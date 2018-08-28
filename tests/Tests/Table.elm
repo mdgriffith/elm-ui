@@ -1,0 +1,123 @@
+module Tests.Table exposing (..)
+
+import Tests.Palette as Palette exposing (..)
+import Html
+import Testable
+import Testable.Element as Element exposing (..)
+import Testable.Element.Background as Background
+import Testable.Element.Font as Font
+import Testable.Runner
+
+
+{-| -}
+main : Html.Html msg
+main =
+    Testable.Runner.show view
+
+
+box attrs =
+    el
+        ([ width (px 50)
+         , height (px 50)
+         , Background.color blue
+         ]
+            ++ attrs
+        )
+        none
+
+
+container =
+    el [ width (px 100), height (px 100) ]
+
+
+view =
+    let
+        data =
+            [ { firstName = "David"
+              , lastName = "Bowie"
+              }
+            , { firstName = "Florence"
+              , lastName = "Welch"
+              }
+            ]
+    in
+    column [ spacing 20, width fill, paddingXY 1 30 ]
+        [ text "Tables With Headers"
+        , table []
+            { data = data
+            , columns =
+                [ { header = text "First Name"
+                  , view =
+                        \row -> text row.firstName
+                  }
+                , { header = text "Last Name"
+                  , view =
+                        \row -> text row.lastName
+                  }
+                ]
+            }
+        , text "Without Headers"
+        , table []
+            { data = data
+            , columns =
+                [ { header = none
+                  , view =
+                        \row -> text row.firstName
+                  }
+                , { header = none
+                  , view =
+                        \row -> text row.lastName
+                  }
+                ]
+            }
+        , text "With Spacing and Styling"
+        , table
+            [ Background.color blue
+            , spacing 20
+            , padding 30
+            ]
+            { data = data
+            , columns =
+                [ { header =
+                        el [ Font.color white ] <|
+                            text "First Name"
+                  , view =
+                        \row -> el [ Background.color lightGrey ] <| text row.firstName
+                  }
+                , { header = el [ Font.color white ] <| text "Last Name"
+                  , view =
+                        \row ->
+                            el [ Background.color lightGrey ] <|
+                                text row.lastName
+                  }
+                ]
+            }
+        , text "Indexed Table With Spacing and Styling"
+        , indexedTable
+            [ Background.color blue
+            , spacing 20
+            , padding 30
+            ]
+            { data = data
+            , columns =
+                [ { header =
+                        el [ Font.color white ] <|
+                            text "Index"
+                  , view =
+                        \i row -> el [ Background.color lightGrey, width fill ] <| text (toString i)
+                  }
+                , { header =
+                        el [ Font.color white ] <|
+                            text "First Name"
+                  , view =
+                        \i row -> el [ Background.color lightGrey, width fill ] <| text row.firstName
+                  }
+                , { header = el [ Font.color white ] <| text "Last Name"
+                  , view =
+                        \i row ->
+                            el [ Background.color lightGrey, width fill ] <|
+                                text row.lastName
+                  }
+                ]
+            }
+        ]
