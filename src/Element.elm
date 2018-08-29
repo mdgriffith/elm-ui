@@ -240,7 +240,7 @@ rgba =
 
 {-| Provide the red, green, and blue channels for the color.
 
-Each channel takes a value between 0 and 1.
+Each channel takes a value between 0 and 255.
 
 -}
 rgb255 : Int -> Int -> Int -> Color
