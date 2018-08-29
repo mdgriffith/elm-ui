@@ -15,8 +15,7 @@ This means:
 
 
 ```elm
-import Color exposing (blue, darkBlue)
-import Element exposing (Element, el, text, row, alignRight)
+import Element exposing (Element, el, text, row, alignRight, rgb)
 import Element.Background as Background
 import Element.Border as Border
 
@@ -37,8 +36,8 @@ myRowOfStuff =
 myElement : Element msg
 myElement =
     el
-        [ Background.color blue
-        , Border.color darkBlue
+        [ Background.color (rgb 0.2 0.3 0.3)
+        , Border.color (rgb 0.2 0.4 0.3)
         ]
         (text "You've made a stylish element!")
 ```
