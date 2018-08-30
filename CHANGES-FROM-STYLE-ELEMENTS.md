@@ -111,7 +111,7 @@ Also of note, is that if something is `center`, then it will truly be in the cen
 
 **When/WhenJust** - `when` and `whenJust` are removed, though you can easily make a convenience function for yourself!  I wanted the library to place an emphasis on common elm constructs instead of library-specific ones.  As far as shortcuts, they don't actually save you much anyway.
 
-**Full, Spacer** - `full` and `spacer` have been removed in order to follow the libraries priority of explicitness.  `full` would override the parents padding, while `spacer` would override the parent's `spacing`.  Both can be achieved with the more common primities of `row`, `column` and `spacing`, and potentially some nesting of layouts.
+**Full, Spacer** - `full` and `spacer` have been removed in order to follow the libraries priority of explicitness.  `full` would override the parents padding, while `spacer` would override the parent's `spacing`.  Both can be achieved with the more common primitives of `row`, `column` and `spacing`, and potentially some nesting of layouts.
 
 
 
@@ -132,7 +132,7 @@ Also of note, is that if something is `center`, then it will truly be in the cen
 
 The default logic has been made more consistent and hopefully more intuitive.  
 
-Al elements start with `width/height shrink`, which means that they are the size of their contents.
+All elements start with `width/height shrink`, which means that they are the size of their contents.
 
 
 # PseudoClass Support
