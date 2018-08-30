@@ -40,10 +40,11 @@ module Element.Input
 
 ## Text Input
 
-@docs text, Placeholder, placeholder, 
+@docs text, Placeholder, placeholder
 
 
 We can also give a hint about what type of content our text field contains.  This will allow things like autofill to work correctly.
+
 
 @docs username, newPassword, currentPassword, email, search, spellChecked
 
