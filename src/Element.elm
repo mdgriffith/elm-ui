@@ -27,41 +27,43 @@ module Element exposing
 {-|
 
 
-## Basic Elements
+# Basic Elements
 
 @docs Element, none, text, el
 
 
-## Rows and Columns
+# Rows and Columns
 
-Rows and columns are the most common layouts.
+When we want more than one child on an element, we want to be _specific_ about how they will be layed out.
+
+So, the common ways to do that would be `row` and `column`.
 
 @docs row, wrappedRow, column
 
 
-## Text Layout
+# Text Layout
 
-Text needs it's own layout primitives.
+Text layout needs some specific considerations.
 
 @docs paragraph, textColumn
 
 
-## Data Table
+# Data Table
 
 @docs Column, table, IndexedColumn, indexedTable
 
 
-## Size
+# Size
 
 @docs Attribute, width, height, Length, px, shrink, fill, fillPortion, maximum, minimum
 
 
-## Debugging
+# Debugging
 
 @docs explain
 
 
-## Padding and Spacing
+# Padding and Spacing
 
 There's no concept of margin in `style-elements`, instead we have padding and spacing.
 
@@ -79,12 +81,15 @@ Here's what we can expect:
 
 ![Three boxes spaced 7 pixels apart. There's a 10 pixel distance from the edge of the parent to the boxes.](https://mdgriffith.gitbooks.io/style-elements/content/assets/spacing-400.png)
 
+**Note** `spacing` set on a `paragraph`, will set the pixel spacing between lines.
+
+
 @docs padding, paddingXY, paddingEach
 
 @docs spacing, spacingXY, spaceEvenly
 
 
-## Alignment
+# Alignment
 
 Alignment can be used to align an `Element` within another `Element`.
 
@@ -313,19 +318,18 @@ toRgb (Internal.Rgba r g b a) =
     }
 
 
-{-| The basic building block of your layout. Here we create a
+{-| The basic building block of your layout.
 
-    import Element
-
-    view =
-        Element.el [] (Element.text "Hello!")
+    howdy : Element msg
+    howdy =
+        Element.el [] (Element.text "Howdy!")
 
 -}
 type alias Element msg =
     Internal.Element msg
 
 
-{-| Standard attribute which cannot be a decoration.
+{-| An attribute that can be attached to an `Element`
 -}
 type alias Attribute msg =
     Internal.Attribute () msg
@@ -534,7 +538,7 @@ forceHover =
     Internal.HoverOption Internal.ForceHover
 
 
-{-| Nothing to see here!
+{-| When you want to render exactly nothing.
 -}
 none : Element msg
 none =
@@ -559,16 +563,15 @@ You can think of an `el` as a `div`, but it can only hae one child.
 
 If you want multiple children, you'll need to use something like `row` or `column`
 
-    import Color exposing (blue, darkBlue)
-    import Element exposing (Element)
+    import Element exposing (Element, rgb)
     import Element.Background as Background
     import Element.Border as Border
 
     myElement : Element msg
     myElement =
         Element.el
-            [ Background.color blue
-            , Border.color darkBlue
+            [ Background.color (rgb 0 0.5 0)
+            , Border.color (rgb 0 0.7 0)
             ]
             (Element.text "You've made a stylish element!")
 
@@ -585,8 +588,7 @@ el attrs child =
         (Internal.Unkeyed [ child ])
 
 
-{-| If you want a row of elements, use `row`!
--}
+{-| -}
 row : List (Attribute msg) -> List (Element msg) -> Element msg
 row attrs children =
     Internal.element
@@ -618,7 +620,8 @@ column attrs children =
         (Internal.Unkeyed children)
 
 
-{-| -}
+{-| Same as `row`, but will wrap if it takes up too much horizontal space.
+-}
 wrappedRow : List (Attribute msg) -> List (Element msg) -> Element msg
 wrappedRow attrs children =
     let
@@ -1004,6 +1007,8 @@ Which will look something like
 
 ![A paragraph where the first letter is twice the height of the others](https://mdgriffith.gitbooks.io/style-elements/content/assets/Screen%20Shot%202017-08-25%20at%209.41.52%20PM.png)
 
+**Note** `spacing` on a paragraph will set the pixel spacing between lines.
+
 -}
 paragraph : List (Attribute msg) -> List (Element msg) -> Element msg
 paragraph attrs children =
@@ -1156,6 +1161,11 @@ newTabLink attrs { url, label } =
 
 
 {-| A link to download a file.
+
+**Note** If you're using `Browser.application`, then this won't be enough to actually trigger a file download due to how `Browser.Navigation` works.
+
+[Here's a description of what needs to happen](https://github.com/elm/html/issues/175).
+
 -}
 download :
     List (Attribute msg)

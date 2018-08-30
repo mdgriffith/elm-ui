@@ -1,16 +1,12 @@
-module Element.Region
-    exposing
-        ( announce
-        , announceUrgently
-        , aside
-        , description
-        , footer
-        , heading
-        , mainContent
-        , navigation
-        )
+module Element.Region exposing
+    ( mainContent, navigation, heading, aside, footer
+    , description
+    , announce, announceUrgently
+    )
 
-{-| This module is meant to make accessibility easy! They're sign posts that accessibility software like screen readers can use to navigate your app.
+{-| This module is meant to make accessibility easy!
+
+These are sign posts that accessibility software like screen readers can use to navigate your app.
 
 All you have to do is add them to elements in your app where you see fit.
 

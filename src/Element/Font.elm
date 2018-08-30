@@ -1,46 +1,21 @@
-module Element.Font
-    exposing
-        ( Font
-        , alignLeft
-        , alignRight
-        , bold
-        , center
-        , color
-        , external
-        , extraBold
-        , extraLight
-        , family
-        , glow
-        , hairline
-        , heavy
-        , italic
-        , justify
-        , letterSpacing
-        , light
-        , medium
-        , monospace
-        , regular
-        , sansSerif
-        , semiBold
-        , serif
-        , shadow
-        , size
-        , strike
-        , typeface
-        , underline
-        , unitalicized
-        , wordSpacing
-        )
+module Element.Font exposing
+    ( color, size
+    , family, Font, typeface, serif, sansSerif, monospace
+    , external
+    , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
+    , underline, strike, italic, unitalicized
+    , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
+    , glow, shadow
+    )
 
 {-|
 
-    import Color exposing (blue)
     import Element
     import Element.Font as Font
 
     view =
         Element.el
-            [ Font.color blue
+            [ Font.color (Element.rgb 0 0 1)
             , Font.size 18
             , Font.family
                 [ Font.typeface "Open Sans"
@@ -49,7 +24,9 @@ module Element.Font
             ]
             (Element.text "Woohoo, I'm stylish text")
 
-**Note**: `Font.color`, `Font.size`, and `Font.family` are inherited, meaning you can set them at the top of your view and all subsequent nodes will have that value.
+**Note:** `Font.color`, `Font.size`, and `Font.family` are inherited, meaning you can set them at the top of your view and all subsequent nodes will have that value.
+
+**Other Note:** If you're looking for something like `line-height`, it's handled by `Element.spacing` on a `paragraph`.
 
 @docs color, size
 

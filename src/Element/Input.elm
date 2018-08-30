@@ -40,7 +40,12 @@ module Element.Input
 
 ## Text Input
 
-@docs text, Placeholder, placeholder, username, newPassword, currentPassword, email, search, spellChecked
+@docs text, Placeholder, placeholder, 
+
+
+We can also give a hint about what type of content our text field contains.  This will allow things like autofill to work correctly.
+
+@docs username, newPassword, currentPassword, email, search, spellChecked
 
 
 ## Multiline Text
@@ -144,7 +149,7 @@ The `onPress` handler will be fired either `onClick` or when the element is focu
     import Element.Input as Input
 
     Input.button []
-        { onPress = Just ClickMsg
+        { onPress = ClickMsg
         , label = text "My Button"
         }
 
@@ -911,7 +916,9 @@ text =
         }
 
 
-{-| -}
+{-| If spell checking is available, this input will be spellchecked.
+
+-}
 spellChecked :
     List (Attribute msg)
     ->
