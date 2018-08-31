@@ -47,7 +47,7 @@ myElement =
 
 ## History
 
-The work is based off of a rewrite of the [Style Elements](https://github.com/mdgriffith/style-elements) library.  A lot of that work was orignally released under the [Stylish Elephants](https://github.com/mdgriffith/stylish-elephants) project.
+The work is based off of a rewrite of the [Style Elements](https://github.com/mdgriffith/style-elements) library.  A lot of that work was originally released under the [Stylish Elephants](https://github.com/mdgriffith/stylish-elephants) project.
 
 
 
