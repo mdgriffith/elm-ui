@@ -777,6 +777,16 @@ textHelper textInput attrs textOptions =
                     , [ Internal.unstyled (Html.text textOptions.text) ]
                     )
 
+        heightFillFromChild =
+            Internal.get attributes <|
+                \attr ->
+                    case attr of
+                        Internal.Height (Internal.Fill _) ->
+                            True
+
+                        _ ->
+                            False
+
         attributesFromChild =
             Internal.get attributes <|
                 \attr ->
@@ -832,6 +842,7 @@ textHelper textInput attrs textOptions =
                 (Element.width Element.fill
                     :: List.concat
                         [ nearbys
+                        , heightFillFromChild
                         , case textOptions.placeholder of
                             Nothing ->
                                 []
