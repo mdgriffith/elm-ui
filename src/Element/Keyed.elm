@@ -1,4 +1,4 @@
-module Element.Keyed exposing (column, el, row)
+module Element.Keyed exposing (el, column, row)
 
 {-| Notes from the `Html.Keyed` on how keyed works:
 

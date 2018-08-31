@@ -1,21 +1,13 @@
-module Element.Events
-    exposing
-        ( onClick
-          -- , onClickCoords
-          -- , onClickPageCoords
-          -- , onClickScreenCoords
-        , onDoubleClick
-        , onFocus
-        , onLoseFocus
-          -- , onMouseCoords
-        , onMouseDown
-        , onMouseEnter
-        , onMouseLeave
-        , onMouseMove
-          -- , onMousePageCoords
-          -- , onMouseScreenCoords
-        , onMouseUp
-        )
+module Element.Events exposing
+    ( onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
+    , onFocus, onLoseFocus
+    -- , onClickCoords
+    -- , onClickPageCoords
+    -- , onClickScreenCoords
+    -- , onMouseCoords
+    -- , onMousePageCoords
+    -- , onMouseScreenCoords
+    )
 
 {-|
 
@@ -36,6 +28,7 @@ import Html.Events
 import Internal.Model as Internal
 import Json.Decode as Json
 import VirtualDom
+
 
 
 -- MOUSE EVENTS

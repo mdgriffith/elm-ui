@@ -83,7 +83,6 @@ Here's what we can expect:
 
 **Note** `spacing` set on a `paragraph`, will set the pixel spacing between lines.
 
-
 @docs padding, paddingXY, paddingEach
 
 @docs spacing, spacingXY, spaceEvenly

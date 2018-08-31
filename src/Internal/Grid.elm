@@ -1,4 +1,4 @@
-module Internal.Grid exposing (..)
+module Internal.Grid exposing (Around, Layout(..), PositionedElement, RelativePosition(..), build, createGrid, getWidth, relative)
 
 {-| Relative positioning within a grid.
 
@@ -80,10 +80,12 @@ createGrid ( spacingX, spacingY ) nearby =
                 [ 1
                 , if Nothing == nearby.above then
                     0
+
                   else
                     1
                 , if Nothing == nearby.below then
                     0
+
                   else
                     1
                 ]
@@ -93,10 +95,12 @@ createGrid ( spacingX, spacingY ) nearby =
                 [ 1
                 , if Nothing == nearby.left then
                     0
+
                   else
                     1
                 , if Nothing == nearby.right then
                     0
+
                   else
                     1
                 ]
@@ -107,6 +111,7 @@ createGrid ( spacingX, spacingY ) nearby =
                 , primary = 1
                 , below = 2
                 }
+
             else
                 { above = 1
                 , primary = 2
@@ -119,6 +124,7 @@ createGrid ( spacingX, spacingY ) nearby =
                 , primary = 1
                 , right = 2
                 }
+
             else
                 { left = 1
                 , primary = 2

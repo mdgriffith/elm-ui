@@ -1,13 +1,7 @@
-module Element.Background
-    exposing
-        ( color
-        , gradient
-        , image
-        , tiled
-        , tiledX
-        , tiledY
-        , uncropped
-        )
+module Element.Background exposing
+    ( color, gradient
+    , image, uncropped, tiled, tiledX, tiledY
+    )
 
 {-|
 

@@ -1,35 +1,14 @@
-module Element.Input
-    exposing
-        ( Label
-        , Option
-        , OptionState(..)
-        , Placeholder
-        , Thumb
-        , button
-        , checkbox
-        , currentPassword
-        , defaultCheckbox
-        , defaultThumb
-        , email
-        , focusedOnLoad
-        , labelAbove
-        , labelBelow
-        , labelLeft
-        , labelRight
-        , multiline
-        , newPassword
-        , option
-        , optionWith
-        , placeholder
-        , radio
-        , radioRow
-        , search
-        , slider
-        , spellChecked
-        , text
-        , thumb
-        , username
-        )
+module Element.Input exposing
+    ( button
+    , checkbox, defaultCheckbox
+    , text, Placeholder, placeholder
+    , username, newPassword, currentPassword, email, search, spellChecked
+    , multiline
+    , slider, Thumb, thumb, defaultThumb
+    , radio, radioRow, Option, option, optionWith, OptionState(..)
+    , Label, labelAbove, labelBelow, labelLeft, labelRight
+    , focusedOnLoad
+    )
 
 {-|
 
@@ -42,9 +21,7 @@ module Element.Input
 
 @docs text, Placeholder, placeholder
 
-
-We can also give a hint about what type of content our text field contains.  This will allow things like autofill to work correctly.
-
+We can also give a hint about what type of content our text field contains. This will allow things like autofill to work correctly.
 
 @docs username, newPassword, currentPassword, email, search, spellChecked
 
@@ -197,6 +174,7 @@ button attrs { onPress, label } =
 focusDefault attrs =
     if List.any hasFocusStyle attrs then
         Internal.NoAttribute
+
     else
         Internal.htmlClass "focusable"
 
@@ -239,8 +217,10 @@ checkbox attrs { label, icon, checked, onChange } =
                         \code ->
                             if code == enter then
                                 Just <| onChange (not checked)
+
                             else if code == space then
                                 Just <| onChange (not checked)
+
                             else
                                 Nothing
                    ]
@@ -257,6 +237,7 @@ checkbox attrs { label, icon, checked, onChange } =
                 Html.Attributes.attribute "aria-checked" <|
                     if checked then
                         "true"
+
                     else
                         "false"
             , Element.centerY
@@ -298,6 +279,7 @@ defaultThumb =
 
     Input.slider
         [ Element.height (Element.px 30)
+
         -- Here is where we're creating/styling the "track"
         , Element.behindContent
             (Element.el
@@ -509,16 +491,19 @@ slider attributes input =
                 , if vertical then
                     Internal.Attr <|
                         Html.Attributes.attribute "orient" "vertical"
+
                   else
                     Internal.NoAttribute
                 , Element.width <|
                     if vertical then
                         Maybe.withDefault (Element.px 20) trackHeight
+
                     else
                         Maybe.withDefault Element.fill trackWidth
                 , Element.height <|
                     if vertical then
                         Maybe.withDefault Element.fill trackWidth
+
                     else
                         Maybe.withDefault (Element.px 20) trackHeight
                 ]
@@ -533,6 +518,7 @@ slider attributes input =
                     ++ [ Element.behindContent <|
                             if vertical then
                                 viewVerticalThumb factor thumbAttributes trackWidth
+
                             else
                                 viewHorizontalThumb factor thumbAttributes trackHeight
                        ]
@@ -765,6 +751,7 @@ textHelper textInput attrs textOptions =
                                             |> (\x ->
                                                     if x < 1 then
                                                         1
+
                                                     else
                                                         x
                                                )
@@ -863,6 +850,7 @@ textHelper textInput attrs textOptions =
                                                , Element.alpha
                                                     (if textOptions.text == "" then
                                                         1
+
                                                      else
                                                         0
                                                     )
@@ -918,7 +906,6 @@ text =
 
 
 {-| If spell checking is available, this input will be spellchecked.
-
 -}
 spellChecked :
     List (Attribute msg)
@@ -978,6 +965,7 @@ newPassword attrs pass =
             TextInputNode <|
                 if pass.show then
                     "text"
+
                 else
                     "password"
         , spellchecked = False
@@ -1008,6 +996,7 @@ currentPassword attrs pass =
             TextInputNode <|
                 if pass.show then
                     "text"
+
                 else
                     "password"
         , spellchecked = False
@@ -1181,6 +1170,7 @@ optionWith val view =
                         [ el None [] <|
                             if selected then
                                 text ":D"
+
                             else
                                 text ":("
                         , text "burrito"
@@ -1301,6 +1291,7 @@ radioHelper orientation attrs input =
                 status =
                     if Just val == input.selected then
                         Selected
+
                     else
                         Idle
             in
@@ -1364,6 +1355,7 @@ radioHelper orientation attrs input =
                         NotFound ->
                             if Just val == input.selected then
                                 ( BeforeFound, prev, nxt )
+
                             else
                                 ( found, val, nxt )
 
@@ -1452,6 +1444,7 @@ radioHelper orientation attrs input =
                             attrs
                 in
                 Internal.StyleClass Flag.transparency (Internal.Transparency "transparent" 1.0) :: pseudos
+
             else
                 []
 
@@ -1492,12 +1485,16 @@ radioHelper orientation attrs input =
                             \code ->
                                 if code == leftArrow then
                                     Just (input.onChange prev)
+
                                 else if code == upArrow then
                                     Just (input.onChange prev)
+
                                 else if code == rightArrow then
                                     Just (input.onChange next)
+
                                 else if code == downArrow then
                                     Just (input.onChange next)
+
                                 else if code == space then
                                     case input.selected of
                                         Nothing ->
@@ -1505,6 +1502,7 @@ radioHelper orientation attrs input =
 
                                         _ ->
                                             Nothing
+
                                 else
                                     Nothing
                         )
@@ -1642,6 +1640,7 @@ onKey desiredCode msg =
         decode code =
             if code == desiredCode then
                 Json.succeed msg
+
             else
                 Json.fail "Not the enter key"
 
@@ -1797,6 +1796,7 @@ defaultCheckbox checked =
         , Border.color <|
             if checked then
                 Element.rgb (59 / 255) (153 / 255) (252 / 255)
+
             else
                 Element.rgb (211 / 255) (211 / 255) (211 / 255)
         , Border.shadow <|
@@ -1806,17 +1806,20 @@ defaultCheckbox checked =
             , color =
                 if checked then
                     Element.rgba (238 / 255) (238 / 255) (238 / 255) 0
+
                 else
                     Element.rgb (238 / 255) (238 / 255) (238 / 255)
             }
         , Background.color <|
             if checked then
                 Element.rgb (59 / 255) (153 / 255) (252 / 255)
+
             else
                 white
         , Border.width <|
             if checked then
                 0
+
             else
                 1
         ]
@@ -1837,6 +1840,7 @@ defaultCheckbox checked =
                     }
                 ]
                 Element.none
+
          else
             Element.none
         )

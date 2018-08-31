@@ -1,4 +1,4 @@
-module Internal.Model exposing (..)
+module Internal.Model exposing (Aligned(..), Angle, Attribute(..), Axis(..), Children(..), Color(..), Description(..), Element(..), EmbedStyle(..), FocusStyle, Font(..), Gathered, HAlign(..), HoverSetting(..), LayoutContext(..), Length(..), Location(..), NodeName(..), Option(..), OptionRecord, Padding(..), Property(..), PseudoClass(..), RenderMode(..), Shadow, Spacing(..), Style(..), TransformComponent(..), Transformation(..), VAlign(..), XYZ, addNodeName, addWhen, alignXName, alignYName, asColumn, asEl, asGrid, asParagraph, asRow, asTextColumn, boxShadowName, columnClass, composeTransformation, contextClasses, createElement, defaultOptions, div, element, embedKeyed, embedWith, extractSpacingAndPadding, filter, finalizeNode, floatClass, focusDefaultStyle, formatBoxShadow, formatColor, formatColorClass, formatDropShadow, formatTextShadow, gatherAttrRecursive, get, getHeight, getSpacing, getStyleName, getWidth, gridClass, htmlClass, lengthClassName, map, mapAttr, mapAttrFromStyle, noStyleSheet, onlyStyles, optionsToRecord, paddingName, pageClass, paragraphClass, reduceRecursive, reduceRecursiveCalcName, reduceStyles, reduceStylesRecursive, removeNever, renderFocusStyle, renderFont, renderFontClassName, renderHeight, renderRoot, renderWidth, rootStyle, rowClass, singleClass, skippable, sortedReduce, spacingName, staticRoot, tag, textElement, textElementFill, textShadowName, toHtml, toStyleSheet, toStyleSheetString, transformClass, transformValue, unit, unstyled, untransformed, unwrapDecorations, unwrapDecsHelper)
 
 {-| -}
 
@@ -275,6 +275,7 @@ finalizeNode has node attributes children embedMode parentContext =
         AsRow ->
             if Flag.present Flag.widthFill has && not (Flag.present Flag.widthBetween has) then
                 html
+
             else if Flag.present Flag.alignRight has then
                 Html.u
                     [ Html.Attributes.class
@@ -288,6 +289,7 @@ finalizeNode has node attributes children embedMode parentContext =
                         )
                     ]
                     [ html ]
+
             else if Flag.present Flag.centerX has then
                 Html.s
                     [ Html.Attributes.class
@@ -301,12 +303,14 @@ finalizeNode has node attributes children embedMode parentContext =
                         )
                     ]
                     [ html ]
+
             else
                 html
 
         AsColumn ->
             if Flag.present Flag.heightFill has && not (Flag.present Flag.heightBetween has) then
                 html
+
             else if Flag.present Flag.centerY has then
                 Html.s
                     [ Html.Attributes.class
@@ -319,6 +323,7 @@ finalizeNode has node attributes children embedMode parentContext =
                         )
                     ]
                     [ html ]
+
             else if Flag.present Flag.alignBottom has then
                 Html.u
                     [ Html.Attributes.class
@@ -331,6 +336,7 @@ finalizeNode has node attributes children embedMode parentContext =
                         )
                     ]
                     [ html ]
+
             else
                 html
 
@@ -349,6 +355,7 @@ embedWith static opts styles children =
                     |> toStyleSheet opts
                )
             :: children
+
     else
         (styles
             |> List.foldl reduceStyles ( Set.empty, [ renderFocusStyle opts.focus ] )
@@ -372,6 +379,7 @@ embedKeyed static opts styles children =
                     |> toStyleSheet opts
                )
             :: children
+
     else
         ( "dynamic-stylesheet"
         , styles
@@ -397,6 +405,7 @@ reduceStylesRecursive cache found styles =
             in
             if Set.member styleName cache then
                 reduceStylesRecursive cache found remaining
+
             else
                 reduceStylesRecursive (Set.insert styleName cache) (head :: found) remaining
 
@@ -409,6 +418,7 @@ reduceStyles style (( cache, existing ) as nevermind) =
     in
     if Set.member styleName cache then
         nevermind
+
     else
         ( Set.insert styleName cache
         , style :: existing
@@ -434,6 +444,7 @@ reduceRecursiveCalcName found styles =
         headOfList :: other :: remaining ->
             if headOfList /= other then
                 reduceRecursiveCalcName (headOfList :: found) (other :: remaining)
+
             else
                 reduceRecursiveCalcName found (other :: remaining)
 
@@ -450,6 +461,7 @@ reduceRecursive found styles =
         ( headOfListName, headOfList ) :: ( otherName, other ) :: remaining ->
             if headOfListName /= otherName then
                 reduceRecursive (headOfList :: found) (( otherName, other ) :: remaining)
+
             else
                 reduceRecursive found (( otherName, other ) :: remaining)
 
@@ -674,6 +686,7 @@ skippable flag style =
 
             _ ->
                 False
+
     else
         case style of
             FontSize i ->
@@ -719,6 +732,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                 Class flag exactClassName ->
                     if Flag.present flag has then
                         gatherAttrRecursive classes node has transform styles attrs children remaining
+
                     else
                         gatherAttrRecursive (exactClassName ++ " " ++ classes) node (Flag.add flag has) transform styles attrs children remaining
 
@@ -728,6 +742,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                 StyleClass flag style ->
                     if Flag.present flag has then
                         gatherAttrRecursive classes node has transform styles attrs children remaining
+
                     else if skippable flag style then
                         gatherAttrRecursive (getStyleName style ++ " " ++ classes)
                             node
@@ -737,6 +752,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             attrs
                             children
                             remaining
+
                     else
                         gatherAttrRecursive (getStyleName style ++ " " ++ classes)
                             node
@@ -760,6 +776,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                 Width width ->
                     if Flag.present Flag.width has then
                         gatherAttrRecursive classes node has transform styles attrs children remaining
+
                     else
                         case width of
                             Px px ->
@@ -792,6 +809,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                         attrs
                                         children
                                         remaining
+
                                 else
                                     gatherAttrRecursive (classes ++ " " ++ Internal.Style.classes.widthFillPortion ++ " width-fill-" ++ String.fromInt portion)
                                         node
@@ -829,6 +847,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                 Height height ->
                     if Flag.present Flag.height has then
                         gatherAttrRecursive classes node has transform styles attrs children remaining
+
                     else
                         case height of
                             Px px ->
@@ -868,6 +887,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                         attrs
                                         children
                                         remaining
+
                                 else
                                     gatherAttrRecursive (classes ++ " " ++ (Internal.Style.classes.heightFillPortion ++ " height-fill-" ++ String.fromInt portion))
                                         node
@@ -919,8 +939,10 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                         Heading i ->
                             if i <= 1 then
                                 gatherAttrRecursive classes (addNodeName "h1" node) has transform styles attrs children remaining
+
                             else if i < 7 then
                                 gatherAttrRecursive classes (addNodeName ("h" ++ String.fromInt i) node) has transform styles attrs children remaining
+
                             else
                                 gatherAttrRecursive classes (addNodeName "h6" node) has transform styles attrs children remaining
 
@@ -1037,6 +1059,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                         newClasses =
                             if location == Behind then
                                 Internal.Style.classes.hasBehind ++ " " ++ classes
+
                             else
                                 classes
                     in
@@ -1045,6 +1068,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                 AlignX x ->
                     if Flag.present Flag.xAlign has then
                         gatherAttrRecursive classes node has transform styles attrs children remaining
+
                     else
                         gatherAttrRecursive (alignXName x ++ " " ++ classes)
                             node
@@ -1071,6 +1095,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                 AlignY y ->
                     if Flag.present Flag.yAlign has then
                         gatherAttrRecursive classes node has transform styles attrs children remaining
+
                     else
                         gatherAttrRecursive (alignYName y ++ " " ++ classes)
                             node
@@ -1114,6 +1139,7 @@ renderWidth w =
                 , Internal.Style.classes.widthFill
                 , []
                 )
+
             else
                 ( Flag.add Flag.widthFill Flag.none
                 , Internal.Style.classes.widthFillPortion ++ " width-fill-" ++ String.fromInt portion
@@ -1195,6 +1221,7 @@ renderHeight h =
                 , Internal.Style.classes.heightFill
                 , []
                 )
+
             else
                 ( Flag.add Flag.heightFill Flag.none
                 , Internal.Style.classes.heightFillPortion ++ " height-fill-" ++ String.fromInt portion
@@ -1323,6 +1350,7 @@ createElement context children rendered =
                         ( html context :: htmls
                         , existingStyles
                         )
+
                     else
                         ( html context :: htmls
                         , existingStyles
@@ -1333,13 +1361,16 @@ createElement context children rendered =
                         ( styled.html NoStyleSheet context :: htmls
                         , if List.isEmpty existingStyles then
                             styled.styles
+
                           else
                             styled.styles ++ existingStyles
                         )
+
                     else
                         ( styled.html NoStyleSheet context :: htmls
                         , if List.isEmpty existingStyles then
                             styled.styles
+
                           else
                             styled.styles ++ existingStyles
                         )
@@ -1361,16 +1392,19 @@ createElement context children rendered =
                         ( VirtualDom.text
                             (if context == asParagraph then
                                 str ++ " "
+
                              else
                                 str
                             )
                             :: htmls
                         , existingStyles
                         )
+
                     else
                         ( textElement
                             (if context == asParagraph then
                                 str ++ " "
+
                              else
                                 str
                             )
@@ -1388,6 +1422,7 @@ createElement context children rendered =
                         ( ( key, html context ) :: htmls
                         , existingStyles
                         )
+
                     else
                         ( ( key, html context ) :: htmls
                         , existingStyles
@@ -1399,13 +1434,16 @@ createElement context children rendered =
                             :: htmls
                         , if List.isEmpty existingStyles then
                             styled.styles
+
                           else
                             styled.styles ++ existingStyles
                         )
+
                     else
                         ( ( key, styled.html NoStyleSheet context ) :: htmls
                         , if List.isEmpty existingStyles then
                             styled.styles
+
                           else
                             styled.styles ++ existingStyles
                         )
@@ -1424,6 +1462,7 @@ createElement context children rendered =
                           , VirtualDom.text
                                 (if context == asParagraph then
                                     str ++ " "
+
                                  else
                                     str
                                 )
@@ -1431,11 +1470,13 @@ createElement context children rendered =
                             :: htmls
                         , existingStyles
                         )
+
                     else
                         ( ( key
                           , textElement
                                 (if context == asParagraph then
                                     str ++ " "
+
                                  else
                                     str
                                 )
@@ -1455,6 +1496,7 @@ createElement context children rendered =
                         newStyles =
                             if List.isEmpty styles then
                                 rendered.styles
+
                             else
                                 rendered.styles ++ styles
                     in
@@ -1482,6 +1524,7 @@ createElement context children rendered =
                         newStyles =
                             if List.isEmpty styles then
                                 rendered.styles
+
                             else
                                 rendered.styles ++ styles
                     in
@@ -1520,6 +1563,7 @@ staticRoot =
 addWhen ifThis x to =
     if ifThis then
         x :: to
+
     else
         to
 
@@ -1550,18 +1594,21 @@ filter attrs =
                     Width width ->
                         if Set.member "width" has then
                             ( found, has )
+
                         else
                             ( x :: found, Set.insert "width" has )
 
                     Height height ->
                         if Set.member "height" has then
                             ( found, has )
+
                         else
                             ( x :: found, Set.insert "height" has )
 
                     Describe description ->
                         if Set.member "described" has then
                             ( found, has )
+
                         else
                             ( x :: found, Set.insert "described" has )
 
@@ -1571,18 +1618,21 @@ filter attrs =
                     AlignX _ ->
                         if Set.member "align-x" has then
                             ( found, has )
+
                         else
                             ( x :: found, Set.insert "align-x" has )
 
                     AlignY _ ->
                         if Set.member "align-y" has then
                             ( found, has )
+
                         else
                             ( x :: found, Set.insert "align-y" has )
 
                     TransformComponent _ _ ->
                         if Set.member "transform" has then
                             ( found, has )
+
                         else
                             ( x :: found, Set.insert "transform" has )
             )
@@ -1598,6 +1648,7 @@ get attrs isAttr =
             (\x found ->
                 if isAttr x then
                     x :: found
+
                 else
                     found
             )
@@ -2030,6 +2081,7 @@ toStyleSheetString options stylesheet =
         renderProps force (Property key val) existing =
             if force then
                 existing ++ "\n  " ++ key ++ ": " ++ val ++ " !important;"
+
             else
                 existing ++ "\n  " ++ key ++ ": " ++ val ++ ";"
 
@@ -2519,6 +2571,7 @@ formatBoxShadow shadow =
         List.filterMap identity
             [ if shadow.inset then
                 Just "inset"
+
               else
                 Nothing
             , Just <| String.fromFloat (Tuple.first shadow.offset) ++ "px"
@@ -2533,6 +2586,7 @@ boxShadowName shadow =
     String.concat <|
         [ if shadow.inset then
             "box-inset"
+
           else
             "box-"
         , String.fromFloat (Tuple.first shadow.offset) ++ "px"

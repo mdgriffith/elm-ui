@@ -1,19 +1,10 @@
-module Element.Border
-    exposing
-        ( color
-        , dashed
-        , dotted
-        , glow
-        , innerGlow
-        , innerShadow
-        , roundEach
-        , rounded
-        , shadow
-        , solid
-        , width
-        , widthEach
-        , widthXY
-        )
+module Element.Border exposing
+    ( color
+    , width, widthXY, widthEach
+    , solid, dashed, dotted
+    , rounded, roundEach
+    , glow, innerGlow, shadow, innerShadow
+    )
 
 {-|
 
