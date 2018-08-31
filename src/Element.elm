@@ -996,7 +996,6 @@ This makes it particularly easy to do something like a [dropped capital](https:/
         [ el
             [ alignLeft
             , padding 5
-            , Font.lineHeight 1
             ]
             (text "S")
         , text "o much text ...."
