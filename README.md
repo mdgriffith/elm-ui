@@ -15,7 +15,7 @@ This means:
 
 
 ```elm
-import Element exposing (Element, el, text, row, alignRight, rgb)
+import Element exposing (Element, el, text, row, alignRight, fill, width, rgb)
 import Element.Background as Background
 import Element.Border as Border
 
