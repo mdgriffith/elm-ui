@@ -558,7 +558,7 @@ text content =
 
 {-| The basic building block of your layout.
 
-You can think of an `el` as a `div`, but it can only hae one child.
+You can think of an `el` as a `div`, but it can only have one child.
 
 If you want multiple children, you'll need to use something like `row` or `column`
 
