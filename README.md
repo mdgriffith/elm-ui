@@ -15,18 +15,19 @@ This means:
 
 
 ```elm
-import Element exposing (Element, el, text, row, alignRight, fill, width, rgb)
+import Element exposing (Element, el, text, row, alignRight, fill, width, rgb255, spacing, centerY, padding)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Font as Font
 
 
 main = 
     Element.layout []
-        myElement
+        myRowOfStuff
 
-
+myRowOfStuff : Element msg
 myRowOfStuff =
-    row [ width fill ]
+    row [ width fill, centerY, spacing 30 ]
         [ myElement
         , myElement
         , el [ alignRight ] myElement
@@ -36,10 +37,12 @@ myRowOfStuff =
 myElement : Element msg
 myElement =
     el
-        [ Background.color (rgb 0.2 0.3 0.3)
-        , Border.color (rgb 0.2 0.4 0.3)
+        [ Background.color (rgb255 240 0 245)
+        , Font.color (rgb255 255 255 255)
+        , Border.rounded 3
+        , padding 30
         ]
-        (text "You've made a stylish element!")
+        (text "stylish!")
 ```
 
 
