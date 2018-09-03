@@ -12,7 +12,7 @@ module Element.Background exposing
 
 @docs image, uncropped, tiled, tiledX, tiledY
 
-**Note** if you want more control over a background image than is provided here, you should try just using a normal `Element.image` with something like `Element.behind`.
+**Note** if you want more control over a background image than is provided here, you should try just using a normal `Element.image` with something like `Element.behindContent`.
 
 -}
 
