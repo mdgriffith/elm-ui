@@ -14,6 +14,8 @@ This means:
 * **Layout and style are explicit and easy to modify.** CSS and HTML as tools for a layout language are hard to modify because there's no central place that represents your layout. You're generally forced to bounce back and forth between multiple definitions in multiple files in order to adjust layout, even though it's probably the most common thing you'll do.
 
 
+[Try this live example on Ellie!](https://ellie-app.com/3f2n4J5RnT3a1)
+
 ```elm
 import Element exposing (Element, el, text, row, alignRight, fill, width, rgb255, spacing, centerY, padding)
 import Element.Background as Background
