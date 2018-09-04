@@ -1881,10 +1881,8 @@ rootStyle =
             , SansSerif
             ]
     in
-    [ StyleClass Flag.bgColor (Colored ("bg-color-" ++ formatColorClass (Rgba 1 1 1 1)) "background-color" (Rgba 1 1 1 1))
+    [ StyleClass Flag.bgColor (Colored ("bg-color-" ++ formatColorClass (Rgba 1 1 1 0)) "background-color" (Rgba 1 1 1 0))
     , StyleClass Flag.fontColor (Colored ("font-color-" ++ formatColorClass (Rgba 0 0 0 1)) "color" (Rgba 0 0 0 1))
-
-    -- , StyleClass Flag.fontSize (Single "font-size-20" "font-size" "20px")
     , StyleClass Flag.fontSize (FontSize 20)
     , StyleClass Flag.fontFamily <|
         FontFamily (List.foldl renderFontClassName "font-" families)
