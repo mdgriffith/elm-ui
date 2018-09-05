@@ -54,16 +54,16 @@ My current thinking is that you have 2 really powerful methods of capturing your
 2. **Capture your colors, font sizes, etc.**  Create a `Style` module that captures the **values** you use for your styling. Keep your colors there, as well as values for spacing, font names, and font sizes all in one place.  You should consider using a scaling function for things like spacing and fontsizes. 
 
 
-## Element.Area
+## Element.Region
 
-The `Element.Area` module is now how you can do accessibility markup.
+The `Element.Region` module is now how you can do accessibility markup.
 
 You can do this by adding an area notation to an element's attributes.
 
 ```elm
-import Element.Area as Area
+import Element.Region as Region
 
-row [ Area.navigation ] 
+row [ Region.navigation ] 
     [ --..my navigation links
     ]
 
@@ -71,7 +71,7 @@ row [ Area.navigation ]
 Or you can make something an `<h1>`
 
 ```
-el [ Area.heading 1 ] (text "Super important stuff")
+el [ Region.heading 1 ] (text "Super important stuff")
 
 ```
 
