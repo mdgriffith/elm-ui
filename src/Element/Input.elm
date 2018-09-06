@@ -586,7 +586,7 @@ type TextKind
 
 {-| -}
 type alias Text msg =
-    { onChange : String -> msg
+    { onChange : Maybe (String -> msg)
     , text : String
     , placeholder : Maybe (Placeholder msg)
     , label : Label msg
@@ -630,7 +630,12 @@ textHelper textInput attrs textOptions =
             Element.width Element.fill :: (defaultTextBoxStyle ++ attrs)
 
         behavior =
-            [ Internal.Attr (Html.Events.onInput textOptions.onChange) ]
+            case textOptions.onChange of
+                Just msg ->
+                    [ Internal.Attr (Html.Events.onInput msg) ]
+
+                Nothing ->
+                    [ Internal.Attr (Html.Attributes.disabled True) ]
 
         noNearbys =
             List.filter (not << forNearby) attributes
@@ -902,7 +907,7 @@ textHelper textInput attrs textOptions =
 text :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -921,7 +926,7 @@ text =
 spellChecked :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -939,7 +944,7 @@ spellChecked =
 search :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -963,7 +968,7 @@ A password takes all the arguments a normal `Input.text` would, and also `show`,
 newPassword :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -994,7 +999,7 @@ newPassword attrs pass =
 currentPassword :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1025,7 +1030,7 @@ currentPassword attrs pass =
 username :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1043,7 +1048,7 @@ username =
 email :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1061,7 +1066,7 @@ email =
 multiline :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg

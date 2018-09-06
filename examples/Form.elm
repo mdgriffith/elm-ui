@@ -114,13 +114,13 @@ view model =
                 ]
                 { text = model.username
                 , placeholder = Just (Input.placeholder [] (text "username"))
-                , onChange = \new -> Update { model | username = new }
+                , onChange = Just (\new -> Update { model | username = new })
                 , label = Input.labelAbove [ Font.size 14 ] (text "Username")
                 }
             , Input.currentPassword [ spacing 12, width shrink ]
                 { text = model.password
                 , placeholder = Nothing
-                , onChange = \new -> Update { model | password = new }
+                , onChange = Just (\new -> Update { model | password = new })
                 , label = Input.labelAbove [ Font.size 14 ] (text "Password")
                 , show = False
                 }
@@ -132,7 +132,7 @@ view model =
                 ]
                 { text = model.comment
                 , placeholder = Just (Input.placeholder [] (text "Extra hot sauce?\n\n\nYes pls"))
-                , onChange = \new -> Update { model | comment = new }
+                , onChange = Just (\new -> Update { model | comment = new })
                 , label = Input.labelAbove [ Font.size 14 ] (text "Leave a comment!")
                 , spellcheck = False
                 }
