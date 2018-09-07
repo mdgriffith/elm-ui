@@ -65,7 +65,7 @@ Text layout needs some specific considerations.
 
 # Padding and Spacing
 
-There's no concept of margin in `style-elements`, instead we have padding and spacing.
+There's no concept of margin in `elm-ui`, instead we have padding and spacing.
 
 Padding is the distance between the outer edge and the content, and spacing is the space between children.
 
@@ -381,7 +381,7 @@ px =
     Internal.Px
 
 
-{-| Shrink an element to fit it's contents.
+{-| Shrink an element to fit its contents.
 -}
 shrink : Length
 shrink =
@@ -1336,7 +1336,7 @@ paddingXY x y =
 
 And then just do
 
-    paddingEach { edges | right 5 }
+    paddingEach { edges | right = 5 }
 
 -}
 paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute msg
