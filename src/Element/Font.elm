@@ -294,7 +294,7 @@ shadow shade =
         Internal.Single (Internal.textShadowName shade) "text-shadow" (Internal.formatTextShadow shade)
 
 
-{-| A glow is just a simplified shadow
+{-| A glow is just a simplified shadow.
 -}
 glow : Color -> Float -> Attr decorative msg
 glow clr i =
