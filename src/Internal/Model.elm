@@ -1002,42 +1002,50 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                     case location of
                                         Above ->
                                             String.join " "
-                                                [ Internal.Style.classes.any
+                                                [ 
+                                                Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.above
                                                 ]
 
                                         Below ->
                                             String.join " "
-                                                [ Internal.Style.classes.any
+                                                [ 
+                                                Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.below
                                                 ]
 
                                         OnRight ->
                                             String.join " "
-                                                [ Internal.Style.classes.any
+                                                [ 
+                                                Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.onRight
                                                 ]
 
                                         OnLeft ->
+
+                                        
                                             String.join " "
-                                                [ Internal.Style.classes.any
+                                                [ 
+                                                Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.onLeft
                                                 ]
 
                                         InFront ->
                                             String.join " "
-                                                [ Internal.Style.classes.any
+                                                [ 
+                                                Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.inFront
                                                 ]
 
                                         Behind ->
                                             String.join " "
-                                                [ Internal.Style.classes.any
+                                                [ 
+                                                Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.behind
                                                 ]

@@ -152,6 +152,7 @@ classes =
     , seButton = "sbt"
 
     -- nearby elements
+    , nearby = "nb"
     , above = "a"
     , below = "b"
     , onRight = "or"
@@ -824,6 +825,103 @@ baseSheet =
                 ]
             ]
         ]
+    , Class (dot classes.nearby)
+        [ Prop "position" "relative"
+        , Prop "border" "none"
+        , Prop "display" "flex"
+        , Prop "flex-direction" "row"
+        , Prop "flex-basis" "auto"
+        , Batch <|
+            (\fn -> List.map fn locations) <|
+                \loc ->
+                    case loc of
+                        Above ->
+                            Descriptor (dot classes.above)
+                                [ Prop "position" "absolute"
+                                , Prop "bottom" "100%"
+                                , Prop "left" "0"
+                                , Prop "width" "100%"
+                                , Prop "z-index" "10"
+                                , Prop "margin" "0 !important"
+                                , Child (dot classes.heightFill)
+                                    [ Prop "height" "auto"
+                                    ]
+                                , Child (dot classes.widthFill)
+                                    [ Prop "width" "100%"
+                                    ]
+                                , Prop "pointer-events" "none"
+                                , Child (dot classes.any)
+                                    [ Prop "pointer-events" "auto"
+                                    ]
+                                ]
+
+                        Below ->
+                            Descriptor (dot classes.below)
+                                [ Prop "position" "absolute"
+                                , Prop "bottom" "0"
+                                , Prop "left" "0"
+                                , Prop "height" "0"
+                                , Prop "width" "100%"
+                                , Prop "z-index" "10"
+                                , Prop "margin" "0 !important"
+                                , Prop "pointer-events" "auto"
+                                , Child (dot classes.heightFill)
+                                    [ Prop "height" "auto"
+                                    ]
+                                ]
+
+                        OnRight ->
+                            Descriptor (dot classes.onRight)
+                                [ Prop "position" "absolute"
+                                , Prop "left" "100%"
+                                , Prop "top" "0"
+                                , Prop "height" "100%"
+                                , Prop "margin" "0 !important"
+                                , Prop "z-index" "10"
+                                , Prop "pointer-events" "auto"
+                                ]
+
+                        OnLeft ->
+                            Descriptor (dot classes.onLeft)
+                                [ Prop "position" "absolute"
+                                , Prop "right" "100%"
+                                , Prop "top" "0"
+                                , Prop "height" "100%"
+                                , Prop "margin" "0 !important"
+                                , Prop "z-index" "10"
+                                , Prop "pointer-events" "auto"
+                                ]
+
+                        Within ->
+                            Descriptor (dot classes.inFront)
+                                [ Prop "position" "absolute"
+                                , Prop "width" "100%"
+                                , Prop "height" "100%"
+                                , Prop "left" "0"
+                                , Prop "top" "0"
+                                , Prop "margin" "0 !important"
+                                , Prop "z-index" "10"
+                                , Prop "pointer-events" "none"
+                                , Child (dot classes.any)
+                                    [ Prop "pointer-events" "auto"
+                                    ]
+                                ]
+
+                        Behind ->
+                            Descriptor (dot classes.behind)
+                                [ Prop "position" "absolute"
+                                , Prop "width" "100%"
+                                , Prop "height" "100%"
+                                , Prop "left" "0"
+                                , Prop "top" "0"
+                                , Prop "margin" "0 !important"
+                                , Prop "z-index" "0"
+                                , Prop "pointer-events" "none"
+                                , Child (dot classes.any)
+                                    [ Prop "pointer-events" "auto"
+                                    ]
+                                ]
+        ]
     , Class (dot classes.any)
         [ Prop "position" "relative"
         , Prop "border" "none"
@@ -844,8 +942,6 @@ baseSheet =
         , Prop "font-size" "inherit"
         , Prop "color" "inherit"
         , Prop "font-family" "inherit"
-
-        -- , Prop "line-height" "inherit"
         , Prop "line-height" "1"
         , Prop "font-weight" "inherit"
 
@@ -1465,96 +1561,6 @@ baseSheet =
         , Descriptor ".hidden"
             [ Prop "display" "none"
             ]
-        , Batch <|
-            (\fn -> List.map fn locations) <|
-                \loc ->
-                    case loc of
-                        Above ->
-                            Descriptor (dot classes.above)
-                                [ Prop "position" "absolute"
-                                , Prop "bottom" "100%"
-                                , Prop "left" "0"
-                                , Prop "width" "100%"
-                                , Prop "z-index" "10"
-                                , Prop "margin" "0 !important"
-                                , Child (dot classes.heightFill)
-                                    [ Prop "height" "auto"
-                                    ]
-                                , Child (dot classes.widthFill)
-                                    [ Prop "width" "100%"
-                                    ]
-                                , Prop "pointer-events" "none"
-                                , Child (dot classes.any)
-                                    [ Prop "pointer-events" "auto"
-                                    ]
-                                ]
-
-                        Below ->
-                            Descriptor (dot classes.below)
-                                [ Prop "position" "absolute"
-                                , Prop "bottom" "0"
-                                , Prop "left" "0"
-                                , Prop "height" "0"
-                                , Prop "width" "100%"
-                                , Prop "z-index" "10"
-                                , Prop "margin" "0 !important"
-                                , Prop "pointer-events" "auto"
-                                , Child (dot classes.heightFill)
-                                    [ Prop "height" "auto"
-                                    ]
-                                ]
-
-                        OnRight ->
-                            Descriptor (dot classes.onRight)
-                                [ Prop "position" "absolute"
-                                , Prop "left" "100%"
-                                , Prop "top" "0"
-                                , Prop "height" "100%"
-                                , Prop "margin" "0 !important"
-                                , Prop "z-index" "10"
-                                , Prop "pointer-events" "auto"
-                                ]
-
-                        OnLeft ->
-                            Descriptor (dot classes.onLeft)
-                                [ Prop "position" "absolute"
-                                , Prop "right" "100%"
-                                , Prop "top" "0"
-                                , Prop "height" "100%"
-                                , Prop "margin" "0 !important"
-                                , Prop "z-index" "10"
-                                , Prop "pointer-events" "auto"
-                                ]
-
-                        Within ->
-                            Descriptor (dot classes.inFront)
-                                [ Prop "position" "absolute"
-                                , Prop "width" "100%"
-                                , Prop "height" "100%"
-                                , Prop "left" "0"
-                                , Prop "top" "0"
-                                , Prop "margin" "0 !important"
-                                , Prop "z-index" "10"
-                                , Prop "pointer-events" "none"
-                                , Child (dot classes.any)
-                                    [ Prop "pointer-events" "auto"
-                                    ]
-                                ]
-
-                        Behind ->
-                            Descriptor (dot classes.behind)
-                                [ Prop "position" "absolute"
-                                , Prop "width" "100%"
-                                , Prop "height" "100%"
-                                , Prop "left" "0"
-                                , Prop "top" "0"
-                                , Prop "margin" "0 !important"
-                                , Prop "z-index" "0"
-                                , Prop "pointer-events" "none"
-                                , Child (dot classes.any)
-                                    [ Prop "pointer-events" "auto"
-                                    ]
-                                ]
         , Descriptor (dot classes.textThin)
             [ Prop "font-weight" "100"
             ]
