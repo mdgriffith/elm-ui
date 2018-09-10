@@ -792,6 +792,96 @@ rules =
         ++ renderCompact (baseSheet ++ commonValues)
 
 
+elDescription =
+    [ Prop "display" "flex"
+    , Prop "flex-direction" "column"
+    , Prop "white-space" "pre"
+    , Descriptor (dot classes.hasBehind)
+        [ Prop "z-index" "0"
+        , Child (dot classes.behind)
+            [ Prop "z-index" "-1"
+            ]
+        ]
+    , Descriptor (dot classes.seButton)
+        -- Special default for text in a button.
+        -- This is overridden is they put the text inside an `el`
+        [ Child (dot classes.text)
+            [ Descriptor (dot classes.heightFill)
+                [ Prop "flex-grow" "0"
+                ]
+            , Descriptor (dot classes.widthFill)
+                [ Prop "align-self" "auto !important"
+                ]
+            ]
+        ]
+    , Child (dot classes.heightContent)
+        [ Prop "height" "auto"
+        ]
+    , Child (dot classes.heightFill)
+        [ Prop "flex-grow" "100000"
+        ]
+    , Child (dot classes.widthFill)
+        [ -- alignLeft, alignRight, centerX are overridden by width.
+          --   Prop "align-self" "stretch !important"
+          Prop "width" "100%"
+        ]
+    , Child (dot classes.widthContent)
+        [ Prop "align-self" "flex-start"
+        ]
+
+    -- , Child (dot classes.widthFill)
+    --     [ Prop "align-self" "stretch"
+    --     , Descriptor (dot classes.alignedHorizontally)
+    --         [ Prop "width" "100%"
+    --         ]
+    --     ]
+    , describeAlignment <|
+        \alignment ->
+            case alignment of
+                Top ->
+                    ( [ Prop "justify-content" "flex-start" ]
+                    , [ Prop "margin-bottom" "auto !important"
+                      , Prop "margin-top" "0 !important"
+                      ]
+                    )
+
+                Bottom ->
+                    ( [ Prop "justify-content" "flex-end" ]
+                    , [ Prop "margin-top" "auto !important"
+                      , Prop "margin-bottom" "0 !important"
+                      ]
+                    )
+
+                Right ->
+                    ( [ Prop "align-items" "flex-end" ]
+                    , [ Prop "align-self" "flex-end" ]
+                    )
+
+                Left ->
+                    ( [ Prop "align-items" "flex-start" ]
+                    , [ Prop "align-self" "flex-start" ]
+                    )
+
+                CenterX ->
+                    ( [ Prop "align-items" "center" ]
+                    , [ Prop "align-self" "center"
+                      ]
+                    )
+
+                CenterY ->
+                    ( [ -- Prop "justify-content" "center"
+                        Child (dot classes.any)
+                            [ Prop "margin-top" "auto"
+                            , Prop "margin-bottom" "auto"
+                            ]
+                      ]
+                    , [ Prop "margin-top" "auto !important"
+                      , Prop "margin-bottom" "auto !important"
+                      ]
+                    )
+    ]
+
+
 baseSheet =
     [ Class "html,body"
         [ Prop "height" "100%"
@@ -831,6 +921,8 @@ baseSheet =
         , Prop "display" "flex"
         , Prop "flex-direction" "row"
         , Prop "flex-basis" "auto"
+        , Descriptor (dot classes.single)
+            elDescription
         , Batch <|
             (\fn -> List.map fn locations) <|
                 \loc ->
@@ -1060,93 +1152,7 @@ baseSheet =
             [ Prop "line-height" "1.05"
             ]
         , Descriptor (dot classes.single)
-            [ Prop "display" "flex"
-            , Prop "flex-direction" "column"
-            , Prop "white-space" "pre"
-            , Descriptor (dot classes.hasBehind)
-                [ Prop "z-index" "0"
-                , Child (dot classes.behind)
-                    [ Prop "z-index" "-1"
-                    ]
-                ]
-            , Descriptor (dot classes.seButton)
-                -- Special default for text in a button.
-                -- This is overridden is they put the text inside an `el`
-                [ Child (dot classes.text)
-                    [ Descriptor (dot classes.heightFill)
-                        [ Prop "flex-grow" "0"
-                        ]
-                    , Descriptor (dot classes.widthFill)
-                        [ Prop "align-self" "auto !important"
-                        ]
-                    ]
-                ]
-            , Child (dot classes.heightContent)
-                [ Prop "height" "auto"
-                ]
-            , Child (dot classes.heightFill)
-                [ Prop "flex-grow" "100000"
-                ]
-            , Child (dot classes.widthFill)
-                [ -- alignLeft, alignRight, centerX are overridden by width.
-                  --   Prop "align-self" "stretch !important"
-                  Prop "width" "100%"
-                ]
-            , Child (dot classes.widthContent)
-                [ Prop "align-self" "flex-start"
-                ]
-
-            -- , Child (dot classes.widthFill)
-            --     [ Prop "align-self" "stretch"
-            --     , Descriptor (dot classes.alignedHorizontally)
-            --         [ Prop "width" "100%"
-            --         ]
-            --     ]
-            , describeAlignment <|
-                \alignment ->
-                    case alignment of
-                        Top ->
-                            ( [ Prop "justify-content" "flex-start" ]
-                            , [ Prop "margin-bottom" "auto !important"
-                              , Prop "margin-top" "0 !important"
-                              ]
-                            )
-
-                        Bottom ->
-                            ( [ Prop "justify-content" "flex-end" ]
-                            , [ Prop "margin-top" "auto !important"
-                              , Prop "margin-bottom" "0 !important"
-                              ]
-                            )
-
-                        Right ->
-                            ( [ Prop "align-items" "flex-end" ]
-                            , [ Prop "align-self" "flex-end" ]
-                            )
-
-                        Left ->
-                            ( [ Prop "align-items" "flex-start" ]
-                            , [ Prop "align-self" "flex-start" ]
-                            )
-
-                        CenterX ->
-                            ( [ Prop "align-items" "center" ]
-                            , [ Prop "align-self" "center"
-                              ]
-                            )
-
-                        CenterY ->
-                            ( [ -- Prop "justify-content" "center"
-                                Child (dot classes.any)
-                                    [ Prop "margin-top" "auto"
-                                    , Prop "margin-bottom" "auto"
-                                    ]
-                              ]
-                            , [ Prop "margin-top" "auto !important"
-                              , Prop "margin-bottom" "auto !important"
-                              ]
-                            )
-            ]
+            elDescription
         , Descriptor (dot classes.row)
             [ Prop "display" "flex"
             , Prop "flex-direction" "row"
