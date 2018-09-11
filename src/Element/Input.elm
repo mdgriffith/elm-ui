@@ -151,9 +151,15 @@ button attrs { onPress, label } =
         Internal.div
         (Element.width Element.shrink
             :: Element.height Element.shrink
-            :: Internal.htmlClass classes.contentCenterX
-            :: Internal.htmlClass classes.contentCenterY
-            :: Internal.htmlClass classes.seButton
+            :: Internal.htmlClass
+                (classes.contentCenterX
+                    ++ " "
+                    ++ classes.contentCenterY
+                    ++ " "
+                    ++ classes.seButton
+                    ++ " "
+                    ++ classes.noTextSelection
+                )
             :: Element.pointer
             :: focusDefault attrs
             :: Internal.Describe Internal.Button
