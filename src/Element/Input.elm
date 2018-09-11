@@ -424,7 +424,28 @@ slider attributes input =
     applyLabel
         [ Element.spacingXY spacingX spacingY
         , Region.announce
-        , Element.width Element.fill
+        , Element.width
+            (case trackWidth of
+                Nothing ->
+                    Element.fill
+
+                Just (Internal.Px _) ->
+                    Element.shrink
+
+                Just x ->
+                    x
+            )
+        , Element.height
+            (case trackHeight of
+                Nothing ->
+                    Element.shrink
+
+                Just (Internal.Px _) ->
+                    Element.shrink
+
+                Just x ->
+                    x
+            )
         ]
         input.label
         (Element.row
