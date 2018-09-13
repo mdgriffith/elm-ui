@@ -942,7 +942,7 @@ baseSheet =
                                     [ Prop "width" "100%"
                                     ]
                                 , Prop "pointer-events" "none"
-                                , Child (dot classes.any)
+                                , Child "*"
                                     [ Prop "pointer-events" "auto"
                                     ]
                                 ]
@@ -956,7 +956,10 @@ baseSheet =
                                 , Prop "width" "100%"
                                 , Prop "z-index" "10"
                                 , Prop "margin" "0 !important"
-                                , Prop "pointer-events" "auto"
+                                , Prop "pointer-events" "none"
+                                , Child "*"
+                                    [ Prop "pointer-events" "auto"
+                                    ]
                                 , Child (dot classes.heightFill)
                                     [ Prop "height" "auto"
                                     ]
@@ -970,7 +973,10 @@ baseSheet =
                                 , Prop "height" "100%"
                                 , Prop "margin" "0 !important"
                                 , Prop "z-index" "10"
-                                , Prop "pointer-events" "auto"
+                                , Prop "pointer-events" "none"
+                                , Child "*"
+                                    [ Prop "pointer-events" "auto"
+                                    ]
                                 ]
 
                         OnLeft ->
@@ -981,7 +987,10 @@ baseSheet =
                                 , Prop "height" "100%"
                                 , Prop "margin" "0 !important"
                                 , Prop "z-index" "10"
-                                , Prop "pointer-events" "auto"
+                                , Prop "pointer-events" "none"
+                                , Child "*"
+                                    [ Prop "pointer-events" "auto"
+                                    ]
                                 ]
 
                         Within ->
@@ -994,7 +1003,7 @@ baseSheet =
                                 , Prop "margin" "0 !important"
                                 , Prop "z-index" "10"
                                 , Prop "pointer-events" "none"
-                                , Child (dot classes.any)
+                                , Child "*"
                                     [ Prop "pointer-events" "auto"
                                     ]
                                 ]
@@ -1009,7 +1018,7 @@ baseSheet =
                                 , Prop "margin" "0 !important"
                                 , Prop "z-index" "0"
                                 , Prop "pointer-events" "none"
-                                , Child (dot classes.any)
+                                , Child "*"
                                     [ Prop "pointer-events" "auto"
                                     ]
                                 ]
