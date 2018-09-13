@@ -910,8 +910,9 @@ baseSheet =
                 ]
             ]
         , Child (dot classes.inFront)
-            [ Descriptor (dot classes.any)
+            [ Descriptor (dot classes.nearby)
                 [ Prop "position" "fixed"
+                , Prop "z-index" "20"
                 ]
             ]
         ]
@@ -933,7 +934,7 @@ baseSheet =
                                 , Prop "bottom" "100%"
                                 , Prop "left" "0"
                                 , Prop "width" "100%"
-                                , Prop "z-index" "10"
+                                , Prop "z-index" "20"
                                 , Prop "margin" "0 !important"
                                 , Child (dot classes.heightFill)
                                     [ Prop "height" "auto"
@@ -954,7 +955,7 @@ baseSheet =
                                 , Prop "left" "0"
                                 , Prop "height" "0"
                                 , Prop "width" "100%"
-                                , Prop "z-index" "10"
+                                , Prop "z-index" "20"
                                 , Prop "margin" "0 !important"
                                 , Prop "pointer-events" "none"
                                 , Child "*"
@@ -972,7 +973,7 @@ baseSheet =
                                 , Prop "top" "0"
                                 , Prop "height" "100%"
                                 , Prop "margin" "0 !important"
-                                , Prop "z-index" "10"
+                                , Prop "z-index" "20"
                                 , Prop "pointer-events" "none"
                                 , Child "*"
                                     [ Prop "pointer-events" "auto"
@@ -986,7 +987,7 @@ baseSheet =
                                 , Prop "top" "0"
                                 , Prop "height" "100%"
                                 , Prop "margin" "0 !important"
-                                , Prop "z-index" "10"
+                                , Prop "z-index" "20"
                                 , Prop "pointer-events" "none"
                                 , Child "*"
                                     [ Prop "pointer-events" "auto"
