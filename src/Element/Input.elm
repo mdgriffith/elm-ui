@@ -691,7 +691,7 @@ textHelper textInput attrs textOptions =
 
                 TextArea ->
                     let
-                        { maybePadding, heightContent, maybeSpacing, adjustedAttributes } =
+                        { maybePadding, heightContent, maybeSpacing, adjustedAttributes, maybeBorder } =
                             attributes
                                 |> List.foldr
                                     (\attr found ->
@@ -710,11 +710,24 @@ textHelper textInput attrs textOptions =
                                                     _ ->
                                                         found
 
+                                            Internal.StyleClass _ (Internal.BorderWidth _ t r b l) ->
+                                                case found.maybeBorder of
+                                                    Nothing ->
+                                                        { found
+                                                            | maybeBorder = Just (Padding t r b l)
+                                                            , adjustedAttributes = attr :: found.adjustedAttributes
+                                                        }
+
+                                                    _ ->
+                                                        found
+
                                             Internal.StyleClass _ (Internal.PaddingStyle _ t r b l) ->
                                                 case found.maybePadding of
                                                     Nothing ->
                                                         { found
                                                             | maybePadding = Just (Padding t r b l)
+
+                                                            -- Skip storing padding because it's being customized later
                                                             , adjustedAttributes = found.adjustedAttributes
                                                         }
 
@@ -737,6 +750,7 @@ textHelper textInput attrs textOptions =
                                     )
                                     { maybePadding = Nothing
                                     , heightContent = Nothing
+                                    , maybeBorder = Nothing
                                     , maybeSpacing = Nothing
                                     , adjustedAttributes = []
                                     }
@@ -766,7 +780,7 @@ textHelper textInput attrs textOptions =
                                 Internal.NoAttribute
 
                             Just True ->
-                                textHeightContent textOptions.text spacing maybePadding
+                                textHeightContent textOptions.text spacing maybePadding maybeBorder
 
                             Just False ->
                                 Internal.NoAttribute
@@ -896,7 +910,7 @@ textHelper textInput attrs textOptions =
         inputElement
 
 
-textHeightContent textValue spacing maybePadding =
+textHeightContent textValue spacing maybePadding maybeBorder =
     let
         newlineCount =
             String.lines textValue
@@ -909,13 +923,20 @@ textHeightContent textValue spacing maybePadding =
                             x
                    )
 
-        heightValue count =
-            case maybePadding of
-                Nothing ->
-                    "calc(" ++ String.fromInt count ++ "em + " ++ String.fromInt ((count - 1) * spacing) ++ "px) !important"
+        topBottom (Padding t _ b _) =
+            t + b
 
-                Just (Padding t r b l) ->
-                    "calc(" ++ String.fromInt count ++ "em + " ++ String.fromInt ((t + b) + ((count - 1) * spacing)) ++ "px) !important"
+        additionalSpacing =
+            ((newlineCount - 1) * spacing)
+                + Maybe.withDefault 0 (Maybe.map topBottom maybePadding)
+                + Maybe.withDefault 0 (Maybe.map topBottom maybeBorder)
+
+        heightValue count =
+            "calc("
+                ++ String.fromInt count
+                ++ "em + "
+                ++ String.fromInt additionalSpacing
+                ++ "px) !important"
     in
     Internal.StyleClass Flag.heightTextAreaContent
         (Internal.Single ("textarea-height-" ++ String.fromInt newlineCount)
