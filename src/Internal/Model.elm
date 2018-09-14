@@ -181,6 +181,7 @@ type Style
     | Single String String String
     | Colored String String Color
     | SpacingStyle String Int Int
+    | BorderWidth String Int Int Int Int
     | PaddingStyle String Int Int Int Int
     | GridTemplateStyle
         { spacing : ( Length, Length )
@@ -327,6 +328,7 @@ htmlClass cls =
 unstyled : VirtualDom.Node msg -> Element msg
 unstyled =
     Unstyled << always
+
 
 
 finalizeNode has node attributes children embedMode parentContext =
@@ -2446,6 +2448,27 @@ toStyleSheetString options stylesheet =
                             )
                         ]
 
+                BorderWidth cls top right bottom left ->
+                    let
+                        class =
+                            "."
+                                ++ cls
+                    in
+                    renderStyle
+                        maybePseudo
+                        class
+                        [ Property "border-width"
+                            (String.fromInt top
+                                ++ "px "
+                                ++ String.fromInt right
+                                ++ "px "
+                                ++ String.fromInt bottom
+                                ++ "px "
+                                ++ String.fromInt left
+                                ++ "px"
+                            )
+                        ]
+
                 GridTemplateStyle template ->
                     let
                         class =
@@ -2791,6 +2814,9 @@ getStyleName style =
             cls
 
         PaddingStyle cls top right bottom left ->
+            cls
+
+        BorderWidth cls top right bottom left ->
             cls
 
         GridTemplateStyle template ->

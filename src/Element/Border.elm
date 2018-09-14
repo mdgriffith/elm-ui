@@ -41,38 +41,81 @@ import Internal.Style as Style exposing (classes)
 {-| -}
 color : Color -> Attr decorative msg
 color clr =
-    Internal.StyleClass Flag.borderColor (Internal.Colored ("border-color-" ++ Internal.formatColorClass clr) "border-color" clr)
+    Internal.StyleClass
+        Flag.borderColor
+        (Internal.Colored
+            ("bc-" ++ Internal.formatColorClass clr)
+            "border-color"
+            clr
+        )
 
 
 {-| -}
 width : Int -> Attribute msg
 width v =
-    Internal.StyleClass Flag.borderWidth (Internal.Single ("border-" ++ String.fromInt v) "border-width" (String.fromInt v ++ "px"))
+    Internal.StyleClass
+        Flag.borderWidth
+        (Internal.BorderWidth
+            ("b-" ++ String.fromInt v)
+            v
+            v
+            v
+            v
+        )
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Internal.StyleClass Flag.borderWidth (Internal.Single ("border-" ++ String.fromInt x ++ "-" ++ String.fromInt y) "border-width" (String.fromInt y ++ "px " ++ String.fromInt x ++ "px"))
+    Internal.StyleClass
+        Flag.borderWidth
+        (Internal.BorderWidth
+            ("b-"
+                ++ String.fromInt x
+                ++ "-"
+                ++ String.fromInt y
+            )
+            y
+            x
+            y
+            x
+        )
 
 
 {-| -}
-widthEach : { bottom : Int, left : Int, right : Int, top : Int } -> Attribute msg
+widthEach :
+    { bottom : Int
+    , left : Int
+    , right : Int
+    , top : Int
+    }
+    -> Attribute msg
 widthEach { bottom, top, left, right } =
-    Internal.StyleClass Flag.borderWidth
-        (Internal.Single ("border-" ++ String.fromInt top ++ "-" ++ String.fromInt right ++ String.fromInt bottom ++ "-" ++ String.fromInt left)
-            "border-width"
-            (String.fromInt top
-                ++ "px "
-                ++ String.fromInt right
-                ++ "px "
-                ++ String.fromInt bottom
-                ++ "px "
-                ++ String.fromInt left
-                ++ "px"
+    if top == bottom && left == right then
+        if top == right then
+            width top
+
+        else
+            widthXY left top
+
+    else
+        Internal.StyleClass Flag.borderWidth
+            (Internal.BorderWidth
+                ("b-"
+                    ++ String.fromInt top
+                    ++ "-"
+                    ++ String.fromInt right
+                    ++ "-"
+                    ++ String.fromInt bottom
+                    ++ "-"
+                    ++ String.fromInt left
+                )
+                top
+                right
+                bottom
+                left
             )
-        )
 
 
 
@@ -105,14 +148,34 @@ dotted =
 -}
 rounded : Int -> Attribute msg
 rounded radius =
-    Internal.StyleClass Flag.borderRound (Internal.Single ("border-radius-" ++ String.fromInt radius) "border-radius" (String.fromInt radius ++ "px"))
+    Internal.StyleClass
+        Flag.borderRound
+        (Internal.Single
+            ("br-" ++ String.fromInt radius)
+            "border-radius"
+            (String.fromInt radius ++ "px")
+        )
 
 
 {-| -}
-roundEach : { topLeft : Int, topRight : Int, bottomLeft : Int, bottomRight : Int } -> Attribute msg
+roundEach :
+    { topLeft : Int
+    , topRight : Int
+    , bottomLeft : Int
+    , bottomRight : Int
+    }
+    -> Attribute msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
     Internal.StyleClass Flag.borderRound
-        (Internal.Single ("border-radius-" ++ String.fromInt topLeft ++ "-" ++ String.fromInt topRight ++ String.fromInt bottomLeft ++ "-" ++ String.fromInt bottomRight)
+        (Internal.Single
+            ("br-"
+                ++ String.fromInt topLeft
+                ++ "-"
+                ++ String.fromInt topRight
+                ++ String.fromInt bottomLeft
+                ++ "-"
+                ++ String.fromInt bottomRight
+            )
             "border-radius"
             (String.fromInt topLeft
                 ++ "px "
@@ -168,7 +231,10 @@ shadow almostShade =
             }
     in
     Internal.StyleClass Flag.shadows <|
-        Internal.Single (Internal.boxShadowName shade) "box-shadow" (Internal.formatBoxShadow shade)
+        Internal.Single
+            (Internal.boxShadowName shade)
+            "box-shadow"
+            (Internal.formatBoxShadow shade)
 
 
 {-| -}
@@ -190,7 +256,10 @@ innerShadow almostShade =
             }
     in
     Internal.StyleClass Flag.shadows <|
-        Internal.Single (Internal.boxShadowName shade) "box-shadow" (Internal.formatBoxShadow shade)
+        Internal.Single
+            (Internal.boxShadowName shade)
+            "box-shadow"
+            (Internal.formatBoxShadow shade)
 
 
 
