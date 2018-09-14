@@ -654,7 +654,7 @@ textHelper : TextInput -> List (Attribute msg) -> Text msg -> Element msg
 textHelper textInput attrs textOptions =
     let
         attributes =
-            Element.width Element.fill :: (defaultTextBoxStyle ++ attrs)
+            defaultTextBoxStyle ++ attrs
 
         behavior =
             [ Internal.Attr (Html.Events.onInput textOptions.onChange) ]
@@ -699,20 +699,15 @@ textHelper textInput attrs textOptions =
                                             Internal.Describe _ ->
                                                 found
 
-                                            Internal.Height val ->
+                                            Internal.Height len ->
                                                 case found.heightContent of
                                                     Nothing ->
-                                                        case val of
-                                                            Internal.Content ->
-                                                                { found
-                                                                    | heightContent = Just val
-                                                                    , adjustedAttributes = found.adjustedAttributes
-                                                                }
+                                                        { found
+                                                            | heightContent = Just (Internal.isContent len)
+                                                            , adjustedAttributes = attr :: found.adjustedAttributes
+                                                        }
 
-                                                            _ ->
-                                                                { found | heightContent = Just val }
-
-                                                    Just i ->
+                                                    _ ->
                                                         found
 
                                             Internal.StyleClass _ (Internal.PaddingStyle _ t r b l) ->
@@ -770,35 +765,11 @@ textHelper textInput attrs textOptions =
                             Nothing ->
                                 Internal.NoAttribute
 
-                            Just Internal.Content ->
-                                let
-                                    newlineCount =
-                                        String.lines textOptions.text
-                                            |> List.length
-                                            |> (\x ->
-                                                    if x < 1 then
-                                                        1
+                            Just True ->
+                                textHeightContent textOptions.text spacing maybePadding
 
-                                                    else
-                                                        x
-                                               )
-
-                                    heightValue count =
-                                        case maybePadding of
-                                            Nothing ->
-                                                "calc(" ++ String.fromInt count ++ "em + " ++ String.fromInt ((count - 1) * spacing) ++ "px) !important"
-
-                                            Just (Padding t r b l) ->
-                                                "calc(" ++ String.fromInt count ++ "em + " ++ String.fromInt ((t + b) + ((count - 1) * spacing)) ++ "px) !important"
-                                in
-                                Internal.StyleClass Flag.height
-                                    (Internal.Single ("textarea-height-" ++ String.fromInt newlineCount)
-                                        "height"
-                                        (heightValue newlineCount)
-                                    )
-
-                            Just x ->
-                                Internal.Height x
+                            Just False ->
+                                Internal.NoAttribute
                       ]
                         ++ adjustedAttributes
                     , [ Internal.unstyled (Html.text textOptions.text) ]
@@ -923,6 +894,34 @@ textHelper textInput attrs textOptions =
         )
         textOptions.label
         inputElement
+
+
+textHeightContent textValue spacing maybePadding =
+    let
+        newlineCount =
+            String.lines textValue
+                |> List.length
+                |> (\x ->
+                        if x < 1 then
+                            1
+
+                        else
+                            x
+                   )
+
+        heightValue count =
+            case maybePadding of
+                Nothing ->
+                    "calc(" ++ String.fromInt count ++ "em + " ++ String.fromInt ((count - 1) * spacing) ++ "px) !important"
+
+                Just (Padding t r b l) ->
+                    "calc(" ++ String.fromInt count ++ "em + " ++ String.fromInt ((t + b) + ((count - 1) * spacing)) ++ "px) !important"
+    in
+    Internal.StyleClass Flag.heightTextAreaContent
+        (Internal.Single ("textarea-height-" ++ String.fromInt newlineCount)
+            "height"
+            (heightValue newlineCount)
+        )
 
 
 {-| -}
@@ -1811,6 +1810,7 @@ defaultTextBoxStyle =
     , Background.color white
     , Border.width 1
     , Element.spacing 3
+    , Element.width Element.fill
     ]
 
 

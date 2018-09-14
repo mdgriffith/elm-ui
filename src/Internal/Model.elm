@@ -1,4 +1,117 @@
-module Internal.Model exposing (Aligned(..), Angle, Attribute(..), Axis(..), Children(..), Color(..), Description(..), Element(..), EmbedStyle(..), FocusStyle, Font(..), Gathered, HAlign(..), HoverSetting(..), LayoutContext(..), Length(..), Location(..), NodeName(..), Option(..), OptionRecord, Padding(..), Property(..), PseudoClass(..), RenderMode(..), Shadow, Spacing(..), Style(..), TransformComponent(..), Transformation(..), VAlign(..), XYZ, addNodeName, addWhen, alignXName, alignYName, asColumn, asEl, asGrid, asParagraph, asRow, asTextColumn, boxShadowName, columnClass, composeTransformation, contextClasses, createElement, defaultOptions, div, element, embedKeyed, embedWith, extractSpacingAndPadding, filter, finalizeNode, floatClass, focusDefaultStyle, formatBoxShadow, formatColor, formatColorClass, formatDropShadow, formatTextShadow, gatherAttrRecursive, get, getHeight, getSpacing, getStyleName, getWidth, gridClass, htmlClass, lengthClassName, map, mapAttr, mapAttrFromStyle, noStyleSheet, onlyStyles, optionsToRecord, paddingName, pageClass, paragraphClass, reduceRecursive, reduceRecursiveCalcName, reduceStyles, reduceStylesRecursive, removeNever, renderFocusStyle, renderFont, renderFontClassName, renderHeight, renderRoot, renderWidth, rootStyle, rowClass, singleClass, skippable, sortedReduce, spacingName, staticRoot, tag, textElement, textElementFill, textShadowName, toHtml, toStyleSheet, toStyleSheetString, transformClass, transformValue, unit, unstyled, untransformed, unwrapDecorations, unwrapDecsHelper)
+module Internal.Model exposing
+    ( Aligned(..)
+    , Angle
+    , Attribute(..)
+    , Axis(..)
+    , Children(..)
+    , Color(..)
+    , Description(..)
+    , Element(..)
+    , EmbedStyle(..)
+    , FocusStyle
+    , Font(..)
+    , Gathered
+    , HAlign(..)
+    , HoverSetting(..)
+    , LayoutContext(..)
+    , Length(..)
+    , Location(..)
+    , NodeName(..)
+    , Option(..)
+    , OptionRecord
+    , Padding(..)
+    , Property(..)
+    , PseudoClass(..)
+    , RenderMode(..)
+    , Shadow
+    , Spacing(..)
+    , Style(..)
+    , TransformComponent(..)
+    , Transformation(..)
+    , VAlign(..)
+    , XYZ
+    , addNodeName
+    , addWhen
+    , alignXName
+    , alignYName
+    , asColumn
+    , asEl
+    , asGrid
+    , asParagraph
+    , asRow
+    , asTextColumn
+    , boxShadowName
+    , columnClass
+    , composeTransformation
+    , contextClasses
+    , createElement
+    , defaultOptions
+    , div
+    , element
+    , embedKeyed
+    , embedWith
+    , extractSpacingAndPadding
+    , filter
+    , finalizeNode
+    , floatClass
+    , focusDefaultStyle
+    , formatBoxShadow
+    , formatColor
+    , formatColorClass
+    , formatDropShadow
+    , formatTextShadow
+    , gatherAttrRecursive
+    , get
+    , getHeight
+    , getSpacing
+    , getStyleName
+    , getWidth
+    , gridClass
+    , htmlClass
+    , lengthClassName
+    , map
+    , mapAttr
+    , mapAttrFromStyle
+    , noStyleSheet
+    , onlyStyles
+    , optionsToRecord
+    , paddingName
+    , pageClass
+    , paragraphClass
+    , reduceRecursive
+    , reduceRecursiveCalcName
+    , reduceStyles
+    , reduceStylesRecursive
+    , removeNever
+    , renderFocusStyle
+    , renderFont
+    , renderFontClassName
+    , renderHeight
+    , renderRoot
+    , renderWidth
+    , rootStyle
+    , rowClass
+    , singleClass
+    , skippable
+    , sortedReduce
+    , spacingName
+    , staticRoot
+    , tag
+    , textElement
+    , textElementFill
+    , textShadowName
+    , toHtml
+    , toStyleSheet
+    , toStyleSheetString
+    , transformClass
+    , transformValue
+    , unit
+    , unstyled
+    , untransformed
+    , unwrapDecorations
+    , unwrapDecsHelper
+    , isContent
+    )
 
 {-| -}
 
@@ -1002,50 +1115,42 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                     case location of
                                         Above ->
                                             String.join " "
-                                                [ 
-                                                Internal.Style.classes.nearby
+                                                [ Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.above
                                                 ]
 
                                         Below ->
                                             String.join " "
-                                                [ 
-                                                Internal.Style.classes.nearby
+                                                [ Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.below
                                                 ]
 
                                         OnRight ->
                                             String.join " "
-                                                [ 
-                                                Internal.Style.classes.nearby
+                                                [ Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.onRight
                                                 ]
 
                                         OnLeft ->
-
-                                        
                                             String.join " "
-                                                [ 
-                                                Internal.Style.classes.nearby
+                                                [ Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.onLeft
                                                 ]
 
                                         InFront ->
                                             String.join " "
-                                                [ 
-                                                Internal.Style.classes.nearby
+                                                [ Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.inFront
                                                 ]
 
                                         Behind ->
                                             String.join " "
-                                                [ 
-                                                Internal.Style.classes.nearby
+                                                [ Internal.Style.classes.nearby
                                                 , Internal.Style.classes.single
                                                 , Internal.Style.classes.behind
                                                 ]
@@ -1646,6 +1751,21 @@ filter attrs =
             )
             ( [], Set.empty )
             attrs
+
+
+isContent len =
+    case len of
+        Content ->
+            True
+
+        Max _ l ->
+            isContent l
+
+        Min _ l ->
+            isContent l
+
+        _ ->
+            False
 
 
 get : List (Attribute aligned msg) -> (Attribute aligned msg -> Bool) -> List (Attribute aligned msg)

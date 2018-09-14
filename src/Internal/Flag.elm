@@ -1,4 +1,59 @@
-module Internal.Flag exposing (Field(..), Flag(..), active, add, alignBottom, alignRight, behind, bgColor, bgGradient, bgImage, borderColor, borderRound, borderStyle, borderWidth, centerX, centerY, cursor, flag, focus, fontAlignment, fontColor, fontFamily, fontSize, fontWeight, gridPosition, gridTemplate, height, heightBetween, heightContent, heightFill, hover, letterSpacing, merge, moveX, moveY, none, overflow, padding, present, rotate, scale, shadows, spacing, transparency, txtShadows, value, width, widthBetween, widthContent, widthFill, wordSpacing, xAlign, yAlign)
+module Internal.Flag exposing
+    ( Field(..)
+    , Flag(..)
+    , active
+    , add
+    , alignBottom
+    , alignRight
+    , behind
+    , bgColor
+    , bgGradient
+    , bgImage
+    , borderColor
+    , borderRound
+    , borderStyle
+    , borderWidth
+    , centerX
+    , centerY
+    , cursor
+    , flag
+    , focus
+    , fontAlignment
+    , fontColor
+    , fontFamily
+    , fontSize
+    , fontWeight
+    , gridPosition
+    , gridTemplate
+    , height
+    , heightBetween
+    , heightContent
+    , heightFill
+    , heightTextAreaContent
+    , hover
+    , letterSpacing
+    , merge
+    , moveX
+    , moveY
+    , none
+    , overflow
+    , padding
+    , present
+    , rotate
+    , scale
+    , shadows
+    , spacing
+    , transparency
+    , txtShadows
+    , value
+    , width
+    , widthBetween
+    , widthContent
+    , widthFill
+    , wordSpacing
+    , xAlign
+    , yAlign
+    )
 
 {-| -}
 
@@ -259,3 +314,7 @@ heightBetween =
 
 behind =
     flag 46
+
+
+heightTextAreaContent =
+    flag 47
