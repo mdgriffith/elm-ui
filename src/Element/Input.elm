@@ -706,7 +706,7 @@ textHelper textInput attrs textOptions =
                                                             Internal.Content ->
                                                                 { found
                                                                     | heightContent = Just val
-                                                                    , adjustedAttributes = attr :: found.adjustedAttributes
+                                                                    , adjustedAttributes = found.adjustedAttributes
                                                                 }
 
                                                             _ ->
