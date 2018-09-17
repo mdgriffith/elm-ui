@@ -6,7 +6,7 @@ module Element.Input exposing
     , multiline
     , slider, Thumb, thumb, defaultThumb
     , radio, radioRow, Option, option, optionWith, OptionState(..)
-    , Label, labelAbove, labelBelow, labelLeft, labelRight
+    , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
     , focusedOnLoad
     )
 
@@ -43,7 +43,7 @@ We can also give a hint about what type of content our text field contains. This
 
 ## Labels
 
-@docs Label, labelAbove, labelBelow, labelLeft, labelRight
+@docs Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
 
 @docs focusedOnLoad
 
@@ -90,34 +90,68 @@ placeholder =
     Placeholder
 
 
+type LabelLocation
+    = OnRight
+    | OnLeft
+    | Above
+    | Below
+
+
 {-| Every input has a required `label`.
 -}
 type Label msg
-    = Label Internal.Location (List (Attribute msg)) (Element msg)
+    = Label LabelLocation (List (Attribute msg)) (Element msg)
+    | HiddenLabel String
 
 
 {-| -}
 labelRight : List (Attribute msg) -> Element msg -> Label msg
 labelRight =
-    Label Internal.OnRight
+    Label OnRight
 
 
 {-| -}
 labelLeft : List (Attribute msg) -> Element msg -> Label msg
 labelLeft =
-    Label Internal.OnLeft
+    Label OnLeft
 
 
 {-| -}
 labelAbove : List (Attribute msg) -> Element msg -> Label msg
 labelAbove =
-    Label Internal.Above
+    Label Above
 
 
 {-| -}
 labelBelow : List (Attribute msg) -> Element msg -> Label msg
 labelBelow =
-    Label Internal.Below
+    Label Below
+
+
+{-| Sometimes you may need to have a label which is not visible, but is still accessible to screen readers.
+
+Seriously consider a visible label before using this.
+
+The situations where a hidden label makes sense:
+
+  - A searchbar with a `search` button right next to it.
+  - A `table` of inputs where the header gives the label.
+
+Basically, a hidden label makes sense when there are other contextual clues that sighted people can pick up on.
+
+-}
+labelHidden : String -> Label msg
+labelHidden =
+    HiddenLabel
+
+
+hiddenLabelAttribute label =
+    case label of
+        HiddenLabel textLabel ->
+            Internal.Describe (Internal.Label textLabel)
+
+        Label _ _ _ ->
+            Internal.NoAttribute
 
 
 {-| A standard button.
@@ -216,21 +250,30 @@ checkbox :
 checkbox attrs { label, icon, checked, onChange } =
     let
         attributes =
-            Element.spacing 6
-                :: [ Internal.Attr (Html.Events.onClick (onChange (not checked)))
-                   , Region.announce
-                   , onKeyLookup <|
-                        \code ->
-                            if code == enter then
-                                Just <| onChange (not checked)
+            [ if isHiddenLabel label then
+                Internal.NoAttribute
 
-                            else if code == space then
-                                Just <| onChange (not checked)
+              else
+                Element.spacing
+                    6
+            , Internal.Attr (Html.Events.onClick (onChange (not checked)))
+            , Region.announce
+            , onKeyLookup <|
+                \code ->
+                    if code == enter then
+                        Just <| onChange (not checked)
 
-                            else
-                                Nothing
-                   ]
-                ++ (tabindex 0 :: Element.pointer :: Element.alignLeft :: Element.width Element.fill :: attrs)
+                    else if code == space then
+                        Just <| onChange (not checked)
+
+                    else
+                        Nothing
+            , tabindex 0
+            , Element.pointer
+            , Element.alignLeft
+            , Element.width Element.fill
+            ]
+                ++ attrs
     in
     applyLabel attributes
         label
@@ -246,6 +289,7 @@ checkbox attrs { label, icon, checked, onChange } =
 
                     else
                         "false"
+            , hiddenLabelAttribute label
             , Element.centerY
             , Element.height Element.fill
             , Element.width Element.shrink
@@ -428,7 +472,11 @@ slider attributes input =
             ]
     in
     applyLabel
-        [ Element.spacingXY spacingX spacingY
+        [ if isHiddenLabel input.label then
+            Internal.NoAttribute
+
+          else
+            Element.spacingXY spacingX spacingY
         , Region.announce
         , Element.width
             (case trackWidth of
@@ -463,7 +511,8 @@ slider attributes input =
             [ Internal.element
                 Internal.asEl
                 (Internal.NodeName "input")
-                [ Internal.StyleClass Flag.active
+                [ hiddenLabelAttribute input.label
+                , Internal.StyleClass Flag.active
                     (Internal.Style
                         ("input[type=\"range\"]." ++ className ++ "::-moz-range-thumb")
                         thumbShadowStyle
@@ -891,6 +940,7 @@ textHelper textInput attrs textOptions =
                         (Internal.NodeName inputNode)
                         (List.concat
                             [ [ focusDefault attrs
+                              , hiddenLabelAttribute textOptions.label
                               ]
                             , inputAttrs
                             , behavior
@@ -902,7 +952,13 @@ textHelper textInput attrs textOptions =
     in
     applyLabel
         (Internal.Class Flag.cursor classes.cursorText
-            :: Element.spacing 5
+            :: (if isHiddenLabel textOptions.label then
+                    Internal.NoAttribute
+
+                else
+                    Element.spacing
+                        5
+               )
             :: Region.announce
             :: attributesFromChild
         )
@@ -1130,9 +1186,27 @@ multiline attrs multi =
         }
 
 
+isHiddenLabel label =
+    case label of
+        HiddenLabel _ ->
+            True
+
+        _ ->
+            False
+
+
 applyLabel : List (Attribute msg) -> Label msg -> Element msg -> Element msg
 applyLabel attrs label input =
     case label of
+        HiddenLabel labelText ->
+            -- NOTE: This means that the label is applied outside of this function!
+            -- It would be nice to unify this logic, but it's a little tricky
+            Internal.element
+                Internal.asColumn
+                (Internal.NodeName "label")
+                attrs
+                (Internal.Unkeyed [ input ])
+
         Label position labelAttrs labelChild ->
             let
                 labelElement =
@@ -1143,42 +1217,28 @@ applyLabel attrs label input =
                         (Internal.Unkeyed [ labelChild ])
             in
             case position of
-                Internal.Above ->
+                Above ->
                     Internal.element
                         Internal.asColumn
                         (Internal.NodeName "label")
                         attrs
                         (Internal.Unkeyed [ labelElement, input ])
 
-                Internal.Below ->
+                Below ->
                     Internal.element
                         Internal.asColumn
                         (Internal.NodeName "label")
                         attrs
                         (Internal.Unkeyed [ input, labelElement ])
 
-                Internal.OnRight ->
+                OnRight ->
                     Internal.element
                         Internal.asRow
                         (Internal.NodeName "label")
                         attrs
                         (Internal.Unkeyed [ input, labelElement ])
 
-                Internal.OnLeft ->
-                    Internal.element
-                        Internal.asRow
-                        (Internal.NodeName "label")
-                        attrs
-                        (Internal.Unkeyed [ labelElement, input ])
-
-                Internal.InFront ->
-                    Internal.element
-                        Internal.asRow
-                        (Internal.NodeName "label")
-                        attrs
-                        (Internal.Unkeyed [ labelElement, input ])
-
-                Internal.Behind ->
+                OnLeft ->
                     Internal.element
                         Internal.asRow
                         (Internal.NodeName "label")
@@ -1380,11 +1440,11 @@ radioHelper orientation attrs input =
         optionArea =
             case orientation of
                 Row ->
-                    row attrs
+                    row (hiddenLabelAttribute input.label :: attrs)
                         (List.map renderOption input.options)
 
                 Column ->
-                    column attrs
+                    column (hiddenLabelAttribute input.label :: attrs)
                         (List.map renderOption input.options)
 
         prevNext =
@@ -1452,6 +1512,9 @@ radioHelper orientation attrs input =
 
                                     _ ->
                                         False
+
+                HiddenLabel _ ->
+                    True
 
         hideIfEverythingisInvisible =
             if not labelVisible && not inputVisible then
