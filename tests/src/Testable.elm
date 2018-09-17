@@ -1,4 +1,4 @@
-module Testable exposing (..)
+module Testable exposing (Attr(..), BoundingBox, Element(..), Found, LayoutContext(..), Location(..), Style, Surroundings, addAttribute, applyLabels, compareFormattedColor, createAttributeTest, createTest, formatColor, formatColorWithAlpha, getElementId, getIds, getSpacing, idAttr, levelToString, render, renderAttribute, renderElement, runTests, toTest)
 
 {-| -}
 
@@ -74,6 +74,7 @@ type alias Surroundings =
 type alias Found =
     { bbox : BoundingBox
     , style : Style
+    , isVisible : Bool
     }
 
 
@@ -312,14 +313,13 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                 |> Maybe.withDefault 0
 
         id =
-            -- Debug.log "create Test" <|
             levelToString level
 
         testChildren : Found -> List (Element msg) -> List Test
         testChildren found children =
             let
                 childrenFound =
-                    -- Should check taht this lookup doesn't fail.
+                    -- Should check that this lookup doesn't fail.
                     -- Thoug if it does, it'll fail when the element itself is tested
                     List.filterMap
                         (\x ->
@@ -535,6 +535,7 @@ applyLabels attrs =
                             | label =
                                 if newLabel == "" then
                                     labeled.label
+
                                 else
                                     newLabel ++ ", " ++ labeled.label
                         }
@@ -666,6 +667,7 @@ formatColorWithAlpha (Internal.Rgba red green blue alpha) =
             ++ (", " ++ String.fromInt (round (blue * 255)))
             ++ ", 1"
             ++ ")"
+
     else
         ("rgba(" ++ String.fromInt (round (red * 255)))
             ++ (", " ++ String.fromInt (round (green * 255)))
@@ -680,6 +682,7 @@ formatColor (Internal.Rgba red green blue alpha) =
             ++ (", " ++ String.fromInt (round (green * 255)))
             ++ (", " ++ String.fromInt (round (blue * 255)))
             ++ ")"
+
     else
         ("rgb(" ++ String.fromInt (round (red * 255)))
             ++ (", " ++ String.fromInt (round (green * 255)))
@@ -693,6 +696,7 @@ getSpacing el =
         getSpacingAttr attr found =
             if found /= Nothing then
                 found
+
             else
                 case attr of
                     Spacing i ->

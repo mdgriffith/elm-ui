@@ -1,4 +1,43 @@
-module Testable.Element exposing (..)
+module Testable.Element exposing
+    ( Length(..)
+    , above
+    , alignBottom
+    , alignLeft
+    , alignRight
+    , alignTop
+    , alpha
+    , behindContent
+    , below
+    , centerX
+    , centerY
+    , column
+    , el
+    , expectRoundedEquality
+    , fill
+    , fillPortion
+    , height
+    , heightHelper
+    , inFront
+    , isVisible
+    , label
+    , maximum
+    , minimum
+    , none
+    , onLeft
+    , onRight
+    , padding
+    , paddingXY
+    , paragraph
+    , px
+    , row
+    , shrink
+    , spacing
+    , text
+    , textColumn
+    , transparent
+    , width
+    , widthHelper
+    )
 
 {-| This module should mirror the top level `Element` api, with one important distinction.
 
@@ -15,6 +54,7 @@ In order to run the test:
 import Dict
 import Element
 import Expect
+import Html.Attributes
 import Testable
 
 
@@ -100,6 +140,7 @@ transparent on =
         { label =
             if on then
                 "transparent"
+
             else
                 "opaque"
         , attr = Element.transparent on
@@ -114,10 +155,23 @@ transparent on =
                     value =
                         if on then
                             "0"
+
                         else
                             "1"
                 in
                 Expect.equal value selfTransparency
+        }
+
+
+{-| -}
+isVisible : Testable.Attr msg
+isVisible =
+    Testable.LabeledTest
+        { label = "is-visible"
+        , attr = Element.htmlAttribute (Html.Attributes.style "not" "applicable")
+        , test =
+            \context _ ->
+                Expect.equal context.self.isVisible True
         }
 
 
@@ -265,6 +319,7 @@ widthHelper maybeMin maybeMax len =
                     \context _ ->
                         if List.member context.location [ Testable.IsNearby Testable.OnRight, Testable.IsNearby Testable.OnLeft ] then
                             Expect.true "width fill doesn't apply to onright/onleft elements" True
+
                         else
                             let
                                 parentAvailableWidth =
@@ -329,6 +384,7 @@ widthHelper maybeMin maybeMax len =
                             -- TODO: The issue is that we have a hard time measuring `text` elements
                             -- So if a element has a text child, then it's width isn't going to show up in the system.
                             expectRoundedEquality context.self.bbox.width context.self.bbox.width
+
                         else
                             -- This fails if this element is actually a column
                             -- So we need to capture what this element is in order to do this calculation.
@@ -422,6 +478,7 @@ heightHelper maybeMin maybeMax len =
                     \context _ ->
                         if List.member context.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                             Expect.true "height fill doesn't apply to above/below elements" True
+
                         else
                             let
                                 parentAvailableHeight =
@@ -486,6 +543,7 @@ heightHelper maybeMin maybeMax len =
                             -- TODO: The issue is that we have a hard time measuring `text` elements
                             -- So if a element has a text child, then it's height isn't going to show up in the system.
                             expectRoundedEquality context.self.bbox.height context.self.bbox.height
+
                         else
                             -- This fails if this element is actually a column
                             -- So we need to capture what this element is in order to do this calculation.
@@ -529,10 +587,12 @@ spacing space =
                                     in
                                     [ if horizontal > 0 then
                                         horizontal
+
                                       else
                                         space
                                     , if vertical > 0 then
                                         vertical
+
                                       else
                                         space
                                     ]
@@ -548,6 +608,7 @@ spacing space =
                                 (\x wrong ->
                                     if not (x >= space) then
                                         x :: wrong
+
                                     else
                                         wrong
                                 )
@@ -588,6 +649,7 @@ alignLeft =
             \found _ ->
                 if List.member found.location [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
                     Expect.true "alignLeft doesn't apply to elements that are onLeft or onRight" True
+
                 else if
                     List.member found.location
                         [ Testable.IsNearby Testable.InFront
@@ -599,10 +661,12 @@ alignLeft =
                     expectRoundedEquality
                         found.self.bbox.left
                         found.parent.bbox.left
+
                 else if List.length found.siblings == 0 then
                     expectRoundedEquality
                         found.self.bbox.left
                         (found.parent.bbox.left + found.parent.bbox.padding.left)
+
                 else
                     case found.location of
                         Testable.InRow ->
@@ -648,10 +712,12 @@ centerX =
                 in
                 if List.member found.location [ Testable.IsNearby Testable.OnRight, Testable.IsNearby Testable.OnLeft ] then
                     Expect.true "centerX doesn't apply to elements that are onLeft or onRight" True
+
                 else if List.length found.siblings == 0 then
                     expectRoundedEquality
                         selfCenter
                         parentCenter
+
                 else
                     case found.location of
                         Testable.InRow ->
@@ -702,6 +768,7 @@ alignRight =
             \found _ ->
                 if List.member found.location [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
                     Expect.true "alignRight doesn't apply to elements that are onLeft or onRight" True
+
                 else if
                     List.member found.location
                         [ Testable.IsNearby Testable.InFront
@@ -713,10 +780,12 @@ alignRight =
                     expectRoundedEquality
                         found.self.bbox.right
                         found.parent.bbox.right
+
                 else if List.length found.siblings == 0 then
                     expectRoundedEquality
                         found.self.bbox.right
                         (found.parent.bbox.right + found.parent.bbox.padding.right)
+
                 else
                     case found.location of
                         Testable.InRow ->
@@ -753,6 +822,7 @@ alignTop =
             \found _ ->
                 if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                     Expect.true "alignTop doesn't apply to elements that are above or below" True
+
                 else if
                     List.member found.location
                         [ Testable.IsNearby Testable.InFront
@@ -764,10 +834,12 @@ alignTop =
                     expectRoundedEquality
                         found.self.bbox.top
                         found.parent.bbox.top
+
                 else if List.length found.siblings == 0 then
                     expectRoundedEquality
                         found.self.bbox.top
                         (found.parent.bbox.top + found.parent.bbox.padding.top)
+
                 else
                     case found.location of
                         Testable.InColumn ->
@@ -804,6 +876,7 @@ alignBottom =
             \found _ ->
                 if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                     Expect.true "alignBottom doesn't apply to elements that are above or below" True
+
                 else if
                     List.member found.location
                         [ Testable.IsNearby Testable.InFront
@@ -815,10 +888,12 @@ alignBottom =
                     expectRoundedEquality
                         found.self.bbox.bottom
                         found.parent.bbox.bottom
+
                 else if List.length found.siblings == 0 then
                     expectRoundedEquality
                         found.self.bbox.bottom
                         (found.parent.bbox.bottom + found.parent.bbox.padding.bottom)
+
                 else
                     case found.location of
                         Testable.InColumn ->
@@ -867,10 +942,12 @@ centerY =
                 in
                 if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                     Expect.true "centerY doesn't apply to elements that are above or below" True
+
                 else if List.length found.siblings == 0 then
                     expectRoundedEquality
                         selfCenter
                         parentCenter
+
                 else
                     case found.location of
                         Testable.InColumn ->
@@ -978,6 +1055,7 @@ inFront element =
                             [ (found.self.bbox.right <= found.parent.bbox.right)
                                 || (found.self.bbox.left >= found.parent.bbox.left)
                             ]
+
                         else
                             [ found.self.bbox.right <= found.parent.bbox.right
                             , found.self.bbox.left >= found.parent.bbox.left
@@ -988,6 +1066,7 @@ inFront element =
                             [ (found.self.bbox.top >= found.parent.bbox.top)
                                 || (found.self.bbox.bottom <= found.parent.bbox.bottom)
                             ]
+
                         else
                             [ found.self.bbox.top >= found.parent.bbox.top
                             , found.self.bbox.bottom <= found.parent.bbox.bottom
@@ -1019,6 +1098,7 @@ behindContent element =
                             [ (found.self.bbox.right <= found.parent.bbox.right)
                                 || (found.self.bbox.left >= found.parent.bbox.left)
                             ]
+
                         else
                             [ found.self.bbox.right <= found.parent.bbox.right
                             , found.self.bbox.left >= found.parent.bbox.left
@@ -1029,6 +1109,7 @@ behindContent element =
                             [ (found.self.bbox.top >= found.parent.bbox.top)
                                 || (found.self.bbox.bottom <= found.parent.bbox.bottom)
                             ]
+
                         else
                             [ found.self.bbox.top >= found.parent.bbox.top
                             , found.self.bbox.bottom <= found.parent.bbox.bottom

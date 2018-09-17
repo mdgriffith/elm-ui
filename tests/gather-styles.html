@@ -34,12 +34,40 @@
             }
             var style = getStyle(element);
             var bbox = getBoundingBox(element);
-            var result = { "bbox": bbox, "style": style, "id": id };
+
+            var visible = isVisible(id, bbox);
+
+
+            var result = { "bbox": bbox, "style": style, "id": id, "isVisible": visible };
             results.push(result);
 
         }
         app.ports.styles.send(results);
     });
+
+    function isVisible(id, bbox) {
+        var current = document.getElementById(id);
+        var result = 0;
+        if (current == document.elementFromPoint(bbox['left'], bbox['top'])) {
+            result++;
+        }
+        if (current == document.elementFromPoint(bbox['left'], bbox['bottom'] - 1)) {
+            result++;
+        }
+        if (current == document.elementFromPoint(bbox['right'] - 1, bbox['top'])) {
+            result++;
+        }
+        if (current == document.elementFromPoint(bbox['right'] - 1, bbox['bottom'] - 1)) {
+            result++;
+        }
+
+
+        if (result == 4) {
+            return true;
+        } else {
+            return false
+        }
+    }
 
     function getStyle(element) {
         var props = []

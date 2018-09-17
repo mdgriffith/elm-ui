@@ -141,6 +141,7 @@ type Msg
         (List
             { id : String
             , bbox : Testable.BoundingBox
+            , isVisible : Bool
             , style : List ( String, String )
             }
         )
@@ -180,7 +181,12 @@ update msg model =
                 Just ( label, current ) ->
                     let
                         toTuple box =
-                            ( box.id, { style = Dict.fromList box.style, bbox = box.bbox } )
+                            ( box.id
+                            , { style = Dict.fromList box.style
+                              , bbox = box.bbox
+                              , isVisible = box.isVisible
+                              }
+                            )
 
                         foundData =
                             boxes
@@ -443,4 +449,13 @@ port test : String -> Cmd msg
 port analyze : List String -> Cmd msg
 
 
-port styles : (List { id : String, bbox : Testable.BoundingBox, style : List ( String, String ) } -> msg) -> Sub msg
+port styles :
+    (List
+        { id : String
+        , bbox : Testable.BoundingBox
+        , style : List ( String, String )
+        , isVisible : Bool
+        }
+     -> msg
+    )
+    -> Sub msg

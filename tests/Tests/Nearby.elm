@@ -23,6 +23,28 @@ box attrs =
         none
 
 
+justBox size color attrs =
+    el
+        ([ width (px size)
+         , height (px size)
+         , Background.color color
+         ]
+            ++ attrs
+        )
+        none
+
+
+littleBox name attrs =
+    el
+        ([ label name
+         , width (px 5)
+         , height (px 5)
+         ]
+            ++ attrs
+        )
+        none
+
+
 p attrs =
     paragraph
         ([ Background.color blue
@@ -389,5 +411,24 @@ view =
         , nearby onRight "onRight" box
         , nearby onLeft "onLeft" box
         , nearby behindContent "behindContent" transparentBox
-        , text "all nearbys, all alignments"
+        , layeredVisibility
+        , overlappingChildren
+        ]
+
+
+layeredVisibility =
+    el
+        [ inFront (justBox 40 red [ isVisible ])
+        ]
+        (el [ inFront (justBox 30 green []) ]
+            (justBox 50 blue [])
+        )
+
+
+overlappingChildren =
+    row []
+        [ el [ inFront (justBox 40 green []) ]
+            (justBox 40 darkGrey [])
+        , el [ onLeft (littleBox "overlapping" [ isVisible, Background.color red ]) ]
+            (justBox 40 darkGrey [])
         ]
