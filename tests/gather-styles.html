@@ -13,9 +13,8 @@
 
 <script type="text/javascript">
 
-    //var app = Elm.Main.fullscreen();
     var node = document.getElementById('root');
-    var app = Elm.Tests.Run.embed(node);
+    var app = Elm.Tests.Run.init({ node: node });
 
     var test_results = "waiting.."
 

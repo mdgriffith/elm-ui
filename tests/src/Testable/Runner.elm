@@ -49,7 +49,7 @@ program tests =
                 cur :: remaining ->
                     ( Just cur, remaining )
     in
-    Browser.embed
+    Browser.element
         { init =
             always
                 ( { current = current
@@ -166,7 +166,7 @@ runTest boxes label element =
 
 update : Msg -> Model Msg -> ( Model Msg, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "update" msg of
         NoOp ->
             ( model, Cmd.none )
 
@@ -246,6 +246,7 @@ view model =
                     finished :: remaining ->
                         if False then
                             viewResultsInline finished
+
                         else
                             Element.layout [] <|
                                 Element.column
@@ -254,6 +255,7 @@ view model =
                                     , Element.width (Element.px 800)
                                     ]
                                     (List.map viewResult (finished :: remaining))
+
             else
                 Html.text "running?"
 

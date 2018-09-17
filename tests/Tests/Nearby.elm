@@ -388,6 +388,6 @@ view =
         , nearby inFront "inFront" box
         , nearby onRight "onRight" box
         , nearby onLeft "onLeft" box
-        , nearby behind "behind" transparentBox
+        , nearby behindContent "behindContent" transparentBox
         , text "all nearbys, all alignments"
         ]
