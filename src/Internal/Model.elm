@@ -68,6 +68,7 @@ module Internal.Model exposing
     , getWidth
     , gridClass
     , htmlClass
+    , isContent
     , lengthClassName
     , map
     , mapAttr
@@ -110,7 +111,6 @@ module Internal.Model exposing
     , untransformed
     , unwrapDecorations
     , unwrapDecsHelper
-    , isContent
     )
 
 {-| -}
@@ -328,7 +328,6 @@ htmlClass cls =
 unstyled : VirtualDom.Node msg -> Element msg
 unstyled =
     Unstyled << always
-
 
 
 finalizeNode has node attributes children embedMode parentContext =
@@ -1448,13 +1447,6 @@ untransformed =
     Untransformed
 
 
-
--- space =
---     VirtualDom.text " "
--- keyedSpace =
---     ( " ", space )
-
-
 createElement : LayoutContext -> Children (Element msg) -> Gathered msg -> Element msg
 createElement context children rendered =
     let
@@ -1621,7 +1613,14 @@ createElement context children rendered =
                                 (finalizeNode rendered.has
                                     rendered.node
                                     rendered.attributes
-                                    (Keyed <| List.map (\x -> ( "nearby-elements-pls", x )) rendered.children ++ keyed)
+                                    (Keyed <|
+                                        keyed
+                                            ++ List.map
+                                                (\x ->
+                                                    ( "nearby-elements-pls", x )
+                                                )
+                                                rendered.children
+                                    )
                                     NoStyleSheet
                                 )
 
@@ -1629,7 +1628,19 @@ createElement context children rendered =
                             Styled
                                 { styles = allStyles
                                 , html =
-                                    finalizeNode rendered.has rendered.node rendered.attributes (Keyed (List.map (\x -> ( "nearby-elements-pls", x )) rendered.children ++ keyed))
+                                    finalizeNode
+                                        rendered.has
+                                        rendered.node
+                                        rendered.attributes
+                                        (Keyed
+                                            (keyed
+                                                ++ List.map
+                                                    (\x ->
+                                                        ( "nearby-elements-pls", x )
+                                                    )
+                                                    rendered.children
+                                            )
+                                        )
                                 }
 
         Unkeyed unkeyedChildren ->
@@ -1646,17 +1657,23 @@ createElement context children rendered =
                     case newStyles of
                         [] ->
                             Unstyled
-                                (finalizeNode rendered.has
+                                (finalizeNode
+                                    rendered.has
                                     rendered.node
                                     rendered.attributes
-                                    (Unkeyed <| rendered.children ++ unkeyed)
+                                    (Unkeyed <| unkeyed ++ rendered.children)
                                     NoStyleSheet
                                 )
 
                         allStyles ->
                             Styled
                                 { styles = allStyles
-                                , html = finalizeNode rendered.has rendered.node rendered.attributes (Unkeyed (rendered.children ++ unkeyed))
+                                , html =
+                                    finalizeNode
+                                        rendered.has
+                                        rendered.node
+                                        rendered.attributes
+                                        (Unkeyed (unkeyed ++ rendered.children))
                                 }
 
 

@@ -912,7 +912,6 @@ baseSheet =
         , Child (dot classes.inFront)
             [ Descriptor (dot classes.nearby)
                 [ Prop "position" "fixed"
-                , Prop "z-index" "20"
                 ]
             ]
         ]
@@ -1002,7 +1001,6 @@ baseSheet =
                                 , Prop "left" "0"
                                 , Prop "top" "0"
                                 , Prop "margin" "0 !important"
-                                , Prop "z-index" "10"
                                 , Prop "pointer-events" "none"
                                 , Child "*"
                                     [ Prop "pointer-events" "auto"
