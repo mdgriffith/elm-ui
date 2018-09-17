@@ -23,14 +23,15 @@ import Html.Attributes
 
 
 type alias FontAdjustment =
-    { capital : Adjustment
-    , lowercase : Adjustment
-    , baseline : Adjustment
-    , descender : Adjustment
+    { lineHeight : Float
+    , capital : Line
+    , lowercase : Line
+    , baseline : Line
+    , descender : Line
     }
 
 
-type alias Adjustment =
+type alias Line =
     Float
 
 
@@ -42,20 +43,30 @@ edges =
     { top = 0, right = 0, bottom = 0, left = 0 }
 
 
+default =
+    { capital = 1.15
+    , lowercase = 0.96
+    , baseline = 0.465
+    , descender = 0.245
+    , lineHeight = 1.5
+    }
+
+
 init =
     { adjustment =
-        { capital = 0.07
-        , lowercase = 0.57
-        , baseline = 0.265
-        , descender = 0.755
-        }
+        default
+    , converted =
+        convertAdjustment default
     }
 
 
 update msg model =
     case msg of
         UpdateAdjustment adj ->
-            { model | adjustment = adj }
+            { model
+                | adjustment = adj
+                , converted = convertAdjustment adj
+            }
 
 
 main =
@@ -71,15 +82,26 @@ view model =
         [ Background.color (rgba 1 1 1 1)
         , Font.color (rgba 0 0 0 1)
         , Font.family
-            [ Font.external
-                { url = "https://fonts.googleapis.com/css?family=EB+Garamond"
-                , name = "EB Garamond"
+            [ -- Font.external
+              -- { url = "https://fonts.googleapis.com/css?family=EB+Garamond"
+              -- , name = "EB Garamond"
+              -- }
+              Font.external
+                { url = "https://fonts.googleapis.com/css?family=Catamaran"
+                , name = "Catamaran"
                 }
             , Font.sansSerif
             ]
         ]
     <|
-        adjustor 240 model.adjustment
+        column [ width fill, height fill, spacing 128 ]
+            [ adjustor 120 model.adjustment
+            , adjusted 120 model.converted
+            ]
+
+
+style name val =
+    htmlAttribute (Html.Attributes.style name val)
 
 
 fontSize pixels lineHeight up =
@@ -103,9 +125,159 @@ charcoal =
     rgb 0.7 0.7 0.7
 
 
-viewAdjustment label adjustment size left updateWith =
+adjustor size adjustment =
+    let
+        labels =
+            [ viewAdjustment "Type Height" adjustment.capital size 180 adjustment.lineHeight (\capital -> { adjustment | capital = capital })
+            , viewAdjustment "Lowercase Height" adjustment.lowercase size 60 adjustment.lineHeight (\lowercase -> { adjustment | lowercase = lowercase })
+            , viewAdjustment "Baseline" adjustment.baseline size 120 adjustment.lineHeight (\baseline -> { adjustment | baseline = baseline })
+            , viewAdjustment "Descender" adjustment.descender size 0 adjustment.lineHeight (\descender -> { adjustment | descender = descender })
+            ]
+    in
+    el
+        ([ centerX
+         , centerY
+         , Background.color (rgb 0 0.8 0.9)
+         , style "line-height" (String.fromFloat adjustment.lineHeight)
+         , onRight
+            (el
+                [ centerY
+                , width (px 40)
+
+                -- , height (px (round (toFloat size * (1 / 1.5))))
+                , height (px size)
+                , Background.color (rgb 0.9 0.8 0)
+                ]
+                none
+            )
+         , Font.size size
+         ]
+            ++ labels
+        )
+        (text "Typography")
+
+
+adjusted size adjustment =
+    row
+        [ centerX
+        , centerY
+        , spacing 32
+        , Font.size 120
+        ]
+        [ el
+            [ Background.color (rgb 0 0.8 0.9)
+            , style "line-height" "normal"
+            , above (el [ Font.size 12 ] (text "line-height: normal"))
+            ]
+            (text "Typography")
+        , el
+            [ Background.color (rgb 0 0.8 0.9)
+            , style "line-height" "1"
+            , above (el [ Font.size 12 ] (text "line-height: 1"))
+            ]
+            (text "Typography")
+        , corrected adjustment.full "corrected"
+        , corrected adjustment.capital "corrected capital"
+        , paragraph [ Font.size 25, spacing 5, width (px 200) ]
+            [ el [ Font.size 55, alignLeft ] (text "L")
+            , text "orem Ipsum is simply dummy text of the printing and typesetting industry."
+            ]
+        ]
+
+
+corrected converted label =
+    el
+        [ Background.color (rgb 0 0.8 0.9)
+        , style "display" "block"
+        , above (el [ Font.size 12, moveUp 6 ] (text label))
+        , style "line-height" (String.fromFloat converted.height)
+        , below
+            (column [ Font.size 12, spacing 5, moveDown 10 ]
+                [ text ("height: " ++ String.left 5 (String.fromFloat converted.height))
+                , text ("vertical: " ++ String.left 5 (String.fromFloat converted.vertical))
+                ]
+            )
+        ]
+        (el
+            [ style "display" "inline-block"
+            , style "line-height" (String.fromFloat converted.height)
+            , style "vertical-align" (String.fromFloat converted.vertical ++ "em")
+            ]
+            (text "Typography")
+        )
+
+
+convertAdjustment adjustment =
+    let
+        base =
+            adjustment.lineHeight
+
+        normalDescender =
+            (adjustment.lineHeight - 1)
+                / 2
+
+        oldMiddle =
+            adjustment.lineHeight / 2
+
+        newCapitalMiddle =
+            ((ascender - newBaseline) / 2) + newBaseline
+
+        newFullMiddle =
+            ((ascender - descender) / 2) + descender
+
+        lines =
+            [ adjustment.capital
+            , adjustment.baseline
+            , adjustment.descender
+            , adjustment.lowercase
+            ]
+
+        ascender =
+            Maybe.withDefault adjustment.capital (List.maximum lines)
+
+        descender =
+            Maybe.withDefault adjustment.descender (List.minimum lines)
+
+        newBaseline =
+            lines
+                |> List.filter (\x -> x /= descender)
+                |> List.minimum
+                |> Maybe.withDefault adjustment.baseline
+
+      
+
+        capitalVertical =
+            (oldMiddle - newCapitalMiddle) * 2
+
+        fullVertical =
+            (oldMiddle - newFullMiddle) * 2
+    in
+    { full =
+        { vertical = fullVertical
+        , height =
+            (ascender - descender)
+                - abs fullVertical
+        }
+    , capital =
+        { vertical = capitalVertical
+        , height = (ascender - newBaseline) - abs capitalVertical
+        }
+    }
+
+
+viewAdjustment label adjustment size left lineHeight updateWith =
+    let
+        fullHeight =
+            toFloat size * 1.5
+    in
     onLeft
-        (el [ moveLeft left, moveUp (0.25 * toFloat size), height (px (round (toFloat size * 1.5))) ] <|
+        (el
+            [ moveLeft left
+
+            -- , moveUp (0.125 * toFloat size)
+            , height (px (round (toFloat size * lineHeight)))
+            ]
+         <|
             Input.slider
                 [ Font.size 24
                 , Element.behindContent
@@ -118,13 +290,32 @@ viewAdjustment label adjustment size left updateWith =
                         ]
                         Element.none
                     )
-                , height (px (round (toFloat size * 1.5)))
+                , height (px (round fullHeight))
                 , width (px 1)
+                , spacing 0
                 , Background.color charcoal
                 , below (el [ centerX ] (text (String.fromFloat adjustment)))
+                , onRight
+                    (el
+                        [ height (px 0)
+                        , width (px 800)
+                        , moveRight 10
+                        , alignBottom
+                        , moveUp (fullHeight * (adjustment / lineHeight))
+                        , Border.color (rgb 0 0 0)
+                        , Border.dashed
+                        , Border.widthEach
+                            { top = 1
+                            , right = 0
+                            , bottom = 0
+                            , left = 0
+                            }
+                        ]
+                        none
+                    )
                 ]
                 { label = Input.labelAbove [ Font.size 18 ] (text "")
-                , max = 1.0
+                , max = lineHeight
                 , min = 0
                 , onChange =
                     \x ->
@@ -139,37 +330,24 @@ viewAdjustment label adjustment size left updateWith =
                         , Border.width 1
                         , Border.color (Element.rgb 0.5 0.5 0.5)
                         , Background.color (Element.rgb 1 1 1)
-                        , onRight
-                            (el
-                                [ height (px 0)
-                                , width (px 1200)
-                                , moveDown 8
-                                , Border.color charcoal
-                                , Border.dashed
-                                , Border.widthEach
-                                    { top = 1
-                                    , right = 0
-                                    , bottom = 0
-                                    , left = 0
-                                    }
-                                ]
-                                none
-                            )
+
+                        -- , onRight
+                        --     (el
+                        --         [ height (px 0)
+                        --         , width (px 1200)
+                        --         , moveDown 8
+                        --         , Border.color (rgb 0 0 0)
+                        --         , Border.dashed
+                        --         , Border.widthEach
+                        --             { top = 1
+                        --             , right = 0
+                        --             , bottom = 0
+                        --             , left = 0
+                        --             }
+                        --         ]
+                        --         none
+                        --     )
                         ]
                 , value = adjustment
                 }
         )
-
-
-adjustor size adjustment =
-    let
-        labels =
-            [ viewAdjustment "Type Height" adjustment.capital size 180 (\capital -> { adjustment | capital = capital })
-            , viewAdjustment "Lowercase Height" adjustment.lowercase size 60 (\lowercase -> { adjustment | lowercase = lowercase })
-            , viewAdjustment "Baseline" adjustment.baseline size 120 (\baseline -> { adjustment | baseline = baseline })
-            , viewAdjustment "Descender" adjustment.descender size 0 (\descender -> { adjustment | descender = descender })
-            ]
-    in
-    el
-        ([ centerX, centerY ] ++ labels ++ fontSize size "1.0" 0)
-        (text "Typography")
