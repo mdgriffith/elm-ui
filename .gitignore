@@ -13,3 +13,5 @@ env
 elm.js
 
 examples/temporary/
+
+.vscode
