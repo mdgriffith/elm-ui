@@ -673,6 +673,21 @@ type Padding
     = Padding Int Int Int Int
 
 
+inheritablePlaceholderAttributes attr =
+    case attr of
+        Internal.StyleClass _ (Internal.PaddingStyle _ _ _ _ _) ->
+            True
+
+        Internal.StyleClass _ (Internal.BorderWidth _ _ _ _ _) ->
+            True
+
+        Internal.StyleClass _ (Internal.Transform _) ->
+            True
+
+        _ ->
+            False
+
+
 {-|
 
     attributes
@@ -707,6 +722,9 @@ textHelper textInput attrs textOptions =
 
         behavior =
             [ Internal.Attr (Html.Events.onInput textOptions.onChange) ]
+
+        forPlaceholder =
+            List.filter inheritablePlaceholderAttributes attributes
 
         noNearbys =
             List.filter (not << forNearby) attributes
@@ -912,7 +930,7 @@ textHelper textInput attrs textOptions =
                                 [ Element.inFront
                                     (Element.el
                                         (defaultTextPadding
-                                            :: noNearbys
+                                            :: forPlaceholder
                                             ++ [ Font.color charcoal
                                                , Internal.htmlClass (classes.noTextSelection ++ " " ++ classes.passPointerEvents)
                                                , Border.color (Element.rgba 0 0 0 0)
