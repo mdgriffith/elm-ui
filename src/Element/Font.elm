@@ -1,7 +1,7 @@
 module Element.Font exposing
     ( color, size
     , family, Font, typeface, serif, sansSerif, monospace
-    , external
+    , external, with, sizeByCapital
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
@@ -35,7 +35,7 @@ module Element.Font exposing
 
 @docs family, Font, typeface, serif, sansSerif, monospace
 
-@docs external
+@docs external, with, sizeByCapital
 
 `Font.external` can be used to import font files. Let's say you found a neat font on <http://fonts.google.com>:
 
@@ -135,6 +135,42 @@ monospace =
 typeface : String -> Font
 typeface =
     Internal.Typeface
+
+
+{-| -}
+type alias Adjustment =
+    { capital : Float
+    , lowercase : Float
+    , baseline : Float
+    , descender : Float
+    }
+
+
+{-| -}
+defaultAdjustment : Adjustment
+defaultAdjustment =
+    { capital = 1.0
+    , lowercase = 0.5
+    , baseline = 0.2
+    , descender = 0
+    }
+
+
+{-| -}
+with :
+    { name : String
+    , adjustment : Adjustment
+    , url : Maybe String
+    }
+    -> Font
+with =
+    Internal.FontWith
+
+
+{-| -}
+sizeByCapital : Attribute msg
+sizeByCapital =
+    Internal.htmlClass classes.sizeByCapital
 
 
 {-| -}

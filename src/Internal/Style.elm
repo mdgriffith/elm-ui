@@ -224,6 +224,8 @@ classes =
     , borderSolid = "bs"
 
     -- text weight
+    , sizeByCapital = "cap"
+    , fullSize = "fs"
     , textThin = "w1"
     , textExtraLight = "w2"
     , textLight = "w3"

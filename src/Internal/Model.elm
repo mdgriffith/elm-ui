@@ -80,12 +80,12 @@ module Internal.Model exposing
     , pageClass
     , paragraphClass
     , reduceRecursive
-    , reduceRecursiveCalcName
     , reduceStyles
     , reduceStylesRecursive
     , removeNever
-    , renderFocusStyle
-    , renderFont
+    ,  renderFocusStyle
+       -- , renderFont
+
     , renderFontClassName
     , renderHeight
     , renderRoot
@@ -93,24 +93,15 @@ module Internal.Model exposing
     , rootStyle
     , rowClass
     , singleClass
-    , skippable
-    , sortedReduce
     , spacingName
     , staticRoot
     , tag
-    , textElement
-    , textElementFill
     , textShadowName
     , toHtml
     , toStyleSheet
-    , toStyleSheetString
     , transformClass
-    , transformValue
-    , unit
     , unstyled
-    , untransformed
     , unwrapDecorations
-    , unwrapDecsHelper
     )
 
 {-| -}
@@ -213,12 +204,26 @@ type PseudoClass
     | Active
 
 
+{-| -}
+type alias Adjustment =
+    { capital : Float
+    , lowercase : Float
+    , baseline : Float
+    , descender : Float
+    }
+
+
 type Font
     = Serif
     | SansSerif
     | Monospace
     | Typeface String
     | ImportFont String String
+    | FontWith
+        { name : String
+        , url : Maybe String
+        , adjustment : Adjustment
+        }
 
 
 type Property
@@ -1490,34 +1495,32 @@ createElement context children rendered =
                     -- Maybe we could unpack text elements in a paragraph as well,
                     -- however, embedded elements that are larger than the line height will overlap with exisitng text.
                     -- I don't think that's what we want.
-                    if
-                        context
-                            == asEl
-                            || context
-                            == asParagraph
-                    then
-                        ( VirtualDom.text
-                            (if context == asParagraph then
-                                str
+                    -- if
+                    --     context
+                    --         == asEl
+                    --         || context
+                    --         == asParagraph
+                    -- then
+                    --     ( VirtualDom.text
+                    --         (if context == asParagraph then
+                    --             str
+                    --          else
+                    --             str
+                    --         )
+                    --         :: htmls
+                    --     , existingStyles
+                    --     )
+                    -- else
+                    ( textElement
+                        (if context == asParagraph then
+                            str
 
-                             else
-                                str
-                            )
-                            :: htmls
-                        , existingStyles
+                         else
+                            str
                         )
-
-                    else
-                        ( textElement
-                            (if context == asParagraph then
-                                str
-
-                             else
-                                str
-                            )
-                            :: htmls
-                        , existingStyles
-                        )
+                        :: htmls
+                    , existingStyles
+                    )
 
                 Empty ->
                     ( htmls, existingStyles )
@@ -1559,28 +1562,27 @@ createElement context children rendered =
                     -- TEXT OPTIMIZATION
                     -- You can have raw text if the element is an el, and has `width-content` and `height-content`
                     -- Same if it's a column or row with one child and width-content, height-content
-                    if
-                        context
-                            == asEl
-                            || context
-                            == asParagraph
-                    then
-                        ( ( key
-                          , VirtualDom.text
-                                str
-                          )
-                            :: htmls
-                        , existingStyles
-                        )
-
-                    else
-                        ( ( key
-                          , textElement
-                                str
-                          )
-                            :: htmls
-                        , existingStyles
-                        )
+                    -- if
+                    --     context
+                    --         == asEl
+                    --         || context
+                    --         == asParagraph
+                    -- then
+                    --     ( ( key
+                    --       , VirtualDom.text
+                    --             str
+                    --       )
+                    --         :: htmls
+                    --     , existingStyles
+                    --     )
+                    -- else
+                    ( ( key
+                      , textElement
+                            str
+                      )
+                        :: htmls
+                    , existingStyles
+                    )
 
                 Empty ->
                     ( htmls, existingStyles )
@@ -2051,6 +2053,12 @@ renderFontClassName font current =
                         |> String.toLower
                         |> String.words
                         |> String.join "-"
+
+                FontWith { name } ->
+                    name
+                        |> String.toLower
+                        |> String.words
+                        |> String.join "-"
            )
 
 
@@ -2160,66 +2168,279 @@ optionsToRecord options =
             options
 
 
-renderFont : List Font -> String
-renderFont families =
-    let
-        fontName font =
-            case font of
-                Serif ->
-                    "serif"
-
-                SansSerif ->
-                    "sans-serif"
-
-                Monospace ->
-                    "monospace"
-
-                Typeface name ->
-                    "\"" ++ name ++ "\""
-
-                ImportFont name url ->
-                    "\"" ++ name ++ "\""
-    in
-    families
-        |> List.map fontName
-        |> String.join ", "
-
-
 toStyleSheet : OptionRecord -> List Style -> VirtualDom.Node msg
 toStyleSheet options styleSheet =
     VirtualDom.node "style" [] [ VirtualDom.text (toStyleSheetString options styleSheet) ]
 
 
-toStyleSheetString : OptionRecord -> List Style -> String
-toStyleSheetString options stylesheet =
-    let
-        renderTopLevels rule =
-            case rule of
-                FontFamily name typefaces ->
-                    let
-                        getImports font =
-                            case font of
-                                ImportFont _ url ->
-                                    Just ("@import url('" ++ url ++ "');")
 
-                                _ ->
-                                    Nothing
-                    in
-                    typefaces
-                        |> List.filterMap getImports
-                        |> String.join "\n"
-                        |> Just
+-- case typefaceAdjustment typefaces of
+--     Nothing ->
+--         ""
+--     Just ( parentAdj, textAdjustment ) ->
+--         String.join " "
+--             [ renderStyle
+--                 maybePseudo
+--                 ("."
+--                     ++ name
+--                     ++ "."
+--                     ++ classes.sizeByCapital
+--                     ++ ", "
+--                     ++ "."
+--                     ++ name
+--                     ++ " ."
+--                     ++ classes.sizeByCapital
+--                 )
+--                 parentAdj
+--             , renderStyle
+--                 maybePseudo
+--                 ("."
+--                     ++ name
+--                     ++ "."
+--                     ++ classes.sizeByCapital
+--                     ++ "> ."
+--                     ++ Internal.Style.classes.text
+--                     ++ ", ."
+--                     ++ name
+--                     ++ " ."
+--                     ++ classes.sizeByCapital
+--                     ++ " > ."
+--                     ++ Internal.Style.classes.text
+--                 )
+--                 textAdjustment
+--             ]
+-- renderTopLevels rule =
+--     case rule of
+--         FontFamily name typefaces ->
+--             let
+--                 getImports font =
+--                     case font of
+--                         ImportFont _ url ->
+--                             Just ("@import url('" ++ url ++ "');")
+--                         FontWith { url } ->
+--                             case url of
+--                                 Just x ->
+--                                     Just ("@import url('" ++ x ++ "');")
+--                                 Nothing ->
+--                                     Nothing
+--                         _ ->
+--                             Nothing
+--             in
+--             typefaces
+--                 |> List.filterMap getImports
+--                 |> String.join "\n"
+--                 |> Just
+--         _ ->
+--             Nothing
+
+
+renderTopLevelValues rules =
+    let
+        withImport font =
+            case font of
+                ImportFont _ url ->
+                    Just ("@import url('" ++ url ++ "');")
+
+                FontWith with ->
+                    case with.url of
+                        Just x ->
+                            Just ("@import url('" ++ x ++ "');")
+
+                        Nothing ->
+                            Nothing
 
                 _ ->
                     Nothing
 
-        renderProps force (Property key val) existing =
-            if force then
-                existing ++ "\n  " ++ key ++ ": " ++ val ++ " !important;"
+        allNames =
+            List.map Tuple.first rules
+
+        fontImports ( name, typefaces ) =
+            let
+                imports =
+                    String.join "\n" (List.filterMap withImport typefaces)
+            in
+            imports
+
+        fontAdjustments ( name, typefaces ) =
+            case typefaceAdjustment typefaces of
+                Nothing ->
+                    String.join ""
+                        (List.map (renderNullAdjustmentRule name) allNames)
+
+                Just adjustment ->
+                    String.join ""
+                        (List.map (renderFontAdjustmentRule name adjustment) allNames)
+    in
+    String.join "\n" (List.map fontImports rules)
+        ++ String.join "\n" (List.map fontAdjustments rules)
+
+
+renderNullAdjustmentRule fontToAdjust otherFontName =
+    let
+        name =
+            if fontToAdjust == otherFontName then
+                fontToAdjust
 
             else
-                existing ++ "\n  " ++ key ++ ": " ++ val ++ ";"
+                otherFontName ++ " ." ++ fontToAdjust
+    in
+    String.join " "
+        [ bracket
+            ("."
+                ++ name
+                ++ "."
+                ++ classes.sizeByCapital
+                ++ ", "
+                ++ "."
+                ++ name
+                ++ " ."
+                ++ classes.sizeByCapital
+            )
+            [ ( "line-height", "1" )
+            ]
+        , bracket
+            ("."
+                ++ name
+                ++ "."
+                ++ classes.sizeByCapital
+                ++ "> ."
+                ++ Internal.Style.classes.text
+                ++ ", ."
+                ++ name
+                ++ " ."
+                ++ classes.sizeByCapital
+                ++ " > ."
+                ++ Internal.Style.classes.text
+            )
+            [ ( "vertical-align", "0" )
+            , ( "line-height", "1" )
+            ]
+        ]
 
+
+renderFontAdjustmentRule fontToAdjust ( parentAdj, textAdjustment ) otherFontName =
+    let
+        name =
+            if fontToAdjust == otherFontName then
+                fontToAdjust
+
+            else
+                otherFontName ++ " ." ++ fontToAdjust
+    in
+    String.join " "
+        [ bracket
+            ("."
+                ++ name
+                ++ "."
+                ++ classes.sizeByCapital
+                ++ ", "
+                ++ "."
+                ++ name
+                ++ " ."
+                ++ classes.sizeByCapital
+            )
+            parentAdj
+        , bracket
+            ("."
+                ++ name
+                ++ "."
+                ++ classes.sizeByCapital
+                ++ "> ."
+                ++ Internal.Style.classes.text
+                ++ ", ."
+                ++ name
+                ++ " ."
+                ++ classes.sizeByCapital
+                ++ " > ."
+                ++ Internal.Style.classes.text
+            )
+            textAdjustment
+        ]
+
+
+bracket selector rules =
+    let
+        renderPair ( name, val ) =
+            name ++ ": " ++ val ++ ";"
+    in
+    selector ++ " {" ++ String.join "" (List.map renderPair rules) ++ "}"
+
+
+fontAdjustmentRules converted =
+    ( [ ( "display", "block" )
+      , ( "line-height", String.fromFloat converted.height )
+      ]
+    , [ ( "display", "inline-block" )
+      , ( "line-height", String.fromFloat converted.height )
+      , ( "vertical-align", String.fromFloat converted.vertical ++ "em" )
+      ]
+    )
+
+
+typefaceAdjustment typefaces =
+    List.foldl
+        (\face found ->
+            case found of
+                Nothing ->
+                    case face of
+                        FontWith with ->
+                            Just
+                                (fontAdjustmentRules
+                                    (.capital (convertAdjustment with.adjustment))
+                                )
+
+                        _ ->
+                            found
+
+                Just _ ->
+                    found
+        )
+        Nothing
+        typefaces
+
+
+fontName font =
+    case font of
+        Serif ->
+            "serif"
+
+        SansSerif ->
+            "sans-serif"
+
+        Monospace ->
+            "monospace"
+
+        Typeface name ->
+            "\"" ++ name ++ "\""
+
+        ImportFont name url ->
+            "\"" ++ name ++ "\""
+
+        FontWith { name } ->
+            "\"" ++ name ++ "\""
+
+
+topLevelValue rule =
+    case rule of
+        FontFamily name typefaces ->
+            Just ( name, typefaces )
+
+        _ ->
+            Nothing
+
+
+renderProps force (Property key val) existing =
+    if force then
+        existing ++ "\n  " ++ key ++ ": " ++ val ++ " !important;"
+
+    else
+        existing ++ "\n  " ++ key ++ ": " ++ val ++ ";"
+
+
+toStyleSheetString : OptionRecord -> List Style -> String
+toStyleSheetString options stylesheet =
+    let
         renderStyle maybePseudo selector props =
             case maybePseudo of
                 Nothing ->
@@ -2308,10 +2529,19 @@ toStyleSheetString options stylesheet =
                         ]
 
                 FontFamily name typefaces ->
-                    renderStyle
-                        maybePseudo
-                        ("." ++ name)
-                        [ Property "font-family" (renderFont typefaces)
+                    let
+                        families =
+                            Property "font-family"
+                                (typefaces
+                                    |> List.map fontName
+                                    |> String.join ", "
+                                )
+                    in
+                    String.join " "
+                        [ renderStyle
+                            maybePseudo
+                            ("." ++ name)
+                            [ families ]
                         ]
 
                 Single class prop val ->
@@ -2659,20 +2889,19 @@ toStyleSheetString options stylesheet =
                             ""
 
         combine style rendered =
-            { rendered
-                | rules = rendered.rules ++ renderStyleRule style Nothing
-                , topLevel =
-                    case renderTopLevels style of
-                        Nothing ->
-                            rendered.topLevel
+            { rules = rendered.rules ++ renderStyleRule style Nothing
+            , topLevel =
+                case topLevelValue style of
+                    Nothing ->
+                        rendered.topLevel
 
-                        Just topLevel ->
-                            rendered.topLevel ++ topLevel
+                    Just topLevel ->
+                        topLevel :: rendered.topLevel
             }
     in
-    case List.foldl combine { rules = "", topLevel = "" } stylesheet of
+    case List.foldl combine { topLevel = [], rules = "" } stylesheet of
         { topLevel, rules } ->
-            topLevel ++ rules
+            renderTopLevelValues topLevel ++ rules
 
 
 lengthClassName : Length -> String
@@ -3058,3 +3287,66 @@ onlyStyles attr =
 
         _ ->
             Nothing
+
+
+
+{- Font Adjustments -}
+
+
+convertAdjustment adjustment =
+    let
+        lineHeight =
+            1.5
+
+        base =
+            lineHeight
+
+        normalDescender =
+            (lineHeight - 1)
+                / 2
+
+        oldMiddle =
+            lineHeight / 2
+
+        newCapitalMiddle =
+            ((ascender - newBaseline) / 2) + newBaseline
+
+        newFullMiddle =
+            ((ascender - descender) / 2) + descender
+
+        lines =
+            [ adjustment.capital
+            , adjustment.baseline
+            , adjustment.descender
+            , adjustment.lowercase
+            ]
+
+        ascender =
+            Maybe.withDefault adjustment.capital (List.maximum lines)
+
+        descender =
+            Maybe.withDefault adjustment.descender (List.minimum lines)
+
+        newBaseline =
+            lines
+                |> List.filter (\x -> x /= descender)
+                |> List.minimum
+                |> Maybe.withDefault adjustment.baseline
+
+        capitalVertical =
+            (oldMiddle - newCapitalMiddle) * 2
+
+        fullVertical =
+            (oldMiddle - newFullMiddle) * 2
+    in
+    { full =
+        { vertical = fullVertical
+        , height =
+            (ascender - descender)
+                - abs fullVertical
+        }
+    , capital =
+        { vertical = capitalVertical
+        , height = (ascender - newBaseline) - abs capitalVertical
+        }
+    }
