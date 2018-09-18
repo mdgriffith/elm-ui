@@ -2563,6 +2563,12 @@ toStyleSheetString options stylesheet =
                         class =
                             "." ++ cls
 
+                        halfX =
+                            String.fromFloat (toFloat x / 2) ++ "px"
+
+                        halfY =
+                            String.fromFloat (toFloat y / 2) ++ "px"
+
                         xPx =
                             String.fromInt x ++ "px"
 
@@ -2597,21 +2603,20 @@ toStyleSheetString options stylesheet =
                             "." ++ Internal.Style.classes.single
                     in
                     String.concat
-                        [ renderStyle maybePseudo (class ++ row ++ " > " ++ any) [ Property "margin-right" xPx ]
+                        [ renderStyle maybePseudo (class ++ row ++ " > " ++ any ++ " + " ++ any) [ Property "margin-left" xPx ]
 
                         -- margins don't apply to last element of normal, unwrapped rows
-                        , renderStyle maybePseudo (class ++ row ++ " > " ++ any ++ ":last-child") [ Property "margin" "0" ]
-
+                        -- , renderStyle maybePseudo (class ++ row ++ " > " ++ any ++ ":first-child") [ Property "margin" "0" ]
                         -- For wrapped rows, margins always apply because we handle "canceling out" the other margins manually in the element.
                         , renderStyle maybePseudo
                             (class ++ wrappedRow ++ " > " ++ any)
-                            [ Property "margin" ("0 " ++ xPx ++ " " ++ yPx ++ " 0")
-                            ]
-                        , renderStyle maybePseudo
-                            (class ++ wrappedRow ++ " > " ++ any ++ ":last-child")
-                            [ Property "margin-right" "0"
+                            [ Property "margin" (halfY ++ " " ++ halfX)
                             ]
 
+                        -- , renderStyle maybePseudo
+                        --     (class ++ wrappedRow ++ " > " ++ any ++ ":last-child")
+                        --     [ Property "margin-right" "0"
+                        --     ]
                         -- columns
                         , renderStyle maybePseudo (class ++ column ++ " > " ++ any ++ " + " ++ any) [ Property "margin-top" yPx ]
                         , renderStyle maybePseudo (class ++ page ++ " > " ++ any ++ " + " ++ any) [ Property "margin-top" yPx ]

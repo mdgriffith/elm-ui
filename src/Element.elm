@@ -647,21 +647,14 @@ wrappedRow attrs children =
                 newPadding =
                     case padded of
                         Just (Internal.Padding name t r b l) ->
-                            if r >= x && b >= y then
+                            if r >= (x // 2) && b >= (y // 2) then
                                 Just <|
-                                    Internal.StyleClass
-                                        Flag.padding
-                                        (Internal.PaddingStyle
-                                            (Internal.paddingName t
-                                                (r - x)
-                                                (b - y)
-                                                l
-                                            )
-                                            t
-                                            (r - x)
-                                            (b - y)
-                                            l
-                                        )
+                                    paddingEach
+                                        { top = t - (y // 2)
+                                        , right = r - (x // 2)
+                                        , bottom = b - (y // 2)
+                                        , left = l - (x // 2)
+                                        }
 
                             else
                                 Nothing
@@ -690,6 +683,13 @@ wrappedRow attrs children =
 
                 Nothing ->
                     -- Not enough space in padding to compensate for spacing
+                    let
+                        halfX =
+                            negate (toFloat x / 2)
+
+                        halfY =
+                            negate (toFloat y / 2)
+                    in
                     Internal.element
                         Internal.asEl
                         Internal.div
@@ -706,9 +706,28 @@ wrappedRow attrs children =
                                         ++ classes.wrapped
                                     )
                                     :: Internal.Attr
-                                        (Html.Attributes.style "margin-bottom" (String.fromInt (negate y) ++ "px"))
-                                    :: width fill
-                                    :: height fill
+                                        (Html.Attributes.style "margin"
+                                            (String.fromFloat halfY
+                                                ++ "px"
+                                                ++ " "
+                                                ++ String.fromFloat halfX
+                                                ++ "px"
+                                            )
+                                        )
+                                    :: Internal.Attr
+                                        (Html.Attributes.style "width"
+                                            ("calc(100% + "
+                                                ++ String.fromInt x
+                                                ++ "px)"
+                                            )
+                                        )
+                                    :: Internal.Attr
+                                        (Html.Attributes.style "height"
+                                            ("calc(100% + "
+                                                ++ String.fromInt y
+                                                ++ "px)"
+                                            )
+                                        )
                                     :: Internal.StyleClass Flag.spacing (Internal.SpacingStyle spaceName x y)
                                     :: []
                                 )
@@ -730,7 +749,7 @@ type alias Todo =
     el
         [ Element.explain Debug.todo
         ]
-        (text "Help!  I'm being debugged!")
+        (text "Help, I'm being debugged!")
 
 -}
 explain : Todo -> Attribute msg
