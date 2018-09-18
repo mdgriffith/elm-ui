@@ -1488,7 +1488,7 @@ createElement context children rendered =
                     -- Same if it's a column or row with one child and width-content, height-content
                     -- interferes with css grid
                     -- Maybe we could unpack text elements in a paragraph as well,
-                    -- however  embedded style elements that are larger than the line height will overlap with exisitng text.
+                    -- however, embedded elements that are larger than the line height will overlap with exisitng text.
                     -- I don't think that's what we want.
                     if
                         context
@@ -1498,7 +1498,7 @@ createElement context children rendered =
                     then
                         ( VirtualDom.text
                             (if context == asParagraph then
-                                str ++ " "
+                                str
 
                              else
                                 str
@@ -1510,7 +1510,7 @@ createElement context children rendered =
                     else
                         ( textElement
                             (if context == asParagraph then
-                                str ++ " "
+                                str
 
                              else
                                 str
@@ -1567,12 +1567,7 @@ createElement context children rendered =
                     then
                         ( ( key
                           , VirtualDom.text
-                                (if context == asParagraph then
-                                    str ++ " "
-
-                                 else
-                                    str
-                                )
+                                str
                           )
                             :: htmls
                         , existingStyles
@@ -1581,12 +1576,7 @@ createElement context children rendered =
                     else
                         ( ( key
                           , textElement
-                                (if context == asParagraph then
-                                    str ++ " "
-
-                                 else
-                                    str
-                                )
+                                str
                           )
                             :: htmls
                         , existingStyles
