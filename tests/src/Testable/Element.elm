@@ -1040,6 +1040,10 @@ onLeft element =
         }
 
 
+compare x vs y =
+    vs (round x) (round y) || vs (floor x) (floor y)
+
+
 {-| -}
 inFront : Testable.Element msg -> Testable.Attr msg
 inFront element =
@@ -1048,39 +1052,42 @@ inFront element =
         , element = element
         , label = "inFront"
         , test =
-            \found _ ->
-                let
-                    horizontalCheck =
-                        if found.self.bbox.width > found.parent.bbox.width then
-                            [ (found.self.bbox.right <= found.parent.bbox.right)
-                                || (found.self.bbox.left >= found.parent.bbox.left)
-                            ]
-
-                        else
-                            [ found.self.bbox.right <= found.parent.bbox.right
-                            , found.self.bbox.left >= found.parent.bbox.left
-                            ]
-
-                    verticalCheck =
-                        if found.self.bbox.width > found.parent.bbox.width then
-                            [ (found.self.bbox.top >= found.parent.bbox.top)
-                                || (found.self.bbox.bottom <= found.parent.bbox.bottom)
-                            ]
-
-                        else
-                            [ found.self.bbox.top >= found.parent.bbox.top
-                            , found.self.bbox.bottom <= found.parent.bbox.bottom
-                            ]
-                in
-                Expect.true "within the confines of the parent"
-                    (List.all ((==) True)
-                        (List.concat
-                            [ horizontalCheck
-                            , verticalCheck
-                            ]
-                        )
-                    )
+            withinHelper
         }
+
+
+withinHelper found _ =
+    let
+        horizontalCheck =
+            if found.self.bbox.width > found.parent.bbox.width then
+                [ compare found.self.bbox.right (<=) found.parent.bbox.right
+                    || compare found.self.bbox.left (>=) found.parent.bbox.left
+                ]
+
+            else
+                [ compare found.self.bbox.right (<=) found.parent.bbox.right
+                , compare found.self.bbox.left (>=) found.parent.bbox.left
+                ]
+
+        verticalCheck =
+            if found.self.bbox.width > found.parent.bbox.width then
+                [ compare found.self.bbox.top (>=) found.parent.bbox.top
+                    || compare found.self.bbox.bottom (<=) found.parent.bbox.bottom
+                ]
+
+            else
+                [ compare found.self.bbox.top (>=) found.parent.bbox.top
+                , compare found.self.bbox.bottom (<=) found.parent.bbox.bottom
+                ]
+    in
+    Expect.true "within the confines of the parent"
+        (List.all ((==) True)
+            (List.concat
+                [ horizontalCheck
+                , verticalCheck
+                ]
+            )
+        )
 
 
 {-| -}
@@ -1089,38 +1096,7 @@ behindContent element =
     Testable.Nearby
         { location = Testable.Behind
         , element = element
-        , label = "behind"
+        , label = "behindContent"
         , test =
-            \found _ ->
-                let
-                    horizontalCheck =
-                        if found.self.bbox.width > found.parent.bbox.width then
-                            [ (found.self.bbox.right <= found.parent.bbox.right)
-                                || (found.self.bbox.left >= found.parent.bbox.left)
-                            ]
-
-                        else
-                            [ found.self.bbox.right <= found.parent.bbox.right
-                            , found.self.bbox.left >= found.parent.bbox.left
-                            ]
-
-                    verticalCheck =
-                        if found.self.bbox.width > found.parent.bbox.width then
-                            [ (found.self.bbox.top >= found.parent.bbox.top)
-                                || (found.self.bbox.bottom <= found.parent.bbox.bottom)
-                            ]
-
-                        else
-                            [ found.self.bbox.top >= found.parent.bbox.top
-                            , found.self.bbox.bottom <= found.parent.bbox.bottom
-                            ]
-                in
-                Expect.true "within the confines of the parent"
-                    (List.all ((==) True)
-                        (List.concat
-                            [ horizontalCheck
-                            , verticalCheck
-                            ]
-                        )
-                    )
+            withinHelper
         }
