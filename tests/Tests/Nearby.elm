@@ -403,7 +403,12 @@ view =
     in
     column
         [ centerX, label "Nearby Elements", spacing 100 ]
-        [ master
+        [ layeredVisibility
+        , overlappingChildren
+
+        -- Note: visibility checks like the above
+        -- need to be at the top so they're in the viewport
+        , master
         , masterParagraph
         , nearby above "above" box
         , nearby below "below" box
@@ -411,14 +416,13 @@ view =
         , nearby onRight "onRight" box
         , nearby onLeft "onLeft" box
         , nearby behindContent "behindContent" transparentBox
-        , layeredVisibility
-        , overlappingChildren
         ]
 
 
 layeredVisibility =
     el
-        [ inFront (justBox 40 red [ isVisible ])
+        [ centerX
+        , inFront (justBox 40 red [ isVisible ])
         ]
         (el [ inFront (justBox 30 green []) ]
             (justBox 50 blue [])
@@ -426,7 +430,7 @@ layeredVisibility =
 
 
 overlappingChildren =
-    row []
+    row [ centerX ]
         [ el [ inFront (justBox 40 green []) ]
             (justBox 40 darkGrey [])
         , el [ onLeft (littleBox "overlapping" [ isVisible, Background.color red ]) ]
