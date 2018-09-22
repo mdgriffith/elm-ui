@@ -22,6 +22,7 @@ module Internal.Flag exposing
     , fontColor
     , fontFamily
     , fontSize
+    , fontVariant
     , fontWeight
     , gridPosition
     , gridTemplate
@@ -318,3 +319,7 @@ behind =
 
 heightTextAreaContent =
     flag 47
+
+
+fontVariant =
+    flag 48

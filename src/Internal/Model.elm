@@ -29,6 +29,7 @@ module Internal.Model exposing
     , TransformComponent(..)
     , Transformation(..)
     , VAlign(..)
+    , Variant(..)
     , XYZ
     , addNodeName
     , addWhen
@@ -223,7 +224,35 @@ type Font
         { name : String
         , url : Maybe String
         , adjustment : Adjustment
+        , variants : List Variant
         }
+
+
+type Variant
+    = VariantActive String
+    | VariantOff String
+    | VariantIndexed String Int
+
+
+renderVariant var =
+    case var of
+        VariantActive name ->
+            "\"" ++ name ++ "\""
+
+        VariantOff name ->
+            "\"" ++ name ++ "\" 0"
+
+        VariantIndexed name index ->
+            "\"" ++ name ++ "\" " ++ String.fromInt index
+
+
+renderVariants typeface =
+    case typeface of
+        FontWith font ->
+            String.join ", " (List.map renderVariant font.variants)
+
+        _ ->
+            ""
 
 
 type Property
@@ -2474,18 +2503,25 @@ toStyleSheetString options stylesheet =
 
                 FontFamily name typefaces ->
                     let
+                        features =
+                            typefaces
+                                |> List.map renderVariants
+                                |> String.join ", "
+
                         families =
-                            Property "font-family"
+                            [ Property "font-family"
                                 (typefaces
                                     |> List.map fontName
                                     |> String.join ", "
                                 )
+                            , Property "font-feature-settings" features
+                            ]
                     in
                     String.join " "
                         [ renderStyle
                             maybePseudo
                             ("." ++ name)
-                            [ families ]
+                            families
                         ]
 
                 Single class prop val ->
@@ -3285,7 +3321,6 @@ convertAdjustment adjustment =
         capitalVertical =
             1 - ascender
 
-      
         capitalSize =
             1 / (ascender - newBaseline)
 

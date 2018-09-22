@@ -785,7 +785,36 @@ commonValues =
                 Class (".p-" ++ String.fromInt i) [ Prop "padding" (String.fromInt i ++ "px") ]
             )
             (List.range 0 24)
+
+        -- Common Font Variants
+        , [ Class ".v-smcp"
+                [ Prop "font-variant" "small-caps"
+                ]
+          , Class ".v-smcp-off"
+                [ Prop "font-variant" "normal"
+                ]
+          ]
+
+        -- , fontVariant "smcp"
+        , fontVariant "zero"
+        , fontVariant "onum"
+        , fontVariant "liga"
+        , fontVariant "dlig"
+        , fontVariant "ordn"
+        , fontVariant "tnum"
+        , fontVariant "afrc"
+        , fontVariant "frac"
         ]
+
+
+fontVariant var =
+    [ Class (".v-" ++ var)
+        [ Prop "font-feature-settings" ("\"" ++ var ++ "\"")
+        ]
+    , Class (".v-" ++ var ++ "-off")
+        [ Prop "font-feature-settings" ("\"" ++ var ++ "\" 0")
+        ]
+    ]
 
 
 rules : String

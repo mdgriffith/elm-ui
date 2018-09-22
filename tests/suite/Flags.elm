@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (allFlags, doesntInvalidateOthers, invalidateSelf, main)
 
 import Html
 import Internal.Flag as Flag
@@ -18,6 +18,7 @@ main =
 invalidateSelf i flag =
     if Flag.present flag (Flag.add flag Flag.none) then
         Html.text ""
+
     else
         Html.div [] [ Html.text (toString (Flag.value flag) ++ " at index " ++ toString i ++ " does not invalidate itself") ]
 
@@ -38,6 +39,7 @@ doesntInvalidateOthers i flag =
     in
     if passing then
         Html.text ""
+
     else
         Html.div []
             [ Html.text (toString (Flag.value flag) ++ " at index " ++ toString i ++ " invalidates other flags!")
@@ -86,4 +88,5 @@ allFlags =
     , Flag.alignBottom
     , Flag.centerX
     , Flag.centerY
+    , Flag.fontVariant
     ]

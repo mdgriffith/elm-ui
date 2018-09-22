@@ -5,6 +5,7 @@ module Element.Font exposing
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
+    , Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, disable, feature, indexed
     , glow, shadow
     )
 
@@ -68,6 +69,11 @@ module Element.Font exposing
 ## Font Weight
 
 @docs heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
+
+
+## Variants
+
+@docs Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, disable, feature, indexed
 
 
 ## Shadows
@@ -151,6 +157,7 @@ with :
     { name : String
     , adjustment : Adjustment
     , url : Maybe String
+    , variants : List Variant
     }
     -> Font
 with =
@@ -333,3 +340,138 @@ glow clr i =
     in
     Internal.StyleClass Flag.txtShadows <|
         Internal.Single (Internal.textShadowName shade) "text-shadow" (Internal.formatTextShadow shade)
+
+
+
+{- Variants -}
+
+
+type alias Variant =
+    Internal.Variant
+
+
+{-| You can use this to set a single variant on an element itself such as:
+
+    el
+        [ Font.variant Font.smallcaps
+        ]
+        (text "rendered with smallcaps")
+
+**Note** These will **not** stack. If you want multiple variants, you should use `Font.with`.
+
+-}
+variant : Variant -> Attribute msg
+variant var =
+    case var of
+        Internal.VariantActive name ->
+            Internal.Class Flag.fontVariant ("v-" ++ name)
+
+        Internal.VariantOff name ->
+            Internal.Class Flag.fontVariant ("v-" ++ name ++ "-off")
+
+        Internal.VariantIndexed name index ->
+            Internal.StyleClass Flag.fontVariant <|
+                Internal.Single ("v-" ++ name ++ "-" ++ String.fromInt index)
+                    "font-feature-settings"
+                    ("\"" ++ name ++ "\" " ++ String.fromInt index)
+
+
+{-| Less often you might want to disable an active variant.
+
+    el
+        [ Font.variant (Font.disable Font.smallCaps)
+        ]
+        (text "Is not smallcaps")
+
+**Note** Generally try to set yourself up so that this isn't really necessary.
+
+-}
+disable : Variant -> Variant
+disable var =
+    case var of
+        Internal.VariantActive name ->
+            Internal.VariantOff name
+
+        Internal.VariantIndexed name index ->
+            Internal.VariantOff name
+
+        Internal.VariantOff name ->
+            var
+
+
+{-| [Small caps](https://en.wikipedia.org/wiki/Small_caps) are rendered using uppercase glyphs, but at the size of lowercase glyphs.
+-}
+smallCaps : Variant
+smallCaps =
+    Internal.VariantActive "smcp"
+
+
+{-| Add a slash when rendering `0`
+-}
+slashedZero : Variant
+slashedZero =
+    Internal.VariantActive "zero"
+
+
+{-| -}
+ligatures : Variant
+ligatures =
+    Internal.VariantActive "liga"
+
+
+{-| Oridinal markers like `1st` and `2nd` will receive special glyphs.
+-}
+ordinal : Variant
+ordinal =
+    Internal.VariantActive "ordn"
+
+
+{-| Number figures will each take up the same space, allowing them to be easily aligned, such as in tables.
+-}
+tabularNumbers : Variant
+tabularNumbers =
+    Internal.VariantActive "tnum"
+
+
+{-| Render fractions with the numerator stacked on top of the denominator.
+-}
+stackedFractions : Variant
+stackedFractions =
+    Internal.VariantActive "afrc"
+
+
+{-| Render fractions
+-}
+diagonalFractions : Variant
+diagonalFractions =
+    Internal.VariantActive "frac"
+
+
+{-| -}
+swash : Int -> Variant
+swash =
+    Internal.VariantIndexed "swsh"
+
+
+{-| Set a feature by name and whether it should be on or off.
+
+Feature names are four-letter names as defined in the [OpenType specification](https://docs.microsoft.com/en-us/typography/opentype/spec/featurelist).
+
+-}
+feature : String -> Bool -> Variant
+feature name on =
+    if on then
+        Internal.VariantIndexed name 1
+
+    else
+        Internal.VariantIndexed name 0
+
+
+{-| A font variant might have multiple versions within the font.
+
+In these cases we need to specify the index of the version we want.
+
+-}
+indexed : String -> Int -> Variant
+indexed name on =
+    Internal.VariantIndexed name on
