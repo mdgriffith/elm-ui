@@ -249,10 +249,31 @@ renderVariant var =
 renderVariants typeface =
     case typeface of
         FontWith font ->
-            String.join ", " (List.map renderVariant font.variants)
+            Just (String.join ", " (List.map renderVariant font.variants))
 
         _ ->
-            ""
+            Nothing
+
+
+isSmallCaps var =
+    case var of
+        VariantActive name ->
+            name == "smcp"
+
+        VariantOff name ->
+            False
+
+        VariantIndexed name index ->
+            name == "smcp" && index == 1
+
+
+hasSmallCaps typeface =
+    case typeface of
+        FontWith font ->
+            List.any isSmallCaps font.variants
+
+        _ ->
+            False
 
 
 type Property
@@ -2505,7 +2526,7 @@ toStyleSheetString options stylesheet =
                     let
                         features =
                             typefaces
-                                |> List.map renderVariants
+                                |> List.filterMap renderVariants
                                 |> String.join ", "
 
                         families =
@@ -2515,6 +2536,13 @@ toStyleSheetString options stylesheet =
                                     |> String.join ", "
                                 )
                             , Property "font-feature-settings" features
+                            , Property "font-variant"
+                                (if List.any hasSmallCaps typefaces then
+                                    "small-caps"
+
+                                 else
+                                    "normal"
+                                )
                             ]
                     in
                     String.join " "
