@@ -19,6 +19,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Element.Lazy
+import Html
 import Html.Attributes
 
 
@@ -47,29 +48,143 @@ edges =
     }
 
 
-default =
-    { capital = 1.15
-    , lowercase = 0.96
-    , baseline = 0.465
-    , descender = 0.245
-    , lineHeight = 1.5
-    }
-
-
-init =
+garamond =
+    let
+        default =
+            { capital = 1.09
+            , lowercase = 0.81
+            , baseline = 0.385
+            , descender = 0.095
+            , lineHeight = 1.5
+            }
+    in
     { adjustment =
         default
     , converted =
         convertAdjustment default
+    , font =
+        { url = Just "https://fonts.googleapis.com/css?family=EB+Garamond"
+        , name = "EB Garamond"
+        , adjustment =
+            { capital = default.capital
+            , lowercase = default.lowercase
+            , baseline = default.baseline
+            , descender = default.descender
+            }
+        }
     }
+
+
+catamaran =
+    let
+        default =
+            { capital = 1.15
+            , lowercase = 0.96
+            , baseline = 0.465
+            , descender = 0.245
+            , lineHeight = 1.5
+            }
+    in
+    { adjustment =
+        default
+    , converted =
+        convertAdjustment default
+    , font =
+        { url = Just "https://fonts.googleapis.com/css?family=Catamaran"
+        , name = "Catamaran"
+        , adjustment =
+            { capital = default.capital
+            , lowercase = default.lowercase
+            , baseline = default.baseline
+            , descender = default.descender
+            }
+        }
+    }
+
+
+poiret =
+    let
+        default =
+            { capital = 1.12
+            , lowercase = 0.82
+            , baseline = 0.365
+            , descender = 0.18
+            , lineHeight = 1.5
+            }
+    in
+    { adjustment =
+        default
+    , converted =
+        convertAdjustment default
+    , font =
+        { url = Just "https://fonts.googleapis.com/css?family=Poiret+One"
+        , name = "Poiret One"
+        , adjustment =
+            { capital = default.capital
+            , lowercase = default.lowercase
+            , baseline = default.baseline
+            , descender = default.descender
+            }
+        }
+    }
+
+
+roboto =
+    let
+        default =
+            { capital = 1.115
+            , lowercase = 0.93
+            , baseline = 0.4
+            , descender = 0.19
+            , lineHeight = 1.5
+            }
+    in
+    { adjustment =
+        default
+    , converted =
+        convertAdjustment default
+    , font =
+        { url = Just "https://fonts.googleapis.com/css?family=Roboto"
+        , name = "Roboto"
+        , adjustment =
+            { capital = default.capital
+            , lowercase = default.lowercase
+            , baseline = default.baseline
+            , descender = default.descender
+            }
+        }
+    }
+
+
+init =
+    -- catamaran
+    garamond
+
+
+
+-- poiret
+-- roboto
 
 
 update msg model =
     case msg of
         UpdateAdjustment adj ->
+            let
+                font =
+                    model.font
+            in
             { model
                 | adjustment = adj
                 , converted = convertAdjustment adj
+                , font =
+                    { font
+                        | adjustment =
+                            { capital = adj.capital
+                            , lowercase = adj.lowercase
+                            , baseline = adj.baseline
+                            , descender = adj.descender
+                            }
+                    }
             }
 
 
@@ -83,17 +198,30 @@ main =
 
 view model =
     Element.layout
-        [ Background.color (rgba 1 1 1 1)
+        [ above (html (Html.node "style" [] [ Html.text """
+.lh-15 .t {
+   line-height: 1.5;
+}
+
+.lh-norm .t {
+    line-height: normal;
+}
+          
+             """ ]))
+        , Background.color (rgba 1 1 1 1)
+        , padding 100
         , Font.color (rgba 0 0 0 1)
         , Font.family
             [ -- Font.external
               -- { url = "https://fonts.googleapis.com/css?family=EB+Garamond"
               -- , name = "EB Garamond"
               -- }
-              Font.external
-                { url = "https://fonts.googleapis.com/css?family=Catamaran"
-                , name = "Catamaran"
-                }
+              --   Font.external
+              --     { url = "https://fonts.googleapis.com/css?family=Catamaran"
+              --     , name = "Catamaran"
+              --     }
+              Font.with
+                model.font
             , Font.sansSerif
             ]
         ]
@@ -108,21 +236,8 @@ style name val =
     htmlAttribute (Html.Attributes.style name val)
 
 
-fontSize pixels lineHeight up =
-    [ Font.size pixels
-
-    -- , htmlAttribute (Html.Attributes.style "line-height" lineHeight)
-    -- , Background.color (rgb 0 0.8 0.9)
-    -- , onLeft
-    --     (el
-    --         [ Background.color (rgb 0 0 0)
-    --         , width (px 20)
-    --         , height (px pixels)
-    --         , moveUp up
-    --         ]
-    --         none
-    --     )
-    ]
+class name =
+    htmlAttribute (Html.Attributes.class name)
 
 
 charcoal =
@@ -142,6 +257,7 @@ adjustor size adjustment =
         ([ centerX
          , centerY
          , Background.color (rgb 0 0.8 0.9)
+         , class "lh-15"
          , style "line-height" (String.fromFloat adjustment.lineHeight)
          , onRight
             (el
@@ -167,14 +283,15 @@ adjusted size adjustment =
         , centerX
         , centerY
         ]
-        [ row
+        [ el [ Font.size 32 ] (text "Standard Defaults in CSS")
+        , row
             [ spacing 32
             , Font.size 120
-            , above (text "hi")
             ]
             [ el
                 [ Background.color (rgb 0 0.8 0.9)
                 , style "line-height" "normal"
+                , class "lh-norm"
                 , above (el [ Font.size 12 ] (text "line-height: normal"))
                 ]
                 (text "Typography")
@@ -185,16 +302,79 @@ adjusted size adjustment =
                 ]
                 (text "Typography")
             ]
+        , el
+            [ Font.size 32 ]
+            (text "New Adjustments in Els")
         , row
-            [ spacing 32
-            , Font.size 120
+            [ Font.size 120
+            , padding 80
             ]
-            [ corrected adjustment.full "corrected"
-            , corrected adjustment.capital "corrected capital"
+            [ --corrected adjustment.full "corrected"
+              -- , corrected adjustment.capital "corrected capital"
+              el
+                [ Font.sizeByCapital
+                , Background.color (rgb 0 0.8 0.9)
+                , above (el [ Font.size 12, moveUp 6 ] (text "corrected capital"))
+                , onLeft <|
+                    el
+                        [ centerY
+                        , width (px 40)
+                        , height (px 120)
+                        , Background.color (rgb 0.9 0.8 0)
+                        ]
+                        none
+                ]
+                (text "Typography")
             ]
-        , paragraph [ Font.size 25, spacing 5, width (px 200) ]
-            [ el [ Font.size 55, alignLeft ] (text "L")
-            , text "orem Ipsum is simply dummy text of the printing and typesetting industry."
+        , row [ spacing 120 ]
+            [ paragraph
+                [ Font.size 25
+                , spacing 5
+                , width (px 200)
+                , Background.color
+                    (rgb 0 0.8 0.9)
+                , above (el [ Font.size 32, moveUp 32 ] (text "Normal Paragraphs"))
+                ]
+                [ el [ Font.size 55, alignLeft, Background.color (rgb 0.9 0.8 0) ] (text "L")
+                , text "orem Ipsum is simply dummy text of the printing and typesetting industry."
+                ]
+            , paragraph
+                [ Font.size 45
+                , spacing 10
+                , width (px 600)
+                , inFront
+                    (el
+                        [ width (px 100)
+                        , height (px 5)
+                        , moveDown 45
+                        , alignRight
+                        , Background.color (rgba 0.9 0.8 0.2 0.5)
+                        ]
+                        none
+                    )
+                , inFront
+                    (el
+                        [ width (px 100)
+                        , height (px 45)
+                        , alignRight
+                        , Background.color (rgba 0 0 0 0.5)
+                        ]
+                        none
+                    )
+                , Background.color
+                    (rgb 0 0.8 0.9)
+                , above
+                    (el [ Font.size 32, moveUp 32 ] (text "Corrected Paragraphs"))
+                ]
+                [ el
+                    [ Font.size 100
+                    , alignLeft
+                    , Background.color (rgb 0.9 0.8 0)
+                    , Font.sizeByCapital
+                    ]
+                    (text "C")
+                , text "ontrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of \"de Finibus Bonorum et Malorum\" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, \"Lorem ipsum dolor sit amet..\", comes from a line in section 1.10.32."
+                ]
             ]
         ]
 
@@ -326,7 +506,7 @@ viewAdjustment label adjustment size left lineHeight updateWith =
                         none
                     )
                 ]
-                { label = Input.labelAbove [ Font.size 18 ] (text "")
+                { label = Input.labelHidden "font adjustment"
                 , max = lineHeight
                 , min = 0
                 , onChange =
