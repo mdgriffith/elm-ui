@@ -147,16 +147,6 @@ type alias Adjustment =
 
 
 {-| -}
-defaultAdjustment : Adjustment
-defaultAdjustment =
-    { capital = 1.0
-    , lowercase = 0.5
-    , baseline = 0.2
-    , descender = 0
-    }
-
-
-{-| -}
 with :
     { name : String
     , adjustment : Adjustment
