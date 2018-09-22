@@ -1061,6 +1061,7 @@ baseSheet =
         , Prop "flex-direction" "row"
         , Prop "flex-basis" "auto"
         , Prop "resize" "none"
+        , Prop "font-feature-settings" "inherit"
 
         -- , Prop "flex-basis" "0%"
         , Prop "box-sizing" "border-box"
