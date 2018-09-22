@@ -1501,92 +1501,6 @@ radioHelper orientation attrs input =
                         AfterFound ->
                             ( found, prev, nxt )
 
-        inputVisible =
-            List.isEmpty <|
-                Internal.get attrs <|
-                    \attr ->
-                        case attr of
-                            Internal.StyleClass _ (Internal.Transparency _ _) ->
-                                True
-
-                            Internal.Class _ "hidden" ->
-                                True
-
-                            _ ->
-                                False
-
-        labelVisible =
-            case input.label of
-                Label _ labelAttrs _ ->
-                    List.isEmpty <|
-                        Internal.get labelAttrs <|
-                            \attr ->
-                                case attr of
-                                    Internal.StyleClass _ (Internal.Transparency _ _) ->
-                                        True
-
-                                    Internal.Class _ "hidden" ->
-                                        True
-
-                                    _ ->
-                                        False
-
-                HiddenLabel _ ->
-                    True
-
-        hideIfEverythingisInvisible =
-            if not labelVisible && not inputVisible then
-                let
-                    pseudos =
-                        List.filterMap
-                            (\attr ->
-                                case attr of
-                                    Internal.StyleClass _ style ->
-                                        case style of
-                                            Internal.PseudoSelector pseudo styles ->
-                                                let
-                                                    transparent =
-                                                        List.filter forTransparency styles
-
-                                                    forTransparency psuedoStyle =
-                                                        case psuedoStyle of
-                                                            Internal.Transparency _ _ ->
-                                                                True
-
-                                                            _ ->
-                                                                False
-
-                                                    flag =
-                                                        case pseudo of
-                                                            Internal.Hover ->
-                                                                Flag.hover
-
-                                                            Internal.Focus ->
-                                                                Flag.focus
-
-                                                            Internal.Active ->
-                                                                Flag.active
-                                                in
-                                                case transparent of
-                                                    [] ->
-                                                        Nothing
-
-                                                    _ ->
-                                                        Just <| Internal.StyleClass flag <| Internal.PseudoSelector pseudo transparent
-
-                                            _ ->
-                                                Nothing
-
-                                    _ ->
-                                        Nothing
-                            )
-                            attrs
-                in
-                Internal.StyleClass Flag.transparency (Internal.Transparency "transparent" 1.0) :: pseudos
-
-            else
-                []
-
         events =
             Internal.get
                 attrs
@@ -1647,7 +1561,7 @@ radioHelper orientation attrs input =
                         )
             ]
             ++ events
-            ++ hideIfEverythingisInvisible
+         -- ++ hideIfEverythingisInvisible
         )
         input.label
         optionArea
