@@ -2173,67 +2173,6 @@ toStyleSheet options styleSheet =
     VirtualDom.node "style" [] [ VirtualDom.text (toStyleSheetString options styleSheet) ]
 
 
-
--- case typefaceAdjustment typefaces of
---     Nothing ->
---         ""
---     Just ( parentAdj, textAdjustment ) ->
---         String.join " "
---             [ renderStyle
---                 maybePseudo
---                 ("."
---                     ++ name
---                     ++ "."
---                     ++ classes.sizeByCapital
---                     ++ ", "
---                     ++ "."
---                     ++ name
---                     ++ " ."
---                     ++ classes.sizeByCapital
---                 )
---                 parentAdj
---             , renderStyle
---                 maybePseudo
---                 ("."
---                     ++ name
---                     ++ "."
---                     ++ classes.sizeByCapital
---                     ++ "> ."
---                     ++ Internal.Style.classes.text
---                     ++ ", ."
---                     ++ name
---                     ++ " ."
---                     ++ classes.sizeByCapital
---                     ++ " > ."
---                     ++ Internal.Style.classes.text
---                 )
---                 textAdjustment
---             ]
--- renderTopLevels rule =
---     case rule of
---         FontFamily name typefaces ->
---             let
---                 getImports font =
---                     case font of
---                         ImportFont _ url ->
---                             Just ("@import url('" ++ url ++ "');")
---                         FontWith { url } ->
---                             case url of
---                                 Just x ->
---                                     Just ("@import url('" ++ x ++ "');")
---                                 Nothing ->
---                                     Nothing
---                         _ ->
---                             Nothing
---             in
---             typefaces
---                 |> List.filterMap getImports
---                 |> String.join "\n"
---                 |> Just
---         _ ->
---             Nothing
-
-
 renderTopLevelValues rules =
     let
         withImport font =
@@ -2369,12 +2308,17 @@ bracket selector rules =
 
 fontAdjustmentRules converted =
     ( [ ( "display", "block" )
-      , ( "line-height", String.fromFloat converted.height )
+
+      --   , ( "line-height", String.fromFloat converted.height )
+      --   , ( "font-size", String.fromFloat (1 + converted.height + converted.vertical) ++ "em" )
       ]
     , [ ( "display", "inline-block" )
       , ( "line-height", String.fromFloat converted.height )
       , ( "vertical-align", String.fromFloat converted.vertical ++ "em" )
+      , ( "font-size", String.fromFloat converted.size ++ "em" )
       ]
+      -- , [ ( "font-size", String.fromFloat converted.size ++ "em" )
+      --   ]
     )
 
 
@@ -3339,7 +3283,11 @@ convertAdjustment adjustment =
                 |> Maybe.withDefault adjustment.baseline
 
         capitalVertical =
-            (oldMiddle - newCapitalMiddle) * 2
+            1 - ascender
+
+      
+        capitalSize =
+            1 / (ascender - newBaseline)
 
         fullVertical =
             (oldMiddle - newFullMiddle) * 2
@@ -3349,9 +3297,18 @@ convertAdjustment adjustment =
         , height =
             (ascender - descender)
                 - abs fullVertical
+        , size = 1.0
         }
     , capital =
-        { vertical = capitalVertical
-        , height = (ascender - newBaseline) - abs capitalVertical
-        }
+        adjust capitalSize (ascender - newBaseline) capitalVertical
+    }
+
+
+adjust size height vertical =
+    { vertical = vertical
+    , height =
+        height / size
+
+    -- vertical
+    , size = size
     }
