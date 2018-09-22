@@ -5,7 +5,7 @@ module Element.Font exposing
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
-    , Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, disable, feature, indexed
+    , Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
     )
 
@@ -73,7 +73,7 @@ module Element.Font exposing
 
 ## Variants
 
-@docs Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, disable, feature, indexed
+@docs Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
 
 
 ## Shadows
@@ -346,6 +346,7 @@ glow clr i =
 {- Variants -}
 
 
+{-| -}
 type alias Variant =
     Internal.Variant
 
@@ -358,6 +359,8 @@ type alias Variant =
         (text "rendered with smallcaps")
 
 **Note** These will **not** stack. If you want multiple variants, you should use `Font.with`.
+
+If you specify a font variant on an element, then it will override all variants listed in `Font.with`.
 
 -}
 variant : Variant -> Attribute msg
@@ -374,29 +377,6 @@ variant var =
                 Internal.Single ("v-" ++ name ++ "-" ++ String.fromInt index)
                     "font-feature-settings"
                     ("\"" ++ name ++ "\" " ++ String.fromInt index)
-
-
-{-| Less often you might want to disable an active variant.
-
-    el
-        [ Font.variant (Font.disable Font.smallCaps)
-        ]
-        (text "Is not smallcaps")
-
-**Note** Generally try to set yourself up so that this isn't really necessary.
-
--}
-disable : Variant -> Variant
-disable var =
-    case var of
-        Internal.VariantActive name ->
-            Internal.VariantOff name
-
-        Internal.VariantIndexed name index ->
-            Internal.VariantOff name
-
-        Internal.VariantOff name ->
-            var
 
 
 {-| [Small caps](https://en.wikipedia.org/wiki/Small_caps) are rendered using uppercase glyphs, but at the size of lowercase glyphs.
