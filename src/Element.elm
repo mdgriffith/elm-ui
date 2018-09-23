@@ -1410,7 +1410,7 @@ alignRight =
 {-| -}
 spaceEvenly : Attribute msg
 spaceEvenly =
-    Internal.Class Flag.xAlign (.spaceEvenly Internal.Style.classes)
+    Internal.Class Flag.spacing Internal.Style.classes.spaceEvenly
 
 
 {-| -}
