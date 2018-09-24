@@ -938,11 +938,11 @@ tableHelper attrs config =
                     }
 
                 InternalColumn col ->
-                    { cursor
-                        | elements =
-                            onGrid cursor.row cursor.column (col.view cell)
-                                :: cursor.elements
-                        , column = cursor.column + 1
+                    { elements =
+                        onGrid cursor.row cursor.column (col.view cell)
+                            :: cursor.elements
+                    , column = cursor.column + 1
+                    , row = cursor.row
                     }
 
         build columns rowData cursor =
@@ -952,9 +952,9 @@ tableHelper attrs config =
                         cursor
                         columns
             in
-            { newCursor
-                | row = cursor.row + 1
-                , column = 1
+            { elements = newCursor.elements
+            , row = cursor.row + 1
+            , column = 1
             }
 
         children =
@@ -983,7 +983,7 @@ tableHelper attrs config =
                     children.elements
 
                 Just renderedHeaders ->
-                    renderedHeaders ++ children.elements
+                    renderedHeaders ++ List.reverse children.elements
             )
         )
 
