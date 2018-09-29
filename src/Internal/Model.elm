@@ -1561,13 +1561,12 @@ createElement context children rendered =
                     --     , existingStyles
                     --     )
                     -- else
-                    ( textElement
-                        (if context == asParagraph then
-                            str
+                    ( (if context == asEl then
+                        textElementFill str
 
-                         else
-                            str
-                        )
+                       else
+                        textElement str
+                      )
                         :: htmls
                     , existingStyles
                     )
@@ -1627,8 +1626,11 @@ createElement context children rendered =
                     --     )
                     -- else
                     ( ( key
-                      , textElement
-                            str
+                      , if context == asEl then
+                            textElementFill str
+
+                        else
+                            textElement str
                       )
                         :: htmls
                     , existingStyles
@@ -1963,14 +1965,13 @@ textElement str =
 textElementFill : String -> VirtualDom.Node msg
 textElementFill str =
     VirtualDom.node "div"
-        [ VirtualDom.property "className"
-            (Json.string <|
-                String.join " "
-                    [ classes.any
-                    , classes.text
-                    , classes.widthFill
-                    , classes.heightFill
-                    ]
+        [ Html.Attributes.class
+            (String.join " "
+                [ classes.any
+                , classes.text
+                , classes.widthFill
+                , classes.heightFill
+                ]
             )
         ]
         [ VirtualDom.text str ]
@@ -2308,7 +2309,38 @@ renderNullAdjustmentRule fontToAdjust otherFontName =
         ]
 
 
-renderFontAdjustmentRule fontToAdjust ( parentAdj, textAdjustment ) otherFontName =
+fontRule name modifier ( parentAdj, textAdjustment ) =
+    [ bracket
+        ("."
+            ++ name
+            ++ "."
+            ++ modifier
+            ++ ", "
+            ++ "."
+            ++ name
+            ++ " ."
+            ++ modifier
+        )
+        parentAdj
+    , bracket
+        ("."
+            ++ name
+            ++ "."
+            ++ modifier
+            ++ "> ."
+            ++ Internal.Style.classes.text
+            ++ ", ."
+            ++ name
+            ++ " ."
+            ++ modifier
+            ++ " > ."
+            ++ Internal.Style.classes.text
+        )
+        textAdjustment
+    ]
+
+
+renderFontAdjustmentRule fontToAdjust ( full, capital ) otherFontName =
     let
         name =
             if fontToAdjust == otherFontName then
@@ -2318,34 +2350,7 @@ renderFontAdjustmentRule fontToAdjust ( parentAdj, textAdjustment ) otherFontNam
                 otherFontName ++ " ." ++ fontToAdjust
     in
     String.join " "
-        [ bracket
-            ("."
-                ++ name
-                ++ "."
-                ++ classes.sizeByCapital
-                ++ ", "
-                ++ "."
-                ++ name
-                ++ " ."
-                ++ classes.sizeByCapital
-            )
-            parentAdj
-        , bracket
-            ("."
-                ++ name
-                ++ "."
-                ++ classes.sizeByCapital
-                ++ "> ."
-                ++ Internal.Style.classes.text
-                ++ ", ."
-                ++ name
-                ++ " ."
-                ++ classes.sizeByCapital
-                ++ " > ."
-                ++ Internal.Style.classes.text
-            )
-            textAdjustment
-        ]
+        (fontRule name classes.sizeByCapital capital ++ fontRule name classes.fullSize full)
 
 
 bracket selector rules =
@@ -2358,17 +2363,12 @@ bracket selector rules =
 
 fontAdjustmentRules converted =
     ( [ ( "display", "block" )
-
-      --   , ( "line-height", String.fromFloat converted.height )
-      --   , ( "font-size", String.fromFloat (1 + converted.height + converted.vertical) ++ "em" )
       ]
     , [ ( "display", "inline-block" )
       , ( "line-height", String.fromFloat converted.height )
       , ( "vertical-align", String.fromFloat converted.vertical ++ "em" )
       , ( "font-size", String.fromFloat converted.size ++ "em" )
       ]
-      -- , [ ( "font-size", String.fromFloat converted.size ++ "em" )
-      --   ]
     )
 
 
@@ -2380,7 +2380,9 @@ typefaceAdjustment typefaces =
                     case face of
                         FontWith with ->
                             Just
-                                (fontAdjustmentRules
+                                ( fontAdjustmentRules
+                                    (.full (convertAdjustment with.adjustment))
+                                , fontAdjustmentRules
                                     (.capital (convertAdjustment with.adjustment))
                                 )
 
@@ -3352,16 +3354,16 @@ convertAdjustment adjustment =
         capitalSize =
             1 / (ascender - newBaseline)
 
+        fullSize =
+            1 / (ascender - descender)
+
         fullVertical =
-            (oldMiddle - newFullMiddle) * 2
+            1 - ascender
+
+        -- (oldMiddle - newFullMiddle) * 2
     in
     { full =
-        { vertical = fullVertical
-        , height =
-            (ascender - descender)
-                - abs fullVertical
-        , size = 1.0
-        }
+        adjust fullSize (ascender - descender) fullVertical
     , capital =
         adjust capitalSize (ascender - newBaseline) capitalVertical
     }
@@ -3371,7 +3373,5 @@ adjust size height vertical =
     { vertical = vertical
     , height =
         height / size
-
-    -- vertical
     , size = size
     }

@@ -1,7 +1,7 @@
 module Element.Font exposing
     ( color, size
     , family, Font, typeface, serif, sansSerif, monospace
-    , external, with, sizeByCapital
+    , external, with, sizeByCapital, full
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
@@ -36,7 +36,7 @@ module Element.Font exposing
 
 @docs family, Font, typeface, serif, sansSerif, monospace
 
-@docs external, with, sizeByCapital
+@docs external, with, sizeByCapital, full
 
 `Font.external` can be used to import font files. Let's say you found a neat font on <http://fonts.google.com>:
 
@@ -168,6 +168,12 @@ with =
 sizeByCapital : Attribute msg
 sizeByCapital =
     Internal.htmlClass classes.sizeByCapital
+
+
+{-| -}
+full : Attribute msg
+full =
+    Internal.htmlClass classes.fullSize
 
 
 {-| -}
