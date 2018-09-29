@@ -361,6 +361,13 @@ type NodeName
     | Embedded String String
 
 
+type NearbyChildren msg
+    = NoNearbyChildren
+    | ChildrenBehind (List (Html.Html msg))
+    | ChildrenInFront (List (Html.Html msg))
+    | ChildrenBehindAndInFront (List (Html.Html msg)) (List (Html.Html msg))
+
+
 div =
     Generic
 
@@ -369,7 +376,7 @@ type alias Gathered msg =
     { node : NodeName
     , attributes : List (VirtualDom.Attribute msg)
     , styles : List Style
-    , children : List (VirtualDom.Node msg)
+    , children : NearbyChildren msg
     , has : Flag.Field
     }
 
@@ -872,7 +879,16 @@ skippable flag style =
                 False
 
 
-gatherAttrRecursive : String -> NodeName -> Flag.Field -> Transformation -> List Style -> List (VirtualDom.Attribute msg) -> List (VirtualDom.Node msg) -> List (Attribute aligned msg) -> Gathered msg
+gatherAttrRecursive :
+    String
+    -> NodeName
+    -> Flag.Field
+    -> Transformation
+    -> List Style
+    -> List (VirtualDom.Attribute msg)
+    -> NearbyChildren msg
+    -> List (Attribute aligned msg)
+    -> Gathered msg
 gatherAttrRecursive classes node has transform styles attrs children elementAttrs =
     case elementAttrs of
         [] ->
@@ -1164,75 +1180,16 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
 
                                 Styled styled ->
                                     styles ++ styled.styles
-
-                        nearbyElement =
-                            Html.div
-                                [ Html.Attributes.class <|
-                                    case location of
-                                        Above ->
-                                            String.join " "
-                                                [ Internal.Style.classes.nearby
-                                                , Internal.Style.classes.single
-                                                , Internal.Style.classes.above
-                                                ]
-
-                                        Below ->
-                                            String.join " "
-                                                [ Internal.Style.classes.nearby
-                                                , Internal.Style.classes.single
-                                                , Internal.Style.classes.below
-                                                ]
-
-                                        OnRight ->
-                                            String.join " "
-                                                [ Internal.Style.classes.nearby
-                                                , Internal.Style.classes.single
-                                                , Internal.Style.classes.onRight
-                                                ]
-
-                                        OnLeft ->
-                                            String.join " "
-                                                [ Internal.Style.classes.nearby
-                                                , Internal.Style.classes.single
-                                                , Internal.Style.classes.onLeft
-                                                ]
-
-                                        InFront ->
-                                            String.join " "
-                                                [ Internal.Style.classes.nearby
-                                                , Internal.Style.classes.single
-                                                , Internal.Style.classes.inFront
-                                                ]
-
-                                        Behind ->
-                                            String.join " "
-                                                [ Internal.Style.classes.nearby
-                                                , Internal.Style.classes.single
-                                                , Internal.Style.classes.behind
-                                                ]
-                                ]
-                                [ case elem of
-                                    Empty ->
-                                        VirtualDom.text ""
-
-                                    Text str ->
-                                        textElement str
-
-                                    Unstyled html ->
-                                        html asEl
-
-                                    Styled styled ->
-                                        styled.html NoStyleSheet asEl
-                                ]
-
-                        newClasses =
-                            if location == Behind then
-                                Internal.Style.classes.hasBehind ++ " " ++ classes
-
-                            else
-                                classes
                     in
-                    gatherAttrRecursive newClasses node has transform newStyles attrs (nearbyElement :: children) remaining
+                    gatherAttrRecursive
+                        classes
+                        node
+                        has
+                        transform
+                        newStyles
+                        attrs
+                        (addNearbyElement location elem children)
+                        remaining
 
                 AlignX x ->
                     if Flag.present Flag.xAlign has then
@@ -1286,6 +1243,106 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             attrs
                             children
                             remaining
+
+
+addNearbyElement location elem existing =
+    let
+        nearby =
+            nearbyElement location elem
+    in
+    case existing of
+        NoNearbyChildren ->
+            case location of
+                Behind ->
+                    ChildrenBehind [ nearby ]
+
+                _ ->
+                    ChildrenInFront [ nearby ]
+
+        ChildrenBehind existingBehind ->
+            case location of
+                Behind ->
+                    ChildrenBehind (nearby :: existingBehind)
+
+                _ ->
+                    ChildrenBehindAndInFront existingBehind [ nearby ]
+
+        ChildrenInFront existingInFront ->
+            case location of
+                Behind ->
+                    ChildrenBehindAndInFront [ nearby ] existingInFront
+
+                _ ->
+                    ChildrenInFront (nearby :: existingInFront)
+
+        ChildrenBehindAndInFront existingBehind existingInFront ->
+            case location of
+                Behind ->
+                    ChildrenBehindAndInFront (nearby :: existingBehind) existingInFront
+
+                _ ->
+                    ChildrenBehindAndInFront existingBehind (nearby :: existingInFront)
+
+
+nearbyElement location elem =
+    Html.div
+        [ Html.Attributes.class <|
+            case location of
+                Above ->
+                    String.join " "
+                        [ Internal.Style.classes.nearby
+                        , Internal.Style.classes.single
+                        , Internal.Style.classes.above
+                        ]
+
+                Below ->
+                    String.join " "
+                        [ Internal.Style.classes.nearby
+                        , Internal.Style.classes.single
+                        , Internal.Style.classes.below
+                        ]
+
+                OnRight ->
+                    String.join " "
+                        [ Internal.Style.classes.nearby
+                        , Internal.Style.classes.single
+                        , Internal.Style.classes.onRight
+                        ]
+
+                OnLeft ->
+                    String.join " "
+                        [ Internal.Style.classes.nearby
+                        , Internal.Style.classes.single
+                        , Internal.Style.classes.onLeft
+                        ]
+
+                InFront ->
+                    String.join " "
+                        [ Internal.Style.classes.nearby
+                        , Internal.Style.classes.single
+                        , Internal.Style.classes.inFront
+                        ]
+
+                Behind ->
+                    String.join " "
+                        [ Internal.Style.classes.nearby
+                        , Internal.Style.classes.single
+                        , Internal.Style.classes.behind
+                        ]
+        ]
+        [ case elem of
+            Empty ->
+                VirtualDom.text ""
+
+            Text str ->
+                textElement str
+
+            Unstyled html ->
+                html asEl
+
+            Styled styled ->
+                styled.html NoStyleSheet asEl
+        ]
 
 
 renderWidth w =
@@ -1494,7 +1551,7 @@ element : LayoutContext -> NodeName -> List (Attribute aligned msg) -> Children 
 element context node attributes children =
     attributes
         |> List.reverse
-        |> gatherAttrRecursive (contextClasses context) node Flag.none untransformed [] [] []
+        |> gatherAttrRecursive (contextClasses context) node Flag.none untransformed [] [] NoNearbyChildren
         |> createElement context children
 
 
@@ -1657,13 +1714,8 @@ createElement context children rendered =
                                 (finalizeNode rendered.has
                                     rendered.node
                                     rendered.attributes
-                                    (Keyed <|
-                                        keyed
-                                            ++ List.map
-                                                (\x ->
-                                                    ( "nearby-elements-pls", x )
-                                                )
-                                                rendered.children
+                                    (Keyed
+                                        (addKeyedChildren "nearby-element-pls" keyed rendered.children)
                                     )
                                     NoStyleSheet
                                 )
@@ -1677,13 +1729,7 @@ createElement context children rendered =
                                         rendered.node
                                         rendered.attributes
                                         (Keyed
-                                            (keyed
-                                                ++ List.map
-                                                    (\x ->
-                                                        ( "nearby-elements-pls", x )
-                                                    )
-                                                    rendered.children
-                                            )
+                                            (addKeyedChildren "nearby-element-pls" keyed rendered.children)
                                         )
                                 }
 
@@ -1705,7 +1751,7 @@ createElement context children rendered =
                                     rendered.has
                                     rendered.node
                                     rendered.attributes
-                                    (Unkeyed <| unkeyed ++ rendered.children)
+                                    (Unkeyed (addChildren unkeyed rendered.children))
                                     NoStyleSheet
                                 )
 
@@ -1717,8 +1763,40 @@ createElement context children rendered =
                                         rendered.has
                                         rendered.node
                                         rendered.attributes
-                                        (Unkeyed (unkeyed ++ rendered.children))
+                                        (Unkeyed (addChildren unkeyed rendered.children))
                                 }
+
+
+addChildren existing nearbyChildren =
+    case nearbyChildren of
+        NoNearbyChildren ->
+            existing
+
+        ChildrenBehind behind ->
+            behind ++ existing
+
+        ChildrenInFront inFront ->
+            existing ++ inFront
+
+        ChildrenBehindAndInFront behind inFront ->
+            behind ++ existing ++ inFront
+
+
+addKeyedChildren key existing nearbyChildren =
+    case nearbyChildren of
+        NoNearbyChildren ->
+            existing
+
+        ChildrenBehind behind ->
+            List.map (\x -> ( key, x )) behind ++ existing
+
+        ChildrenInFront inFront ->
+            existing ++ List.map (\x -> ( key, x )) inFront
+
+        ChildrenBehindAndInFront behind inFront ->
+            List.map (\x -> ( key, x )) behind
+                ++ existing
+                ++ List.map (\x -> ( key, x )) inFront
 
 
 unit =
