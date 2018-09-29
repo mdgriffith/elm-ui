@@ -34,6 +34,7 @@ palette =
     { white = Element.rgb 1 1 1
     , red = Element.rgb 1 0 0
     , green = Element.rgb 0 1 0
+    , black = Element.rgb 0 0 0
     , lightGrey = Element.rgb 0.7 0.7 0.7
     }
 
@@ -342,7 +343,7 @@ viewResult testable =
                 ( label, Nothing ) ->
                     Element.el
                         [ Background.color palette.green
-                        , Font.color palette.white
+                        , Font.color palette.black
                         , Element.paddingXY 20 10
                         , Element.alignLeft
                         , Border.rounded 3
@@ -353,7 +354,7 @@ viewResult testable =
                 ( label, Just ({ given, description } as reason) ) ->
                     Element.column
                         [ Background.color palette.red
-                        , Font.color palette.white
+                        , Font.color palette.black
                         , Element.paddingXY 20 10
                         , Element.alignLeft
                         , Element.width Element.shrink
@@ -382,7 +383,7 @@ viewResult testable =
             [ Element.alignLeft
             , Element.spacing 20
             , Background.color palette.green
-            , Font.color palette.white
+            , Font.color palette.black
             , Element.paddingXY 20 10
             , Element.alignLeft
             , Border.rounded 3
