@@ -168,7 +168,7 @@ runTest boxes label element =
 
 update : Msg -> Model Msg -> ( Model Msg, Cmd Msg )
 update msg model =
-    case Debug.log "update" msg of
+    case msg of
         NoOp ->
             ( model, Cmd.none )
 
