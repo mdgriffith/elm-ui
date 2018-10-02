@@ -65,6 +65,7 @@ garamond =
     , font =
         { url = Just "https://fonts.googleapis.com/css?family=EB+Garamond"
         , name = "EB Garamond"
+        , variants = []
         , adjustment =
             { capital = default.capital
             , lowercase = default.lowercase
@@ -92,6 +93,7 @@ catamaran =
     , font =
         { url = Just "https://fonts.googleapis.com/css?family=Catamaran"
         , name = "Catamaran"
+        , variants = []
         , adjustment =
             { capital = default.capital
             , lowercase = default.lowercase
@@ -119,6 +121,7 @@ poiret =
     , font =
         { url = Just "https://fonts.googleapis.com/css?family=Poiret+One"
         , name = "Poiret One"
+        , variants = []
         , adjustment =
             { capital = default.capital
             , lowercase = default.lowercase
@@ -152,6 +155,7 @@ roboto =
             , baseline = default.baseline
             , descender = default.descender
             }
+        , variants = []
         }
     }
 
@@ -283,7 +287,46 @@ adjusted size adjustment =
         , centerX
         , centerY
         ]
-        [ el [ Font.size 32 ] (text "Standard Defaults in CSS")
+        [ el
+            [ Font.size 32 ]
+            (text "New Adjustments in Els")
+        , row
+            [ Font.size 85
+            , padding 80
+            , spacing 48
+            ]
+            [ el
+                [ Font.size 95
+                , Font.full
+                , Background.color (rgb 0 0.8 0.9)
+                , above (el [ Font.size 24, moveUp 6 ] (text "full height"))
+                , onLeft <|
+                    el
+                        [ centerY
+                        , width (px 40)
+                        , height (px 95)
+                        , Background.color (rgb 0.9 0.8 0)
+                        ]
+                        none
+                ]
+                (text "Typography")
+            , el
+                [ Font.sizeByCapital
+                , Font.size 85
+                , Background.color (rgb 0 0.8 0.9)
+                , above (el [ Font.size 24, moveUp 6 ] (text "corrected capital"))
+                , onLeft <|
+                    el
+                        [ centerY
+                        , width (px 40)
+                        , height (px 85)
+                        , Background.color (rgb 0.9 0.8 0)
+                        ]
+                        none
+                ]
+                (text "Typography")
+            ]
+        , el [ Font.size 32 ] (text "Standard Defaults in CSS")
         , row
             [ spacing 32
             , Font.size 120
@@ -299,30 +342,6 @@ adjusted size adjustment =
                 [ Background.color (rgb 0 0.8 0.9)
                 , style "line-height" "1"
                 , above (el [ Font.size 12 ] (text "line-height: 1"))
-                ]
-                (text "Typography")
-            ]
-        , el
-            [ Font.size 32 ]
-            (text "New Adjustments in Els")
-        , row
-            [ Font.size 120
-            , padding 80
-            ]
-            [ --corrected adjustment.full "corrected"
-              -- , corrected adjustment.capital "corrected capital"
-              el
-                [ Font.sizeByCapital
-                , Background.color (rgb 0 0.8 0.9)
-                , above (el [ Font.size 12, moveUp 6 ] (text "corrected capital"))
-                , onLeft <|
-                    el
-                        [ centerY
-                        , width (px 40)
-                        , height (px 120)
-                        , Background.color (rgb 0.9 0.8 0)
-                        ]
-                        none
                 ]
                 (text "Typography")
             ]
@@ -465,8 +484,6 @@ viewAdjustment label adjustment size left lineHeight updateWith =
     onLeft
         (el
             [ moveLeft left
-
-            -- , moveUp (0.125 * toFloat size)
             , height (px (round (toFloat size * lineHeight)))
             ]
          <|
@@ -522,23 +539,6 @@ viewAdjustment label adjustment size left lineHeight updateWith =
                         , Border.width 1
                         , Border.color (Element.rgb 0.5 0.5 0.5)
                         , Background.color (Element.rgb 1 1 1)
-
-                        -- , onRight
-                        --     (el
-                        --         [ height (px 0)
-                        --         , width (px 1200)
-                        --         , moveDown 8
-                        --         , Border.color (rgb 0 0 0)
-                        --         , Border.dashed
-                        --         , Border.widthEach
-                        --             { top = 1
-                        --             , right = 0
-                        --             , bottom = 0
-                        --             , left = 0
-                        --             }
-                        --         ]
-                        --         none
-                        --     )
                         ]
                 , value = adjustment
                 }
