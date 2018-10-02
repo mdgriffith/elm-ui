@@ -137,7 +137,7 @@ The situations where a hidden label makes sense:
   - A searchbar with a `search` button right next to it.
   - A `table` of inputs where the header gives the label.
 
-Basically, a hidden label makes sense when there are other contextual clues that sighted people can pick up on.
+Basically, a hidden label works when there are other contextual clues that sighted people can pick up on.
 
 -}
 labelHidden : String -> Label msg
