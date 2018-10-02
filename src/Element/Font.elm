@@ -1,11 +1,11 @@
 module Element.Font exposing
     ( color, size
     , family, Font, typeface, serif, sansSerif, monospace
-    , external, with, sizeByCapital, full
+    , external
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
-    , Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+    , Variant, variant, variantList, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
     )
 
@@ -36,24 +36,7 @@ module Element.Font exposing
 
 @docs family, Font, typeface, serif, sansSerif, monospace
 
-@docs external, with, sizeByCapital, full
-
-`Font.external` can be used to import font files. Let's say you found a neat font on <http://fonts.google.com>:
-
-    import Element
-    import Element.Font as Font
-
-    view =
-        Element.el
-            [ Font.family
-                [ Font.external
-                    { name = "Roboto"
-                    , url = "https://fonts.googleapis.com/css?family=Roboto"
-                    }
-                , Font.sansSerif
-                ]
-            ]
-            (Element.text "Woohoo, I'm stylish text")
+@docs external
 
 
 ## Alignment and Spacing
@@ -73,7 +56,7 @@ module Element.Font exposing
 
 ## Variants
 
-@docs Variant, variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+@docs Variant, variant, variantList, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
 
 
 ## Shadows
@@ -96,7 +79,13 @@ type alias Font =
 {-| -}
 color : Color -> Attr decorative msg
 color fontColor =
-    Internal.StyleClass Flag.fontColor (Internal.Colored ("fc-" ++ Internal.formatColorClass fontColor) "color" fontColor)
+    Internal.StyleClass
+        Flag.fontColor
+        (Internal.Colored
+            ("fc-" ++ Internal.formatColorClass fontColor)
+            "color"
+            fontColor
+        )
 
 
 {-|
@@ -116,7 +105,12 @@ color fontColor =
 -}
 family : List Font -> Attribute msg
 family families =
-    Internal.StyleClass Flag.fontFamily <| Internal.FontFamily (List.foldl Internal.renderFontClassName "ff-" families) families
+    Internal.StyleClass
+        Flag.fontFamily
+        (Internal.FontFamily
+            (List.foldl Internal.renderFontClassName "ff-" families)
+            families
+        )
 
 
 {-| -}
@@ -155,8 +149,7 @@ type alias Adjustment =
 {-| -}
 with :
     { name : String
-    , adjustment : Adjustment
-    , url : Maybe String
+    , adjustment : Maybe Adjustment
     , variants : List Variant
     }
     -> Font
@@ -176,7 +169,30 @@ full =
     Internal.htmlClass classes.fullSize
 
 
-{-| -}
+{-| **Note** it's likely that `Font.external` will cause a flash on your page on loading.
+
+To bypass this, import your fonts using a separate stylesheet and just use `Font.typeface`.
+
+It's likely that `Font.external` will be removed or redesigned in the future to avoid the flashing.
+
+`Font.external` can be used to import font files. Let's say you found a neat font on <http://fonts.google.com>:
+
+    import Element
+    import Element.Font as Font
+
+    view =
+        Element.el
+            [ Font.family
+                [ Font.external
+                    { name = "Roboto"
+                    , url = "https://fonts.googleapis.com/css?family=Roboto"
+                    }
+                , Font.sansSerif
+                ]
+            ]
+            (Element.text "Woohoo, I'm stylish text")
+
+-}
 external : { url : String, name : String } -> Font
 external { url, name } =
     Internal.ImportFont name url
@@ -364,9 +380,7 @@ type alias Variant =
         ]
         (text "rendered with smallcaps")
 
-**Note** These will **not** stack. If you want multiple variants, you should use `Font.with`.
-
-If you specify a font variant on an element, then it will override all variants listed in `Font.with`.
+**Note** These will **not** stack. If you want multiple variants, you should use `Font.variantList`.
 
 -}
 variant : Variant -> Attribute msg
@@ -383,6 +397,54 @@ variant var =
                 Internal.Single ("v-" ++ name ++ "-" ++ String.fromInt index)
                     "font-feature-settings"
                     ("\"" ++ name ++ "\" " ++ String.fromInt index)
+
+
+isSmallCaps x =
+    case x of
+        Internal.VariantActive feat ->
+            feat == "smcp"
+
+        _ ->
+            False
+
+
+{-| -}
+variantList : List Variant -> Attribute msg
+variantList vars =
+    let
+        features =
+            vars
+                |> List.map Internal.renderVariant
+
+        hasSmallCaps =
+            List.any isSmallCaps vars
+
+        name =
+            if hasSmallCaps then
+                vars
+                    |> List.map Internal.variantName
+                    |> String.join "-"
+                    |> (\x -> x ++ "-sc")
+
+            else
+                vars
+                    |> List.map Internal.variantName
+                    |> String.join "-"
+
+        featureString =
+            String.join ", " features
+    in
+    Internal.StyleClass Flag.fontVariant <|
+        Internal.Style ("v-" ++ name)
+            [ Internal.Property "font-feature-settings" featureString
+            , Internal.Property "font-variant"
+                (if hasSmallCaps then
+                    "small-caps"
+
+                 else
+                    "normal"
+                )
+            ]
 
 
 {-| [Small caps](https://en.wikipedia.org/wiki/Small_caps) are rendered using uppercase glyphs, but at the size of lowercase glyphs.

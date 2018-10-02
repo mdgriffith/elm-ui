@@ -90,6 +90,7 @@ module Internal.Model exposing
     , renderFontClassName
     , renderHeight
     , renderRoot
+    , renderVariant
     , renderWidth
     , rootStyle
     , rowClass
@@ -103,6 +104,7 @@ module Internal.Model exposing
     , transformClass
     , unstyled
     , unwrapDecorations
+    , variantName
     )
 
 {-| -}
@@ -222,8 +224,7 @@ type Font
     | ImportFont String String
     | FontWith
         { name : String
-        , url : Maybe String
-        , adjustment : Adjustment
+        , adjustment : Maybe Adjustment
         , variants : List Variant
         }
 
@@ -244,6 +245,18 @@ renderVariant var =
 
         VariantIndexed name index ->
             "\"" ++ name ++ "\" " ++ String.fromInt index
+
+
+variantName var =
+    case var of
+        VariantActive name ->
+            name
+
+        VariantOff name ->
+            name ++ "-0"
+
+        VariantIndexed name index ->
+            name ++ "-" ++ String.fromInt index
 
 
 renderVariants typeface =
@@ -2309,14 +2322,12 @@ renderTopLevelValues rules =
                 ImportFont _ url ->
                     Just ("@import url('" ++ url ++ "');")
 
-                FontWith with ->
-                    case with.url of
-                        Just x ->
-                            Just ("@import url('" ++ x ++ "');")
-
-                        Nothing ->
-                            Nothing
-
+                -- FontWith with ->
+                --     case with.url of
+                --         Just x ->
+                --             Just ("@import url('" ++ x ++ "');")
+                --         Nothing ->
+                --             Nothing
                 _ ->
                     Nothing
 
@@ -2457,12 +2468,17 @@ typefaceAdjustment typefaces =
                 Nothing ->
                     case face of
                         FontWith with ->
-                            Just
-                                ( fontAdjustmentRules
-                                    (.full (convertAdjustment with.adjustment))
-                                , fontAdjustmentRules
-                                    (.capital (convertAdjustment with.adjustment))
-                                )
+                            case with.adjustment of
+                                Nothing ->
+                                    found
+
+                                Just adjustment ->
+                                    Just
+                                        ( fontAdjustmentRules
+                                            (.full (convertAdjustment adjustment))
+                                        , fontAdjustmentRules
+                                            (.capital (convertAdjustment adjustment))
+                                        )
 
                         _ ->
                             found
