@@ -1035,6 +1035,7 @@ baseSheet =
                                 , Prop "top" "0"
                                 , Prop "margin" "0 !important"
                                 , Prop "pointer-events" "none"
+                                , Prop "z-index" "20"
                                 , Child "*"
                                     [ Prop "pointer-events" "auto"
                                     ]
