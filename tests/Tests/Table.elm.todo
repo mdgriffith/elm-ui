@@ -1,12 +1,12 @@
-module Tests.Table exposing (..)
+module Tests.Table exposing (box, container, main, view)
 
-import Tests.Palette as Palette exposing (..)
 import Html
 import Testable
 import Testable.Element as Element exposing (..)
 import Testable.Element.Background as Background
 import Testable.Element.Font as Font
 import Testable.Runner
+import Tests.Palette as Palette exposing (..)
 
 
 {-| -}
@@ -104,7 +104,7 @@ view =
                         el [ Font.color white ] <|
                             text "Index"
                   , view =
-                        \i row -> el [ Background.color lightGrey, width fill ] <| text (toString i)
+                        \i row -> el [ Background.color lightGrey, width fill ] <| text (String.fromInt i)
                   }
                 , { header =
                         el [ Font.color white ] <|

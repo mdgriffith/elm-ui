@@ -299,7 +299,7 @@ fromRgb255 clr =
         clr.alpha
 
 
-{-| Deconstruct a `Color` into it's rgb channels.
+{-| Deconstruct a `Color` into its rgb channels.
 -}
 toRgb :
     Color

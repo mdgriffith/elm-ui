@@ -1,49 +1,36 @@
-module Main exposing (allFlags, doesntInvalidateOthers, invalidateSelf, main)
+module Flags exposing (suite)
 
+{-| -}
+
+import Expect
 import Html
 import Internal.Flag as Flag
+import Test
 
 
-main =
-    Html.div []
-        [ Html.text "Verify All Flags invalidate themselves"
-        , Html.div []
-            (List.indexedMap invalidateSelf allFlags)
-        , Html.text "Verify All Flags don't interfere with other flags"
-        , Html.div []
-            (List.indexedMap doesntInvalidateOthers allFlags)
+suite =
+    Test.describe "Flag Operations"
+        [ Test.test "All Flags Invalidate Themselves" <|
+            \_ ->
+                Expect.equal True (List.all (\flag -> Flag.present flag (Flag.add flag Flag.none)) allFlags)
+        , Test.test "All Flags don't interfere with each other" <|
+            \_ ->
+                Expect.equal True (List.all (doesntInvalidateOthers allFlags) allFlags)
         ]
 
 
-invalidateSelf i flag =
-    if Flag.present flag (Flag.add flag Flag.none) then
-        Html.text ""
-
-    else
-        Html.div [] [ Html.text (toString (Flag.value flag) ++ " at index " ++ toString i ++ " does not invalidate itself") ]
-
-
-doesntInvalidateOthers i flag =
+doesntInvalidateOthers others flag =
     let
         withFlag =
             Flag.none
                 |> Flag.add flag
-
-        passing =
-            List.all identity <|
-                List.indexedMap
-                    (\j otherFlag ->
-                        Flag.present otherFlag (Flag.add otherFlag withFlag)
-                    )
-                    allFlags
     in
-    if passing then
-        Html.text ""
-
-    else
-        Html.div []
-            [ Html.text (toString (Flag.value flag) ++ " at index " ++ toString i ++ " invalidates other flags!")
-            ]
+    List.all identity <|
+        List.map
+            (\otherFlag ->
+                Flag.present otherFlag (Flag.add otherFlag withFlag)
+            )
+            others
 
 
 allFlags =
