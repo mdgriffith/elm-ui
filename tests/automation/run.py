@@ -101,5 +101,5 @@ if __name__ == "__main__":
 
     pprint.pprint(results)
 
-    with open("results/test-results.json", 'w') as RESULTS:
+    with open("automation/results/test-results.json", 'w') as RESULTS:
         RESULTS.write(json.dumps(results, indent=4))
