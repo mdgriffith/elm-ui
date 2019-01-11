@@ -1,8 +1,20 @@
-module Main exposing (..)
+module ClassNames exposing (suite)
 
+{-| -}
+
+import Expect
 import Html
 import Internal.Flag as Flag
 import Internal.Style
+import Test
+
+
+suite =
+    Test.describe "Classname Collisions"
+        [ Test.test "No duplicates" <|
+            \_ ->
+                Expect.equal [] onlyDuplicates
+        ]
 
 
 main =

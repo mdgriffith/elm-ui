@@ -1,4 +1,4 @@
-module Tests.Basic exposing (view)
+module Tests.WidthHeight exposing (view)
 
 {-| -}
 

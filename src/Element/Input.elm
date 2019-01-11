@@ -352,7 +352,7 @@ defaultThumb =
             Input.defaultThumb
         }
 
-The `thumb` is the icon that you can move around.
+`Element.behindContent` is used to render the track of the slider. Without it, no track would be rendered. The `thumb` is the icon that you can move around.
 
 The slider can be vertical or horizontal depending on the width/height of the slider.
 
@@ -1297,20 +1297,9 @@ optionWith val view =
         ]
         { onChange = ChooseLunch
         , selected = Just model.lunch
-        , label = Input.labelAbove (text "Lunch")
+        , label = Input.labelAbove [] (text "Lunch")
         , options =
-            [ Input.styledChoice Burrito <|
-                \selected ->
-                    Element.row
-                        [ spacing 5 ]
-                        [ el None [] <|
-                            if selected then
-                                text ":D"
-
-                            else
-                                text ":("
-                        , text "burrito"
-                        ]
+            [ Input.option Burrito (text "Burrito")
             , Input.option Taco (text "Taco!")
             , Input.option Gyro (text "Gyro")
             ]

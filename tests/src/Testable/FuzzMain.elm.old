@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module FuzzMain exposing (Model, Msg(..), PossibleAttributes, Stage(..), Testable, TestableElement(..), allIndividualTestables, allPossibilities, analyze, attr, availableAttributes, content, createContainer, createElement, generateTest, generateTests, heightFill, heightPx, heights, init, layout, main, possibleToList, runTest, styles, subscriptions, testableLayout, tests, update, view, viewResult, widthFill, widthPx, widths)
 
 {-| -}
 
@@ -26,7 +26,8 @@ init : ( Model Msg, Cmd Msg )
 init =
     ( { current = Nothing
       , upcoming =
-            Tests.tests
+            -- Tests.tests
+            []
 
       -- generateTests (Random.initialSeed 227852860) 1
       , finished = []
@@ -93,6 +94,7 @@ generateTests : Random.Seed -> Int -> List (Testable msg)
 generateTests seed num =
     if num <= 0 then
         []
+
     else
         let
             ( testable, newSeed ) =
@@ -225,6 +227,7 @@ view model =
                         -- , Background.color Color.grey
                         ]
                         (List.map viewResult model.finished)
+
             else
                 Html.text "running?"
 
