@@ -1563,6 +1563,7 @@ classifyDevice window =
             Landscape
     }
 
+
 {-| When designing it's nice to use a modular scale to set spacial rythms.
 
     scaled =
