@@ -8,6 +8,7 @@ module Element.Input exposing
     , radio, radioRow, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
     , focusedOnLoad
+    , numericText
     )
 
 {-|
@@ -1158,6 +1159,41 @@ username =
         , spellchecked = False
         , autofill = Just "username"
         }
+
+
+{-| -}
+numericText :
+    { min : Maybe Float
+    , max : Maybe Float
+    , step : Maybe Float
+    }
+    -> List (Attribute msg)
+    ->
+        { onChange : String -> msg
+        , text : String
+        , placeholder : Maybe (Placeholder msg)
+        , label : Label msg
+        }
+    -> Element msg
+numericText { min, max, step } attrs =
+    let
+        asAttrList mf attr =
+            mf
+                |> Maybe.map (\m -> [ Element.htmlAttribute (attr (String.fromFloat m)) ])
+                |> Maybe.withDefault []
+
+        mergedAttrs =
+            asAttrList min Html.Attributes.min
+                ++ asAttrList max Html.Attributes.max
+                ++ asAttrList step Html.Attributes.step
+                ++ attrs
+    in
+    textHelper
+        { type_ = TextInputNode "number"
+        , spellchecked = False
+        , autofill = Just "number"
+        }
+        mergedAttrs
 
 
 {-| -}
