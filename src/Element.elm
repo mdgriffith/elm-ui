@@ -34,7 +34,7 @@ module Element exposing
 
 # Rows and Columns
 
-When we want more than one child on an element, we want to be _specific_ about how they will be layed out.
+When we want more than one child on an element, we want to be _specific_ about how they will be laid out.
 
 So, the common ways to do that would be `row` and `column`.
 
@@ -1442,7 +1442,7 @@ transparent on =
 
 {-| A capped value between 0.0 and 1.0, where 0.0 is transparent and 1.0 is fully opaque.
 
-Semantically equavalent to html opacity.
+Semantically equivalent to html opacity.
 
 -}
 alpha : Float -> Attr decorative msg
@@ -1559,7 +1559,7 @@ classifyDevice window =
 {-| When designing it's nice to use a modular scale to set spacial rythms.
 
     scaled =
-        Scale.modular 16 1.25
+        modular 16 1.25
 
 A modular scale starts with a number, and multiplies it by a ratio a number of times.
 Then, when setting font sizes you can use:
