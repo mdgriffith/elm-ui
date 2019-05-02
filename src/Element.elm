@@ -109,6 +109,8 @@ will result in a layout like
 
 Where there are two elements on the left, one in the center, and one on the right.
 
+**Note** For text alignment, check out `Element.Font`!
+
 @docs centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
 
 
