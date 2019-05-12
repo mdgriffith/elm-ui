@@ -1559,7 +1559,7 @@ classifyDevice window =
 {-| When designing it's nice to use a modular scale to set spacial rythms.
 
     scaled =
-        Scale.modular 16 1.25
+        Element.modular 16 1.25
 
 A modular scale starts with a number, and multiplies it by a ratio a number of times.
 Then, when setting font sizes you can use:
