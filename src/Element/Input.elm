@@ -759,7 +759,7 @@ textHelper textInput attrs textOptions =
                 TextArea ->
                     let
                         { maybePadding, heightContent, maybeSpacing, adjustedAttributes, maybeBorder } =
-                            attributes
+                            (value textOptions.text :: attributes)
                                 |> List.foldr
                                     (\attr found ->
                                         case attr of
