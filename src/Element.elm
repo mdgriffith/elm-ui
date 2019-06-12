@@ -105,9 +105,11 @@ If alignment is set on elements in a layout such as `row`, then the element will
 
 will result in a layout like
 
-    |-|-|     |-|        |-|
+    |-|-|    |-|    |-|
 
-Where there are two elements on the left, one in the center, and one on the right.
+Where there are two elements on the left, one on the right, and one in the center of the space between the elements on the left and right.
+
+**Note** For text alignment, check out `Element.Font`!
 
 @docs centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
 
@@ -1532,13 +1534,21 @@ type Orientation
 classifyDevice : { window | height : Int, width : Int } -> Device
 classifyDevice window =
     { class =
-        if window.width <= 600 then
+        let
+            shortSide =
+                if window.width < window.height then
+                    window.width
+
+                else
+                    window.height
+        in
+        if shortSide <= 600 then
             Phone
 
-        else if window.width > 600 && window.width <= 1200 then
+        else if shortSide > 600 && shortSide <= 1200 then
             Tablet
 
-        else if window.width > 1200 && window.width <= 1800 then
+        else if shortSide > 1200 && shortSide <= 1800 then
             Desktop
 
         else
@@ -1555,7 +1565,7 @@ classifyDevice window =
 {-| When designing it's nice to use a modular scale to set spacial rythms.
 
     scaled =
-        Scale.modular 16 1.25
+        Element.modular 16 1.25
 
 A modular scale starts with a number, and multiplies it by a ratio a number of times.
 Then, when setting font sizes you can use:

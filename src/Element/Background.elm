@@ -35,7 +35,7 @@ image src =
     Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") center / cover no-repeat"))
 
 
-{-| A centered background image that keeps its natural propostions, but scales to fit the space.
+{-| A centered background image that keeps its natural proportions, but scales to fit the space.
 -}
 uncropped : String -> Attribute msg
 uncropped src =

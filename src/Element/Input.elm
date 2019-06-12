@@ -741,8 +741,8 @@ textHelper textInput attrs textOptions =
             case textInput.type_ of
                 TextInputNode inputType ->
                     ( "input"
-                    , [ value textOptions.text
-                      , Internal.Attr (Html.Attributes.type_ inputType)
+                    , [ Internal.Attr (Html.Attributes.type_ inputType)
+                      , value textOptions.text
                       , spellcheck textInput.spellchecked
                       , Internal.htmlClass classes.inputText
                       , case textInput.autofill of
@@ -759,7 +759,7 @@ textHelper textInput attrs textOptions =
                 TextArea ->
                     let
                         { maybePadding, heightContent, maybeSpacing, adjustedAttributes, maybeBorder } =
-                            attributes
+                            (value textOptions.text :: attributes)
                                 |> List.foldr
                                     (\attr found ->
                                         case attr of
