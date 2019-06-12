@@ -189,9 +189,16 @@ The main technique for responsiveness is to store window size information in you
 
 Install the `Browser` package, and set up a subscription for [`Browser.Events.onResize`](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Events#onResize).
 
-You'll also need to retrieve the initial window size. You can either run the following task:
+You'll also need to retrieve the initial window size. You can either use [`Browser.Dom.getViewport`](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Dom#getViewport):
 
-    Task.perform (\size -> WindowResize { width = size.width, height = size.height }) Window.size
+    Task.perform
+        (\window ->
+            WindowResize
+                { width = round window.viewport.width
+                , height = round window.viewport.height
+                }
+        )
+        Browser.Dom.getViewport
 
 Or pass in `window.innerWidth` and `window.innerHeight` as flags to your program, which is the preferred way. This requires minor setup on the JS side, but allows you to avoid the state where you don't have window info.
 
