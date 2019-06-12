@@ -1538,13 +1538,21 @@ type Orientation
 classifyDevice : { window | height : Int, width : Int } -> Device
 classifyDevice window =
     { class =
-        if window.width <= 600 then
+        let
+            shortSide =
+                if window.width < window.height then
+                    window.width
+
+                else
+                    window.height
+        in
+        if shortSide <= 600 then
             Phone
 
-        else if window.width > 600 && window.width <= 1200 then
+        else if shortSide > 600 && shortSide <= 1200 then
             Tablet
 
-        else if window.width > 1200 && window.width <= 1800 then
+        else if shortSide > 1200 && shortSide <= 1800 then
             Desktop
 
         else
