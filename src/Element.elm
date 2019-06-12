@@ -105,9 +105,9 @@ If alignment is set on elements in a layout such as `row`, then the element will
 
 will result in a layout like
 
-    |-|-|     |-|        |-|
+    |-|-|    |-|    |-|
 
-Where there are two elements on the left, one in the center, and one on the right.
+Where there are two elements on the left, one on the right, and one in the center of the space between the elements on the left and right.
 
 **Note** For text alignment, check out `Element.Font`!
 
