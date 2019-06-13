@@ -232,7 +232,7 @@ shadow almostShade =
     in
     Internal.StyleClass Flag.shadows <|
         Internal.Single
-            (Internal.boxShadowName shade)
+            (Internal.boxShadowClass shade)
             "box-shadow"
             (Internal.formatBoxShadow shade)
 
@@ -257,7 +257,7 @@ innerShadow almostShade =
     in
     Internal.StyleClass Flag.shadows <|
         Internal.Single
-            (Internal.boxShadowName shade)
+            (Internal.boxShadowClass shade)
             "box-shadow"
             (Internal.formatBoxShadow shade)
 

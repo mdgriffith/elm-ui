@@ -41,7 +41,7 @@ module Internal.Model exposing
     , asParagraph
     , asRow
     , asTextColumn
-    , boxShadowName
+    , boxShadowClass
     , columnClass
     , composeTransformation
     , contextClasses
@@ -98,7 +98,7 @@ module Internal.Model exposing
     , spacingName
     , staticRoot
     , tag
-    , textShadowName
+    , textShadowClass
     , toHtml
     , toStyleSheet
     , transformClass
@@ -3050,12 +3050,12 @@ formatTextShadow shadow =
         ]
 
 
-textShadowName shadow =
+textShadowClass shadow =
     String.concat
         [ "txt"
-        , String.fromFloat (Tuple.first shadow.offset) ++ "px"
-        , String.fromFloat (Tuple.second shadow.offset) ++ "px"
-        , String.fromFloat shadow.blur ++ "px"
+        , floatClass (Tuple.first shadow.offset) ++ "px"
+        , floatClass (Tuple.second shadow.offset) ++ "px"
+        , floatClass shadow.blur ++ "px"
         , formatColorClass shadow.color
         ]
 
@@ -3076,17 +3076,17 @@ formatBoxShadow shadow =
             ]
 
 
-boxShadowName shadow =
+boxShadowClass shadow =
     String.concat <|
         [ if shadow.inset then
             "box-inset"
 
           else
             "box-"
-        , String.fromFloat (Tuple.first shadow.offset) ++ "px"
-        , String.fromFloat (Tuple.second shadow.offset) ++ "px"
-        , String.fromFloat shadow.blur ++ "px"
-        , String.fromFloat shadow.size ++ "px"
+        , floatClass (Tuple.first shadow.offset) ++ "px"
+        , floatClass (Tuple.second shadow.offset) ++ "px"
+        , floatClass shadow.blur ++ "px"
+        , floatClass shadow.size ++ "px"
         , formatColorClass shadow.color
         ]
 

@@ -346,7 +346,7 @@ shadow :
     -> Attr decorative msg
 shadow shade =
     Internal.StyleClass Flag.txtShadows <|
-        Internal.Single (Internal.textShadowName shade) "text-shadow" (Internal.formatTextShadow shade)
+        Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
 
 
 {-| A glow is just a simplified shadow.
@@ -361,7 +361,7 @@ glow clr i =
             }
     in
     Internal.StyleClass Flag.txtShadows <|
-        Internal.Single (Internal.textShadowName shade) "text-shadow" (Internal.formatTextShadow shade)
+        Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
 
 
 
