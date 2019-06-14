@@ -10,7 +10,7 @@ A few notes about my design process for `elm-ui`.
 
 I don't usually accept PRs that add features. Mainly this is because there is a bunch of design thought and research that needs to be done before a feature can be added.
 
-So, here's where you can help out!
+So, here are some other ways you can help if you so desire!
 
 # Bugs and Unexpected Things
 
