@@ -1285,7 +1285,7 @@ scale n =
     Internal.TransformComponent Flag.scale (Internal.Scale ( n, n, 1 ))
 
 
-{-| Angle is given in radians. [Here are some conversion functions if you want another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
+{-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
 rotate : Float -> Attr decorative msg
 rotate angle =
