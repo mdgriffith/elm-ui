@@ -703,7 +703,8 @@ input[type=range] {
 }
 
 /* Hide all syling for track */
-input[type=range]::-moz-range-track {
+input[type=range]::-moz-range-track,
+input[type=range]::-moz-range-progress {
     background: transparent;
     cursor: pointer;
 }
@@ -733,6 +734,7 @@ input[type=range]::-moz-range-thumb {
     background-color: black;
     border:none;
     border-radius: 5px;
+    cursor: pointer;
 }
 input[type=range]::-ms-thumb {
     opacity: 0.5;
@@ -1033,6 +1035,7 @@ baseSheet =
                                 , Prop "top" "0"
                                 , Prop "margin" "0 !important"
                                 , Prop "pointer-events" "none"
+                                , Prop "z-index" "20"
                                 , Child "*"
                                     [ Prop "pointer-events" "auto"
                                     ]

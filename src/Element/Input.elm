@@ -442,6 +442,20 @@ slider attributes input =
         className =
             "thmb-" ++ thumbWidthString ++ "-" ++ thumbHeightString
 
+        heightClassName = 
+            "height-px-" ++ trackHeightString
+
+        trackHeightString =
+            case trackHeight of
+                Nothing -> 
+                    "2px"
+
+                Just (Internal.Px px) ->
+                    String.fromInt px ++ "px"
+
+                _ ->
+                    "100%"
+
         thumbWidthString =
             case width of
                 Nothing ->
@@ -469,6 +483,11 @@ slider attributes input =
                 thumbWidthString
             , Internal.Property "height"
                 thumbHeightString
+            ]
+
+        trackShadowStyle =
+            [ Internal.Property "height"
+                  trackHeightString
             ]
     in
     applyLabel
@@ -516,6 +535,11 @@ slider attributes input =
                     (Internal.Style
                         ("input[type=\"range\"]." ++ className ++ "::-moz-range-thumb")
                         thumbShadowStyle
+                    )
+                , Internal.StyleClass Flag.gridTemplate
+                    (Internal.Style
+                        ("input[type=\"range\"]." ++ heightClassName ++ "::-moz-range-track, input[type=\"range\"]." ++ heightClassName ++ "::-moz-range-progress")
+                        trackShadowStyle
                     )
                 , Internal.StyleClass Flag.hover
                     (Internal.Style
