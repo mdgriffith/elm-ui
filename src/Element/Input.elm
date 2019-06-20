@@ -924,6 +924,12 @@ redistributeOver attr els =
         Internal.Width _ ->
             { els | parent = attr :: els.parent }
 
+        Internal.Height (Internal.Fill _) ->
+            { els
+                | fullParent = attr :: els.fullParent
+                , parent = attr :: els.parent
+            }
+
         Internal.Height h ->
             case h of
                 Internal.Content ->
