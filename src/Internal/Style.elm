@@ -1522,6 +1522,9 @@ baseSheet =
             ]
         , Descriptor (dot classes.inputMultiline)
             [ Prop "white-space" "pre-wrap"
+            , Descriptor (dot classes.paragraph)
+                [ Prop "white-space" "pre-wrap"
+                ]
             ]
         , Descriptor (dot classes.paragraph)
             [ Prop "display" "block"
