@@ -690,17 +690,24 @@ textHelper textInput attrs textOptions =
                 _ ->
                     False
 
+        isHeightContent attr =
+            case attr of
+                Internal.Height Internal.Content ->
+                    True
+
+                _ ->
+                    False
+
         bottomPadding attr =
             case attr of
                 Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
-                    Just
-                        (Element.paddingEach
+                    Just <|
+                        Element.paddingEach
                             { top = 0
                             , right = 0
                             , bottom = b
                             , left = 0
                             }
-                        )
 
                 _ ->
                     Nothing
@@ -711,7 +718,7 @@ textHelper textInput attrs textOptions =
                     False
 
                 TextArea ->
-                    Maybe.withDefault False redistributed.heightContent
+                    List.any isHeightContent withDefaults
 
         inputElement =
             Internal.element
@@ -775,11 +782,10 @@ textHelper textInput attrs textOptions =
                                     :: Internal.htmlClass classes.inputMultiline
                                     :: List.concat
                                         [ if heightContent then
-                                            List.filter onlySpacing redistributed.parent
-                                            --   redistributed.parent
+                                            redistributed.wrapper
 
                                           else
-                                            List.filter onlySpacing redistributed.parent
+                                            redistributed.wrapper
                                                 ++ List.filterMap bottomPadding redistributed.parent
                                         , case textOptions.placeholder of
                                             Nothing ->
@@ -887,7 +893,8 @@ calcMoveToCompensateForPadding attrs =
 redistribute them to the parent, the input, or the cover.
 
   - fullParent -> Wrapper around label and input
-  - parent -> wrapper around input
+  - parent -> parent of wrapper
+  - wrapper -> the element that is here to take up space.
   - cover -> things like placeholders or text areas which are layered on top of input.
   - input -> actual input element
 
@@ -895,20 +902,27 @@ redistribute them to the parent, the input, or the cover.
 redistribute :
     List (Attribute msg)
     ->
-        { parent : List (Attribute msg)
-        , fullParent : List (Attribute msg)
+        { fullParent : List (Attribute msg)
+        , parent : List (Attribute msg)
+        , wrapper : List (Attribute msg)
         , input : List (Attribute msg)
         , cover : List (Attribute msg)
-        , heightContent : Maybe Bool
         }
 redistribute attrs =
-    List.foldl redistributeOver { fullParent = [], parent = [], input = [], cover = [], heightContent = Nothing } attrs
+    List.foldl redistributeOver
+        { fullParent = []
+        , parent = []
+        , input = []
+        , cover = []
+        , wrapper = []
+        }
+        attrs
         |> (\redist ->
                 { parent = List.reverse redist.parent
                 , fullParent = List.reverse redist.fullParent
+                , wrapper = List.reverse redist.wrapper
                 , input = List.reverse redist.input
                 , cover = List.reverse redist.cover
-                , heightContent = redist.heightContent
                 }
            )
 
@@ -931,22 +945,9 @@ redistributeOver attr els =
             }
 
         Internal.Height h ->
-            case h of
-                Internal.Content ->
-                    { els
-                        | parent = attr :: els.parent
-                        , heightContent =
-                            els.heightContent
-                                |> orElse True
-                    }
-
-                _ ->
-                    { els
-                        | parent = attr :: els.parent
-                        , heightContent =
-                            els.heightContent
-                                |> orElse False
-                    }
+            { els
+                | parent = attr :: els.parent
+            }
 
         Internal.AlignX _ ->
             { els | fullParent = attr :: els.fullParent }
@@ -959,11 +960,16 @@ redistributeOver attr els =
                 | fullParent = attr :: els.fullParent
                 , parent = attr :: els.parent
                 , input = attr :: els.input
+                , wrapper = attr :: els.wrapper
             }
 
         Internal.StyleClass _ (Internal.PaddingStyle _ _ _ _ _) ->
             { els
                 | parent = attr :: els.parent
+
+                --   input = attr :: els.input
+                -- , wrapper = attr :: els.wrapper
+                , cover = attr :: els.cover
             }
 
         Internal.StyleClass _ (Internal.BorderWidth _ _ _ _ _) ->
