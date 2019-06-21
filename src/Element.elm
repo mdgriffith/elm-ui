@@ -1233,7 +1233,7 @@ downloadAs attrs { url, filename, label } =
 createNearby : Internal.Location -> Element msg -> Attribute msg
 createNearby loc element =
     case element of
-        Internl.Empty ->
+        Internal.Empty ->
             Internal.NoAttribute
 
         _ ->
