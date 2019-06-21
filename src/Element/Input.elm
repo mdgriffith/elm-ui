@@ -757,7 +757,6 @@ textHelper textInput attrs textOptions =
                 (Internal.Unkeyed [])
 
         wrappedInput =
-            -- if heightContent  then
             case textInput.type_ of
                 TextArea ->
                     -- textarea with height-content means that
@@ -1008,30 +1007,6 @@ redistributeOver attr els =
 
         Internal.TransformComponent _ _ ->
             { els | input = attr :: els.input }
-
-
-orElse thing maybe =
-    case maybe of
-        Nothing ->
-            Just thing
-
-        _ ->
-            maybe
-
-
-inheritablePlaceholderAttributes attr =
-    case attr of
-        Internal.StyleClass _ (Internal.PaddingStyle _ _ _ _ _) ->
-            True
-
-        Internal.StyleClass _ (Internal.BorderWidth _ _ _ _ _) ->
-            True
-
-        Internal.StyleClass _ (Internal.Transform _) ->
-            True
-
-        _ ->
-            False
 
 
 {-| -}
@@ -1759,17 +1734,6 @@ onFocusOut msg =
 onFocusIn : msg -> Attribute msg
 onFocusIn msg =
     Internal.Attr <| Html.Events.on "focusin" (Json.succeed msg)
-
-
-type_ : String -> Attribute msg
-type_ =
-    Internal.Attr << Html.Attributes.type_
-
-
-
--- checked : Bool -> Attribute msg
--- checked =
---     Internal.Attr << Html.Attributes.checked
 
 
 selected : Bool -> Attribute msg
