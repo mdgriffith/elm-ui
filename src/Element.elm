@@ -1226,28 +1226,42 @@ downloadAs attrs { url, filename, label } =
         (Internal.Unkeyed [ label ])
 
 
+
+{- NEARBYS -}
+
+
+createNearby : Internal.Location -> Element msg -> Attribute msg
+createNearby loc element =
+    case element of
+        Internl.Empty ->
+            Internal.NoAttribute
+
+        _ ->
+            Internal.Nearby loc element
+
+
 {-| -}
 below : Element msg -> Attribute msg
 below element =
-    Internal.Nearby Internal.Below element
+    createNearby Internal.Below element
 
 
 {-| -}
 above : Element msg -> Attribute msg
 above element =
-    Internal.Nearby Internal.Above element
+    createNearby Internal.Above element
 
 
 {-| -}
 onRight : Element msg -> Attribute msg
 onRight element =
-    Internal.Nearby Internal.OnRight element
+    createNearby Internal.OnRight element
 
 
 {-| -}
 onLeft : Element msg -> Attribute msg
 onLeft element =
-    Internal.Nearby Internal.OnLeft element
+    createNearby Internal.OnLeft element
 
 
 {-| This will place an element in front of another.
@@ -1257,14 +1271,14 @@ onLeft element =
 -}
 inFront : Element msg -> Attribute msg
 inFront element =
-    Internal.Nearby Internal.InFront element
+    createNearby Internal.InFront element
 
 
 {-| This will place an element between the background and the content of an element.
 -}
 behindContent : Element msg -> Attribute msg
 behindContent element =
-    Internal.Nearby Internal.Behind element
+    createNearby Internal.Behind element
 
 
 {-| -}
