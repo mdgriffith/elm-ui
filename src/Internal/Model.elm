@@ -2221,8 +2221,10 @@ renderFocusStyle focus =
                                     |> Tuple.mapFirst toFloat
                                     |> Tuple.mapSecond toFloat
                             , inset = False
-                            , blur = toFloat shadow.blur
-                            , size = toFloat shadow.size
+                            , blur =
+                                toFloat shadow.blur
+                            , size =
+                                toFloat shadow.size
                             }
                         )
                 )
@@ -2265,7 +2267,7 @@ focusDefaultStyle =
             { color =
                 Rgba (155 / 255) (203 / 255) 1 1
             , offset = ( 0, 0 )
-            , blur = 3
+            , blur = 0
             , size = 3
             }
     }
