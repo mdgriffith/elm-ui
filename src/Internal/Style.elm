@@ -204,6 +204,7 @@ classes =
 
     -- , hoverOpaque = "hover-opaque"
     , focus = "fcs"
+    , focusedWithin = "focus-within"
 
     -- , focusOpaque = "focus-opaque"
     , active = "atv"

@@ -732,7 +732,6 @@ textHelper textInput attrs textOptions =
                 )
                 ([ value textOptions.text
                  , Internal.Attr (Html.Events.onInput textOptions.onChange)
-                 , Internal.htmlClass "focusable"
                  , hiddenLabelAttribute textOptions.label
                  , spellcheck textInput.spellchecked
                  , Maybe.map autofill textInput.autofill
@@ -742,6 +741,7 @@ textHelper textInput attrs textOptions =
                             TextInputNode inputType ->
                                 [ Internal.Attr (Html.Attributes.type_ inputType)
                                 , Internal.htmlClass classes.inputText
+                                , Internal.htmlClass "focusable"
                                 ]
 
                             TextArea ->
@@ -769,6 +769,7 @@ textHelper textInput attrs textOptions =
                         ([ Element.width Element.fill
                          , Element.height (Element.px 100)
                          , Element.scrollbarY
+                         , Internal.htmlClass classes.focusedWithin
                          ]
                             ++ redistributed.parent
                         )

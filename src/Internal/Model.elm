@@ -83,8 +83,7 @@ module Internal.Model exposing
     , reduceRecursive
     , reduceStyles
     , reduceStylesRecursive
-    , removeNever
-    ,  renderFocusStyle
+    ,  removeNever
        -- , renderFont
 
     , renderFontClassName
@@ -537,7 +536,7 @@ embedWith static opts styles children =
     if static then
         staticRoot
             :: (styles
-                    |> List.foldl reduceStyles ( Set.empty, [ renderFocusStyle opts.focus ] )
+                    |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
                     |> Tuple.second
                     -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
                     -- |> sortedReduce
@@ -547,7 +546,7 @@ embedWith static opts styles children =
 
     else
         (styles
-            |> List.foldl reduceStyles ( Set.empty, [ renderFocusStyle opts.focus ] )
+            |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
             |> Tuple.second
             -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
             -- |> sortedReduce
@@ -561,7 +560,7 @@ embedKeyed static opts styles children =
         ( "static-stylesheet", staticRoot )
             :: ( "dynamic-stylesheet"
                , styles
-                    |> List.foldl reduceStyles ( Set.empty, [ renderFocusStyle opts.focus ] )
+                    |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
                     |> Tuple.second
                     -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
                     -- |> sortedReduce
@@ -572,7 +571,7 @@ embedKeyed static opts styles children =
     else
         ( "dynamic-stylesheet"
         , styles
-            |> List.foldl reduceStyles ( Set.empty, [ renderFocusStyle opts.focus ] )
+            |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
             |> Tuple.second
             -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
             -- |> sortedReduce
@@ -2206,9 +2205,9 @@ renderFontClassName font current =
 
 renderFocusStyle :
     FocusStyle
-    -> Style
+    -> List Style
 renderFocusStyle focus =
-    Style (Internal.Style.dot classes.any ++ ":focus .focusable, " ++ Internal.Style.dot classes.any ++ ".focusable:focus")
+    [ Style (Internal.Style.dot classes.focusedWithin ++ ":focus-within")
         (List.filterMap identity
             [ Maybe.map (\color -> Property "border-color" (formatColor color)) focus.borderColor
             , Maybe.map (\color -> Property "background-color" (formatColor color)) focus.backgroundColor
@@ -2231,6 +2230,30 @@ renderFocusStyle focus =
             , Just <| Property "outline" "none"
             ]
         )
+    , Style (Internal.Style.dot classes.any ++ ":focus .focusable, " ++ Internal.Style.dot classes.any ++ ".focusable:focus")
+        (List.filterMap identity
+            [ Maybe.map (\color -> Property "border-color" (formatColor color)) focus.borderColor
+            , Maybe.map (\color -> Property "background-color" (formatColor color)) focus.backgroundColor
+            , Maybe.map
+                (\shadow ->
+                    Property "box-shadow"
+                        (formatBoxShadow
+                            { color = shadow.color
+                            , offset =
+                                shadow.offset
+                                    |> Tuple.mapFirst toFloat
+                                    |> Tuple.mapSecond toFloat
+                            , inset = False
+                            , blur = toFloat shadow.blur
+                            , size = toFloat shadow.size
+                            }
+                        )
+                )
+                focus.shadow
+            , Just <| Property "outline" "none"
+            ]
+        )
+    ]
 
 
 focusDefaultStyle : { backgroundColor : Maybe Color, borderColor : Maybe Color, shadow : Maybe Shadow }
