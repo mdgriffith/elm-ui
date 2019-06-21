@@ -853,7 +853,7 @@ textHelper textInput attrs textOptions =
                                 Internal.NoAttribute
                       ]
                         ++ adjustedAttributes
-                    , [ Internal.unstyled (Html.text textOptions.text) ]
+                    , []
                     )
 
         heightFillFromChild =
