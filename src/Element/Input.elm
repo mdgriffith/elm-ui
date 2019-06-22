@@ -669,8 +669,354 @@ type alias Text msg =
     }
 
 
-type Padding
-    = Padding Int Int Int Int
+{-| -}
+textHelper : TextInput -> List (Attribute msg) -> Text msg -> Element msg
+textHelper textInput attrs textOptions =
+    let
+        withDefaults =
+            defaultTextBoxStyle ++ attrs
+
+        redistributed =
+            redistribute withDefaults
+
+        moveUpToCompensateForPadding =
+            calcMoveToCompensateForPadding withDefaults
+
+        onlySpacing attr =
+            case attr of
+                Internal.StyleClass _ (Internal.SpacingStyle _ _ _) ->
+                    True
+
+                _ ->
+                    False
+
+        isHeightContent attr =
+            case attr of
+                Internal.Height Internal.Content ->
+                    True
+
+                _ ->
+                    False
+
+        bottomPadding attr =
+            case attr of
+                Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
+                    Just <|
+                        Element.paddingEach
+                            { top = 0
+                            , right = 0
+                            , bottom = b
+                            , left = 0
+                            }
+
+                _ ->
+                    Nothing
+
+        heightContent =
+            case textInput.type_ of
+                TextInputNode inputType ->
+                    False
+
+                TextArea ->
+                    List.any isHeightContent withDefaults
+
+        inputElement =
+            Internal.element
+                Internal.asEl
+                (case textInput.type_ of
+                    TextInputNode inputType ->
+                        Internal.NodeName "input"
+
+                    TextArea ->
+                        Internal.NodeName "textarea"
+                )
+                ([ value textOptions.text
+                 , Internal.Attr (Html.Events.onInput textOptions.onChange)
+                 , hiddenLabelAttribute textOptions.label
+                 , spellcheck textInput.spellchecked
+                 , Maybe.map autofill textInput.autofill
+                    |> Maybe.withDefault Internal.NoAttribute
+                 ]
+                    ++ (case textInput.type_ of
+                            TextInputNode inputType ->
+                                [ Internal.Attr (Html.Attributes.type_ inputType)
+                                , Internal.htmlClass classes.inputText
+                                , Internal.htmlClass "focusable"
+                                ]
+
+                            TextArea ->
+                                [ Element.clip
+                                , Element.height Element.fill
+                                , Internal.htmlClass classes.inputMultiline
+                                , Element.alpha 0.3
+                                , moveUpToCompensateForPadding
+                                ]
+                       )
+                    ++ redistributed.input
+                )
+                (Internal.Unkeyed [])
+
+        wrappedInput =
+            -- if heightContent  then
+            case textInput.type_ of
+                TextArea ->
+                    -- textarea with height-content means that
+                    -- the input element is rendered `inFront` and transparently.
+                    -- Then the input text is rendered as the actual element.
+                    Internal.element
+                        Internal.asEl
+                        Internal.div
+                        ([ Element.width Element.fill
+                         , Element.height (Element.px 100)
+                         , Element.scrollbarY
+                         , Internal.htmlClass classes.focusedWithin
+                         ]
+                            ++ redistributed.parent
+                        )
+                        (Internal.Unkeyed
+                            [ Internal.element
+                                Internal.asParagraph
+                                Internal.div
+                                (Element.width Element.fill
+                                    :: Element.height Element.fill
+                                    :: Element.inFront inputElement
+                                    :: Internal.htmlClass classes.inputMultiline
+                                    :: List.concat
+                                        [ if heightContent then
+                                            redistributed.wrapper
+
+                                          else
+                                            redistributed.wrapper
+                                                ++ List.filterMap bottomPadding redistributed.parent
+                                        , case textOptions.placeholder of
+                                            Nothing ->
+                                                []
+
+                                            Just place ->
+                                                [ renderPlaceholder place redistributed.cover (textOptions.text == "")
+                                                ]
+                                        ]
+                                )
+                                (Internal.Unkeyed
+                                    [ Internal.unstyled (Html.text textOptions.text) ]
+                                )
+                            ]
+                        )
+
+                TextInputNode inputType ->
+                    Internal.element
+                        Internal.asEl
+                        Internal.div
+                        (Element.width Element.fill
+                            :: List.concat
+                                [ redistributed.parent
+                                , case textOptions.placeholder of
+                                    Nothing ->
+                                        []
+
+                                    Just place ->
+                                        [ renderPlaceholder place redistributed.cover (textOptions.text == "")
+                                        ]
+                                ]
+                        )
+                        (Internal.Unkeyed [ inputElement ])
+    in
+    applyLabel
+        (Internal.Class Flag.cursor classes.cursorText
+            :: (if isHiddenLabel textOptions.label then
+                    Internal.NoAttribute
+
+                else
+                    Element.spacing
+                        5
+               )
+            :: Region.announce
+            :: redistributed.fullParent
+        )
+        textOptions.label
+        wrappedInput
+
+
+renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on =
+    Element.inFront
+        (Element.el
+            (defaultTextPadding
+                :: forPlaceholder
+                ++ [ Font.color charcoal
+                   , Internal.htmlClass (classes.noTextSelection ++ " " ++ classes.passPointerEvents)
+                   , Border.color (Element.rgba 0 0 0 0)
+                   , Background.color (Element.rgba 0 0 0 0)
+                   , Element.height Element.fill
+                   , Element.width Element.fill
+                   , Element.alpha
+                        (if on then
+                            1
+
+                         else
+                            0
+                        )
+                   ]
+                ++ placeholderAttrs
+            )
+            placeholderEl
+        )
+
+
+{-| Because textareas are now shadowed, where they're rendered twice,
+we to move the literal text area up because spacing is based on line height.
+-}
+calcMoveToCompensateForPadding : List (Attribute msg) -> Attribute msg
+calcMoveToCompensateForPadding attrs =
+    let
+        gatherSpacing attr found =
+            case attr of
+                Internal.StyleClass _ (Internal.SpacingStyle _ x y) ->
+                    case found of
+                        Nothing ->
+                            Just y
+
+                        _ ->
+                            found
+
+                _ ->
+                    found
+    in
+    case List.foldr gatherSpacing Nothing attrs of
+        Nothing ->
+            Internal.NoAttribute
+
+        Just vSpace ->
+            Element.moveUp (toFloat vSpace / 2)
+
+
+{-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
+
+redistribute them to the parent, the input, or the cover.
+
+  - fullParent -> Wrapper around label and input
+  - parent -> parent of wrapper
+  - wrapper -> the element that is here to take up space.
+  - cover -> things like placeholders or text areas which are layered on top of input.
+  - input -> actual input element
+
+-}
+redistribute :
+    List (Attribute msg)
+    ->
+        { fullParent : List (Attribute msg)
+        , parent : List (Attribute msg)
+        , wrapper : List (Attribute msg)
+        , input : List (Attribute msg)
+        , cover : List (Attribute msg)
+        }
+redistribute attrs =
+    List.foldl redistributeOver
+        { fullParent = []
+        , parent = []
+        , input = []
+        , cover = []
+        , wrapper = []
+        }
+        attrs
+        |> (\redist ->
+                { parent = List.reverse redist.parent
+                , fullParent = List.reverse redist.fullParent
+                , wrapper = List.reverse redist.wrapper
+                , input = List.reverse redist.input
+                , cover = List.reverse redist.cover
+                }
+           )
+
+
+redistributeOver attr els =
+    case attr of
+        Internal.Nearby _ _ ->
+            { els | parent = attr :: els.parent }
+
+        Internal.Width (Internal.Fill _) ->
+            { els | fullParent = attr :: els.fullParent }
+
+        Internal.Width _ ->
+            { els | parent = attr :: els.parent }
+
+        Internal.Height (Internal.Fill _) ->
+            { els
+                | fullParent = attr :: els.fullParent
+                , parent = attr :: els.parent
+            }
+
+        Internal.Height h ->
+            { els
+                | parent = attr :: els.parent
+            }
+
+        Internal.AlignX _ ->
+            { els | fullParent = attr :: els.fullParent }
+
+        Internal.AlignY _ ->
+            { els | fullParent = attr :: els.fullParent }
+
+        Internal.StyleClass _ (Internal.SpacingStyle _ _ _) ->
+            { els
+                | fullParent = attr :: els.fullParent
+                , parent = attr :: els.parent
+                , input = attr :: els.input
+                , wrapper = attr :: els.wrapper
+            }
+
+        Internal.StyleClass _ (Internal.PaddingStyle _ _ _ _ _) ->
+            { els
+                | parent = attr :: els.parent
+
+                --   input = attr :: els.input
+                -- , wrapper = attr :: els.wrapper
+                , cover = attr :: els.cover
+            }
+
+        Internal.StyleClass _ (Internal.BorderWidth _ _ _ _ _) ->
+            { els
+                | parent = attr :: els.parent
+                , cover = attr :: els.cover
+            }
+
+        Internal.StyleClass _ (Internal.Transform _) ->
+            { els
+                | parent = attr :: els.parent
+                , cover = attr :: els.cover
+            }
+
+        Internal.StyleClass _ (Internal.FontSize _) ->
+            { els | fullParent = attr :: els.fullParent }
+
+        Internal.StyleClass _ (Internal.FontFamily _ _) ->
+            { els | fullParent = attr :: els.fullParent }
+
+        Internal.StyleClass _ _ ->
+            { els | parent = attr :: els.parent }
+
+        Internal.NoAttribute ->
+            els
+
+        Internal.Attr a ->
+            { els | input = attr :: els.input }
+
+        Internal.Describe _ ->
+            { els | input = attr :: els.input }
+
+        Internal.Class _ _ ->
+            { els | parent = attr :: els.parent }
+
+        Internal.TransformComponent _ _ ->
+            { els | input = attr :: els.input }
+
+
+orElse thing maybe =
+    case maybe of
+        Nothing ->
+            Just thing
+
+        _ ->
+            maybe
 
 
 inheritablePlaceholderAttributes attr =
@@ -686,337 +1032,6 @@ inheritablePlaceholderAttributes attr =
 
         _ ->
             False
-
-
-{-|
-
-    attributes
-
-    <parent>
-        attribute::width/height fill
-        attribtue::alignment
-        attribute::spacing
-        attribute::fontsize/family/lineheight
-        <el-wrapper>
-                attribute::nearby(placeholder)
-                attribute::width/height fill
-                inFront ->
-                    placeholder
-                        attribute::padding
-
-
-            <input>
-                textarea ->
-                    special height for height-content
-                        attribtue::padding
-                        attribute::lineHeight
-                attributes
-        <label>
-
--}
-textHelper : TextInput -> List (Attribute msg) -> Text msg -> Element msg
-textHelper textInput attrs textOptions =
-    let
-        attributes =
-            defaultTextBoxStyle ++ attrs
-
-        behavior =
-            [ Internal.Attr (Html.Events.onInput textOptions.onChange) ]
-
-        forPlaceholder =
-            List.filter inheritablePlaceholderAttributes attributes
-
-        noNearbys =
-            List.filter (not << forNearby) attributes
-
-        forNearby attr =
-            case attr of
-                Internal.Nearby _ _ ->
-                    True
-
-                _ ->
-                    False
-
-        ( inputNode, inputAttrs, inputChildren ) =
-            case textInput.type_ of
-                TextInputNode inputType ->
-                    ( "input"
-                    , [ Internal.Attr (Html.Attributes.type_ inputType)
-                      , value textOptions.text
-                      , spellcheck textInput.spellchecked
-                      , Internal.htmlClass classes.inputText
-                      , case textInput.autofill of
-                            Nothing ->
-                                Internal.NoAttribute
-
-                            Just fill ->
-                                autofill fill
-                      ]
-                        ++ noNearbys
-                    , []
-                    )
-
-                TextArea ->
-                    let
-                        { maybePadding, heightContent, maybeSpacing, adjustedAttributes, maybeBorder } =
-                            (value textOptions.text :: attributes)
-                                |> List.foldr
-                                    (\attr found ->
-                                        case attr of
-                                            Internal.Describe _ ->
-                                                found
-
-                                            Internal.Height len ->
-                                                case found.heightContent of
-                                                    Nothing ->
-                                                        { found
-                                                            | heightContent = Just (Internal.isContent len)
-                                                            , adjustedAttributes = attr :: found.adjustedAttributes
-                                                        }
-
-                                                    _ ->
-                                                        found
-
-                                            Internal.StyleClass _ (Internal.BorderWidth _ t r b l) ->
-                                                case found.maybeBorder of
-                                                    Nothing ->
-                                                        { found
-                                                            | maybeBorder = Just (Padding t r b l)
-                                                            , adjustedAttributes = attr :: found.adjustedAttributes
-                                                        }
-
-                                                    _ ->
-                                                        found
-
-                                            Internal.StyleClass _ (Internal.PaddingStyle _ t r b l) ->
-                                                case found.maybePadding of
-                                                    Nothing ->
-                                                        { found
-                                                            | maybePadding = Just (Padding t r b l)
-
-                                                            -- Skip storing padding because it's being customized later
-                                                            , adjustedAttributes = found.adjustedAttributes
-                                                        }
-
-                                                    _ ->
-                                                        found
-
-                                            Internal.StyleClass _ (Internal.SpacingStyle _ x y) ->
-                                                case found.maybeSpacing of
-                                                    Nothing ->
-                                                        { found
-                                                            | maybeSpacing = Just y
-                                                            , adjustedAttributes = attr :: found.adjustedAttributes
-                                                        }
-
-                                                    _ ->
-                                                        found
-
-                                            _ ->
-                                                { found | adjustedAttributes = attr :: found.adjustedAttributes }
-                                    )
-                                    { maybePadding = Nothing
-                                    , heightContent = Nothing
-                                    , maybeBorder = Nothing
-                                    , maybeSpacing = Nothing
-                                    , adjustedAttributes = []
-                                    }
-
-                        -- NOTE: This is where default text spacing is set
-                        spacing =
-                            Maybe.withDefault 5 maybeSpacing
-                    in
-                    ( "textarea"
-                    , [ spellcheck textInput.spellchecked
-                      , Internal.htmlClass classes.inputMultiline
-                      , Maybe.map autofill textInput.autofill
-                            |> Maybe.withDefault Internal.NoAttribute
-                      , case maybePadding of
-                            Nothing ->
-                                Internal.NoAttribute
-
-                            Just (Padding t r b l) ->
-                                Element.paddingEach
-                                    { top = max 0 (t - (spacing // 2))
-                                    , bottom = max 0 (b - (spacing // 2))
-                                    , left = l
-                                    , right = r
-                                    }
-                      , case heightContent of
-                            Nothing ->
-                                Internal.NoAttribute
-
-                            Just True ->
-                                textHeightContent textOptions.text spacing maybePadding maybeBorder
-
-                            Just False ->
-                                Internal.NoAttribute
-                      ]
-                        ++ adjustedAttributes
-                    , []
-                    )
-
-        heightFillFromChild =
-            Internal.get attributes <|
-                \attr ->
-                    case attr of
-                        Internal.Height (Internal.Fill _) ->
-                            True
-
-                        _ ->
-                            False
-
-        attributesFromChild =
-            Internal.get attributes <|
-                \attr ->
-                    case attr of
-                        Internal.Width (Internal.Fill _) ->
-                            True
-
-                        Internal.Height (Internal.Fill _) ->
-                            True
-
-                        Internal.AlignX _ ->
-                            True
-
-                        Internal.AlignY _ ->
-                            True
-
-                        Internal.StyleClass _ (Internal.SpacingStyle _ _ _) ->
-                            True
-
-                        Internal.StyleClass _ (Internal.FontSize _) ->
-                            True
-
-                        Internal.StyleClass _ (Internal.FontFamily _ _) ->
-                            True
-
-                        _ ->
-                            False
-
-        nearbys =
-            Internal.get attributes <|
-                \attr ->
-                    case attr of
-                        Internal.Nearby _ _ ->
-                            True
-
-                        _ ->
-                            False
-
-        inputPadding =
-            Internal.get attributes <|
-                \attr ->
-                    case attr of
-                        Internal.StyleClass _ (Internal.PaddingStyle _ _ _ _ _) ->
-                            True
-
-                        _ ->
-                            False
-
-        inputElement =
-            Internal.element
-                Internal.asEl
-                Internal.div
-                (Element.width Element.fill
-                    :: List.concat
-                        [ nearbys
-                        , heightFillFromChild
-                        , case textOptions.placeholder of
-                            Nothing ->
-                                []
-
-                            Just (Placeholder placeholderAttrs placeholderEl) ->
-                                [ Element.inFront
-                                    (Element.el
-                                        (defaultTextPadding
-                                            :: forPlaceholder
-                                            ++ [ Font.color charcoal
-                                               , Internal.htmlClass (classes.noTextSelection ++ " " ++ classes.passPointerEvents)
-                                               , Border.color (Element.rgba 0 0 0 0)
-                                               , Background.color (Element.rgba 0 0 0 0)
-                                               , Element.height Element.fill
-                                               , Element.width Element.fill
-                                               , Element.alpha
-                                                    (if textOptions.text == "" then
-                                                        1
-
-                                                     else
-                                                        0
-                                                    )
-                                               ]
-                                            ++ placeholderAttrs
-                                        )
-                                        placeholderEl
-                                    )
-                                ]
-                        ]
-                )
-                (Internal.Unkeyed
-                    [ Internal.element
-                        Internal.asEl
-                        (Internal.NodeName inputNode)
-                        (List.concat
-                            [ [ focusDefault attrs
-                              , hiddenLabelAttribute textOptions.label
-                              ]
-                            , inputAttrs
-                            , behavior
-                            ]
-                        )
-                        (Internal.Unkeyed inputChildren)
-                    ]
-                )
-    in
-    applyLabel
-        (Internal.Class Flag.cursor classes.cursorText
-            :: (if isHiddenLabel textOptions.label then
-                    Internal.NoAttribute
-
-                else
-                    Element.spacing
-                        5
-               )
-            :: Region.announce
-            :: attributesFromChild
-        )
-        textOptions.label
-        inputElement
-
-
-textHeightContent textValue spacing maybePadding maybeBorder =
-    let
-        newlineCount =
-            String.lines textValue
-                |> List.length
-                |> (\x ->
-                        if x < 1 then
-                            1
-
-                        else
-                            x
-                   )
-
-        topBottom (Padding t _ b _) =
-            t + b
-
-        additionalSpacing =
-            ((newlineCount - 1) * spacing)
-                + Maybe.withDefault 0 (Maybe.map topBottom maybePadding)
-                + Maybe.withDefault 0 (Maybe.map topBottom maybeBorder)
-
-        heightValue count =
-            "calc("
-                ++ String.fromInt count
-                ++ "em + "
-                ++ String.fromInt additionalSpacing
-                ++ "px) !important"
-    in
-    Internal.StyleClass Flag.heightTextAreaContent
-        (Internal.Single ("textarea-height-" ++ String.fromInt newlineCount)
-            "height"
-            (heightValue newlineCount)
-        )
 
 
 {-| -}

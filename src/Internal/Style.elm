@@ -204,6 +204,7 @@ classes =
 
     -- , hoverOpaque = "hover-opaque"
     , focus = "fcs"
+    , focusedWithin = "focus-within"
 
     -- , focusOpaque = "focus-opaque"
     , active = "atv"
@@ -1522,6 +1523,9 @@ baseSheet =
             ]
         , Descriptor (dot classes.inputMultiline)
             [ Prop "white-space" "pre-wrap"
+            , Descriptor (dot classes.paragraph)
+                [ Prop "white-space" "pre-wrap"
+                ]
             ]
         , Descriptor (dot classes.paragraph)
             [ Prop "display" "block"
