@@ -1,0 +1,24 @@
+{
+  "name": "render-benchmark",
+  "version": "1.0.0",
+  "description": "A CLI for capturing rendering performance",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bench": "node runtime/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdgriffith/render-benchmark.git"
+  },
+  "author": "Matthew Griffith <mdg.griffith@gmail.com> (http://mechanical-elephant.com/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mdgriffith/render-benchmark/issues"
+  },
+  "homepage": "https://github.com/mdgriffith/render-benchmark#readme",
+  "dependencies": {
+    "node-elm-compiler": "^5.0.3",
+    "puppeteer": "^1.18.0"
+  }
+}
