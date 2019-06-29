@@ -20,7 +20,7 @@ This means if a key is changed between renders, then the diffing step will be sk
 
 -}
 
-import Element exposing (Attribute, Element, fill, height, width)
+import Element exposing (Attribute, Element, fill, height, shrink, width)
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
 
@@ -31,8 +31,8 @@ el attrs child =
     Internal.element
         Internal.asEl
         Internal.div
-        (width Element.shrink
-            :: height Element.shrink
+        (width shrink
+            :: height shrink
             :: attrs
         )
         (Internal.Keyed [ child ])
@@ -44,9 +44,9 @@ row attrs children =
     Internal.element
         Internal.asRow
         Internal.div
-        (Internal.htmlClass classes.contentLeft
-            :: Internal.htmlClass classes.contentCenterY
-            :: width fill
+        (Internal.htmlClass (classes.contentLeft ++ " " ++ classes.contentCenterY)
+            :: width shrink
+            :: height shrink
             :: attrs
         )
         (Internal.Keyed children)
@@ -58,10 +58,13 @@ column attrs children =
     Internal.element
         Internal.asColumn
         Internal.div
-        (Internal.htmlClass classes.contentTop
-            :: Internal.htmlClass classes.contentLeft
-            :: height fill
-            :: width fill
+        (Internal.htmlClass
+            (classes.contentTop
+                ++ " "
+                ++ classes.contentLeft
+            )
+            :: height shrink
+            :: width shrink
             :: attrs
         )
         (Internal.Keyed children)
