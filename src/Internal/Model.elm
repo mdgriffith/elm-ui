@@ -1034,7 +1034,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                 in
                                 gatherAttrRecursive (classes ++ " " ++ newClass)
                                     node
-                                    (Flag.merge addToFlags has)
+                                    (Flag.merge addToFlags (Flag.add Flag.width has))
                                     transform
                                     (newStyles ++ styles)
                                     attrs
@@ -1112,7 +1112,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                 in
                                 gatherAttrRecursive (classes ++ " " ++ newClass)
                                     node
-                                    (Flag.merge addToFlags has)
+                                    (Flag.merge addToFlags (Flag.add Flag.height has))
                                     transform
                                     (newStyles ++ styles)
                                     attrs
