@@ -1,51 +1,136 @@
 module Element.Input exposing
-    ( button
+    ( focusedOnLoad
+    , button
     , checkbox, defaultCheckbox
-    , text, Placeholder, placeholder
+    , text, multiline
+    , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
-    , multiline
     , slider, Thumb, thumb, defaultThumb
     , radio, radioRow, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
-    , focusedOnLoad
     )
 
-{-|
+{-| Input elements have a lot of constraints!
+
+We want all of our input elements to:
+
+  - _Always be accessible_
+  - _Behave intuitively_
+  - _Be completely restyleable_
+
+While these three goals may seem pretty obvious, Html and CSS have made it surprisingly difficult to achieve!
+
+And incredibly difficult for develoeprs to remember all the tricks necessary to make things work. If you've every tried to make a `<textarea>` be the height of it's content or restyle a radio button while maintaining accessibility, you may be familiar!
+
+This module is intended to be accessible by default. You shouldn't have to wade through docs, articles, and books to find out [exactly how accessible your html actually is](https://www.powermapper.com/tests/screen-readers/aria/index.html).
+
+
+# Focus Styling
+
+All Elements can be styled on focus by using [`Element.focusStyle`](Element#focusStyle) to set a global focus style or [`Element.focused`](Element#focused) to set a focus style individually for an element.
+
+@docs focusedOnLoad
+
+
+# Buttons
 
 @docs button
+
+
+# Checkboxes
+
+A checkbox requires you to store a `Bool` in your model.
+
+This is also the first input element that has a [`required label`](#Label).
+
+    import Element exposing (text)
+    import Element.Input as Input
+
+    type Msg
+        = GuacamoleChecked Bool
+
+    view model =
+        Input.checkbox []
+            { onChange = GuacamoleChecked
+            , icon = Input.defaultCheckbox
+            , checked = model.guacamole
+            , label =
+                Input.labelRight []
+                    (text "Do you want Guacamole?")
+            }
 
 @docs checkbox, defaultCheckbox
 
 
-## Text Input
+# Text
 
-@docs text, Placeholder, placeholder
+@docs text, multiline
 
-We can also give a hint about what type of content our text field contains. This will allow things like autofill to work correctly.
+@docs Placeholder, placeholder
+
+
+## Text with autofill
+
+If we want to play nicely with a browser's ability to autofill a form, we need to be able to give it a hint about what we're expecting.
+
+The following inputs are very similar to `Input.text`, but they give the browser a hint to allow autofill to work correctly.
 
 @docs username, newPassword, currentPassword, email, search, spellChecked
 
 
-## Multiline Text
+# Sliders
 
-@docs multiline
+A slider is great for choosing between a range of numerical values.
 
-
-## Slider
+  - **thumb** - The icon that you click and drag to change the value.
+  - **track** - The line behind the thumb denoting where you can slide to.
 
 @docs slider, Thumb, thumb, defaultThumb
 
 
-## Radio Buttons
+# Radio Selection
+
+The fact that we still call this a radio selection is fascinating. I can't remember the last time I actually used an honest-to-goodness button on a radio. Chalk it up along with the floppy disk save icon or the word [Dashboard](https://en.wikipedia.org/wiki/Dashboard).
+
+Perhaps a better name would be `Input.chooseOne`, because this allows you to select one of a set of options!
+
+Nevertheless, here we are. Here's how you put one together
+
+    Input.radio
+        [ padding 10
+        , spacing 20
+        ]
+        { onChange = ChooseLunch
+        , selected = Just model.lunch
+        , label = Input.labelAbove [] (text "Lunch")
+        , options =
+            [ Input.option Burrito (text "Burrito")
+            , Input.option Taco (text "Taco!")
+            , Input.option Gyro (text "Gyro")
+            ]
+        }
+
+**Note** we're using `Input.option`, which will render the default radio icon you're probably used to. If you want compeltely custom styling, use `Input.optionWith`!
 
 @docs radio, radioRow, Option, option, optionWith, OptionState
 
 
-## Labels
+# Labels
+
+Every input has a required `Label`.
 
 @docs Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
 
-@docs focusedOnLoad
+
+# Form Elements
+
+You might be wondering where something like `<form>` is.
+
+What I've found is that most people who want `<form>` usually want it for the [implicit submission behavior](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#implicit-submission) or to be clearer, they want to do something when the `Enter` key is pressed.
+
+Instead of implicit submission behavior, [try making an `onEnter` event handler like in this Ellie Example](https://ellie-app.com/5X6jBKtxzdpa1). Then everything is explicit!
+
+And no one has to look up obtuse html documentation to understand the behavior of their code :).
 
 -}
 
@@ -97,8 +182,7 @@ type LabelLocation
     | Below
 
 
-{-| Every input has a required `label`.
--}
+{-| -}
 type Label msg
     = Label LabelLocation (List (Attribute msg)) (Element msg)
     | HiddenLabel String
@@ -156,14 +240,24 @@ hiddenLabelAttribute label =
 
 {-| A standard button.
 
-The `onPress` handler will be fired either `onClick` or when the element is focused and the enter key has been pressed.
+The `onPress` handler will be fired either `onClick` or when the element is focused and the `Enter` key has been pressed.
 
+    import Element exposing (rgb255, text)
+    import Element.Background as Background
     import Element.Input as Input
 
-    Input.button []
-        { onPress = ClickMsg
-        , label = text "My Button"
-        }
+    blue =
+        Element.rgb255 238 238 238
+
+    myButton =
+        Input.button
+            [ Background.color blue
+            , Element.focused
+                [ Background.color purple ]
+            ]
+            { onPress = ClickMsg
+            , label = text "My Button"
+            }
 
 `onPress` takes a `Maybe msg`. If you provide the value `Nothing`, then the button will be disabled.
 
@@ -237,7 +331,14 @@ type alias Checkbox msg =
     }
 
 
-{-| -}
+{-|
+
+  - **onChange** - The `Msg` to send.
+  - **icon** - The checkbox icon to show. This can be whatever you'd like, but `Input.defaultCheckbox` is included to get you started.
+  - **checked** - The current checked state.
+  - **label** - The [`Label`](#Label) for this checkbox
+
+-}
 checkbox :
     List (Attribute msg)
     ->
@@ -343,7 +444,9 @@ defaultThumb =
             )
         ]
         { onChange = AdjustValue
-        , label = Input.labelAbove [] (text "My Slider Value")
+        , label =
+            Input.labelAbove []
+                (text "My Slider Value")
         , min = 0
         , max = 75
         , step = Nothing
@@ -360,7 +463,7 @@ The slider can be vertical or horizontal depending on the width/height of the sl
   - `height (px someHeight)` and `width (px someWidth)` where `someHeight` > `someWidth` will also do it.
   - otherwise, the slider will be horizontal.
 
-**Note:** If you want a slider for an `Int` value:
+**Note** If you want a slider for an `Int` value:
 
   - set `step` to be `Just 1`, or some other whole value
   - `value = toFloat model.myInt`
@@ -1068,7 +1171,7 @@ search =
 
 It's `newPassword` instead of just `password` because it gives the browser a hint on what type of password input it is.
 
-A password takes all the arguments a normal `Input.text` would, and also `show`, which will remove the password mask (e.g. `****` vs `pass1234`)
+A password takes all the arguments a normal `Input.text` would, and also **show**, which will remove the password mask (e.g. `****` vs `pass1234`)
 
 -}
 newPassword :
@@ -1168,7 +1271,11 @@ email =
         }
 
 
-{-| -}
+{-| A multiline text input.
+
+By default it will have a minimum height of one line and resize based on it's contents.
+
+-}
 multiline :
     List (Attribute msg)
     ->
@@ -1254,8 +1361,7 @@ applyLabel attrs label input =
                         (Internal.Unkeyed [ labelElement, input ])
 
 
-{-| Add choices to your radio and select menus.
--}
+{-| -}
 type Option value msg
     = Option value (OptionState -> Element msg)
 
@@ -1267,35 +1373,21 @@ type OptionState
     | Selected
 
 
-{-| -}
+{-| Add a choice to your radio element. This will be rendered with the default radio icon.
+-}
 option : value -> Element msg -> Option value msg
 option val txt =
     Option val (defaultRadioOption txt)
 
 
-{-| -}
+{-| Customize exactly what your radio option should look like in different states.
+-}
 optionWith : value -> (OptionState -> Element msg) -> Option value msg
 optionWith val view =
     Option val view
 
 
-{-|
-
-    Input.radio
-        [ padding 10
-        , spacing 20
-        ]
-        { onChange = ChooseLunch
-        , selected = Just model.lunch
-        , label = Input.labelAbove [] (text "Lunch")
-        , options =
-            [ Input.option Burrito (text "Burrito")
-            , Input.option Taco (text "Taco!")
-            , Input.option Gyro (text "Gyro")
-            ]
-        }
-
--}
+{-| -}
 radio :
     List (Attribute msg)
     ->
@@ -1776,7 +1868,11 @@ autofill =
     Internal.Attr << Html.Attributes.attribute "autocomplete"
 
 
-{-| -}
+{-| Attach this attribute to any `Input` that you would like to be automatically focused when the page loads.
+
+You should only have a maximum of one per page.
+
+-}
 focusedOnLoad : Attribute msg
 focusedOnLoad =
     Internal.Attr <| Html.Attributes.autofocus True
@@ -1803,7 +1899,11 @@ defaultTextPadding =
     Element.paddingXY 12 12
 
 
-{-| -}
+{-| The blue default checked box icon.
+
+You'll likely want to make your own checkbox at some point that fits your design.
+
+-}
 defaultCheckbox : Bool -> Element msg
 defaultCheckbox checked =
     Element.el
@@ -1821,7 +1921,7 @@ defaultCheckbox checked =
 
             else
                 Element.rgb (211 / 255) (211 / 255) (211 / 255)
-        , Border.shadow <|
+        , Border.shadow
             { offset = ( 0, 0 )
             , blur = 1
             , size = 1
