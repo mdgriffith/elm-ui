@@ -681,18 +681,17 @@ overrides =
         ++ dot classes.any
         ++ dot classes.container
         ++ " { flex-basis: auto !important; }}"
-        ++ sliderOverrides
+        ++ sliderReset
+        ++ trackReset
+        ++ thumbReset
         ++ explainer
 
 
-sliderOverrides =
+sliderReset =
     """
-
-/* General Input Reset */
 input[type=range] {
-  -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
-  /* width: 100%;  Specific width is required for Firefox. */
-  background: transparent; /* Otherwise white in Chrome */
+  -webkit-appearance: none; 
+  background: transparent;
   position:absolute;
   left:0;
   top:0;
@@ -702,8 +701,11 @@ input[type=range] {
   height: 100%;
   opacity: 0;
 }
+"""
 
-/* Hide all syling for track */
+
+trackReset =
+    """
 input[type=range]::-moz-range-track {
     background: transparent;
     cursor: pointer;
@@ -716,8 +718,11 @@ input[type=range]::-webkit-slider-runnable-track {
     background: transparent;
     cursor: pointer;
 }
+"""
 
-/* Thumbs */
+
+thumbReset =
+    """
 input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
     opacity: 0.5;
@@ -1564,6 +1569,12 @@ baseSheet =
                 , Child (dot classes.text)
                     [ Prop "display" "inline"
                     , Prop "white-space" "normal"
+                    ]
+                , Child (dot classes.single)
+                    [ Child (dot classes.text)
+                        [ Prop "display" "inline"
+                        , Prop "white-space" "normal"
+                        ]
                     ]
                 ]
             , Child (dot classes.row)
