@@ -1,6 +1,7 @@
-port module Render exposing (Benchmark, toProgram)
+port module Benchmark.Render exposing (Benchmark, toProgram)
 
-{-| -}
+{-| This is the rendering harness. The actual cases are in `src`.
+-}
 
 import Browser
 import Browser.Events

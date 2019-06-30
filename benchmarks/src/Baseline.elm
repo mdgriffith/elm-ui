@@ -1,9 +1,9 @@
-module Bench exposing (bench)
+module Baseline exposing (bench)
 
 {-| -}
 
+import Benchmark.Render
 import Html
-import Render
 
 
 type Msg
@@ -11,7 +11,7 @@ type Msg
     | Tick Float
 
 
-bench : Render.Benchmark Int Msg
+bench : Benchmark.Render.Benchmark Int Msg
 bench =
     { name = "Baseline"
     , init = 0
