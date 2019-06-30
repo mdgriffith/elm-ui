@@ -1,0 +1,618 @@
+[
+    {
+        "name": "Baseline",
+        "perf": {
+            "Timestamp": 345986.702145,
+            "Nodes": 32,
+            "LayoutDuration": 0.145099,
+            "RecalcStyleDuration": 0.001496,
+            "ScriptDuration": 0.030322,
+            "JSHeapUsedSize": 2697680,
+            "FirstMeaningfulPaint": 345985.868625,
+            "DomContentLoaded": 345985.545586,
+            "NavigationStart": 345985.408888,
+            "TimeToFirstPaintMS": 323.0389999807812
+        },
+        "frames": {
+            "count": 597,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.77386934673367,
+            "fps": 59.616536848412224
+        }
+    },
+    {
+        "name": "elmUI1024",
+        "perf": {
+            "Timestamp": 345998.637,
+            "Nodes": 3110,
+            "LayoutDuration": 0.143663,
+            "RecalcStyleDuration": 0.037193,
+            "ScriptDuration": 0.124266,
+            "JSHeapUsedSize": 5124552,
+            "FirstMeaningfulPaint": 345997.643123,
+            "DomContentLoaded": 345997.439475,
+            "NavigationStart": 345997.266533,
+            "TimeToFirstPaintMS": 203.64799996605143
+        },
+        "frames": {
+            "count": 595,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.82689075630252,
+            "fps": 59.42868557730723
+        }
+    },
+    {
+        "name": "elmUI128",
+        "perf": {
+            "Timestamp": 346010.270391,
+            "Nodes": 422,
+            "LayoutDuration": 0.088399,
+            "RecalcStyleDuration": 0.004369,
+            "ScriptDuration": 0.039421,
+            "JSHeapUsedSize": 3047360,
+            "FirstMeaningfulPaint": 346009.272964,
+            "DomContentLoaded": 346009.171456,
+            "NavigationStart": 346009.087675,
+            "TimeToFirstPaintMS": 101.50799999246374
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.650582362728784,
+            "fps": 60.057959428400125
+        }
+    },
+    {
+        "name": "elmUI2048",
+        "perf": {
+            "Timestamp": 346022.120399,
+            "Nodes": 6182,
+            "LayoutDuration": 0.195444,
+            "RecalcStyleDuration": 0.06521,
+            "ScriptDuration": 0.148801,
+            "JSHeapUsedSize": 7547272,
+            "FirstMeaningfulPaint": 346021.124589,
+            "DomContentLoaded": 346020.833759,
+            "NavigationStart": 346020.651084,
+            "TimeToFirstPaintMS": 290.83000001264736
+        },
+        "frames": {
+            "count": 474,
+            "median": 20,
+            "mode": 18,
+            "avg": 21.116033755274263,
+            "fps": 47.35737835947647
+        }
+    },
+    {
+        "name": "elmUI24",
+        "perf": {
+            "Timestamp": 346033.831737,
+            "Nodes": 110,
+            "LayoutDuration": 0.094541,
+            "RecalcStyleDuration": 0.001542,
+            "ScriptDuration": 0.025952,
+            "JSHeapUsedSize": 2957488,
+            "FirstMeaningfulPaint": 346032.833183,
+            "DomContentLoaded": 346032.728693,
+            "NavigationStart": 346032.648695,
+            "TimeToFirstPaintMS": 104.48999999789521
+        },
+        "frames": {
+            "count": 599,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.681135225375627,
+            "fps": 59.94795836669335
+        }
+    },
+    {
+        "name": "elmUI256",
+        "perf": {
+            "Timestamp": 346045.348411,
+            "Nodes": 806,
+            "LayoutDuration": 0.095629,
+            "RecalcStyleDuration": 0.007168,
+            "ScriptDuration": 0.045604,
+            "JSHeapUsedSize": 3775848,
+            "FirstMeaningfulPaint": 346044.351806,
+            "DomContentLoaded": 346044.238766,
+            "NavigationStart": 346044.162083,
+            "TimeToFirstPaintMS": 113.03999996744096
+        },
+        "frames": {
+            "count": 600,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.656666666666666,
+            "fps": 60.03602161296778
+        }
+    },
+    {
+        "name": "elmUI4096",
+        "perf": {
+            "Timestamp": 346057.300433,
+            "Nodes": 12326,
+            "LayoutDuration": 0.228002,
+            "RecalcStyleDuration": 0.116152,
+            "ScriptDuration": 0.210452,
+            "JSHeapUsedSize": 13654464,
+            "FirstMeaningfulPaint": 346056.302642,
+            "DomContentLoaded": 346055.912087,
+            "NavigationStart": 346055.667222,
+            "TimeToFirstPaintMS": 390.5550000490621
+        },
+        "frames": {
+            "count": 239,
+            "median": 38,
+            "mode": 38,
+            "avg": 42,
+            "fps": 23.80952380952381
+        }
+    },
+    {
+        "name": "elmUI512",
+        "perf": {
+            "Timestamp": 346069.183102,
+            "Nodes": 1574,
+            "LayoutDuration": 0.130964,
+            "RecalcStyleDuration": 0.019871,
+            "ScriptDuration": 0.102341,
+            "JSHeapUsedSize": 3823384,
+            "FirstMeaningfulPaint": 346068.189191,
+            "DomContentLoaded": 346068.014006,
+            "NavigationStart": 346067.858869,
+            "TimeToFirstPaintMS": 175.18500000005588
+        },
+        "frames": {
+            "count": 597,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.765494137353432,
+            "fps": 59.64631831351784
+        }
+    },
+    {
+        "name": "elmUI64",
+        "perf": {
+            "Timestamp": 346080.805163,
+            "Nodes": 230,
+            "LayoutDuration": 0.086837,
+            "RecalcStyleDuration": 0.002749,
+            "ScriptDuration": 0.035007,
+            "JSHeapUsedSize": 3241216,
+            "FirstMeaningfulPaint": 346079.807008,
+            "DomContentLoaded": 346079.708721,
+            "NavigationStart": 346079.639147,
+            "TimeToFirstPaintMS": 98.28699997160584
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.640599001663894,
+            "fps": 60.093990600939904
+        }
+    },
+    {
+        "name": "elmUI8192",
+        "perf": {
+            "Timestamp": 346093.404299,
+            "Nodes": 24604,
+            "LayoutDuration": 0.396954,
+            "RecalcStyleDuration": 0.25935,
+            "ScriptDuration": 0.473007,
+            "JSHeapUsedSize": 21113448,
+            "FirstMeaningfulPaint": 0,
+            "DomContentLoaded": 346091.658898,
+            "NavigationStart": 346091.153798,
+            "TimeToFirstPaintMS": -346091658.898
+        },
+        "frames": {
+            "count": 106,
+            "median": 88,
+            "mode": 76,
+            "avg": 94.94339622641509,
+            "fps": 10.532591414944356
+        }
+    },
+    {
+        "name": "viewHtml1024",
+        "perf": {
+            "Timestamp": 346105.074855,
+            "Nodes": 2082,
+            "LayoutDuration": 0.113217,
+            "RecalcStyleDuration": 0.005573,
+            "ScriptDuration": 0.021185,
+            "JSHeapUsedSize": 3026520,
+            "FirstMeaningfulPaint": 346104.081608,
+            "DomContentLoaded": 346103.951646,
+            "NavigationStart": 346103.853903,
+            "TimeToFirstPaintMS": 129.96200000634417
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.630615640599,
+            "fps": 60.130065032516264
+        }
+    },
+    {
+        "name": "viewHtml128",
+        "perf": {
+            "Timestamp": 346116.54228,
+            "Nodes": 290,
+            "LayoutDuration": 0.084021,
+            "RecalcStyleDuration": 0.000915,
+            "ScriptDuration": 0.009023,
+            "JSHeapUsedSize": 2839840,
+            "FirstMeaningfulPaint": 346115.548342,
+            "DomContentLoaded": 346115.455214,
+            "NavigationStart": 346115.420731,
+            "TimeToFirstPaintMS": 93.12799997860566
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.628951747088188,
+            "fps": 60.13608164898939
+        }
+    },
+    {
+        "name": "viewHtml2048",
+        "perf": {
+            "Timestamp": 346128.083785,
+            "Nodes": 4130,
+            "LayoutDuration": 0.132194,
+            "RecalcStyleDuration": 0.011767,
+            "ScriptDuration": 0.033818,
+            "JSHeapUsedSize": 3553304,
+            "FirstMeaningfulPaint": 346127.093366,
+            "DomContentLoaded": 346126.933672,
+            "NavigationStart": 346126.879529,
+            "TimeToFirstPaintMS": 159.6939999726601
+        },
+        "frames": {
+            "count": 602,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.61794019933555,
+            "fps": 60.17592962814874
+        }
+    },
+    {
+        "name": "viewHtml24",
+        "perf": {
+            "Timestamp": 346139.80112,
+            "Nodes": 82,
+            "LayoutDuration": 0.10086,
+            "RecalcStyleDuration": 0.000441,
+            "ScriptDuration": 0.01238,
+            "JSHeapUsedSize": 2734168,
+            "FirstMeaningfulPaint": 346138.80972,
+            "DomContentLoaded": 346138.693184,
+            "NavigationStart": 346138.637483,
+            "TimeToFirstPaintMS": 116.53600004501641
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.64226289517471,
+            "fps": 60.08798240351929
+        }
+    },
+    {
+        "name": "viewHtml256",
+        "perf": {
+            "Timestamp": 346151.228859,
+            "Nodes": 546,
+            "LayoutDuration": 0.089365,
+            "RecalcStyleDuration": 0.001558,
+            "ScriptDuration": 0.009812,
+            "JSHeapUsedSize": 2978440,
+            "FirstMeaningfulPaint": 346150.23484,
+            "DomContentLoaded": 346150.134675,
+            "NavigationStart": 346150.104686,
+            "TimeToFirstPaintMS": 100.16500001074746
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.622296173044926,
+            "fps": 60.16016016016015
+        }
+    },
+    {
+        "name": "viewHtml4096",
+        "perf": {
+            "Timestamp": 346162.959497,
+            "Nodes": 8226,
+            "LayoutDuration": 0.218309,
+            "RecalcStyleDuration": 0.020438,
+            "ScriptDuration": 0.05622,
+            "JSHeapUsedSize": 4545408,
+            "FirstMeaningfulPaint": 346161.990085,
+            "DomContentLoaded": 346161.717714,
+            "NavigationStart": 346161.640804,
+            "TimeToFirstPaintMS": 272.3709999700077
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.625623960066555,
+            "fps": 60.14811849479584
+        }
+    },
+    {
+        "name": "viewHtml512",
+        "perf": {
+            "Timestamp": 346174.413124,
+            "Nodes": 1058,
+            "LayoutDuration": 0.0982,
+            "RecalcStyleDuration": 0.002726,
+            "ScriptDuration": 0.011984,
+            "JSHeapUsedSize": 3230320,
+            "FirstMeaningfulPaint": 346173.418192,
+            "DomContentLoaded": 346173.307241,
+            "NavigationStart": 346173.275328,
+            "TimeToFirstPaintMS": 110.9510000096634
+        },
+        "frames": {
+            "count": 602,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.619601328903656,
+            "fps": 60.169915042478756
+        }
+    },
+    {
+        "name": "viewHtml64",
+        "perf": {
+            "Timestamp": 346185.879167,
+            "Nodes": 162,
+            "LayoutDuration": 0.086741,
+            "RecalcStyleDuration": 0.000479,
+            "ScriptDuration": 0.008242,
+            "JSHeapUsedSize": 2775368,
+            "FirstMeaningfulPaint": 346184.884919,
+            "DomContentLoaded": 346184.789315,
+            "NavigationStart": 346184.760847,
+            "TimeToFirstPaintMS": 95.6039999728091
+        },
+        "frames": {
+            "count": 602,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.61794019933555,
+            "fps": 60.17592962814874
+        }
+    },
+    {
+        "name": "viewHtml8192",
+        "perf": {
+            "Timestamp": 346197.765446,
+            "Nodes": 16418,
+            "LayoutDuration": 0.330272,
+            "RecalcStyleDuration": 0.050241,
+            "ScriptDuration": 0.086286,
+            "JSHeapUsedSize": 6687328,
+            "FirstMeaningfulPaint": 0,
+            "DomContentLoaded": 346196.379984,
+            "NavigationStart": 346196.273358,
+            "TimeToFirstPaintMS": -346196379.984
+        },
+        "frames": {
+            "count": 582,
+            "median": 17,
+            "mode": 17,
+            "avg": 17.189003436426116,
+            "fps": 58.17672930827669
+        }
+    },
+    {
+        "name": "viewInline1024",
+        "perf": {
+            "Timestamp": 346209.261267,
+            "Nodes": 2082,
+            "LayoutDuration": 0.115626,
+            "RecalcStyleDuration": 0.00799,
+            "ScriptDuration": 0.039209,
+            "JSHeapUsedSize": 3297280,
+            "FirstMeaningfulPaint": 346208.276922,
+            "DomContentLoaded": 346208.132481,
+            "NavigationStart": 346208.072482,
+            "TimeToFirstPaintMS": 144.4410000112839
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.655574043261232,
+            "fps": 60.039960039960036
+        }
+    },
+    {
+        "name": "viewInline128",
+        "perf": {
+            "Timestamp": 346221.259416,
+            "Nodes": 290,
+            "LayoutDuration": 0.112782,
+            "RecalcStyleDuration": 0.00195,
+            "ScriptDuration": 0.017902,
+            "JSHeapUsedSize": 2894680,
+            "FirstMeaningfulPaint": 346220.276355,
+            "DomContentLoaded": 346220.248296,
+            "NavigationStart": 346220.051557,
+            "TimeToFirstPaintMS": 28.058999974746257
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.64559068219634,
+            "fps": 60.07596961215514
+        }
+    },
+    {
+        "name": "viewInline2048",
+        "perf": {
+            "Timestamp": 346232.845892,
+            "Nodes": 4130,
+            "LayoutDuration": 0.146042,
+            "RecalcStyleDuration": 0.012963,
+            "ScriptDuration": 0.05584,
+            "JSHeapUsedSize": 3667392,
+            "FirstMeaningfulPaint": 346231.862693,
+            "DomContentLoaded": 346231.683101,
+            "NavigationStart": 346231.607326,
+            "TimeToFirstPaintMS": 179.59200002951548
+        },
+        "frames": {
+            "count": 599,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.70450751252087,
+            "fps": 59.864081551069354
+        }
+    },
+    {
+        "name": "viewInline24",
+        "perf": {
+            "Timestamp": 346244.547507,
+            "Nodes": 82,
+            "LayoutDuration": 0.095162,
+            "RecalcStyleDuration": 0.000847,
+            "ScriptDuration": 0.011158,
+            "JSHeapUsedSize": 2750736,
+            "FirstMeaningfulPaint": 346243.551815,
+            "DomContentLoaded": 346243.44497,
+            "NavigationStart": 346243.397346,
+            "TimeToFirstPaintMS": 106.84500000206754
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.632279534109816,
+            "fps": 60.12404961984794
+        }
+    },
+    {
+        "name": "viewInline256",
+        "perf": {
+            "Timestamp": 346256.312428,
+            "Nodes": 546,
+            "LayoutDuration": 0.132689,
+            "RecalcStyleDuration": 0.00552,
+            "ScriptDuration": 0.024725,
+            "JSHeapUsedSize": 3080456,
+            "FirstMeaningfulPaint": 346255.335878,
+            "DomContentLoaded": 346255.166638,
+            "NavigationStart": 346255.08648,
+            "TimeToFirstPaintMS": 169.24000001745299
+        },
+        "frames": {
+            "count": 599,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.69282136894825,
+            "fps": 59.905990599059905
+        }
+    },
+    {
+        "name": "viewInline4096",
+        "perf": {
+            "Timestamp": 346268.55972,
+            "Nodes": 8226,
+            "LayoutDuration": 0.266169,
+            "RecalcStyleDuration": 0.040441,
+            "ScriptDuration": 0.151584,
+            "JSHeapUsedSize": 4803920,
+            "FirstMeaningfulPaint": 346267.570152,
+            "DomContentLoaded": 346267.554917,
+            "NavigationStart": 346267.010086,
+            "TimeToFirstPaintMS": 15.234999998938292
+        },
+        "frames": {
+            "count": 572,
+            "median": 17,
+            "mode": 17,
+            "avg": 17.51923076923077,
+            "fps": 57.080131723380894
+        }
+    },
+    {
+        "name": "viewInline512",
+        "perf": {
+            "Timestamp": 346280.413897,
+            "Nodes": 1058,
+            "LayoutDuration": 0.120525,
+            "RecalcStyleDuration": 0.00541,
+            "ScriptDuration": 0.025665,
+            "JSHeapUsedSize": 3425912,
+            "FirstMeaningfulPaint": 346279.440873,
+            "DomContentLoaded": 346279.280955,
+            "NavigationStart": 346279.218933,
+            "TimeToFirstPaintMS": 159.91799999028444
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.64226289517471,
+            "fps": 60.08798240351929
+        }
+    },
+    {
+        "name": "viewInline64",
+        "perf": {
+            "Timestamp": 346292.197182,
+            "Nodes": 162,
+            "LayoutDuration": 0.108792,
+            "RecalcStyleDuration": 0.00093,
+            "ScriptDuration": 0.014489,
+            "JSHeapUsedSize": 2806104,
+            "FirstMeaningfulPaint": 346291.219288,
+            "DomContentLoaded": 346291.080611,
+            "NavigationStart": 346291.032715,
+            "TimeToFirstPaintMS": 138.67700000992045
+        },
+        "frames": {
+            "count": 601,
+            "median": 17,
+            "mode": 17,
+            "avg": 16.638935108153078,
+            "fps": 60.1
+        }
+    },
+    {
+        "name": "viewInline8192",
+        "perf": {
+            "Timestamp": 346304.274811,
+            "Nodes": 16418,
+            "LayoutDuration": 0.473895,
+            "RecalcStyleDuration": 0.063373,
+            "ScriptDuration": 0.164557,
+            "JSHeapUsedSize": 7591024,
+            "FirstMeaningfulPaint": 0,
+            "DomContentLoaded": 346302.724079,
+            "NavigationStart": 346302.540332,
+            "TimeToFirstPaintMS": -346302724.079
+        },
+        "frames": {
+            "count": 430,
+            "median": 21,
+            "mode": 22,
+            "avg": 23.290697674418606,
+            "fps": 42.93559660509236
+        }
+    }
+]

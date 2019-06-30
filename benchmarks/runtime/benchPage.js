@@ -33,11 +33,15 @@ function summarize(frames) {
     }
 }
 
+const keep = ["Timestamp", "Nodes", "LayoutDuration", "RecalcStyleDuration", "ScriptDuration", "JSHeapUsedSize", "FirstMeaningfulPaint", "DomContentLoaded", "NavigationStart"]
+
+
 function extract(metrics) {
     var ext = {}
     metrics.metrics.forEach((item) => {
-        ext[item.name] = item.value
-
+        if (keep.indexOf(item.name) >= 0) {
+            ext[item.name] = item.value
+        }
     })
     ext.TimeToFirstPaintMS = 1000 * (ext.FirstMeaningfulPaint - ext.DomContentLoaded)
     return ext
