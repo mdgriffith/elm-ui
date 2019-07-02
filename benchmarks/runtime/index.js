@@ -15,36 +15,79 @@ main = Benchmark.Render.toProgram ${item.module}.${item.value}
     fs.writeFileSync('./tmp/Main.elm', entrypoint);
 }
 
+
+function regoupResults(results) {
+    var regrouped = {}
+
+    for (var i = 0; i < results.length; i++) {
+        if (results[i].group) {
+
+            var reorged = {
+                count: results[i].count
+                , fps: results[i].frames.fps
+                , timeToFirstPaintMS: results[i].perf.TimeToFirstPaintMS
+                , nodes: results[i].perf.Nodes
+                , layoutSeconds: results[i].perf.LayoutDuration
+                , recalcStyleSeconds: results[i].perf.RecalcStyleDuration
+                , scriptDurationSeconds: results[i].perf.ScriptDuration
+            }
+            if (results[i].group in regrouped) {
+                regrouped[results[i].group].results.push(reorged)
+            } else {
+                regrouped[results[i].group] = { results: [reorged], name: results[i].group }
+            }
+        }
+    }
+    return Object.values(regrouped)
+}
+
+
+async function write_results(allResults) {
+    var resultsDir = "results"
+    if (!fs.existsSync(resultsDir)) {
+        fs.mkdirSync(resultsDir);
+    }
+    var results = JSON.stringify(allResults)
+    var template = fs.readFileSync("./runtime/template/viewResults.html")
+    // we embed the compiled js to avoid having to start a server to read the app.
+    await compileToString(["./src/View/Results.elm"], { optimize: true }).then(function (compiled_elm_code) {
+        const compiled = eval(`\`${template}\``)
+        fs.writeFileSync(`./${resultsDir}/1.1.1-cand.html`, compiled)
+    });
+
+    // fs.writeFileSync(`./${resultsDir}/1.1.1-candidate-optimized.json`, results)
+}
+
 (async () => {
     const browser = await puppeteer.launch();
-    var instances = [{ module: "Baseline", value: "bench" }
-        , { module: "ManyElements", value: "elmUI1024" }
-        , { module: "ManyElements", value: "elmUI128" }
-        , { module: "ManyElements", value: "elmUI2048" }
-        , { module: "ManyElements", value: "elmUI24" }
-        , { module: "ManyElements", value: "elmUI256" }
-        , { module: "ManyElements", value: "elmUI4096" }
-        , { module: "ManyElements", value: "elmUI512" }
-        , { module: "ManyElements", value: "elmUI64" }
-        , { module: "ManyElements", value: "elmUI8192" }
-        , { module: "ManyElements", value: "viewHtml1024" }
-        , { module: "ManyElements", value: "viewHtml128" }
-        , { module: "ManyElements", value: "viewHtml2048" }
-        , { module: "ManyElements", value: "viewHtml24" }
-        , { module: "ManyElements", value: "viewHtml256" }
-        , { module: "ManyElements", value: "viewHtml4096" }
-        , { module: "ManyElements", value: "viewHtml512" }
-        , { module: "ManyElements", value: "viewHtml64" }
-        , { module: "ManyElements", value: "viewHtml8192" }
-        , { module: "ManyElements", value: "viewInline1024" }
-        , { module: "ManyElements", value: "viewInline128" }
-        , { module: "ManyElements", value: "viewInline2048" }
-        , { module: "ManyElements", value: "viewInline24" }
-        , { module: "ManyElements", value: "viewInline256" }
-        , { module: "ManyElements", value: "viewInline4096" }
-        , { module: "ManyElements", value: "viewInline512" }
-        , { module: "ManyElements", value: "viewInline64" }
-        , { module: "ManyElements", value: "viewInline8192" }
+    var instances = [{ module: "Baseline", group: null, value: "bench" }
+        , { module: "ManyElements", group: "elmUI", count: 1024, value: "elmUI1024" }
+        , { module: "ManyElements", group: "elmUI", count: 128, value: "elmUI128" }
+        , { module: "ManyElements", group: "elmUI", count: 2048, value: "elmUI2048" }
+        , { module: "ManyElements", group: "elmUI", count: 24, value: "elmUI24" }
+        , { module: "ManyElements", group: "elmUI", count: 256, value: "elmUI256" }
+        , { module: "ManyElements", group: "elmUI", count: 4096, value: "elmUI4096" }
+        , { module: "ManyElements", group: "elmUI", count: 512, value: "elmUI512" }
+        , { module: "ManyElements", group: "elmUI", count: 64, value: "elmUI64" }
+        , { module: "ManyElements", group: "elmUI", count: 8192, value: "elmUI8192" }
+        , { module: "ManyElements", group: "viewHtml", count: 1024, value: "viewHtml1024" }
+        , { module: "ManyElements", group: "viewHtml", count: 128, value: "viewHtml128" }
+        , { module: "ManyElements", group: "viewHtml", count: 2048, value: "viewHtml2048" }
+        , { module: "ManyElements", group: "viewHtml", count: 24, value: "viewHtml24" }
+        , { module: "ManyElements", group: "viewHtml", count: 256, value: "viewHtml256" }
+        , { module: "ManyElements", group: "viewHtml", count: 4096, value: "viewHtml4096" }
+        , { module: "ManyElements", group: "viewHtml", count: 512, value: "viewHtml512" }
+        , { module: "ManyElements", group: "viewHtml", count: 64, value: "viewHtml64" }
+        , { module: "ManyElements", group: "viewHtml", count: 8192, value: "viewHtml8192" }
+        , { module: "ManyElements", group: "viewInline", count: 1024, value: "viewInline1024" }
+        , { module: "ManyElements", group: "viewInline", count: 128, value: "viewInline128" }
+        , { module: "ManyElements", group: "viewInline", count: 2048, value: "viewInline2048" }
+        , { module: "ManyElements", group: "viewInline", count: 24, value: "viewInline24" }
+        , { module: "ManyElements", group: "viewInline", count: 256, value: "viewInline256" }
+        , { module: "ManyElements", group: "viewInline", count: 4096, value: "viewInline4096" }
+        , { module: "ManyElements", group: "viewInline", count: 512, value: "viewInline512" }
+        , { module: "ManyElements", group: "viewInline", count: 64, value: "viewInline64" }
+        , { module: "ManyElements", group: "viewInline", count: 8192, value: "viewInline8192" }
 
     ]
 
@@ -68,15 +111,17 @@ main = Benchmark.Render.toProgram ${item.module}.${item.value}
 
         const page = await browser.newPage();
         const results = await benchPage(page);
+        results.group = item.group
+        results.count = item.count
         await page.close()
         console.log(results)
         allResults.push(results)
     }
     await browser.close();
 
-    var resultsDir = "results"
-    if (!fs.existsSync(resultsDir)) {
-        fs.mkdirSync(resultsDir);
-    }
-    fs.writeFileSync(`./${resultsDir}/1.1.1-candidate-optimized.json`, JSON.stringify(allResults))
+
+    allResults = regoupResults(allResults)
+
+    write_results(allResults)
+
 })();

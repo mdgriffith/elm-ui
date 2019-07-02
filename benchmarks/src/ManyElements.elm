@@ -34,6 +34,7 @@ import Benchmark.Render
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
+import Element.Keyed
 import Html
 import Html.Attributes
 
@@ -235,13 +236,14 @@ elmUI name count =
 
 view model =
     Element.layout []
-        (Element.column [ spacing 8, centerX ]
+        (Element.Keyed.column [ spacing 8, centerX ]
             (List.map (viewEl model.index) model.elements)
         )
 
 
 viewEl selectedIndex index =
-    el
+    ( String.fromInt index
+    , el
         [ Background.color
             (if selectedIndex == index then
                 pink
@@ -257,8 +259,16 @@ viewEl selectedIndex index =
                 white
             )
         , padding 24
+        , width (px 500)
+        , height (px 70)
         ]
-        (text "Hello!")
+        (if selectedIndex == index then
+            text "selected"
+
+         else
+            text "Hello!"
+        )
+    )
 
 
 white =
@@ -315,7 +325,14 @@ viewHtmlElement selectedIndex index =
                 "pink"
             )
         ]
-        [ Html.text "Hello!" ]
+        [ Html.div []
+            [ if selectedIndex == index then
+                Html.text "selected"
+
+              else
+                Html.text "Hello!"
+            ]
+        ]
 
 
 {-| -}
@@ -368,4 +385,11 @@ viewInlineHtmlElement selectedIndex index =
             , Html.Attributes.style "padding" "24"
             ]
         )
-        [ Html.text "Hello!" ]
+        [ Html.div []
+            [ if selectedIndex == index then
+                Html.text "selected"
+
+              else
+                Html.text "Hello!"
+            ]
+        ]

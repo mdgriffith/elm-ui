@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Results</title>
+  <script>
+  ${compiled_elm_code}
+  </script>
+</head>
+
+<body>
+  <div id="elm"></div>
+  <script>
+    const results = ${results}
+
+    var app = Elm.View.Results.init({
+        node: document.getElementById('elm')
+    });
+
+    app.ports.worldToElm.send(results)
+
+  </script>
+</body>
+</html>
