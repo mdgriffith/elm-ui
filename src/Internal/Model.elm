@@ -2758,8 +2758,9 @@ toStyleSheetString options stylesheet =
                             ]
                         , renderStyle
                             maybePseudo
-                            ("textarea" ++ class)
+                            ("textarea" ++ any ++ class)
                             [ Property "line-height" ("calc(1em + " ++ String.fromInt y ++ "px)")
+                            , Property "height" ("calc(100% + " ++ String.fromInt y ++ "px)")
                             ]
 
                         -- , renderStyle

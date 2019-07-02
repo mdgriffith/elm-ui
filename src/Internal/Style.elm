@@ -252,6 +252,7 @@ classes =
     -- inputText
     , inputText = "it"
     , inputMultiline = "iml"
+    , inputMultilineParent = "imlp"
     }
 
 
@@ -1528,8 +1529,20 @@ baseSheet =
             ]
         , Descriptor (dot classes.inputMultiline)
             [ Prop "white-space" "pre-wrap"
+            , Prop "height" "100%"
+            , Prop "width" "100%"
+
+            -- , Prop "color" "transparent"
+            , Prop "background-color" "transparent"
+
+            -- , Prop "caret-color" "black"
+            ]
+        , Descriptor (dot classes.inputMultilineParent)
+            [ Prop "white-space" "pre-wrap"
+            , Prop "cursor" "text"
             , Descriptor (dot classes.paragraph)
                 [ Prop "white-space" "pre-wrap"
+                , Prop "color" "transparent"
                 ]
             ]
         , Descriptor (dot classes.paragraph)

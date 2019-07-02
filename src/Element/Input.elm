@@ -872,7 +872,6 @@ textHelper textInput attrs textOptions =
                                 [ Element.clip
                                 , Element.height Element.fill
                                 , Internal.htmlClass classes.inputMultiline
-                                , Element.alpha 0.3
                                 , moveUpToCompensateForPadding
                                 ]
                        )
@@ -890,7 +889,8 @@ textHelper textInput attrs textOptions =
                         Internal.asEl
                         Internal.div
                         ([ Element.width Element.fill
-                         , Element.height (Element.px 100)
+
+                         --  , Element.height (Element.px 100)
                          , Element.scrollbarY
                          , Internal.htmlClass classes.focusedWithin
                          ]
@@ -903,7 +903,7 @@ textHelper textInput attrs textOptions =
                                 (Element.width Element.fill
                                     :: Element.height Element.fill
                                     :: Element.inFront inputElement
-                                    :: Internal.htmlClass classes.inputMultiline
+                                    :: Internal.htmlClass classes.inputMultilineParent
                                     :: List.concat
                                         [ if heightContent then
                                             redistributed.wrapper
@@ -1991,6 +1991,7 @@ defaultTextBoxStyle =
     , Border.width 1
     , Element.spacing 3
     , Element.width Element.fill
+    , Element.height Element.shrink
     ]
 
 
