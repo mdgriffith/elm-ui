@@ -188,6 +188,27 @@ type Label msg
     | HiddenLabel String
 
 
+isStacked : Label msg -> Bool
+isStacked label =
+    case label of
+        Label loc _ _ ->
+            case loc of
+                OnRight ->
+                    False
+
+                OnLeft ->
+                    False
+
+                Above ->
+                    True
+
+                Below ->
+                    True
+
+        HiddenLabel _ ->
+            True
+
+
 {-| -}
 labelRight : List (Attribute msg) -> Element msg -> Label msg
 labelRight =
@@ -780,7 +801,7 @@ textHelper textInput attrs textOptions =
             defaultTextBoxStyle ++ attrs
 
         redistributed =
-            redistribute withDefaults
+            redistribute (isStacked textOptions.label) withDefaults
 
         moveUpToCompensateForPadding =
             calcMoveToCompensateForPadding withDefaults
@@ -1003,7 +1024,8 @@ redistribute them to the parent, the input, or the cover.
 
 -}
 redistribute :
-    List (Attribute msg)
+    Bool
+    -> List (Attribute msg)
     ->
         { fullParent : List (Attribute msg)
         , parent : List (Attribute msg)
@@ -1011,8 +1033,8 @@ redistribute :
         , input : List (Attribute msg)
         , cover : List (Attribute msg)
         }
-redistribute attrs =
-    List.foldl redistributeOver
+redistribute stacked attrs =
+    List.foldl (redistributeOver stacked)
         { fullParent = []
         , parent = []
         , input = []
@@ -1030,27 +1052,105 @@ redistribute attrs =
            )
 
 
-redistributeOver attr els =
+isFill len =
+    case len of
+        Internal.Fill _ ->
+            True
+
+        Internal.Content ->
+            False
+
+        Internal.Px _ ->
+            False
+
+        Internal.Min _ l ->
+            isFill l
+
+        Internal.Max _ l ->
+            isFill l
+
+
+isShrink len =
+    case len of
+        Internal.Content ->
+            True
+
+        Internal.Px _ ->
+            False
+
+        Internal.Fill _ ->
+            False
+
+        Internal.Min _ l ->
+            isShrink l
+
+        Internal.Max _ l ->
+            isShrink l
+
+
+isPixel len =
+    case len of
+        Internal.Content ->
+            False
+
+        Internal.Px _ ->
+            True
+
+        Internal.Fill _ ->
+            False
+
+        Internal.Min _ l ->
+            isPixel l
+
+        Internal.Max _ l ->
+            isPixel l
+
+
+{-| isStacked means that the label is above or below
+-}
+redistributeOver stacked attr els =
     case attr of
         Internal.Nearby _ _ ->
             { els | parent = attr :: els.parent }
 
-        Internal.Width (Internal.Fill _) ->
-            { els | fullParent = attr :: els.fullParent }
+        Internal.Width width ->
+            if stacked then
+                { els | fullParent = attr :: els.fullParent }
 
-        Internal.Width _ ->
-            { els | parent = attr :: els.parent }
+            else if isFill width then
+                { els
+                    | fullParent = attr :: els.fullParent
+                    , parent = attr :: els.parent
+                }
 
-        Internal.Height (Internal.Fill _) ->
-            { els
-                | fullParent = attr :: els.fullParent
-                , parent = attr :: els.parent
-            }
+            else if isPixel width then
+                { els | parent = attr :: els.parent }
 
-        Internal.Height h ->
-            { els
-                | parent = attr :: els.parent
-            }
+            else
+                { els
+                    | parent = attr :: els.parent
+                }
+
+        Internal.Height height ->
+            if not stacked then
+                { els
+                    | fullParent = attr :: els.fullParent
+                    , parent = attr :: els.parent
+                }
+
+            else if isFill height then
+                { els
+                    | fullParent = attr :: els.fullParent
+                    , parent = attr :: els.parent
+                }
+
+            else if isPixel height then
+                { els | parent = attr :: els.parent }
+
+            else
+                { els
+                    | parent = attr :: els.parent
+                }
 
         Internal.AlignX _ ->
             { els | fullParent = attr :: els.fullParent }
