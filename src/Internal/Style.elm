@@ -1531,11 +1531,7 @@ baseSheet =
             [ Prop "white-space" "pre-wrap"
             , Prop "height" "100%"
             , Prop "width" "100%"
-
-            -- , Prop "color" "transparent"
             , Prop "background-color" "transparent"
-
-            -- , Prop "caret-color" "black"
             ]
         , Descriptor (dot classes.inputMultilineParent)
             [ Prop "white-space" "pre-wrap"

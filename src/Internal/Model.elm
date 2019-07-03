@@ -2681,11 +2681,29 @@ toStyleSheetString options stylesheet =
                         ]
 
                 Colored class prop color ->
-                    renderStyle
-                        maybePseudo
-                        ("." ++ class)
-                        [ Property prop (formatColor color)
-                        ]
+                    -- This is because the trick we're using to make a txtarea be height:content
+                    -- stops the inheritance chain for font color.
+                    -- So we need to pack our bags, hike up our socks and jump over the break.
+                    if prop == "color" then
+                        String.concat
+                            [ renderStyle
+                                maybePseudo
+                                ("." ++ class)
+                                [ Property prop (formatColor color)
+                                ]
+                            , renderStyle
+                                maybePseudo
+                                ("." ++ class ++ " ." ++ classes.inputMultilineParent ++ " ." ++ classes.inputMultiline)
+                                [ Property prop (formatColor color)
+                                ]
+                            ]
+
+                    else
+                        renderStyle
+                            maybePseudo
+                            ("." ++ class)
+                            [ Property prop (formatColor color)
+                            ]
 
                 SpacingStyle cls x y ->
                     let
