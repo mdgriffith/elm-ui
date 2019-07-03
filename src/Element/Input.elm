@@ -909,17 +909,24 @@ textHelper textInput attrs textOptions =
                                           else
                                             redistributed.wrapper
                                                 ++ List.filterMap bottomPadding redistributed.parent
-                                        , case textOptions.placeholder of
+                                        ]
+                                )
+                                (Internal.Unkeyed
+                                    (if textOptions.text == "" then
+                                        case textOptions.placeholder of
                                             Nothing ->
                                                 []
 
                                             Just place ->
-                                                [ renderPlaceholder place redistributed.cover (textOptions.text == "")
+                                                [ renderPlaceholder place
+                                                    -- redistributed.cover
+                                                    []
+                                                    (textOptions.text == "")
                                                 ]
-                                        ]
-                                )
-                                (Internal.Unkeyed
-                                    [ Internal.unstyled (Html.text textOptions.text) ]
+
+                                     else
+                                        [ Internal.unstyled (Html.text textOptions.text) ]
+                                    )
                                 )
                             ]
                         )
@@ -936,7 +943,7 @@ textHelper textInput attrs textOptions =
                                         []
 
                                     Just place ->
-                                        [ renderPlaceholder place redistributed.cover (textOptions.text == "")
+                                        [ Element.inFront (renderPlaceholder place redistributed.cover (textOptions.text == ""))
                                         ]
                                 ]
                         )
@@ -959,28 +966,26 @@ textHelper textInput attrs textOptions =
 
 
 renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on =
-    Element.inFront
-        (Element.el
-            (defaultTextPadding
-                :: forPlaceholder
-                ++ [ Font.color charcoal
-                   , Internal.htmlClass (classes.noTextSelection ++ " " ++ classes.passPointerEvents)
-                   , Border.color (Element.rgba 0 0 0 0)
-                   , Background.color (Element.rgba 0 0 0 0)
-                   , Element.height Element.fill
-                   , Element.width Element.fill
-                   , Element.alpha
-                        (if on then
-                            1
+    Element.el
+        --defaultTextPadding
+        (forPlaceholder
+            ++ [ Font.color charcoal
+               , Internal.htmlClass (classes.noTextSelection ++ " " ++ classes.passPointerEvents)
+               , Border.color (Element.rgba 0 0 0 0)
+               , Background.color (Element.rgba 0 0 0 0)
+               , Element.height Element.fill
+               , Element.width Element.fill
+               , Element.alpha
+                    (if on then
+                        1
 
-                         else
-                            0
-                        )
-                   ]
-                ++ placeholderAttrs
-            )
-            placeholderEl
+                     else
+                        0
+                    )
+               ]
+            ++ placeholderAttrs
         )
+        placeholderEl
 
 
 {-| Because textareas are now shadowed, where they're rendered twice,
