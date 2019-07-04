@@ -965,10 +965,10 @@ textHelper textInput attrs textOptions =
 
 renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on =
     Element.el
-        --defaultTextPadding
         (forPlaceholder
             ++ [ Font.color charcoal
                , Internal.htmlClass (classes.noTextSelection ++ " " ++ classes.passPointerEvents)
+               , Element.clip
                , Border.color (Element.rgba 0 0 0 0)
                , Background.color (Element.rgba 0 0 0 0)
                , Element.height Element.fill
