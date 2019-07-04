@@ -1197,6 +1197,7 @@ baseSheet =
             -- chrome and safari have a minimum recognized line height for text input of 1.05
             -- If it's 1, it bumps up to something like 1.2
             [ Prop "line-height" "1.05"
+            , Prop "background" "transparent"
             ]
         , Descriptor (dot classes.single)
             elDescription
