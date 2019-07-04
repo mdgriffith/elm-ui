@@ -801,10 +801,9 @@ textHelper textInput attrs textOptions =
             defaultTextBoxStyle ++ attrs
 
         redistributed =
-            redistribute (isStacked textOptions.label) withDefaults
-
-        moveUpToCompensateForPadding =
-            calcMoveToCompensateForPadding withDefaults
+            redistribute (textInput.type_ == TextArea)
+                (isStacked textOptions.label)
+                withDefaults
 
         onlySpacing attr =
             case attr of
@@ -864,15 +863,16 @@ textHelper textInput attrs textOptions =
                     ++ (case textInput.type_ of
                             TextInputNode inputType ->
                                 [ Internal.Attr (Html.Attributes.type_ inputType)
-                                , Internal.htmlClass classes.inputText
-                                , Internal.htmlClass "focusable"
+                                , Internal.htmlClass (classes.inputText ++ " " ++ classes.inputMultiline)
+
+                                -- , Internal.htmlClass "focusable"
                                 ]
 
                             TextArea ->
                                 [ Element.clip
                                 , Element.height Element.fill
                                 , Internal.htmlClass classes.inputMultiline
-                                , moveUpToCompensateForPadding
+                                , calcMoveToCompensateForPadding withDefaults
                                 ]
                        )
                     ++ redistributed.input
@@ -919,7 +919,6 @@ textHelper textInput attrs textOptions =
 
                                             Just place ->
                                                 [ renderPlaceholder place
-                                                    -- redistributed.cover
                                                     []
                                                     (textOptions.text == "")
                                                 ]
@@ -943,7 +942,8 @@ textHelper textInput attrs textOptions =
                                         []
 
                                     Just place ->
-                                        [ Element.inFront (renderPlaceholder place redistributed.cover (textOptions.text == ""))
+                                        [ Element.behindContent
+                                            (renderPlaceholder place redistributed.cover (textOptions.text == ""))
                                         ]
                                 ]
                         )
@@ -1028,6 +1028,7 @@ redistribute them to the parent, the input, or the cover.
 -}
 redistribute :
     Bool
+    -> Bool
     -> List (Attribute msg)
     ->
         { fullParent : List (Attribute msg)
@@ -1036,8 +1037,8 @@ redistribute :
         , input : List (Attribute msg)
         , cover : List (Attribute msg)
         }
-redistribute stacked attrs =
-    List.foldl (redistributeOver stacked)
+redistribute isMultiline stacked attrs =
+    List.foldl (redistributeOver isMultiline stacked)
         { fullParent = []
         , parent = []
         , input = []
@@ -1111,7 +1112,7 @@ isPixel len =
 
 {-| isStacked means that the label is above or below
 -}
-redistributeOver stacked attr els =
+redistributeOver isMultiline stacked attr els =
     case attr of
         Internal.Nearby _ _ ->
             { els | parent = attr :: els.parent }
@@ -1169,14 +1170,35 @@ redistributeOver stacked attr els =
                 , wrapper = attr :: els.wrapper
             }
 
-        Internal.StyleClass _ (Internal.PaddingStyle _ _ _ _ _) ->
-            { els
-                | parent = attr :: els.parent
+        Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
+            if isMultiline then
+                { els
+                    | parent = attr :: els.parent
+                    , cover = attr :: els.cover
+                }
 
-                --   input = attr :: els.input
-                -- , wrapper = attr :: els.wrapper
-                , cover = attr :: els.cover
-            }
+            else
+                let
+                    newLineHeight =
+                        Element.htmlAttribute
+                            (Html.Attributes.style
+                                "line-height"
+                                ("calc(1.05em + " ++ String.fromInt (2 * min t b) ++ "px)")
+                            )
+
+                    reducedVerticalPadding =
+                        Element.paddingEach
+                            { top = t - min t b
+                            , right = r
+                            , bottom = b - min t b
+                            , left = l
+                            }
+                in
+                { els
+                    | parent = reducedVerticalPadding :: els.parent
+                    , input = newLineHeight :: els.input
+                    , cover = attr :: els.cover
+                }
 
         Internal.StyleClass _ (Internal.BorderWidth _ _ _ _ _) ->
             { els
