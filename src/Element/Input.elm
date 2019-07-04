@@ -863,9 +863,7 @@ textHelper textInput attrs textOptions =
                     ++ (case textInput.type_ of
                             TextInputNode inputType ->
                                 [ Internal.Attr (Html.Attributes.type_ inputType)
-                                , Internal.htmlClass (classes.inputText ++ " " ++ classes.inputMultiline)
-
-                                -- , Internal.htmlClass "focusable"
+                                , Internal.htmlClass classes.inputText
                                 ]
 
                             TextArea ->
@@ -1179,11 +1177,18 @@ redistributeOver isMultiline stacked attr els =
 
             else
                 let
+                    newHeight =
+                        Element.htmlAttribute
+                            (Html.Attributes.style
+                                "height"
+                                ("calc(1.0em + " ++ String.fromInt (2 * min t b) ++ "px)")
+                            )
+
                     newLineHeight =
                         Element.htmlAttribute
                             (Html.Attributes.style
                                 "line-height"
-                                ("calc(1.05em + " ++ String.fromInt (2 * min t b) ++ "px)")
+                                ("calc(1.0em + " ++ String.fromInt (2 * min t b) ++ "px)")
                             )
 
                     reducedVerticalPadding =
@@ -1196,7 +1201,7 @@ redistributeOver isMultiline stacked attr els =
                 in
                 { els
                     | parent = reducedVerticalPadding :: els.parent
-                    , input = newLineHeight :: els.input
+                    , input = newHeight :: newLineHeight :: els.input
                     , cover = attr :: els.cover
                 }
 
