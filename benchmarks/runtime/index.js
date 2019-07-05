@@ -102,11 +102,11 @@ async function write_results(allResults) {
     for (var i = 0; i < instances.length; i++) {
         var item = instances[i]
         write_entrypoint(item)
-        var template = fs.readFileSync("./runtime/template/index.html")
+        var template = fs.readFileSync("./runtime/template/run.html")
         // we embed the compiled js to avoid having to start a server to read the app.
         await compileToString(["./tmp/Main.elm"], { optimize: true }).then(function (compiled_elm_code) {
             const compiled = eval(`\`${template}\``)
-            fs.writeFileSync("./tmp/index.html", compiled)
+            fs.writeFileSync("./tmp/run.html", compiled)
         });
 
         const page = await browser.newPage();
