@@ -1466,7 +1466,7 @@ renderHeight h =
                 , [ Single
                         (Internal.Style.classes.any
                             ++ "."
-                            ++ Internal.Style.classes.row
+                            ++ Internal.Style.classes.column
                             ++ " > "
                             ++ (Internal.Style.dot <| "height-fill-" ++ String.fromInt portion)
                         )
