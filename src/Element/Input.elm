@@ -853,26 +853,29 @@ textHelper textInput attrs textOptions =
                     TextArea ->
                         Internal.NodeName "textarea"
                 )
-                ([ value textOptions.text
-                 , Internal.Attr (Html.Events.onInput textOptions.onChange)
-                 , hiddenLabelAttribute textOptions.label
-                 , spellcheck textInput.spellchecked
-                 , Maybe.map autofill textInput.autofill
-                    |> Maybe.withDefault Internal.NoAttribute
-                 ]
-                    ++ (case textInput.type_ of
-                            TextInputNode inputType ->
-                                [ Internal.Attr (Html.Attributes.type_ inputType)
-                                , Internal.htmlClass classes.inputText
-                                ]
+                ((case textInput.type_ of
+                    TextInputNode inputType ->
+                        -- Note: Due to a weird edgecase in...Edge...
+                        -- `type` needs to come _before_ `value`
+                        -- More reading: https://github.com/mdgriffith/elm-ui/pull/94/commits/4f493a27001ccc3cf1f2baa82e092c35d3811876
+                        [ Internal.Attr (Html.Attributes.type_ inputType)
+                        , Internal.htmlClass classes.inputText
+                        ]
 
-                            TextArea ->
-                                [ Element.clip
-                                , Element.height Element.fill
-                                , Internal.htmlClass classes.inputMultiline
-                                , calcMoveToCompensateForPadding withDefaults
-                                ]
-                       )
+                    TextArea ->
+                        [ Element.clip
+                        , Element.height Element.fill
+                        , Internal.htmlClass classes.inputMultiline
+                        , calcMoveToCompensateForPadding withDefaults
+                        ]
+                 )
+                    ++ [ value textOptions.text
+                       , Internal.Attr (Html.Events.onInput textOptions.onChange)
+                       , hiddenLabelAttribute textOptions.label
+                       , spellcheck textInput.spellchecked
+                       , Maybe.map autofill textInput.autofill
+                            |> Maybe.withDefault Internal.NoAttribute
+                       ]
                     ++ redistributed.input
                 )
                 (Internal.Unkeyed [])
