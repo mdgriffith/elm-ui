@@ -4,6 +4,9 @@ var compileToString = require("node-elm-compiler").compileToString;
 const fs = require('fs');
 
 
+
+
+
 function write_entrypoint(item) {
 
     const entrypoint = `module Main exposing (main)
@@ -12,11 +15,20 @@ import Benchmark.Render
 
 main = Benchmark.Render.toProgram ${item.module}.${item.value}
 `
-    fs.writeFileSync('./tmp/Main.elm', entrypoint);
+    fs.writeFileSync('./benchmarks/tmp/Main.elm', entrypoint);
+}
+
+async function compile_and_embed(config) {
+    var template = fs.readFileSync(config.template)
+    // we embed the compiled js to avoid having to start a server to read the app.
+    await compileToString(config.elm, config.elmOptions).then(function (compiled_elm_code) {
+        const compiled = eval(`\`${template}\``)
+        fs.writeFileSync(config.target, compiled)
+    });
 }
 
 
-function regoupResults(results) {
+function regroupResults(results) {
     var regrouped = {}
 
     for (var i = 0; i < results.length; i++) {
@@ -43,20 +55,23 @@ function regoupResults(results) {
 
 
 async function write_results(allResults) {
-    var resultsDir = "results"
+    var resultsDir = "benchmarks/results"
     if (!fs.existsSync(resultsDir)) {
         fs.mkdirSync(resultsDir);
     }
     var results = JSON.stringify(allResults)
-    var template = fs.readFileSync("./runtime/template/viewResults.html")
+    var template = fs.readFileSync("./benchmarks/runtime/template/viewResults.html")
     // we embed the compiled js to avoid having to start a server to read the app.
-    await compileToString(["./src/View/Results.elm"], { optimize: true }).then(function (compiled_elm_code) {
+    await compileToString(["./src/View/Results.elm"], { optimize: true, cwd: "./benchmarks" }).then(function (compiled_elm_code) {
         const compiled = eval(`\`${template}\``)
         fs.writeFileSync(`./${resultsDir}/1.1.1-cand.html`, compiled)
     });
 
     // fs.writeFileSync(`./${resultsDir}/1.1.1-candidate-optimized.json`, results)
 }
+
+
+
 
 (async () => {
     const browser = await puppeteer.launch();
@@ -97,14 +112,19 @@ async function write_results(allResults) {
         fs.mkdirSync(dir);
     }
 
+    var dir = "./benchmarks/tmp"
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir);
+    }
+
     var allResults = []
 
     for (var i = 0; i < instances.length; i++) {
         var item = instances[i]
         write_entrypoint(item)
-        var template = fs.readFileSync("./runtime/template/run.html")
+        var template = fs.readFileSync("./benchmarks/runtime/template/run.html")
         // we embed the compiled js to avoid having to start a server to read the app.
-        await compileToString(["./tmp/Main.elm"], { optimize: true }).then(function (compiled_elm_code) {
+        await compileToString(["tmp/Main.elm"], { optimize: true, cwd: "./benchmarks" }).then(function (compiled_elm_code) {
             const compiled = eval(`\`${template}\``)
             fs.writeFileSync("./tmp/run.html", compiled)
         });
@@ -119,8 +139,7 @@ async function write_results(allResults) {
     }
     await browser.close();
 
-
-    allResults = regoupResults(allResults)
+    allResults = regroupResults(allResults)
 
     write_results(allResults)
 

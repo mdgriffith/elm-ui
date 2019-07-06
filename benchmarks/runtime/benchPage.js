@@ -4,7 +4,7 @@ async function benchPage(page) {
     const client = await page.target().createCDPSession();
     await client.send('Performance.enable');
     // await page.tracing.start({ path: 'trace.json' });
-    await page.goto(`file:${path.join(__dirname, '/../tmp/index.html')}`)
+    await page.goto('file://' + path.resolve('./tmp/run.html'))
 
     await page.waitFor(1000);
     // await page.tracing.stop();
@@ -15,7 +15,6 @@ async function benchPage(page) {
     const frames = await page.evaluate(x => {
         return Promise.resolve(window.metrics);
     }, {});
-
     return {
         name: frames.name,
         perf: extract(metrics),
