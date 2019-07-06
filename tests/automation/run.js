@@ -6,13 +6,15 @@ const fs = require('fs');
 const program = require('commander');
 const path = require("path");
 const chalk = require('chalk');
+const childProcess = require('child_process')
 
 program.option('-s, --sauce', 'run tests on sauce labs')
     .option('--chrome', 'run only chrome tests')
     .option('--firefox', 'run only firefox tests')
-    .option('--build', 'Set build number for sauce labs')
-    .option('--name', 'Set run name for sauce labs')
+    .option('--build [value]', 'Set build number for sauce labs')
+    .option('--name [value]', 'Set run name for sauce labs')
     .parse(process.argv)
+
 
 // 'Windows 10'
 const windows = [
@@ -58,8 +60,31 @@ const osx = {
 }
 
 
-function prepare_envs() {
-    return []
+function prepare_all_envs(config) {
+    var envs = []
+
+    for (i = 0; i < windows.length; i++) {
+        envs.push({
+            browser: windows[i].browser,
+            browserVersion: windows[i].browserVersion,
+            platform: "Windows 10",
+            build: config.build,
+            name: config.name
+        })
+    }
+
+    for (i = 0; i < osx.length; i++) {
+        envs.push({
+            browser: osx[i].browser,
+            browserVersion: osx[i].browserVersion,
+            platform: "macOS 10.14",
+            build: config.build,
+            name: config.name
+        })
+    }
+
+
+    return envs
 }
 
 async function compile_and_embed(config) {
@@ -139,11 +164,27 @@ async function run_test(driver, url) {
     if (program.sauce) {
         const build = program.build
         const name = program.name
+
+        if (build == null || name == null) {
+            throw ("A Build and a Name must be specified.");
+        }
+
+
         var results = []
-        console.log("TODO: PUBLISH FILE BEFORE TESTING")
-        var url = "fail"
-        // Publish to 
-        const envs = prepare_envs({ build: build, name: name })
+
+        // Publish to netlify
+        childProcess.execSync("sh tests/automation/publish-file.sh", {
+            env: {
+                FILE: "test.html",
+                BUILD: program.build,
+                NAME: program.name
+            }
+        })
+        var url = `http://elm-ui-testing.netlify.com/tests/${program.build}/${program.name}/`
+        console.log(`Running sauce labs test ${url}`)
+
+
+        const envs = prepare_all_envs({ build: build, name: name })
         for (i = 0; i < envs.length; i++) {
             var driver = prepare_sauce_driver(envs[i])
             results.push(await run_test(driver, url))
@@ -151,7 +192,9 @@ async function run_test(driver, url) {
 
 
     } else {
-        if (program.chrome) {
+
+        // Run chrome if nothing else is selected
+        if (program.chrome || (!program.chrome && !program.firefox)) {
             console.log("Running locally on Chrome...")
             const driver = await prepare_local_driver(osx.chrome)
             var results = await run_test(driver, "file://" + path.resolve('./tmp/test.html'))

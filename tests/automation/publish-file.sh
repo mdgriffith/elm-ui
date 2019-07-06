@@ -1,18 +1,21 @@
+These env variables need to be set before running this script
+# FILE="test.html"
+# BUILD="1.1.0"
+# NAME="development"
 DIRECTORY='./tmp/elm-ui-testing'
 
 # Check to see if the repo is already cloned locally
-# if [ ! -d "$DIRECTORY" ]; then
-#   cd tmp  
-#   git clone git@github.com:mdgriffith/elm-ui-testing.git
-# else
-#   cd tmp
-#   git pull
-# fi
-
-cp test.html elm-ui-testing/public/tests/test.html
+cd tmp
+if [ ! -d "$DIRECTORY" ]; then
+  git clone git@github.com:mdgriffith/elm-ui-testing.git
+else
+  git pull
+fi
+mkdir -p "elm-ui-testing/public/tests/$BUILD/$NAME/"
+cp "$FILE" "elm-ui-testing/public/tests/$BUILD/$NAME/index.html"
 cd elm-ui-testing
 git add .
-git commit -m "Publish file from elm-ui suite"
+git commit -m "Elm UI test for $NAME on $BUILD"
 git push origin master
 
 echo "done"

@@ -6,7 +6,7 @@
     "scripts": {
         "test": "elm-test",
         "test-render": "node tests/automation/run.js --chrome",
-        "test-render-sauce": "source source.env; node tests/automation/run.js",
+        "test-render-sauce": "source sauce.env; node tests/automation/run.js --sauce",
         "bench": "node benchmarks/runtime/index.js"
     },
     "repository": {
