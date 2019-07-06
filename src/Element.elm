@@ -1143,6 +1143,8 @@ link attrs { url, label } =
                 (classes.contentCenterX
                     ++ " "
                     ++ classes.contentCenterY
+                    ++ " "
+                    ++ classes.link
                 )
             :: attrs
         )
@@ -1166,7 +1168,13 @@ newTabLink attrs { url, label } =
             :: Internal.Attr (Html.Attributes.target "_blank")
             :: width shrink
             :: height shrink
-            :: Internal.htmlClass (classes.contentCenterX ++ " " ++ classes.contentCenterY)
+            :: Internal.htmlClass
+                (classes.contentCenterX
+                    ++ " "
+                    ++ classes.contentCenterY
+                    ++ " "
+                    ++ classes.link
+                )
             :: attrs
         )
         (Internal.Unkeyed [ label ])

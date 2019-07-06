@@ -253,6 +253,9 @@ classes =
     , inputText = "it"
     , inputMultiline = "iml"
     , inputMultilineParent = "imlp"
+
+    -- link
+    , link = "lnk"
     }
 
 
@@ -1222,15 +1225,16 @@ baseSheet =
                 , Descriptor (dot classes.widthExact)
                     [ Prop "flex-basis" "auto"
                     ]
+                , Descriptor (dot classes.link)
+                    [ Prop "flex-basis" "auto"
+                    ]
                 ]
             , Child (dot classes.heightFill)
-                [ --Prop "height" "100%"
-                  -- alignTop, centerY, and alignBottom need to be disabled
+                [ -- alignTop, centerY, and alignBottom need to be disabled
                   Prop "align-self" "stretch !important"
                 ]
             , Child (dot classes.heightFillPortion)
-                [ --Prop "height" "100%"
-                  -- alignTop, centerY, and alignBottom need to be disabled
+                [ -- alignTop, centerY, and alignBottom need to be disabled
                   Prop "align-self" "stretch !important"
                 ]
 
