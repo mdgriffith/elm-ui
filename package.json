@@ -1,0 +1,30 @@
+{
+    "name": "elm-ui-testing",
+    "version": "1.0.0",
+    "description": "Run the Elm UI benchmarks and render tests",
+    "main": "index.js",
+    "scripts": {
+        "test": "elm-test",
+        "test-render": "node tests/automation/run.js --chrome",
+        "test-render-sauce": "source source.env; node tests/automation/run.js",
+        "bench": "node benchmarks/runtime/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mdgriffith/elm-ui.git"
+    },
+    "author": "Matthew Griffith <mdg.griffith@gmail.com> (http://mechanical-elephant.com/)",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/mdgriffith/elm-ui/issues"
+    },
+    "homepage": "https://github.com/mdgriffith/elm-ui#readme",
+    "dependencies": {
+        "chalk": "^2.4.2",
+        "commander": "^2.20.0",
+        "elm-test": "^0.19.0-rev6",
+        "node-elm-compiler": "^5.0.3",
+        "puppeteer": "^1.18.0",
+        "selenium-webdriver": "^4.0.0-alpha.4"
+    }
+}

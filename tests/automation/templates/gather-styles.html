@@ -1,0 +1,105 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Rendering Benchmark Viewer</title>
+        <script>
+            ${compiled_elm_code}
+        </script>
+    </head>
+    <style>
+    </style>
+    <body id="root"></body>
+    
+    <script type="text/javascript">
+
+        var app = Elm.Tests.Run.init();
+
+        var test_results = "waiting.."
+
+        app.ports.report.subscribe(function (results) {
+            test_results = results;
+        })
+
+        app.ports.analyze.subscribe(function (ids) {
+            // ids : List String
+            var idsLength = ids.length;
+            var results = [];
+            for (var i = 0; i < idsLength; i++) {
+                var id = ids[i];
+                var element = document.getElementById(id);
+                if (element == null) {
+                    console.log("id " + id + " not found");
+                }
+                var style = getStyle(element);
+                var bbox = getBoundingBox(element);
+
+                var visible = isVisible(id, bbox);
+
+
+                var result = { "bbox": bbox, "style": style, "id": id, "isVisible": visible };
+                results.push(result);
+
+            }
+            app.ports.styles.send(results);
+        });
+
+        function isVisible(id, bbox) {
+            var current = document.getElementById(id);
+            var result = 0;
+            if (current == document.elementFromPoint(bbox['left'], bbox['top'])) {
+                result++;
+            }
+            if (current == document.elementFromPoint(bbox['left'], bbox['bottom'] - 1)) {
+                result++;
+            }
+            if (current == document.elementFromPoint(bbox['right'] - 1, bbox['top'])) {
+                result++;
+            }
+            if (current == document.elementFromPoint(bbox['right'] - 1, bbox['bottom'] - 1)) {
+                result++;
+            }
+
+
+            if (result == 4) {
+                return true;
+            } else {
+                return false
+            }
+        }
+
+        function getStyle(element) {
+            var props = []
+            var style = window.getComputedStyle(element);
+            for (var i = style.length; i--;) {
+                var name = style.item(i);
+                var value = style.getPropertyValue(name);
+                props.push([name, value]);
+            }
+            return props;
+        }
+
+        function getBoundingBox(element) {
+            var bbox = element.getBoundingClientRect();
+            var style = window.getComputedStyle(element, null);
+
+            var padding = {
+                'top': parseFloat(style.getPropertyValue('padding-top'))
+                , 'bottom': parseFloat(style.getPropertyValue('padding-bottom'))
+                , 'left': parseFloat(style.getPropertyValue('padding-left'))
+                , 'right': parseFloat(style.getPropertyValue('padding-right'))
+            };
+
+            return {
+                'top': bbox.top
+                , 'bottom': bbox.bottom
+                , 'left': bbox.left
+                , 'right': bbox.right
+                , 'width': bbox.width
+                , 'height': bbox.height
+                , 'padding': padding
+            }
+        }
+
+    </script>
+</html>
