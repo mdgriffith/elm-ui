@@ -182,6 +182,7 @@ function print_results(results) {
             } else {
                 failed = failed + 1
                 console.log("    " + chalk.red("fail") + " -> " + results[i].results[j][0])
+                console.log("        " + results[i].results[j][1].description)
             }
         }
         if (failed == 0) {
