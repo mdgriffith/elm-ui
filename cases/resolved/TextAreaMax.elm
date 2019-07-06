@@ -22,6 +22,10 @@ singleLine =
     "Hello   World!  ->"
 
 
+placeholder =
+    "placeholder"
+
+
 main =
     Element.layout [ width fill, height fill, Font.color (rgb 1 0 0) ] <|
         column [ width fill, height fill ]
@@ -47,14 +51,30 @@ main =
                 none
             , Input.text
                 [ centerX
+                , spacing 5
 
-                -- , spacing 20
                 -- , height (px 100)
-                , width shrink
+                -- , width shrink
+                -- , height shrink
+                , width (px 200)
                 ]
                 { onChange = always ()
                 , text = empty
-                , placeholder = Just (Input.placeholder [] (text "hello"))
+                , placeholder = Just (Input.placeholder [] (text placeholder))
                 , label = Input.labelAbove [] (text "labeled")
+                }
+            , Input.text
+                [ centerX
+                , spacing 5
+
+                -- , height (px 100)
+                -- , width shrink
+                -- , height shrink
+                , width (px 200)
+                ]
+                { onChange = always ()
+                , text = "Filled Content"
+                , placeholder = Just (Input.placeholder [] (text placeholder))
+                , label = Input.labelBelow [] (text "labeled")
                 }
             ]
