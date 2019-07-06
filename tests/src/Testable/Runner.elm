@@ -50,7 +50,7 @@ program tests =
                 cur :: remaining ->
                     ( Just cur, remaining )
     in
-    Browser.element
+    Browser.document
         { init =
             always
                 ( { current = current
@@ -232,42 +232,50 @@ update msg model =
                     )
 
 
-view : Model Msg -> Html Msg
+view : Model Msg -> Browser.Document Msg
 view model =
     case model.current of
         Nothing ->
             if List.isEmpty model.upcoming then
-                -- (List.map viewResult model.finished)
-                case model.finished of
-                    [] ->
-                        Element.layout [] <|
-                            Element.column
-                                [ Element.spacing 20
-                                , Element.padding 20
-                                , Element.width (Element.px 800)
-
-                                -- , Background.color Color.grey
-                                ]
-                                [ Element.none ]
-
-                    finished :: remaining ->
-                        if False then
-                            viewResultsInline finished
-
-                        else
+                { title = "tests finished"
+                , body =
+                    [ case model.finished of
+                        [] ->
                             Element.layout [] <|
                                 Element.column
                                     [ Element.spacing 20
                                     , Element.padding 20
                                     , Element.width (Element.px 800)
+
+                                    -- , Background.color Color.grey
                                     ]
-                                    (List.map viewResult (finished :: remaining))
+                                    [ Element.none ]
+
+                        finished :: remaining ->
+                            if False then
+                                viewResultsInline finished
+
+                            else
+                                Element.layout [] <|
+                                    Element.column
+                                        [ Element.spacing 20
+                                        , Element.padding 20
+                                        , Element.width (Element.px 800)
+                                        ]
+                                        (List.map viewResult (finished :: remaining))
+                    ]
+                }
 
             else
-                Html.text "running?"
+                { title = "tests finished"
+                , body = []
+                }
 
         Just ( label, current ) ->
-            Testable.render current
+            { title = "running"
+            , body =
+                [ Testable.render current ]
+            }
 
 
 viewResultsInline : WithResults (Testable.Element Msg) -> Html Msg
