@@ -1345,11 +1345,6 @@ baseSheet =
         , Descriptor (dot classes.column)
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
-
-            -- This should resolve this
-            -- https://github.com/mdgriffith/elm-ui/pull/43
-            -- But things break
-            -- TODO: why do they break??
             , Child (dot classes.any)
                 [ Prop "flex-basis" "0%"
                 , Descriptor (dot classes.heightExact)
