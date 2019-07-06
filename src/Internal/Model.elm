@@ -1055,7 +1055,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                     name =
                                         "height-px-" ++ val
                                 in
-                                gatherAttrRecursive (name ++ " " ++ classes)
+                                gatherAttrRecursive (Internal.Style.classes.heightExact ++ " " ++ name ++ " " ++ classes)
                                     node
                                     (Flag.add Flag.height has)
                                     transform
@@ -1443,7 +1443,7 @@ renderHeight h =
                     "height-px-" ++ val
             in
             ( Flag.none
-            , name
+            , Internal.Style.classes.heightExact ++ " " ++ name
             , [ Single name "height" (val ++ "px") ]
             )
 

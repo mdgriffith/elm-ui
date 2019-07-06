@@ -148,6 +148,7 @@ classes =
     , widthFillPortion = "wfp"
     , heightFill = "hf"
     , heightContent = "hc"
+    , heightExact = "he"
     , heightFillPortion = "hfp"
     , seButton = "sbt"
 
@@ -1344,9 +1345,14 @@ baseSheet =
         , Descriptor (dot classes.column)
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
+
+            -- This should resolve this
+            -- https://github.com/mdgriffith/elm-ui/pull/43
+            -- But things break
+            -- TODO: why do they break??
             , Child (dot classes.any)
                 [ Prop "flex-basis" "0%"
-                , Descriptor (dot classes.widthExact)
+                , Descriptor (dot classes.heightExact)
                     [ Prop "flex-basis" "auto"
                     ]
                 ]
@@ -1364,7 +1370,7 @@ baseSheet =
                   Prop "width" "100%"
                 ]
 
-            -- TODO:: THIs might be necessary, maybe it should move to widthFill?
+            -- TODO:: This might be necessary, maybe it should move to widthFill?
             -- , Child (dot classes.widthFill)
             --     [ Prop "align-self" "stretch"
             --     , Descriptor (dot classes.alignedHorizontally)

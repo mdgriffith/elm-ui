@@ -16,7 +16,6 @@ module Testable.Element exposing
     , fill
     , fillPortion
     , height
-    , heightHelper
     , inFront
     , isVisible
     , label
@@ -36,7 +35,6 @@ module Testable.Element exposing
     , textColumn
     , transparent
     , width
-    , widthHelper
     )
 
 {-| This module should mirror the top level `Element` api, with one important distinction.
@@ -300,10 +298,12 @@ widthHelper maybeMin maybeMax len =
                         )
                 , test =
                     \found _ ->
-                        Expect.true "exact width is exact"
-                            ((floor found.self.bbox.width == val)
-                                && minMaxTest (floor found.self.bbox.width)
-                            )
+                        Expect.all
+                            [ \_ ->
+                                Expect.true "exact width is exact" (floor found.self.bbox.width == val)
+                            , \_ -> Expect.true "min/max is upheld" (minMaxTest (floor found.self.bbox.width))
+                            ]
+                            ()
                 }
 
         Fill portion ->
@@ -459,10 +459,15 @@ heightHelper maybeMin maybeMax len =
                         )
                 , test =
                     \found _ ->
-                        Expect.true "exact height is exact"
-                            ((floor found.self.bbox.height == val)
-                                && minMaxTest (floor found.self.bbox.height)
-                            )
+                        Expect.all
+                            [ \_ ->
+                                Expect.true ("exact height is exact: " ++ String.fromInt (floor found.self.bbox.height) ++ "," ++ String.fromInt val)
+                                    (floor found.self.bbox.height == val)
+                            , \_ ->
+                                Expect.true "min/max holds true"
+                                    (minMaxTest (floor found.self.bbox.height))
+                            ]
+                            ()
                 }
 
         Fill portion ->
