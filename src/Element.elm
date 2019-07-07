@@ -471,7 +471,7 @@ type alias Option =
 
 This option will stop the static/constant stylesheet from rendering.
 
-Make sure to render the constant/static stylesheet at least once on your page!
+If you're embedding multiple elm-ui `layout` elements, you need to guarantee that only one is rendering the static style sheet and that it's above ll the others in the DOM tree.
 
 -}
 noStaticStyleSheet : Option
