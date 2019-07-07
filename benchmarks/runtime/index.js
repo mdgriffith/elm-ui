@@ -132,6 +132,7 @@ async function write_results(allResults) {
         var item = instances[i]
         write_entrypoint(item)
         var template = fs.readFileSync("./benchmarks/runtime/template/run.html")
+        var cssom = fs.readFileSync("./experiments/virtual-css/cssom.js")
         // we embed the compiled js to avoid having to start a server to read the app.
         await compileToString(["tmp/Main.elm"], { optimize: true, cwd: "./benchmarks" }).then(function (compiled_elm_code) {
             const compiled = eval(`\`${template}\``)
