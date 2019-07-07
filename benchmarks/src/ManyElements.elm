@@ -8,6 +8,15 @@ module ManyElements exposing
     , elmUI512
     , elmUI64
     , elmUI8192
+    , elmUIVCSS1024
+    , elmUIVCSS128
+    , elmUIVCSS2048
+    , elmUIVCSS24
+    , elmUIVCSS256
+    , elmUIVCSS4096
+    , elmUIVCSS512
+    , elmUIVCSS64
+    , elmUIVCSS8192
     , viewHtml1024
     , viewHtml128
     , viewHtml2048
@@ -37,6 +46,7 @@ import Element.Font as Font
 import Element.Keyed
 import Html
 import Html.Attributes
+import Internal.Model as Internal
 
 
 
@@ -86,6 +96,55 @@ elmUI4096 =
 elmUI8192 : Benchmark.Render.Benchmark Model Msg
 elmUI8192 =
     elmUI "elmUI8192" 8192
+
+
+
+{- Elm UI VirtualCSS -}
+
+
+elmUIVCSS24 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS24 =
+    elmUIVCSS "elmUIVCSS24" 24
+
+
+elmUIVCSS64 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS64 =
+    elmUIVCSS "elmUIVCSS64" 64
+
+
+elmUIVCSS128 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS128 =
+    elmUIVCSS "elmUIVCSS128" 128
+
+
+elmUIVCSS256 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS256 =
+    elmUIVCSS "elmUIVCSS256" 256
+
+
+elmUIVCSS512 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS512 =
+    elmUIVCSS "elmUIVCSS512" 512
+
+
+elmUIVCSS1024 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS1024 =
+    elmUIVCSS "elmUIVCSS1024" 1024
+
+
+elmUIVCSS2048 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS2048 =
+    elmUIVCSS "elmUIVCSS2048" 2048
+
+
+elmUIVCSS4096 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS4096 =
+    elmUIVCSS "elmUIVCSS4096" 4096
+
+
+elmUIVCSS8192 : Benchmark.Render.Benchmark Model Msg
+elmUIVCSS8192 =
+    elmUIVCSS "elmUIVCSS8192" 8192
 
 
 
@@ -203,8 +262,8 @@ type Msg
 
 
 {-| -}
-elmUI : String -> Int -> Benchmark.Render.Benchmark Model Msg
-elmUI name count =
+elmUIVCSS : String -> Int -> Benchmark.Render.Benchmark Model Msg
+elmUIVCSS name count =
     { name = name
     , init =
         { index = 0
@@ -212,7 +271,17 @@ elmUI name count =
         , elements = List.range 0 (count - 1)
         }
     , view =
-        view
+        \model ->
+            Element.layoutWith
+                { options =
+                    [ Internal.RenderModeOption
+                        Internal.WithVirtualCss
+                    ]
+                }
+                []
+                (Element.column [ spacing 8, centerX ]
+                    (List.map (viewEl model.index) model.elements)
+                )
     , update =
         \msg model ->
             case msg of
@@ -234,16 +303,44 @@ elmUI name count =
     }
 
 
-view model =
-    Element.layout []
-        (Element.Keyed.column [ spacing 8, centerX ]
-            (List.map (viewEl model.index) model.elements)
-        )
+{-| -}
+elmUI : String -> Int -> Benchmark.Render.Benchmark Model Msg
+elmUI name count =
+    { name = name
+    , init =
+        { index = 0
+        , numberOfElements = count
+        , elements = List.range 0 (count - 1)
+        }
+    , view =
+        \model ->
+            Element.layout []
+                (Element.column [ spacing 8, centerX ]
+                    (List.map (viewEl model.index) model.elements)
+                )
+    , update =
+        \msg model ->
+            case msg of
+                Refresh ->
+                    if model.index > model.numberOfElements then
+                        { model | index = 0 }
+
+                    else
+                        { model | index = model.index + 1 }
+
+                Tick i ->
+                    if model.index > model.numberOfElements then
+                        { model | index = 0 }
+
+                    else
+                        { model | index = model.index + 1 }
+    , tick = Tick
+    , refresh = Refresh
+    }
 
 
 viewEl selectedIndex index =
-    ( String.fromInt index
-    , el
+    el
         [ Background.color
             (if selectedIndex == index then
                 pink
@@ -268,7 +365,6 @@ viewEl selectedIndex index =
          else
             text "Hello!"
         )
-    )
 
 
 white =

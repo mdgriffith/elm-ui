@@ -85,6 +85,15 @@ async function write_results(allResults) {
         , { module: "ManyElements", group: "elmUI", count: 512, value: "elmUI512" }
         , { module: "ManyElements", group: "elmUI", count: 64, value: "elmUI64" }
         , { module: "ManyElements", group: "elmUI", count: 8192, value: "elmUI8192" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 1024, value: "elmUIVCSS1024" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 128, value: "elmUIVCSS128" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 2048, value: "elmUIVCSS2048" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 24, value: "elmUIVCSS24" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 256, value: "elmUIVCSS256" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 4096, value: "elmUIVCSS4096" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 512, value: "elmUIVCSS512" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 64, value: "elmUIVCSS64" }
+        , { module: "ManyElements", group: "elmUIVCSS", count: 8192, value: "elmUIVCSS8192" }
         , { module: "ManyElements", group: "viewHtml", count: 1024, value: "viewHtml1024" }
         , { module: "ManyElements", group: "viewHtml", count: 128, value: "viewHtml128" }
         , { module: "ManyElements", group: "viewHtml", count: 2048, value: "viewHtml2048" }

@@ -83,9 +83,7 @@ module Internal.Model exposing
     , reduceRecursive
     , reduceStyles
     , reduceStylesRecursive
-    ,  removeNever
-       -- , renderFont
-
+    , removeNever
     , renderFontClassName
     , renderHeight
     , renderRoot
@@ -95,7 +93,6 @@ module Internal.Model exposing
     , rowClass
     , singleClass
     , spacingName
-    , staticRoot
     , tag
     , textShadowClass
     , toHtml
@@ -113,7 +110,7 @@ import Html.Attributes
 import Html.Keyed
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Style exposing (classes, dot)
-import Json.Encode as Json
+import Json.Encode as Encode
 import Set exposing (Set)
 import VirtualDom
 
@@ -534,7 +531,7 @@ finalizeNode has node attributes children embedMode parentContext =
 
 embedWith static opts styles children =
     if static then
-        staticRoot
+        staticRoot opts
             :: (styles
                     |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
                     |> Tuple.second
@@ -557,7 +554,7 @@ embedWith static opts styles children =
 
 embedKeyed static opts styles children =
     if static then
-        ( "static-stylesheet", staticRoot )
+        ( "static-stylesheet", staticRoot opts )
             :: ( "dynamic-stylesheet"
                , styles
                     |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
@@ -1822,8 +1819,17 @@ defaultOptions =
     }
 
 
-staticRoot =
-    VirtualDom.node "style" [] [ VirtualDom.text Internal.Style.rules ]
+staticRoot : OptionRecord -> VirtualDom.Node msg
+staticRoot opts =
+    case opts.mode of
+        Layout ->
+            VirtualDom.node "style" [] [ VirtualDom.text Internal.Style.rules ]
+
+        NoStaticStyleSheet ->
+            VirtualDom.text ""
+
+        WithVirtualCss ->
+            VirtualDom.node "elm-ui-static-rules" [ VirtualDom.property "rules" (Encode.string Internal.Style.rules) ] []
 
 
 addWhen ifThis x to =
@@ -2072,10 +2078,6 @@ type Children x
     | Keyed (List ( String, x ))
 
 
-
--- toHtml : OptionRecord -> Element msg -> VirtualDom.Node msg
-
-
 toHtml mode el =
     case el of
         Unstyled html ->
@@ -2111,8 +2113,7 @@ renderRoot optionList attributes child =
 
 
 type RenderMode
-    = Viewport
-    | Layout
+    = Layout
     | NoStaticStyleSheet
     | WithVirtualCss
 
@@ -2337,7 +2338,20 @@ optionsToRecord options =
 
 toStyleSheet : OptionRecord -> List Style -> VirtualDom.Node msg
 toStyleSheet options styleSheet =
-    VirtualDom.node "style" [] [ VirtualDom.text (toStyleSheetString options styleSheet) ]
+    case options.mode of
+        Layout ->
+            VirtualDom.node "style" [] [ VirtualDom.text (toStyleSheetString options styleSheet) ]
+
+        NoStaticStyleSheet ->
+            VirtualDom.node "style" [] [ VirtualDom.text (toStyleSheetString options styleSheet) ]
+
+        WithVirtualCss ->
+            VirtualDom.node "elm-ui-rules"
+                [ VirtualDom.property "rulesPayload"
+                    (encodeStyles options styleSheet)
+                , VirtualDom.attribute "rules" "hello"
+                ]
+                []
 
 
 renderTopLevelValues rules =
@@ -2553,496 +2567,14 @@ renderProps force (Property key val) existing =
         existing ++ "\n  " ++ key ++ ": " ++ val ++ ";"
 
 
-toStyleSheetString : OptionRecord -> List Style -> String
-toStyleSheetString options stylesheet =
+encodeStyles options stylesheet =
     let
-        renderStyle maybePseudo selector props =
-            case maybePseudo of
-                Nothing ->
-                    selector ++ "{" ++ List.foldl (renderProps False) "" props ++ "\n}"
-
-                Just pseudo ->
-                    case pseudo of
-                        Hover ->
-                            case options.hover of
-                                NoHover ->
-                                    ""
-
-                                ForceHover ->
-                                    selector ++ "-hv {" ++ List.foldl (renderProps True) "" props ++ "\n}"
-
-                                AllowHover ->
-                                    selector ++ "-hv:hover {" ++ List.foldl (renderProps False) "" props ++ "\n}"
-
-                        Focus ->
-                            let
-                                renderedProps =
-                                    List.foldl (renderProps False) "" props
-                            in
-                            String.join "\n"
-                                [ selector
-                                    ++ "-fs:focus {"
-                                    ++ renderedProps
-                                    ++ "\n}"
-                                , "."
-                                    ++ classes.any
-                                    ++ ":focus ~ "
-                                    ++ selector
-                                    ++ "-fs:not(.focus)  {"
-                                    ++ renderedProps
-                                    ++ "\n}"
-                                , "."
-                                    ++ classes.any
-                                    ++ ":focus "
-                                    ++ selector
-                                    ++ "-fs  {"
-                                    ++ renderedProps
-                                    ++ "\n}"
-                                , ".focusable-parent:focus ~ "
-                                    ++ "."
-                                    ++ classes.any
-                                    ++ " "
-                                    ++ selector
-                                    ++ "-fs {"
-                                    ++ renderedProps
-                                    ++ "\n}"
-                                ]
-
-                        Active ->
-                            selector ++ "-act:active {" ++ List.foldl (renderProps False) "" props ++ "\n}"
-
-        renderStyleRule rule maybePseudo =
-            case rule of
-                Style selector props ->
-                    renderStyle maybePseudo selector props
-
-                Shadows name prop ->
-                    renderStyle
-                        maybePseudo
-                        ("." ++ name)
-                        [ Property "box-shadow" prop
-                        ]
-
-                Transparency name transparency ->
-                    let
-                        opacity =
-                            (1 - transparency)
-                                |> min 1
-                                |> max 0
-                    in
-                    renderStyle
-                        maybePseudo
-                        ("." ++ name)
-                        [ Property "opacity" (String.fromFloat opacity)
-                        ]
-
-                FontSize i ->
-                    renderStyle
-                        maybePseudo
-                        (".font-size-" ++ String.fromInt i)
-                        [ Property "font-size" (String.fromInt i ++ "px")
-                        ]
-
-                FontFamily name typefaces ->
-                    let
-                        features =
-                            typefaces
-                                |> List.filterMap renderVariants
-                                |> String.join ", "
-
-                        families =
-                            [ Property "font-family"
-                                (typefaces
-                                    |> List.map fontName
-                                    |> String.join ", "
-                                )
-                            , Property "font-feature-settings" features
-                            , Property "font-variant"
-                                (if List.any hasSmallCaps typefaces then
-                                    "small-caps"
-
-                                 else
-                                    "normal"
-                                )
-                            ]
-                    in
-                    String.join " "
-                        [ renderStyle
-                            maybePseudo
-                            ("." ++ name)
-                            families
-                        ]
-
-                Single class prop val ->
-                    renderStyle
-                        maybePseudo
-                        ("." ++ class)
-                        [ Property prop val
-                        ]
-
-                Colored class prop color ->
-                    -- This is because the trick we're using to make a txtarea be height:content
-                    -- stops the inheritance chain for font color.
-                    -- So we need to pack our bags, hike up our socks and jump over the break.
-                    if prop == "color" then
-                        String.concat
-                            [ renderStyle
-                                maybePseudo
-                                ("." ++ class)
-                                [ Property prop (formatColor color)
-                                ]
-                            , renderStyle
-                                maybePseudo
-                                ("." ++ class ++ " ." ++ classes.inputMultilineParent ++ " ." ++ classes.inputMultiline)
-                                [ Property prop (formatColor color)
-                                ]
-                            ]
-
-                    else
-                        renderStyle
-                            maybePseudo
-                            ("." ++ class)
-                            [ Property prop (formatColor color)
-                            ]
-
-                SpacingStyle cls x y ->
-                    let
-                        class =
-                            "." ++ cls
-
-                        halfX =
-                            String.fromFloat (toFloat x / 2) ++ "px"
-
-                        halfY =
-                            String.fromFloat (toFloat y / 2) ++ "px"
-
-                        xPx =
-                            String.fromInt x ++ "px"
-
-                        yPx =
-                            String.fromInt y ++ "px"
-
-                        row =
-                            "." ++ Internal.Style.classes.row
-
-                        wrappedRow =
-                            "." ++ Internal.Style.classes.wrapped ++ row
-
-                        column =
-                            "." ++ Internal.Style.classes.column
-
-                        page =
-                            "." ++ Internal.Style.classes.page
-
-                        paragraph =
-                            "." ++ Internal.Style.classes.paragraph
-
-                        left =
-                            "." ++ Internal.Style.classes.alignLeft
-
-                        right =
-                            "." ++ Internal.Style.classes.alignRight
-
-                        any =
-                            "." ++ Internal.Style.classes.any
-
-                        single =
-                            "." ++ Internal.Style.classes.single
-                    in
-                    String.concat
-                        [ renderStyle maybePseudo (class ++ row ++ " > " ++ any ++ " + " ++ any) [ Property "margin-left" xPx ]
-
-                        -- margins don't apply to last element of normal, unwrapped rows
-                        -- , renderStyle maybePseudo (class ++ row ++ " > " ++ any ++ ":first-child") [ Property "margin" "0" ]
-                        -- For wrapped rows, margins always apply because we handle "canceling out" the other margins manually in the element.
-                        , renderStyle maybePseudo
-                            (class ++ wrappedRow ++ " > " ++ any)
-                            [ Property "margin" (halfY ++ " " ++ halfX)
-                            ]
-
-                        -- , renderStyle maybePseudo
-                        --     (class ++ wrappedRow ++ " > " ++ any ++ ":last-child")
-                        --     [ Property "margin-right" "0"
-                        --     ]
-                        -- columns
-                        , renderStyle maybePseudo (class ++ column ++ " > " ++ any ++ " + " ++ any) [ Property "margin-top" yPx ]
-                        , renderStyle maybePseudo (class ++ page ++ " > " ++ any ++ " + " ++ any) [ Property "margin-top" yPx ]
-                        , renderStyle maybePseudo (class ++ page ++ " > " ++ left) [ Property "margin-right" xPx ]
-                        , renderStyle maybePseudo (class ++ page ++ " > " ++ right) [ Property "margin-left" xPx ]
-                        , renderStyle
-                            maybePseudo
-                            (class ++ paragraph)
-                            [ Property "line-height" ("calc(1em + " ++ String.fromInt y ++ "px)")
-                            ]
-                        , renderStyle
-                            maybePseudo
-                            ("textarea" ++ any ++ class)
-                            [ Property "line-height" ("calc(1em + " ++ String.fromInt y ++ "px)")
-                            , Property "height" ("calc(100% + " ++ String.fromInt y ++ "px)")
-                            ]
-
-                        -- , renderStyle
-                        --     maybePseudo
-                        --     (class ++ paragraph ++ " > " ++ any)
-                        --     [ Property "margin-right" xPx
-                        --     , Property "margin-bottom" yPx
-                        --     ]
-                        , renderStyle
-                            maybePseudo
-                            (class ++ paragraph ++ " > " ++ left)
-                            [ Property "margin-right" xPx
-                            ]
-                        , renderStyle
-                            maybePseudo
-                            (class ++ paragraph ++ " > " ++ right)
-                            [ Property "margin-left" xPx
-                            ]
-                        , renderStyle
-                            maybePseudo
-                            (class ++ paragraph ++ "::after")
-                            [ Property "content" "''"
-                            , Property "display" "block"
-                            , Property "height" "0"
-                            , Property "width" "0"
-                            , Property "margin-top" (String.fromInt (-1 * (y // 2)) ++ "px")
-                            ]
-                        , renderStyle
-                            maybePseudo
-                            (class ++ paragraph ++ "::before")
-                            [ Property "content" "''"
-                            , Property "display" "block"
-                            , Property "height" "0"
-                            , Property "width" "0"
-                            , Property "margin-bottom" (String.fromInt (-1 * (y // 2)) ++ "px")
-                            ]
-                        ]
-
-                PaddingStyle cls top right bottom left ->
-                    let
-                        class =
-                            "."
-                                ++ cls
-                    in
-                    renderStyle
-                        maybePseudo
-                        class
-                        [ Property "padding"
-                            (String.fromInt top
-                                ++ "px "
-                                ++ String.fromInt right
-                                ++ "px "
-                                ++ String.fromInt bottom
-                                ++ "px "
-                                ++ String.fromInt left
-                                ++ "px"
-                            )
-                        ]
-
-                BorderWidth cls top right bottom left ->
-                    let
-                        class =
-                            "."
-                                ++ cls
-                    in
-                    renderStyle
-                        maybePseudo
-                        class
-                        [ Property "border-width"
-                            (String.fromInt top
-                                ++ "px "
-                                ++ String.fromInt right
-                                ++ "px "
-                                ++ String.fromInt bottom
-                                ++ "px "
-                                ++ String.fromInt left
-                                ++ "px"
-                            )
-                        ]
-
-                GridTemplateStyle template ->
-                    let
-                        class =
-                            ".grid-rows-"
-                                ++ String.join "-" (List.map lengthClassName template.rows)
-                                ++ "-cols-"
-                                ++ String.join "-" (List.map lengthClassName template.columns)
-                                ++ "-space-x-"
-                                ++ lengthClassName (Tuple.first template.spacing)
-                                ++ "-space-y-"
-                                ++ lengthClassName (Tuple.second template.spacing)
-
-                        ySpacing =
-                            toGridLength (Tuple.second template.spacing)
-
-                        xSpacing =
-                            toGridLength (Tuple.first template.spacing)
-
-                        toGridLength x =
-                            toGridLengthHelper Nothing Nothing x
-
-                        toGridLengthHelper minimum maximum x =
-                            case x of
-                                Px px ->
-                                    String.fromInt px ++ "px"
-
-                                Content ->
-                                    case ( minimum, maximum ) of
-                                        ( Nothing, Nothing ) ->
-                                            "max-content"
-
-                                        ( Just minSize, Nothing ) ->
-                                            "minmax(" ++ String.fromInt minSize ++ "px, " ++ "max-content)"
-
-                                        ( Nothing, Just maxSize ) ->
-                                            "minmax(max-content, " ++ String.fromInt maxSize ++ "px)"
-
-                                        ( Just minSize, Just maxSize ) ->
-                                            "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt maxSize ++ "px)"
-
-                                Fill i ->
-                                    case ( minimum, maximum ) of
-                                        ( Nothing, Nothing ) ->
-                                            String.fromInt i ++ "fr"
-
-                                        ( Just minSize, Nothing ) ->
-                                            "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt i ++ "fr" ++ "fr)"
-
-                                        ( Nothing, Just maxSize ) ->
-                                            "minmax(max-content, " ++ String.fromInt maxSize ++ "px)"
-
-                                        ( Just minSize, Just maxSize ) ->
-                                            "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt maxSize ++ "px)"
-
-                                Min m len ->
-                                    toGridLengthHelper (Just m) maximum len
-
-                                Max m len ->
-                                    toGridLengthHelper minimum (Just m) len
-
-                        msColumns =
-                            template.columns
-                                |> List.map toGridLength
-                                |> String.join ySpacing
-                                |> (\x -> "-ms-grid-columns: " ++ x ++ ";")
-
-                        msRows =
-                            template.columns
-                                |> List.map toGridLength
-                                |> String.join ySpacing
-                                |> (\x -> "-ms-grid-rows: " ++ x ++ ";")
-
-                        base =
-                            class ++ "{" ++ msColumns ++ msRows ++ "}"
-
-                        columns =
-                            template.columns
-                                |> List.map toGridLength
-                                |> String.join " "
-                                |> (\x -> "grid-template-columns: " ++ x ++ ";")
-
-                        rows =
-                            template.rows
-                                |> List.map toGridLength
-                                |> String.join " "
-                                |> (\x -> "grid-template-rows: " ++ x ++ ";")
-
-                        gapX =
-                            "grid-column-gap:" ++ toGridLength (Tuple.first template.spacing) ++ ";"
-
-                        gapY =
-                            "grid-row-gap:" ++ toGridLength (Tuple.second template.spacing) ++ ";"
-
-                        modernGrid =
-                            class ++ "{" ++ columns ++ rows ++ gapX ++ gapY ++ "}"
-
-                        supports =
-                            "@supports (display:grid) {" ++ modernGrid ++ "}"
-                    in
-                    base ++ supports
-
-                GridPosition position ->
-                    let
-                        class =
-                            ".grid-pos-"
-                                ++ String.fromInt position.row
-                                ++ "-"
-                                ++ String.fromInt position.col
-                                ++ "-"
-                                ++ String.fromInt position.width
-                                ++ "-"
-                                ++ String.fromInt position.height
-
-                        msPosition =
-                            String.join " "
-                                [ "-ms-grid-row: "
-                                    ++ String.fromInt position.row
-                                    ++ ";"
-                                , "-ms-grid-row-span: "
-                                    ++ String.fromInt position.height
-                                    ++ ";"
-                                , "-ms-grid-column: "
-                                    ++ String.fromInt position.col
-                                    ++ ";"
-                                , "-ms-grid-column-span: "
-                                    ++ String.fromInt position.width
-                                    ++ ";"
-                                ]
-
-                        base =
-                            class ++ "{" ++ msPosition ++ "}"
-
-                        modernPosition =
-                            String.join " "
-                                [ "grid-row: "
-                                    ++ String.fromInt position.row
-                                    ++ " / "
-                                    ++ String.fromInt (position.row + position.height)
-                                    ++ ";"
-                                , "grid-column: "
-                                    ++ String.fromInt position.col
-                                    ++ " / "
-                                    ++ String.fromInt (position.col + position.width)
-                                    ++ ";"
-                                ]
-
-                        modernGrid =
-                            class ++ "{" ++ modernPosition ++ "}"
-
-                        supports =
-                            "@supports (display:grid) {" ++ modernGrid ++ "}"
-                    in
-                    base ++ supports
-
-                PseudoSelector class styles ->
-                    let
-                        renderPseudoRule style =
-                            renderStyleRule style (Just class)
-                    in
-                    List.map renderPseudoRule styles
-                        |> String.join " "
-
-                Transform transform ->
-                    let
-                        val =
-                            transformValue transform
-
-                        class =
-                            transformClass transform
-                    in
-                    case ( class, val ) of
-                        ( Just cls, Just v ) ->
-                            renderStyle
-                                maybePseudo
-                                ("." ++ cls)
-                                [ Property "transform"
-                                    v
-                                ]
-
-                        _ ->
-                            ""
-
         combine style rendered =
-            { rules = rendered.rules ++ renderStyleRule style Nothing
+            let
+                renderedStyle =
+                    renderStyleRule options style Nothing
+            in
+            { rules = renderedStyle ++ rendered.rules
             , topLevel =
                 case topLevelValue style of
                     Nothing ->
@@ -3052,9 +2584,521 @@ toStyleSheetString options stylesheet =
                         topLevel :: rendered.topLevel
             }
     in
-    case List.foldl combine { topLevel = [], rules = "" } stylesheet of
+    case List.foldl combine { topLevel = [], rules = [] } stylesheet of
         { topLevel, rules } ->
-            renderTopLevelValues topLevel ++ rules
+            -- TODO: top level values are still required
+            rules
+                |> List.map (\r -> ( r, Encode.string r ))
+                |> Encode.object
+
+
+toStyleSheetString : OptionRecord -> List Style -> String
+toStyleSheetString options stylesheet =
+    let
+        combine style rendered =
+            { rules = rendered.rules ++ renderStyleRule options style Nothing
+            , topLevel =
+                case topLevelValue style of
+                    Nothing ->
+                        rendered.topLevel
+
+                    Just topLevel ->
+                        topLevel :: rendered.topLevel
+            }
+    in
+    case List.foldl combine { topLevel = [], rules = [] } stylesheet of
+        { topLevel, rules } ->
+            renderTopLevelValues topLevel ++ String.concat rules
+
+
+renderStyle : OptionRecord -> Maybe PseudoClass -> String -> List Property -> List String
+renderStyle options maybePseudo selector props =
+    case maybePseudo of
+        Nothing ->
+            [ selector ++ "{" ++ List.foldl (renderProps False) "" props ++ "\n}" ]
+
+        Just pseudo ->
+            case pseudo of
+                Hover ->
+                    case options.hover of
+                        NoHover ->
+                            []
+
+                        ForceHover ->
+                            [ selector ++ "-hv {" ++ List.foldl (renderProps True) "" props ++ "\n}" ]
+
+                        AllowHover ->
+                            [ selector ++ "-hv:hover {" ++ List.foldl (renderProps False) "" props ++ "\n}" ]
+
+                Focus ->
+                    let
+                        renderedProps =
+                            List.foldl (renderProps False) "" props
+                    in
+                    [ selector
+                        ++ "-fs:focus {"
+                        ++ renderedProps
+                        ++ "\n}"
+                    , "."
+                        ++ classes.any
+                        ++ ":focus ~ "
+                        ++ selector
+                        ++ "-fs:not(.focus)  {"
+                        ++ renderedProps
+                        ++ "\n}"
+                    , "."
+                        ++ classes.any
+                        ++ ":focus "
+                        ++ selector
+                        ++ "-fs  {"
+                        ++ renderedProps
+                        ++ "\n}"
+                    , ".focusable-parent:focus ~ "
+                        ++ "."
+                        ++ classes.any
+                        ++ " "
+                        ++ selector
+                        ++ "-fs {"
+                        ++ renderedProps
+                        ++ "\n}"
+                    ]
+
+                Active ->
+                    [ selector ++ "-act:active {" ++ List.foldl (renderProps False) "" props ++ "\n}" ]
+
+
+renderStyleRule : OptionRecord -> Style -> Maybe PseudoClass -> List String
+renderStyleRule options rule maybePseudo =
+    case rule of
+        Style selector props ->
+            renderStyle options maybePseudo selector props
+
+        Shadows name prop ->
+            renderStyle options
+                maybePseudo
+                ("." ++ name)
+                [ Property "box-shadow" prop
+                ]
+
+        Transparency name transparency ->
+            let
+                opacity =
+                    (1 - transparency)
+                        |> min 1
+                        |> max 0
+            in
+            renderStyle options
+                maybePseudo
+                ("." ++ name)
+                [ Property "opacity" (String.fromFloat opacity)
+                ]
+
+        FontSize i ->
+            renderStyle options
+                maybePseudo
+                (".font-size-" ++ String.fromInt i)
+                [ Property "font-size" (String.fromInt i ++ "px")
+                ]
+
+        FontFamily name typefaces ->
+            let
+                features =
+                    typefaces
+                        |> List.filterMap renderVariants
+                        |> String.join ", "
+
+                families =
+                    [ Property "font-family"
+                        (typefaces
+                            |> List.map fontName
+                            |> String.join ", "
+                        )
+                    , Property "font-feature-settings" features
+                    , Property "font-variant"
+                        (if List.any hasSmallCaps typefaces then
+                            "small-caps"
+
+                         else
+                            "normal"
+                        )
+                    ]
+            in
+            renderStyle options
+                maybePseudo
+                ("." ++ name)
+                families
+
+        Single class prop val ->
+            renderStyle options
+                maybePseudo
+                ("." ++ class)
+                [ Property prop val
+                ]
+
+        Colored class prop color ->
+            -- This is because the trick we're using to make a txtarea be height:content
+            -- stops the inheritance chain for font color.
+            -- So we need to pack our bags, hike up our socks and jump over the break.
+            if prop == "color" then
+                List.concat
+                    [ renderStyle options
+                        maybePseudo
+                        ("." ++ class)
+                        [ Property prop (formatColor color)
+                        ]
+                    , renderStyle options
+                        maybePseudo
+                        ("." ++ class ++ " ." ++ classes.inputMultilineParent ++ " ." ++ classes.inputMultiline)
+                        [ Property prop (formatColor color)
+                        ]
+                    ]
+
+            else
+                renderStyle options
+                    maybePseudo
+                    ("." ++ class)
+                    [ Property prop (formatColor color)
+                    ]
+
+        SpacingStyle cls x y ->
+            let
+                class =
+                    "." ++ cls
+
+                halfX =
+                    String.fromFloat (toFloat x / 2) ++ "px"
+
+                halfY =
+                    String.fromFloat (toFloat y / 2) ++ "px"
+
+                xPx =
+                    String.fromInt x ++ "px"
+
+                yPx =
+                    String.fromInt y ++ "px"
+
+                row =
+                    "." ++ Internal.Style.classes.row
+
+                wrappedRow =
+                    "." ++ Internal.Style.classes.wrapped ++ row
+
+                column =
+                    "." ++ Internal.Style.classes.column
+
+                page =
+                    "." ++ Internal.Style.classes.page
+
+                paragraph =
+                    "." ++ Internal.Style.classes.paragraph
+
+                left =
+                    "." ++ Internal.Style.classes.alignLeft
+
+                right =
+                    "." ++ Internal.Style.classes.alignRight
+
+                any =
+                    "." ++ Internal.Style.classes.any
+
+                single =
+                    "." ++ Internal.Style.classes.single
+            in
+            List.concat
+                [ renderStyle options maybePseudo (class ++ row ++ " > " ++ any ++ " + " ++ any) [ Property "margin-left" xPx ]
+
+                -- margins don't apply to last element of normal, unwrapped rows
+                -- , renderStyle options maybePseudo (class ++ row ++ " > " ++ any ++ ":first-child") [ Property "margin" "0" ]
+                -- For wrapped rows, margins always apply because we handle "canceling out" the other margins manually in the element.
+                , renderStyle options
+                    maybePseudo
+                    (class ++ wrappedRow ++ " > " ++ any)
+                    [ Property "margin" (halfY ++ " " ++ halfX)
+                    ]
+
+                -- , renderStyle options maybePseudo
+                --     (class ++ wrappedRow ++ " > " ++ any ++ ":last-child")
+                --     [ Property "margin-right" "0"
+                --     ]
+                -- columns
+                , renderStyle options maybePseudo (class ++ column ++ " > " ++ any ++ " + " ++ any) [ Property "margin-top" yPx ]
+                , renderStyle options maybePseudo (class ++ page ++ " > " ++ any ++ " + " ++ any) [ Property "margin-top" yPx ]
+                , renderStyle options maybePseudo (class ++ page ++ " > " ++ left) [ Property "margin-right" xPx ]
+                , renderStyle options maybePseudo (class ++ page ++ " > " ++ right) [ Property "margin-left" xPx ]
+                , renderStyle options
+                    maybePseudo
+                    (class ++ paragraph)
+                    [ Property "line-height" ("calc(1em + " ++ String.fromInt y ++ "px)")
+                    ]
+                , renderStyle options
+                    maybePseudo
+                    ("textarea" ++ any ++ class)
+                    [ Property "line-height" ("calc(1em + " ++ String.fromInt y ++ "px)")
+                    , Property "height" ("calc(100% + " ++ String.fromInt y ++ "px)")
+                    ]
+
+                -- , renderStyle options
+                --     maybePseudo
+                --     (class ++ paragraph ++ " > " ++ any)
+                --     [ Property "margin-right" xPx
+                --     , Property "margin-bottom" yPx
+                --     ]
+                , renderStyle options
+                    maybePseudo
+                    (class ++ paragraph ++ " > " ++ left)
+                    [ Property "margin-right" xPx
+                    ]
+                , renderStyle options
+                    maybePseudo
+                    (class ++ paragraph ++ " > " ++ right)
+                    [ Property "margin-left" xPx
+                    ]
+                , renderStyle options
+                    maybePseudo
+                    (class ++ paragraph ++ "::after")
+                    [ Property "content" "''"
+                    , Property "display" "block"
+                    , Property "height" "0"
+                    , Property "width" "0"
+                    , Property "margin-top" (String.fromInt (-1 * (y // 2)) ++ "px")
+                    ]
+                , renderStyle options
+                    maybePseudo
+                    (class ++ paragraph ++ "::before")
+                    [ Property "content" "''"
+                    , Property "display" "block"
+                    , Property "height" "0"
+                    , Property "width" "0"
+                    , Property "margin-bottom" (String.fromInt (-1 * (y // 2)) ++ "px")
+                    ]
+                ]
+
+        PaddingStyle cls top right bottom left ->
+            let
+                class =
+                    "."
+                        ++ cls
+            in
+            renderStyle options
+                maybePseudo
+                class
+                [ Property "padding"
+                    (String.fromInt top
+                        ++ "px "
+                        ++ String.fromInt right
+                        ++ "px "
+                        ++ String.fromInt bottom
+                        ++ "px "
+                        ++ String.fromInt left
+                        ++ "px"
+                    )
+                ]
+
+        BorderWidth cls top right bottom left ->
+            let
+                class =
+                    "."
+                        ++ cls
+            in
+            renderStyle options
+                maybePseudo
+                class
+                [ Property "border-width"
+                    (String.fromInt top
+                        ++ "px "
+                        ++ String.fromInt right
+                        ++ "px "
+                        ++ String.fromInt bottom
+                        ++ "px "
+                        ++ String.fromInt left
+                        ++ "px"
+                    )
+                ]
+
+        GridTemplateStyle template ->
+            let
+                class =
+                    ".grid-rows-"
+                        ++ String.join "-" (List.map lengthClassName template.rows)
+                        ++ "-cols-"
+                        ++ String.join "-" (List.map lengthClassName template.columns)
+                        ++ "-space-x-"
+                        ++ lengthClassName (Tuple.first template.spacing)
+                        ++ "-space-y-"
+                        ++ lengthClassName (Tuple.second template.spacing)
+
+                ySpacing =
+                    toGridLength (Tuple.second template.spacing)
+
+                xSpacing =
+                    toGridLength (Tuple.first template.spacing)
+
+                toGridLength x =
+                    toGridLengthHelper Nothing Nothing x
+
+                toGridLengthHelper minimum maximum x =
+                    case x of
+                        Px px ->
+                            String.fromInt px ++ "px"
+
+                        Content ->
+                            case ( minimum, maximum ) of
+                                ( Nothing, Nothing ) ->
+                                    "max-content"
+
+                                ( Just minSize, Nothing ) ->
+                                    "minmax(" ++ String.fromInt minSize ++ "px, " ++ "max-content)"
+
+                                ( Nothing, Just maxSize ) ->
+                                    "minmax(max-content, " ++ String.fromInt maxSize ++ "px)"
+
+                                ( Just minSize, Just maxSize ) ->
+                                    "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt maxSize ++ "px)"
+
+                        Fill i ->
+                            case ( minimum, maximum ) of
+                                ( Nothing, Nothing ) ->
+                                    String.fromInt i ++ "fr"
+
+                                ( Just minSize, Nothing ) ->
+                                    "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt i ++ "fr" ++ "fr)"
+
+                                ( Nothing, Just maxSize ) ->
+                                    "minmax(max-content, " ++ String.fromInt maxSize ++ "px)"
+
+                                ( Just minSize, Just maxSize ) ->
+                                    "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt maxSize ++ "px)"
+
+                        Min m len ->
+                            toGridLengthHelper (Just m) maximum len
+
+                        Max m len ->
+                            toGridLengthHelper minimum (Just m) len
+
+                msColumns =
+                    template.columns
+                        |> List.map toGridLength
+                        |> String.join ySpacing
+                        |> (\x -> "-ms-grid-columns: " ++ x ++ ";")
+
+                msRows =
+                    template.columns
+                        |> List.map toGridLength
+                        |> String.join ySpacing
+                        |> (\x -> "-ms-grid-rows: " ++ x ++ ";")
+
+                base =
+                    class ++ "{" ++ msColumns ++ msRows ++ "}"
+
+                columns =
+                    template.columns
+                        |> List.map toGridLength
+                        |> String.join " "
+                        |> (\x -> "grid-template-columns: " ++ x ++ ";")
+
+                rows =
+                    template.rows
+                        |> List.map toGridLength
+                        |> String.join " "
+                        |> (\x -> "grid-template-rows: " ++ x ++ ";")
+
+                gapX =
+                    "grid-column-gap:" ++ toGridLength (Tuple.first template.spacing) ++ ";"
+
+                gapY =
+                    "grid-row-gap:" ++ toGridLength (Tuple.second template.spacing) ++ ";"
+
+                modernGrid =
+                    class ++ "{" ++ columns ++ rows ++ gapX ++ gapY ++ "}"
+
+                supports =
+                    "@supports (display:grid) {" ++ modernGrid ++ "}"
+            in
+            [ base
+            , supports
+            ]
+
+        GridPosition position ->
+            let
+                class =
+                    ".grid-pos-"
+                        ++ String.fromInt position.row
+                        ++ "-"
+                        ++ String.fromInt position.col
+                        ++ "-"
+                        ++ String.fromInt position.width
+                        ++ "-"
+                        ++ String.fromInt position.height
+
+                msPosition =
+                    String.join " "
+                        [ "-ms-grid-row: "
+                            ++ String.fromInt position.row
+                            ++ ";"
+                        , "-ms-grid-row-span: "
+                            ++ String.fromInt position.height
+                            ++ ";"
+                        , "-ms-grid-column: "
+                            ++ String.fromInt position.col
+                            ++ ";"
+                        , "-ms-grid-column-span: "
+                            ++ String.fromInt position.width
+                            ++ ";"
+                        ]
+
+                base =
+                    class ++ "{" ++ msPosition ++ "}"
+
+                modernPosition =
+                    String.join " "
+                        [ "grid-row: "
+                            ++ String.fromInt position.row
+                            ++ " / "
+                            ++ String.fromInt (position.row + position.height)
+                            ++ ";"
+                        , "grid-column: "
+                            ++ String.fromInt position.col
+                            ++ " / "
+                            ++ String.fromInt (position.col + position.width)
+                            ++ ";"
+                        ]
+
+                modernGrid =
+                    class ++ "{" ++ modernPosition ++ "}"
+
+                supports =
+                    "@supports (display:grid) {" ++ modernGrid ++ "}"
+            in
+            [ base
+            , supports
+            ]
+
+        PseudoSelector class styles ->
+            let
+                renderPseudoRule style =
+                    renderStyleRule options style (Just class)
+            in
+            List.concatMap renderPseudoRule styles
+
+        Transform transform ->
+            let
+                val =
+                    transformValue transform
+
+                class =
+                    transformClass transform
+            in
+            case ( class, val ) of
+                ( Just cls, Just v ) ->
+                    renderStyle options
+                        maybePseudo
+                        ("." ++ cls)
+                        [ Property "transform"
+                            v
+                        ]
+
+                _ ->
+                    []
 
 
 lengthClassName : Length -> String
