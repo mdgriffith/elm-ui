@@ -22,6 +22,7 @@ sauce.env
 __pycache__
 node_modules
 benchmarks/tmp
+benchmarks/results
 tests/tmp
 
 tmp
