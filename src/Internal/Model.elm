@@ -530,25 +530,22 @@ finalizeNode has node attributes children embedMode parentContext =
 
 
 embedWith static opts styles children =
+    let
+        dynamicStyleSheet =
+            styles
+                |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
+                |> Tuple.second
+                -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
+                -- |> sortedReduce
+                |> toStyleSheet opts
+    in
     if static then
         staticRoot opts
-            :: (styles
-                    |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
-                    |> Tuple.second
-                    -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
-                    -- |> sortedReduce
-                    |> toStyleSheet opts
-               )
+            :: dynamicStyleSheet
             :: children
 
     else
-        (styles
-            |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
-            |> Tuple.second
-            -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
-            -- |> sortedReduce
-            |> toStyleSheet opts
-        )
+        dynamicStyleSheet
             :: children
 
 
@@ -2568,28 +2565,16 @@ renderProps force (Property key val) existing =
 
 
 encodeStyles options stylesheet =
-    let
-        combine style rendered =
-            let
-                renderedStyle =
-                    renderStyleRule options style Nothing
-            in
-            { rules = renderedStyle ++ rendered.rules
-            , topLevel =
-                case topLevelValue style of
-                    Nothing ->
-                        rendered.topLevel
-
-                    Just topLevel ->
-                        topLevel :: rendered.topLevel
-            }
-    in
-    case List.foldl combine { topLevel = [], rules = [] } stylesheet of
-        { topLevel, rules } ->
-            -- TODO: top level values are still required
-            rules
-                |> List.map (\r -> ( r, Encode.string r ))
-                |> Encode.object
+    stylesheet
+        |> List.map
+            (\style ->
+                let
+                    styled =
+                        renderStyleRule options style Nothing
+                in
+                ( getStyleName style, Encode.list Encode.string styled )
+            )
+        |> Encode.object
 
 
 toStyleSheetString : OptionRecord -> List Style -> String

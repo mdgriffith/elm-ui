@@ -26,7 +26,10 @@
     Object.keys(newStyles).forEach((key) => {
       if (!ruleCache.has(key)) {
         const newRule = newStyles[key]
-        sheet.insertRule(newRule)
+        for (var i = 0; i < newRule.length; i++) {
+          sheet.insertRule(newRule[i])
+        }
+
         ruleCache.add(key)
       }
     });
