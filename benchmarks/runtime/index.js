@@ -54,6 +54,10 @@ function regroupResults(results) {
 }
 
 
+var contain = [{ module: "Contain", group: "html", count: 1024, value: "viewHtml8192" }
+    , { module: "Contain", group: "contain", count: 128, value: "viewHtmlContain8192" }]
+
+
 async function write_results(allResults) {
     var resultsDir = "benchmarks/results"
     if (!fs.existsSync(resultsDir)) {
@@ -71,11 +75,12 @@ async function write_results(allResults) {
 }
 
 
-
-
 (async () => {
     const browser = await puppeteer.launch();
-    var instances = [{ module: "Baseline", group: null, value: "bench" }
+
+
+    var instances = [
+        { module: "Baseline", group: null, value: "bench" }
         , { module: "ManyElements", group: "elmUI", count: 1024, value: "elmUI1024" }
         , { module: "ManyElements", group: "elmUI", count: 128, value: "elmUI128" }
         , { module: "ManyElements", group: "elmUI", count: 2048, value: "elmUI2048" }
@@ -112,7 +117,6 @@ async function write_results(allResults) {
         , { module: "ManyElements", group: "viewInline", count: 512, value: "viewInline512" }
         , { module: "ManyElements", group: "viewInline", count: 64, value: "viewInline64" }
         , { module: "ManyElements", group: "viewInline", count: 8192, value: "viewInline8192" }
-
     ]
 
 

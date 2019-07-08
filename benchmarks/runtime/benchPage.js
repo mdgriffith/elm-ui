@@ -6,11 +6,11 @@ async function benchPage(page) {
     // await page.tracing.start({ path: 'trace.json' });
     await page.goto('file://' + path.resolve('./tmp/run.html'))
 
-    await page.waitFor(1000);
+    await page.waitFor(5000);
     // await page.tracing.stop();
     const metrics = await client.send('Performance.getMetrics');
     await page.evaluate(() => { window.elmStartAnim() })
-    await sleep(10000)
+    await sleep(5000)
     await page.evaluate(() => { window.elmStopAnim() })
     const frames = await page.evaluate(x => {
         return Promise.resolve(window.metrics);
