@@ -454,7 +454,10 @@ finalizeNode has node attributes children embedMode parentContext =
                 Embedded nodeName internal ->
                     VirtualDom.node nodeName
                         attributes
-                        [ createNode internal [ Html.Attributes.class (classes.any ++ " " ++ classes.single) ]
+                        [ createNode internal
+                            [ Html.Attributes.class
+                                (classes.any ++ " " ++ classes.single)
+                            ]
                         ]
     in
     case parentContext of
@@ -551,26 +554,25 @@ embedWith static opts styles children =
 
 
 embedKeyed static opts styles children =
+    let
+        dynamicStyleSheet =
+            styles
+                |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
+                |> Tuple.second
+                -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
+                -- |> sortedReduce
+                |> toStyleSheet opts
+    in
     if static then
         ( "static-stylesheet", staticRoot opts )
             :: ( "dynamic-stylesheet"
-               , styles
-                    |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
-                    |> Tuple.second
-                    -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
-                    -- |> sortedReduce
-                    |> toStyleSheet opts
+               , dynamicStyleSheet
                )
             :: children
 
     else
         ( "dynamic-stylesheet"
-        , styles
-            |> List.foldl reduceStyles ( Set.empty, renderFocusStyle opts.focus )
-            |> Tuple.second
-            -- |> reduceStylesRecursive Set.empty [ ]) --renderFocusStyle opts.focus ]
-            -- |> sortedReduce
-            |> toStyleSheet opts
+        , dynamicStyleSheet
         )
             :: children
 
