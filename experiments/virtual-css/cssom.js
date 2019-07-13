@@ -2,7 +2,6 @@
   var ruleCache = new Set()
 
   function createStyleNode() {
-
     const node = document.createElement('style')
     // Without it, IE will have a broken source order specificity if we
     // insert rules after we insert the style tag.
@@ -12,11 +11,8 @@
     return node
   }
 
-
   var staticSheet = createStyleNode();
   var sheet = createStyleNode().sheet;
-
-
 
   function sync_static(newStyleString) {
     staticSheet.textContent = newStyleString
@@ -29,70 +25,23 @@
         for (var i = 0; i < newRule.length; i++) {
           sheet.insertRule(newRule[i])
         }
-
         ruleCache.add(key)
       }
     });
   }
 
   class CssRulesNode extends HTMLElement {
-    constructor() {
-      var self = super();
-    }
-    connectedCallback() {
-      sync(this.rulesPayload)
-    }
     set rules(rules) {
-      console.log("set rules")
-      console.log(rules)
-      if (self.rulesPayload) {
-        console.log(self.rulesPayload)
-      }
-      this._rules = rules;
-      console.log(this._rules)
-    }
-    attributeChangedCallback(attrName, oldVal, newVal) {
-      console.log(attrName, oldVal, newVal)
+      sync(rules);
     }
   }
   customElements.define('elm-ui-rules', CssRulesNode);
 
-
-
   class CssStaticRulesNode extends HTMLElement {
-    constructor() {
-      var self = super();
-      this._rules = null;
-    }
-    connectedCallback() {
-      // console.log("static connected")
-      // console.log(this)
-      // if (this._rules) {
-      //   sync_static(this._rules)
-      // }
-    }
     set rules(rules) {
-      this._rules = rules
-      sync_static(this._rules)
-      // console.log("set static rules")
-      // console.log(rules)
-    }
-
-    attributeChangedCallback(attrName, oldVal, newVal) {
-      console.log("attribute cng")
-      console.log(attrName)
-      if (attrName == "rules") {
-        sync_static(newVal)
-      }
+      sync_static(rules);
     }
   }
   customElements.define('elm-ui-static-rules', CssStaticRulesNode);
-
-
-
-
-
-
-
 
 }())
