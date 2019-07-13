@@ -343,14 +343,14 @@ viewEl selectedIndex index =
     el
         [ Background.color
             (if selectedIndex == index then
-                pinkish index
+                pink
 
              else
                 white
             )
         , Font.color
             (if selectedIndex /= index then
-                pinkish index
+                pink
 
              else
                 white
