@@ -2345,9 +2345,8 @@ toStyleSheet options styleSheet =
 
         WithVirtualCss ->
             VirtualDom.node "elm-ui-rules"
-                [ VirtualDom.property "rulesPayload"
+                [ VirtualDom.property "rules"
                     (encodeStyles options styleSheet)
-                , VirtualDom.attribute "rules" "hello"
                 ]
                 []
 
