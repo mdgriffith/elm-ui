@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const benchPage = require('./benchPage');
+const chalk = require('chalk');
 var compileToString = require("node-elm-compiler").compileToString;
 const fs = require('fs');
 
@@ -98,42 +99,26 @@ async function writeResults(allResults, resultsDir, name) {
 
 
     var instances = [
-        { module: "Baseline", group: null, value: "bench" }
-        , { module: "ManyElements", group: "elmUI", count: 1024, value: "elmUI1024" }
-        // , { module: "ManyElements", group: "elmUI", count: 128, value: "elmUI128" }
+        { module: "ManyElements", group: "elmUI", count: 1024, value: "elmUI1024" }
+        , { module: "ManyElements", group: "elmUI", count: 128, value: "elmUI128" }
         , { module: "ManyElements", group: "elmUI", count: 2048, value: "elmUI2048" }
         , { module: "ManyElements", group: "elmUI", count: 24, value: "elmUI24" }
-        // , { module: "ManyElements", group: "elmUI", count: 256, value: "elmUI256" }
         , { module: "ManyElements", group: "elmUI", count: 4096, value: "elmUI4096" }
-        // , { module: "ManyElements", group: "elmUI", count: 512, value: "elmUI512" }
-        // , { module: "ManyElements", group: "elmUI", count: 64, value: "elmUI64" }
         , { module: "ManyElements", group: "elmUI", count: 8192, value: "elmUI8192" }
         , { module: "ManyElements", group: "elmUIVCSS", count: 1024, value: "elmUIVCSS1024" }
-        // , { module: "ManyElements", group: "elmUIVCSS", count: 128, value: "elmUIVCSS128" }
         , { module: "ManyElements", group: "elmUIVCSS", count: 2048, value: "elmUIVCSS2048" }
         , { module: "ManyElements", group: "elmUIVCSS", count: 24, value: "elmUIVCSS24" }
-        // , { module: "ManyElements", group: "elmUIVCSS", count: 256, value: "elmUIVCSS256" }
         , { module: "ManyElements", group: "elmUIVCSS", count: 4096, value: "elmUIVCSS4096" }
-        // , { module: "ManyElements", group: "elmUIVCSS", count: 512, value: "elmUIVCSS512" }
-        // , { module: "ManyElements", group: "elmUIVCSS", count: 64, value: "elmUIVCSS64" }
         , { module: "ManyElements", group: "elmUIVCSS", count: 8192, value: "elmUIVCSS8192" }
         , { module: "ManyElements", group: "viewHtml", count: 1024, value: "viewHtml1024" }
-        // , { module: "ManyElements", group: "viewHtml", count: 128, value: "viewHtml128" }
         , { module: "ManyElements", group: "viewHtml", count: 2048, value: "viewHtml2048" }
         , { module: "ManyElements", group: "viewHtml", count: 24, value: "viewHtml24" }
-        // , { module: "ManyElements", group: "viewHtml", count: 256, value: "viewHtml256" }
         , { module: "ManyElements", group: "viewHtml", count: 4096, value: "viewHtml4096" }
-        // , { module: "ManyElements", group: "viewHtml", count: 512, value: "viewHtml512" }
-        // , { module: "ManyElements", group: "viewHtml", count: 64, value: "viewHtml64" }
         , { module: "ManyElements", group: "viewHtml", count: 8192, value: "viewHtml8192" }
         , { module: "ManyElements", group: "viewInline", count: 1024, value: "viewInline1024" }
-        // , { module: "ManyElements", group: "viewInline", count: 128, value: "viewInline128" }
         , { module: "ManyElements", group: "viewInline", count: 2048, value: "viewInline2048" }
         , { module: "ManyElements", group: "viewInline", count: 24, value: "viewInline24" }
-        // , { module: "ManyElements", group: "viewInline", count: 256, value: "viewInline256" }
         , { module: "ManyElements", group: "viewInline", count: 4096, value: "viewInline4096" }
-        // , { module: "ManyElements", group: "viewInline", count: 512, value: "viewInline512" }
-        // , { module: "ManyElements", group: "viewInline", count: 64, value: "viewInline64" }
         , { module: "ManyElements", group: "viewInline", count: 8192, value: "viewInline8192" }
     ]
 
@@ -156,6 +141,7 @@ async function writeResults(allResults, resultsDir, name) {
         fs.mkdirSync(`./${resultsDir}/${resultName}/instances/`, { recursive: true });
     }
 
+    console.log(`Beginning benchmark for ${resultName} →`)
 
     for (var i = 0; i < instances.length; i++) {
         var item = instances[i]
@@ -174,7 +160,8 @@ async function writeResults(allResults, resultsDir, name) {
         results.group = item.group
         results.count = item.count
         await page.close()
-        console.log(results)
+        // console.log(results)
+        console.log("    Benchmark of " + chalk.green(`${item.module}.${item.value}`) + " complete")
         allResults.push(results)
     }
     await browser.close();
@@ -182,5 +169,8 @@ async function writeResults(allResults, resultsDir, name) {
     allResults = regroupResults(allResults)
 
     writeResults(allResults, resultsDir, resultName)
+    console.log()
+    console.log("Benchmark complete")
+    console.log("   → " + chalk.green(`${resultsDir}/${resultName}/index.html`))
 
 })();

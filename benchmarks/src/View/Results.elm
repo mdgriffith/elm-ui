@@ -52,11 +52,13 @@ main =
                 , body =
                     [ Html.div
                         [ class "container" ]
-                        [ row
-                            (List.map viewLinks model.data)
+                        [ column
+                            [ Html.h2 [] [ Html.text "Benchmarked Pages" ]
+                            , row (List.map viewLinks model.data)
+                            ]
                         , row
-                            [ viewNodes model.data
-                            , viewFps model.data
+                            [ -- viewNodes model.data
+                              viewFps model.data
                             , viewTimeToPaint model.data
                             ]
                         , row
@@ -68,7 +70,7 @@ main =
                                             , getCount = .count
                                             , name = data.name
                                             , flavor = "Cold render"
-                                            , range = (0, 1.2)
+                                            , range = ( 0, 1.2 )
                                             }
                                             (List.sortBy .count data.results)
                                     )
@@ -82,7 +84,7 @@ main =
                                             , getCount = .count
                                             , name = data.name
                                             , flavor = "Warm render"
-                                            , range = (0, 1.2)
+                                            , range = ( 0, 1.2 )
                                             }
                                             (List.sortBy .count data.results)
                                     )
@@ -96,7 +98,7 @@ main =
                                             , getCount = .count
                                             , name = data.name
                                             , flavor = "Long Animation"
-                                            , range = (0, 5)
+                                            , range = ( 0, 5 )
                                             }
                                             (List.sortBy .count data.results)
                                     )
@@ -129,7 +131,7 @@ update msg model =
 
 viewLinks data =
     column
-        (Html.h2 [] [ Html.text data.name ]
+        (Html.h1 [] [ Html.text data.name ]
             :: (data.results
                     |> List.sortBy .link
                     |> List.map viewSingleLink
@@ -138,7 +140,11 @@ viewLinks data =
 
 
 viewSingleLink result =
-    Html.a [ Attr.href result.link ] [ Html.text result.name ]
+    Html.a
+        [ Attr.href result.link
+        , Html.style "padding-right" "30px"
+        ]
+        [ Html.text result.name ]
 
 
 
@@ -300,7 +306,7 @@ viewRenderBreakdown :
     , getCount : Render -> Float
     , name : String
     , flavor : String
-    , range : (Float, Float)
+    , range : ( Float, Float )
     }
     -> List Render
     -> Html.Html msg
