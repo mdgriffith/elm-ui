@@ -16,6 +16,7 @@ module Internal.Model exposing
     , LayoutContext(..)
     , Length(..)
     , Location(..)
+    , NearbyChildren(..)
     , NodeName(..)
     , Option(..)
     , OptionRecord

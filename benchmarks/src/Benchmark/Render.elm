@@ -6,6 +6,8 @@ port module Benchmark.Render exposing (Benchmark, toProgram)
 import Browser
 import Browser.Events
 import Html exposing (Html)
+import Html.Attributes as Attr
+import Html.Events as Events
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Time
@@ -50,7 +52,17 @@ toProgram render =
         , view =
             \model ->
                 { title = render.name
-                , body = [ render.view model.model ]
+                , body =
+                    [ Html.div
+                        [ Attr.style "display" "flex"
+                        , Attr.style "flex-direction" "row"
+                        ]
+                        [ Html.button [ Events.onClick Refresh ] [ Html.text "Refresh" ]
+                        , Html.button [ Events.onClick StartAnim ] [ Html.text "StartAnim" ]
+                        , Html.button [ Events.onClick StopAnim ] [ Html.text "StopAnim" ]
+                        ]
+                    , render.view model.model
+                    ]
                 }
         , update =
             update render

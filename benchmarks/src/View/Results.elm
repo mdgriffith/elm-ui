@@ -3,11 +3,15 @@ port module View.Results exposing (main)
 import Browser
 import Color
 import Html
-import Html.Attributes exposing (class)
+import Html.Attributes as Attr exposing (class)
 import LineChart as LineChart
 import LineChart.Area as Area
 import LineChart.Axis as Axis
 import LineChart.Axis.Intersection as Intersection
+import LineChart.Axis.Line as AxisLine
+import LineChart.Axis.Range as Range
+import LineChart.Axis.Ticks as Ticks
+import LineChart.Axis.Title as Title
 import LineChart.Colors as Colors
 import LineChart.Container as Container
 import LineChart.Dots as Dots
@@ -17,6 +21,22 @@ import LineChart.Interpolation as Interpolation
 import LineChart.Junk as Junk exposing (..)
 import LineChart.Legends as Legends
 import LineChart.Line as Line
+
+
+row children =
+    Html.div
+        [ Attr.style "display" "flex"
+        , Attr.style "flex-direction" "row"
+        ]
+        children
+
+
+column children =
+    Html.div
+        [ Attr.style "display" "flex"
+        , Attr.style "flex-direction" "column"
+        ]
+        children
 
 
 main =
@@ -32,12 +52,58 @@ main =
                 , body =
                     [ Html.div
                         [ class "container" ]
-                        ([ viewNodes model.data
-                         , viewFps model.data
-                         , viewTimeToPaint model.data
-                         ]
-                            ++ List.map viewTimeDistribution model.data
-                        )
+                        [ row
+                            (List.map viewLinks model.data)
+                        , row
+                            [ viewNodes model.data
+                            , viewFps model.data
+                            , viewTimeToPaint model.data
+                            ]
+                        , row
+                            [ column
+                                (List.map
+                                    (\data ->
+                                        viewRenderBreakdown
+                                            { get = .coldRender
+                                            , getCount = .count
+                                            , name = data.name
+                                            , flavor = "Cold render"
+                                            , range = (0, 1.2)
+                                            }
+                                            (List.sortBy .count data.results)
+                                    )
+                                    model.data
+                                )
+                            , column
+                                (List.map
+                                    (\data ->
+                                        viewRenderBreakdown
+                                            { get = .warmRender
+                                            , getCount = .count
+                                            , name = data.name
+                                            , flavor = "Warm render"
+                                            , range = (0, 1.2)
+                                            }
+                                            (List.sortBy .count data.results)
+                                    )
+                                    model.data
+                                )
+                            , column
+                                (List.map
+                                    (\data ->
+                                        viewRenderBreakdown
+                                            { get = .extendedRender
+                                            , getCount = .count
+                                            , name = data.name
+                                            , flavor = "Long Animation"
+                                            , range = (0, 5)
+                                            }
+                                            (List.sortBy .count data.results)
+                                    )
+                                    model.data
+                                )
+                            ]
+                        ]
                     ]
                 }
         , update =
@@ -61,6 +127,20 @@ update msg model =
             ( { data = data }, Cmd.none )
 
 
+viewLinks data =
+    column
+        (Html.h2 [] [ Html.text data.name ]
+            :: (data.results
+                    |> List.sortBy .link
+                    |> List.map viewSingleLink
+               )
+        )
+
+
+viewSingleLink result =
+    Html.a [ Attr.href result.link ] [ Html.text result.name ]
+
+
 
 -- DATA
 
@@ -79,11 +159,23 @@ type alias Data =
 
 
 type alias Render =
-    { count : Float
+    { name : String
+    , count : Float
     , fps : Float
     , timeToFirstPaintMS : Float
     , nodes : Float
-    , layoutSeconds : Float
+    , link : String
+    , coldRender :
+        Breakdown
+    , warmRender :
+        Breakdown
+    , extendedRender :
+        Breakdown
+    }
+
+
+type alias Breakdown =
+    { layoutSeconds : Float
     , recalcStyleSeconds : Float
     , scriptDurationSeconds : Float
     }
@@ -112,12 +204,27 @@ getShape i =
     Dots.triangle
 
 
+graphWidth =
+    800
+
+
+graphHeight =
+    500
+
+
+container =
+    Container.styled "line-chart-1"
+        [ ( "font-family", "monospace" )
+        , ( "flex-shrink", "0" )
+        ]
+
+
 viewFps : List Data -> Html.Html msg
 viewFps datums =
     LineChart.viewCustom
-        { y = Axis.default 800 "FPS" .fps
-        , x = Axis.default 1400 "Base Count" .count
-        , container = Container.styled "line-chart-1" [ ( "font-family", "monospace" ) ]
+        { y = Axis.default graphHeight "FPS" .fps
+        , x = Axis.default graphWidth "Base Count" .count
+        , container = container
         , interpolation =
             -- Try out these different configs!
             -- Interpolation.linear
@@ -143,9 +250,9 @@ viewResult i data =
 viewTimeToPaint : List Data -> Html.Html msg
 viewTimeToPaint datums =
     LineChart.viewCustom
-        { y = Axis.default 800 "First Paint" (max 0 << .timeToFirstPaintMS)
-        , x = Axis.default 1400 "Base Count" .count
-        , container = Container.styled "line-chart-1" [ ( "font-family", "monospace" ) ]
+        { y = Axis.default graphHeight "First Paint" (max 0 << .timeToFirstPaintMS)
+        , x = Axis.default graphWidth "Base Count" .count
+        , container = container
         , interpolation =
             -- Try out these different configs!
             -- Interpolation.linear
@@ -167,9 +274,9 @@ viewTimeToPaint datums =
 viewNodes : List Data -> Html.Html msg
 viewNodes datums =
     LineChart.viewCustom
-        { y = Axis.default 800 "Nodes" .nodes
-        , x = Axis.default 1400 "Base Count" .count
-        , container = Container.styled "line-chart-1" [ ( "font-family", "monospace" ) ]
+        { y = Axis.default graphHeight "Nodes" .nodes
+        , x = Axis.default graphWidth "Base Count" .count
+        , container = container
         , interpolation =
             -- Try out these different configs!
             -- Interpolation.linear
@@ -188,62 +295,79 @@ viewNodes datums =
         (List.indexedMap viewResult datums)
 
 
-viewTimeDistribution : Data -> Html.Html msg
-viewTimeDistribution data =
-    let
-        sorted =
-            List.sortBy .count data.results
-    in
-    LineChart.viewCustom
-        { y = Axis.default 800 (data.name ++ "(s)") .seconds
-        , x = Axis.default 1400 "Base Count" .count
-        , container = Container.styled "line-chart-1" [ ( "font-family", "monospace" ) ]
-        , interpolation =
-            -- Try out these different configs!
-            -- Interpolation.linear
-            Interpolation.monotone
+viewRenderBreakdown :
+    { get : Render -> Breakdown
+    , getCount : Render -> Float
+    , name : String
+    , flavor : String
+    , range : (Float, Float)
+    }
+    -> List Render
+    -> Html.Html msg
+viewRenderBreakdown { get, getCount, name, flavor, range } results =
+    Html.div []
+        [ Html.h2 [] [ Html.text (name ++ ", " ++ flavor) ]
+        , LineChart.viewCustom
+            { y =
+                Axis.custom
+                    { title = Title.default (name ++ "(s)")
+                    , variable = Just << .seconds
+                    , pixels = graphHeight
+                    , range = Range.window (Tuple.first range) (Tuple.second range)
+                    , axisLine = AxisLine.full Colors.black
+                    , ticks = Ticks.default
+                    }
+            , x = Axis.default graphWidth "Base Count" .count
+            , container = container
+            , interpolation =
+                -- Try out these different configs!
+                -- Interpolation.linear
+                Interpolation.monotone
 
-        -- Interpolation.stepped
-        , intersection = Intersection.default
-        , legends = Legends.default
-        , events = Events.default
-        , junk = Junk.default
-        , grid = Grid.default
-        , area = Area.stacked 0.5
-        , line = Line.default
-        , dots = Dots.default
-        }
-        [ LineChart.line (getColor 0)
-            (getShape 0)
-            "Layout"
-            (List.map
-                (\x ->
-                    { seconds = x.layoutSeconds
-                    , count = x.count
-                    }
+            -- Interpolation.stepped
+            , intersection = Intersection.default
+            , legends = Legends.default
+            , events = Events.default
+            , junk = Junk.default
+            , grid = Grid.default
+            , area = Area.stacked 0.5
+            , line = Line.default
+            , dots = Dots.default
+            }
+            [ LineChart.line (getColor 0)
+                (getShape 0)
+                "Layout"
+                (List.map
+                    (\x ->
+                        { seconds = .layoutSeconds (get x)
+                        , count = getCount x
+                        }
+                    )
+                    results
                 )
-                sorted
-            )
-        , LineChart.line (getColor 1)
-            (getShape 1)
-            "RecalcStyle"
-            (List.map
-                (\x ->
-                    { seconds = x.recalcStyleSeconds
-                    , count = x.count
-                    }
+            , LineChart.line (getColor 1)
+                (getShape 1)
+                "RecalcStyle"
+                (List.map
+                    (\x ->
+                        { seconds =
+                            .recalcStyleSeconds (get x)
+                        , count = getCount x
+                        }
+                    )
+                    results
                 )
-                sorted
-            )
-        , LineChart.line (getColor 2)
-            (getShape 2)
-            "Script"
-            (List.map
-                (\x ->
-                    { seconds = x.scriptDurationSeconds
-                    , count = x.count
-                    }
+            , LineChart.line (getColor 2)
+                (getShape 2)
+                "Script"
+                (List.map
+                    (\x ->
+                        { seconds =
+                            .scriptDurationSeconds (get x)
+                        , count = getCount x
+                        }
+                    )
+                    results
                 )
-                sorted
-            )
+            ]
         ]

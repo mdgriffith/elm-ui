@@ -343,14 +343,14 @@ viewEl selectedIndex index =
     el
         [ Background.color
             (if selectedIndex == index then
-                pink
+                pinkish index
 
              else
                 white
             )
         , Font.color
             (if selectedIndex /= index then
-                pink
+                pinkish index
 
              else
                 white
@@ -373,6 +373,21 @@ white =
 
 pink =
     rgb255 240 0 245
+
+
+pinkish i =
+    rgb255 (wrap255 (i + 240)) 0 245
+
+
+wrap255 i =
+    if i > 255 then
+        0
+
+    else if i < 0 then
+        0
+
+    else
+        i
 
 
 {-| -}
@@ -470,14 +485,14 @@ viewInline name count =
 viewInlineHtmlElement selectedIndex index =
     Html.div
         (if selectedIndex == index then
-            [ Html.Attributes.style "background-color" "rgb(240, 0, 245)"
+            [ Html.Attributes.style "background-color" (renderColor (wrap255 (index + 240)) 0 245)
             , Html.Attributes.style "color" "white"
             , Html.Attributes.style "padding" "24"
             ]
 
          else
             [ Html.Attributes.style "background-color" "white"
-            , Html.Attributes.style "color" "rgb(240, 0, 245)"
+            , Html.Attributes.style "color" (renderColor (wrap255 (index + 240)) 0 245)
             , Html.Attributes.style "padding" "24"
             ]
         )
@@ -489,3 +504,13 @@ viewInlineHtmlElement selectedIndex index =
                 Html.text "Hello!"
             ]
         ]
+
+
+renderColor r g b =
+    "rgb("
+        ++ String.fromInt r
+        ++ ","
+        ++ String.fromInt g
+        ++ ","
+        ++ String.fromInt b
+        ++ ")"
