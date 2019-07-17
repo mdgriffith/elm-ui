@@ -132,6 +132,51 @@ Instead of implicit submission behavior, [try making an `onEnter` event handler 
 
 And no one has to look up obtuse html documentation to understand the behavior of their code :).
 
+
+# Disabling Inputs
+
+You also might be wondering how to disable an input.
+
+Disabled inputs can be a little problematic for user experience, and doubly so for accessibility. This is because it's now your priority to inform the user _why_ some field is disabled.
+
+If an input is truly disabled, meaning it's not focusable or doesn't send off a `Msg`, you actually lose your ability to help the user out! For those wary about accessibility [this is a big problem.](https://ux.stackexchange.com/questions/103239/should-disabled-elements-be-focusable-for-accessibility-purposes)
+
+Here are some alternatives to think about that don't involve explicitly disabling an input.
+
+**Disabled Buttons** - Change the `Msg` it fires, the text that is rendered, and optionally set a `Region.description` which will be available to screen readers.
+
+    import Element.Input as Input
+    import Element.Region as Region
+
+    myButton ready =
+        if ready then
+            Input.button
+                [ Background.color blue
+                ]
+                { onPress =
+                    Just SaveButtonPressed
+                , label =
+                    text "Save blog post"
+                }
+
+        else
+            Input.button
+                [ Background.color grey
+                , Region.description
+                    "A publish date is required before saving a blogpost."
+                ]
+                { onPress =
+                    Just DisabledSaveButtonPressed
+                , label =
+                    text "Save Blog "
+                }
+
+Consider showing a hint if `DisabledSaveButtonPressed` is sent.
+
+For other inputs such as `Input.text`, consider simply rendering it in a normal `paragraph` or `el` if it's not editable.
+
+Alternatively, see if it's reasonable to _not_ display an input if you'd normally disable it. Is there an option where it's only visible when it's editable?
+
 -}
 
 import Element exposing (Attribute, Color, Element)
@@ -276,11 +321,9 @@ The `onPress` handler will be fired either `onClick` or when the element is focu
             , Element.focused
                 [ Background.color purple ]
             ]
-            { onPress = ClickMsg
+            { onPress = Just ClickMsg
             , label = text "My Button"
             }
-
-`onPress` takes a `Maybe msg`. If you provide the value `Nothing`, then the button will be disabled.
 
 -}
 button :
