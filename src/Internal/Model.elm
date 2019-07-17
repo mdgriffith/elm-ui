@@ -1141,24 +1141,18 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                 gatherAttrRecursive classes (addNodeName "h6" node) has transform styles attrs children remaining
 
                         Paragraph ->
-                            let
-                                newNode =
-                                    case node of
-                                        Generic ->
-                                            NodeName "p"
-
-                                        NodeName name ->
-                                            NodeName name
-
-                                        Embedded x y ->
-                                            Embedded x y
-                            in
-                            gatherAttrRecursive classes
-                                newNode
+                            -- previously we rendered a <p> tag, though apparently this invalidates the html if it has <div>s inside.
+                            -- Since we can't guaranteee that there are no divs, we need another strategy.
+                            -- While it's not documented in many places, there apparently is a paragraph aria role
+                            -- maybe it doesn't do anything, but it might help.
+                            -- https://github.com/w3c/aria/blob/11f85f41a5b621fdbe85fc9bcdcd270e653a48ba/common/script/roleInfo.js
+                            gatherAttrRecursive
+                                classes
+                                node
                                 has
                                 transform
                                 styles
-                                attrs
+                                (VirtualDom.attribute "role" "paragraph" :: attrs)
                                 children
                                 remaining
 
@@ -2043,34 +2037,44 @@ getHeight attrs =
             Nothing
 
 
+textElementClasses : String
+textElementClasses =
+    classes.any
+        ++ " "
+        ++ classes.text
+        ++ " "
+        ++ classes.widthContent
+        ++ " "
+        ++ classes.heightContent
+
+
 textElement : String -> VirtualDom.Node msg
 textElement str =
     Html.div
         [ Html.Attributes.class
-            (String.join " "
-                [ classes.any
-                , classes.text
-                , classes.widthContent
-                , classes.heightContent
-                ]
-            )
+            textElementClasses
         ]
         [ Html.text str ]
 
 
+textElementFillClasses : String
+textElementFillClasses =
+    classes.any
+        ++ " "
+        ++ classes.text
+        ++ " "
+        ++ classes.widthFill
+        ++ " "
+        ++ classes.heightFill
+
+
 textElementFill : String -> VirtualDom.Node msg
 textElementFill str =
-    VirtualDom.node "div"
+    Html.div
         [ Html.Attributes.class
-            (String.join " "
-                [ classes.any
-                , classes.text
-                , classes.widthFill
-                , classes.heightFill
-                ]
-            )
+            textElementFillClasses
         ]
-        [ VirtualDom.text str ]
+        [ Html.text str ]
 
 
 type Children x
