@@ -937,6 +937,10 @@ textHelper textInput attrs textOptions =
                         , Element.height Element.fill
                         , Internal.htmlClass classes.inputMultiline
                         , calcMoveToCompensateForPadding withDefaults
+
+                        -- The only reason we do this padding trick is so that when the user clicks in the padding,
+                        -- that the cursor will reset correctly.
+                        -- This could probably be combined with the above `calcMoveToCompensateForPadding`
                         , Element.paddingEach parentPadding
                         , Internal.Attr (Html.Attributes.style "margin" (renderBox (negateBox parentPadding)))
                         , Internal.Attr (Html.Attributes.style "box-sizing" "content-box")
@@ -957,8 +961,8 @@ textHelper textInput attrs textOptions =
             case textInput.type_ of
                 TextArea ->
                     -- textarea with height-content means that
-                    -- the input element is rendered `inFront` and transparently.
-                    -- Then the input text is rendered as the actual element.
+                    -- the input element is rendered `inFront` with a transparent background
+                    -- Then the input text is rendered as the space filling element.
                     Internal.element
                         Internal.asEl
                         Internal.div
