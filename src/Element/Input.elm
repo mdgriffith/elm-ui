@@ -2065,7 +2065,7 @@ defaultTextBoxStyle =
     , Border.color darkGrey
     , Background.color white
     , Border.width 1
-    , Element.spacing 3
+    , Element.spacing 5
     , Element.width Element.fill
     , Element.height Element.shrink
     ]
