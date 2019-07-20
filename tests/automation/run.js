@@ -13,6 +13,7 @@ program.option('-s, --sauce', 'run tests on sauce labs')
     .option('--firefox', 'run only firefox tests')
     .option('--build [value]', 'Set build number for sauce labs')
     .option('--name [value]', 'Set run name for sauce labs')
+    .option('--verbose', 'Print out all test results')
     .parse(process.argv)
 
 
@@ -24,10 +25,6 @@ const windows = [
     },
     {
         browser: "firefox"
-        , browserVersion: "latest"
-    },
-    {
-        browser: "safari"
         , browserVersion: "latest"
     },
     {
@@ -73,16 +70,15 @@ function prepare_all_envs(config) {
         })
     }
 
-    for (i = 0; i < osx.length; i++) {
-        envs.push({
-            browser: osx[i].browser,
-            browserVersion: osx[i].browserVersion,
-            platform: "macOS 10.14",
-            build: config.build,
-            name: config.name
-        })
-    }
-
+    // for (i = 0; i < osx.length; i++) {
+    //     envs.push({
+    //         browser: osx[i].browser,
+    //         browserVersion: osx[i].browserVersion,
+    //         platform: "macOS 10.14",
+    //         build: config.build,
+    //         name: config.name
+    //     })
+    // }
 
     return envs
 }
@@ -103,7 +99,7 @@ function prepare_sauce_driver(env) {
     const username = process.env.SAUCE_USERNAME;
     const accessKey = process.env.SAUCE_ACCESS_KEY;
 
-    driver = new webdriver.Builder().withCapabilities({
+    driver = new Builder().withCapabilities({
         'browserName': env.browser,
         'platformName': env.platform,
         'browserVersion': env.browserVersion,
@@ -133,11 +129,10 @@ async function prepare_local_driver(env) {
 }
 
 async function run_test(driver, url) {
-
     var results = null
     try {
         await driver.get(url);
-        await driver.wait(until.titleIs('tests finished'), 60000);
+        await driver.wait(until.titleIs('tests finished'), 120 * 1000);
         results = await driver.executeScript("return test_results")
     } finally {
         await driver.quit();
@@ -169,7 +164,6 @@ async function run_test(driver, url) {
             throw ("A Build and a Name must be specified.");
         }
 
-
         var results = []
 
         // Publish to netlify
@@ -181,15 +175,22 @@ async function run_test(driver, url) {
             }
         })
         var url = `http://elm-ui-testing.netlify.com/tests/${program.build}/${program.name}/`
-        console.log(`Running sauce labs test ${url}`)
-
+        console.log(`Running sauce labs test:`)
+        console.log(`    ${url}`)
 
         const envs = prepare_all_envs({ build: build, name: name })
+        var test_runs = []
+        var test_labels = []
         for (i = 0; i < envs.length; i++) {
             var driver = prepare_sauce_driver(envs[i])
-            results.push(await run_test(driver, url))
-        }
+            test_runs.push(run_test(driver, url))
+            test_labels.push(envs[i])
 
+        }
+        var results = await Promise.all(test_runs)
+        for (i = 0; i < results.length; i++) {
+            print_results(renderEnvName(test_labels[i]), results[i]);
+        }
 
     } else {
 
@@ -198,42 +199,59 @@ async function run_test(driver, url) {
             console.log("Running locally on Chrome...")
             const driver = await prepare_local_driver(osx.chrome)
             var results = await run_test(driver, "file://" + path.resolve('./tmp/test.html'))
-            print_results(results);
+            print_results("Local Chrome", results);
         }
         if (program.firefox) {
             console.log("Running locally on Firefox...")
             const driver = await prepare_local_driver(osx.firefox)
             var results = await run_test(driver, "file://" + path.resolve('./tmp/test.html'))
-            print_results(results);
+            print_results("Local Firefox", results);
         }
 
     }
 })();
 
+function renderEnvName(env) {
+    return `${env.platform}, ${env.browser} ${env.browserVersion}`
+}
 
-function print_results(results) {
-    var passed = 0
-    var failed = 0
+function print_results(label, results) {
+    var total_passed = 0
+    var total_failed = 0
     var i;
+    if (program.verbose) {
+        console.log(label)
+    }
     for (i = 0; i < results.length; i++) {
-        passed = 0
-        failed = 0
-        console.log(results[i].label)
+        var passed = 0
+        var failed = 0
         for (j = 0; j < results[i].results.length; j++) {
             if (results[i].results[j][1] == null) {
                 passed = passed + 1
             } else {
+                if (failed == 0) {
+                    if (!program.verbose) {
+                        console.log(label)
+                    }
+                    console.log(results[i].label)
+                }
                 failed = failed + 1
                 console.log("    " + chalk.red("fail") + " -> " + results[i].results[j][0])
                 console.log("        " + results[i].results[j][1].description)
             }
         }
-        if (failed == 0) {
-            console.log(chalk.green(`    All ${passed} tests passed`))
-        } else {
+        total_passed = total_passed + passed
+        total_failed = total_failed + failed
+
+        if (failed != 0) {
             console.log(chalk.green(`    ${passed} tests passed`))
             console.log(chalk.red(`    ${failed} tests failed`))
+            console.log()
+        } else if (program.verbose) {
+            console.log(results[i].label + chalk.green(`    ${passed} tests passed`))
         }
-        console.log()
+    }
+    if (total_failed == 0) {
+        console.log(`${label} -> ` + chalk.green(`All ${total_passed} tests passed`))
     }
 }
