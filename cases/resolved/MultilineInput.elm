@@ -4,6 +4,7 @@ import Browser
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Font as Font
 import Element.Input exposing (labelAbove, multiline)
 import Html exposing (Html)
 import Html.Events exposing (onClick)
@@ -38,10 +39,6 @@ update msg model =
 
 
 testtxt =
-    "orem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.  Why do we use it?"
-
-
-testtxtnewlines =
     """orem Ipsum is simply dummy text of the printing 
 and typesetting industry. Lorem Ipsum has been the industry's 
 standard dummy text ever since the 1500s, when an unknown 
@@ -52,168 +49,152 @@ typesetting
 , remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.  Why do we use it?"""
 
 
+rowTest header els =
+    column [ width fill, spacing 24 ]
+        [ el [] (text header)
+        , row
+            [ width fill
+            , height (px 800)
+            , spacing 50
+            , centerX
+            , Border.width 1
+            ]
+            els
+        ]
+
+
+label str =
+    labelAbove
+        [ width (px 100)
+        , Font.italic
+        ]
+        (text str)
+
+
 view : Model -> Html Msg
 view model =
     layout [] <|
         column
-            [ width (px 1200)
+            [ width (px 1500)
             , padding 100
-            , spacing 50
+            , spacing 500
             , centerX
             ]
-            [ column
-                [ width (px 700)
-                , padding 100
-                , spacing 50
-                , centerX
-                ]
-                [ multiline [ spacing 3 ]
+            [ rowTest "Heights"
+                [ multiline []
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ width (px 100)
-                            , Background.color (Element.rgb 0.5 0.5 0.5)
-                            ]
-                        <|
-                            text "Default height"
+                        label "Default"
                     }
-                , multiline [ spacing 0, padding 10, height shrink ]
+                , multiline [ height shrink ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ Background.color (Element.rgb 0.5 0.5 0.5)
-                            , width (px 100)
-                            ]
-                        <|
-                            text "Shrink - no nl"
+                        label "Height shrink"
                     }
-                , multiline [ spacing 3, height shrink ]
+                , multiline [ height fill ]
                     { onChange = MLChanged
-                    , text = testtxtnewlines
+                    , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
-                    , label = labelAbove [ Background.color (Element.rgb 0.5 0.5 0.5), width (px 100) ] <| text "Shrink - w/nl"
+                    , label =
+                        label "Height Fill"
+                    }
+                , multiline [ height (px 200) ]
+                    { onChange = MLChanged
+                    , text = testtxt
+                    , placeholder = Nothing
+                    , spellcheck = False
+                    , label =
+                        label "Height 200px"
                     }
                 ]
-            , row [ width fill, height (px 400), spacing 40 ]
-                [ multiline [ spacing 3 ]
+            , rowTest "Widths"
+                [ multiline []
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ width (px 100)
-                            , Background.color (Element.rgb 0.5 0.5 0.5)
-                            ]
-                        <|
-                            text "Default height"
+                        label "Default"
                     }
-                , multiline [ spacing 0, padding 10, height shrink ]
+                , multiline [ width fill ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ Background.color (Element.rgb 0.5 0.5 0.5)
-                            , width (px 100)
-                            ]
-                        <|
-                            text "Shrink - no nl"
+                        label "Width fill"
                     }
-                , multiline [ spacing 3, height shrink ]
+                , multiline [ width shrink ]
                     { onChange = MLChanged
-                    , text = testtxtnewlines
+                    , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
-                    , label = labelAbove [ Background.color (Element.rgb 0.5 0.5 0.5), width (px 100) ] <| text "Shrink - w/nl"
+                    , label =
+                        label "Width Shrink"
+                    }
+                , multiline [ width (px 300) ]
+                    { onChange = MLChanged
+                    , text = testtxt
+                    , placeholder = Nothing
+                    , spellcheck = False
+                    , label = label "width 300"
                     }
                 ]
-            , row
-                [ width fill
-                , height (px 400)
-                , spacing 40
-                , Border.width 1
-                ]
-                [ multiline [ padding 20, spacing 20, height fill ]
+            , rowTest "Spacing"
+                [ multiline []
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ width (px 100)
-                            , Background.color (Element.rgb 0.5 0.5 0.5)
-                            ]
-                        <|
-                            text "Default height"
+                        label "Default"
                     }
-                , multiline [ spacing 0, padding 10, height shrink ]
+                , multiline [ spacing 30, padding 60 ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ Background.color (Element.rgb 0.5 0.5 0.5)
-                            , width (px 100)
-                            ]
-                        <|
-                            text "Shrink - no nl"
+                        label "Spacing 30"
                     }
-                , multiline [ spacing 3, height shrink ]
+                , multiline [ spacing 0 ]
                     { onChange = MLChanged
-                    , text = testtxtnewlines
+                    , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
-                    , label = labelAbove [ Background.color (Element.rgb 0.5 0.5 0.5), width (px 100) ] <| text "Shrink - w/nl"
+                    , label = label "Spacing 0"
                     }
                 ]
-            , row
-                [ width fill
-                , height (px 800)
-                , spacing 40
-                , Border.width 1
-                ]
-                [ multiline [ spacing 3, height fill ]
+            , rowTest "Scrollable viewport with different paddings "
+                [ multiline [ height (px 200), padding 30 ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ width (px 100)
-                            , Background.color (Element.rgb 0.5 0.5 0.5)
-                            ]
-                        <|
-                            text "Default height"
+                        label "Height 200, Padding 30"
                     }
-                , multiline [ spacing 0, padding 10, height shrink ]
+                , multiline [ height (px 200), padding 60 ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
                     , label =
-                        labelAbove
-                            [ Background.color (Element.rgb 0.5 0.5 0.5)
-                            , width (px 100)
-                            ]
-                        <|
-                            text "Shrink - no nl"
+                        label "Height 200, Padding 60"
                     }
-                , multiline [ spacing 3, height shrink ]
+                , multiline [ height (px 200), padding 0 ]
                     { onChange = MLChanged
-                    , text = testtxtnewlines
+                    , text = testtxt
                     , placeholder = Nothing
                     , spellcheck = False
-                    , label = labelAbove [ Background.color (Element.rgb 0.5 0.5 0.5), width (px 100) ] <| text "Shrink - w/nl"
+                    , label = label "Height 200, Padding 0"
                     }
                 ]
             ]
