@@ -1013,6 +1013,7 @@ textHelper textInput attrs textOptions =
                         Internal.asEl
                         Internal.div
                         (Element.width Element.fill
+                            :: Internal.htmlClass classes.focusedWithin
                             :: List.concat
                                 [ redistributed.parent
                                 , case textOptions.placeholder of
