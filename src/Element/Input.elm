@@ -856,6 +856,14 @@ textHelper textInput attrs textOptions =
                 _ ->
                     False
 
+        getHeight attr =
+            case attr of
+                Internal.Height h ->
+                    Just h
+
+                _ ->
+                    Nothing
+
         isHeightContent attr =
             case attr of
                 Internal.Height Internal.Content ->
@@ -864,16 +872,18 @@ textHelper textInput attrs textOptions =
                 _ ->
                     False
 
-        bottomPadding attr =
+        getPadding attr =
             case attr of
                 Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
-                    Just <|
-                        Element.paddingEach
-                            { top = 0
-                            , right = 0
-                            , bottom = b
-                            , left = 0
-                            }
+                    -- The - 3 is here to prevent accidental triggering of scrollbars
+                    -- when things are off by a pixel or two.
+                    -- (or at least when the browser *thinks* it's off by a pixel or two)
+                    Just
+                        { top = max 0 (floor (toFloat t - 3))
+                        , right = max 0 (floor (toFloat r - 3))
+                        , bottom = max 0 (floor (toFloat b - 3))
+                        , left = max 0 (floor (toFloat l - 3))
+                        }
 
                 _ ->
                     Nothing
@@ -884,7 +894,24 @@ textHelper textInput attrs textOptions =
                     False
 
                 TextArea ->
-                    List.any isHeightContent withDefaults
+                    withDefaults
+                        |> List.filterMap getHeight
+                        |> List.reverse
+                        |> List.head
+                        |> Maybe.map ((==) Internal.Content)
+                        |> Maybe.withDefault False
+
+        parentPadding =
+            withDefaults
+                |> List.filterMap getPadding
+                |> List.reverse
+                |> List.head
+                |> Maybe.withDefault
+                    { top = 0
+                    , right = 0
+                    , bottom = 0
+                    , left = 0
+                    }
 
         inputElement =
             Internal.element
@@ -910,6 +937,9 @@ textHelper textInput attrs textOptions =
                         , Element.height Element.fill
                         , Internal.htmlClass classes.inputMultiline
                         , calcMoveToCompensateForPadding withDefaults
+                        , Element.paddingEach parentPadding
+                        , Internal.Attr (Html.Attributes.style "margin" (renderBox (negateBox parentPadding)))
+                        , Internal.Attr (Html.Attributes.style "box-sizing" "content-box")
                         ]
                  )
                     ++ [ value textOptions.text
@@ -932,10 +962,17 @@ textHelper textInput attrs textOptions =
                     Internal.element
                         Internal.asEl
                         Internal.div
-                        ([ Element.width Element.fill
-                         , Element.scrollbarY
-                         , Internal.htmlClass classes.focusedWithin
-                         ]
+                        ((if heightContent then
+                            [ Element.width Element.fill
+                            , Internal.htmlClass classes.focusedWithin
+                            ]
+
+                          else
+                            [ Element.width Element.fill
+                            , Internal.htmlClass classes.focusedWithin
+                            , Element.scrollbarY
+                            ]
+                         )
                             ++ redistributed.parent
                         )
                         (Internal.Unkeyed
@@ -946,14 +983,7 @@ textHelper textInput attrs textOptions =
                                     :: Element.height Element.fill
                                     :: Element.inFront inputElement
                                     :: Internal.htmlClass classes.inputMultilineParent
-                                    :: List.concat
-                                        [ if heightContent then
-                                            redistributed.wrapper
-
-                                          else
-                                            redistributed.wrapper
-                                                ++ List.filterMap bottomPadding redistributed.parent
-                                        ]
+                                    :: redistributed.wrapper
                                 )
                                 (Internal.Unkeyed
                                     (if textOptions.text == "" then
@@ -1007,6 +1037,25 @@ textHelper textInput attrs textOptions =
         )
         textOptions.label
         wrappedInput
+
+
+negateBox box =
+    { top = negate box.top
+    , right = negate box.right
+    , bottom = negate box.bottom
+    , left = negate box.left
+    }
+
+
+renderBox { top, right, bottom, left } =
+    String.fromInt top
+        ++ "px "
+        ++ String.fromInt right
+        ++ "px "
+        ++ String.fromInt bottom
+        ++ "px "
+        ++ String.fromInt left
+        ++ "px"
 
 
 renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on =
