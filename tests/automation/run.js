@@ -131,6 +131,7 @@ async function prepare_local_driver(env) {
 async function run_test(driver, url) {
     var results = null
     try {
+        await driver.manage().window().setRect({ width: 1200, height: 800, x: 0, y: 0 });
         await driver.get(url);
         await driver.wait(until.titleIs('tests finished'), 120 * 1000);
         results = await driver.executeScript("return test_results")
