@@ -5,7 +5,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-import Element.Input exposing (labelAbove, multiline)
+import Element.Input as Input exposing (labelAbove, multiline)
 import Html exposing (Html)
 import Html.Events exposing (onClick)
 
@@ -36,6 +36,18 @@ update msg model =
 
         MLChanged s ->
             model
+
+
+examplePlaceholder =
+    Input.placeholder [ Font.color (rgb 0.2 0.2 0.8) ] (text "My placeholder...")
+
+
+examplePlaceholderLong =
+    Input.placeholder [ Font.color (rgb 0.2 0.2 0.8) ] (text "My placeholderMy placeholderMy placeholderMy placeholderMy placeholderMy placeholderMy placeholderMy placeholder...")
+
+
+background =
+    Background.color (rgb 0 1 0)
 
 
 testtxt =
@@ -81,7 +93,7 @@ view model =
             , centerX
             ]
             [ rowTest "Heights"
-                [ multiline []
+                [ multiline [ background ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
@@ -89,7 +101,7 @@ view model =
                     , label =
                         label "Default"
                     }
-                , multiline [ height shrink ]
+                , multiline [ background, height shrink ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
@@ -97,7 +109,7 @@ view model =
                     , label =
                         label "Height shrink"
                     }
-                , multiline [ height fill ]
+                , multiline [ background, height fill ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
@@ -105,7 +117,7 @@ view model =
                     , label =
                         label "Height Fill"
                     }
-                , multiline [ height (px 200) ]
+                , multiline [ background, height (px 200) ]
                     { onChange = MLChanged
                     , text = testtxt
                     , placeholder = Nothing
@@ -195,6 +207,74 @@ view model =
                     , placeholder = Nothing
                     , spellcheck = False
                     , label = label "Height 200, Padding 0"
+                    }
+                ]
+            , rowTest "Placeholders"
+                [ multiline []
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholder
+                    , spellcheck = False
+                    , label =
+                        label "Default"
+                    }
+                , multiline [ height shrink ]
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholder
+                    , spellcheck = False
+                    , label =
+                        label "Height shrink"
+                    }
+                , multiline [ height fill ]
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholder
+                    , spellcheck = False
+                    , label =
+                        label "Height Fill"
+                    }
+                , multiline [ height (px 200) ]
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholder
+                    , spellcheck = False
+                    , label =
+                        label "Height 200px"
+                    }
+                ]
+            , rowTest "Long Placeholders"
+                [ multiline []
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholderLong
+                    , spellcheck = False
+                    , label =
+                        label "Default"
+                    }
+                , multiline [ height shrink ]
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholderLong
+                    , spellcheck = False
+                    , label =
+                        label "Height shrink"
+                    }
+                , multiline [ height fill ]
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholderLong
+                    , spellcheck = False
+                    , label =
+                        label "Height Fill"
+                    }
+                , multiline [ height (px 200) ]
+                    { onChange = MLChanged
+                    , text = ""
+                    , placeholder = Just examplePlaceholderLong
+                    , spellcheck = False
+                    , label =
+                        label "Height 200px"
                     }
                 ]
             ]
