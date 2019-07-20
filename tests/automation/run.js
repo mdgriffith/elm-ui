@@ -9,8 +9,10 @@ const chalk = require('chalk');
 const childProcess = require('child_process')
 
 program.option('-s, --sauce', 'run tests on sauce labs')
-    .option('--chrome', 'run only chrome tests')
-    .option('--firefox', 'run only firefox tests')
+    .option('--chrome', 'run chrome tests (default)')
+    .option('--firefox', 'run firefox tests')
+    .option('--ie', 'run ie tests')
+    .option('--edge', 'run edge tests')
     .option('--build [value]', 'Set build number for sauce labs')
     .option('--name [value]', 'Set run name for sauce labs')
     .option('--verbose', 'Print out all test results')
@@ -18,23 +20,36 @@ program.option('-s, --sauce', 'run tests on sauce labs')
 
 
 // 'Windows 10'
-const windows = [
-    {
-        browser: "chrome"
+
+
+const windows = {
+    chrome: {
+        platform: "Windows 10"
+        , browser: "chrome"
         , browserVersion: "latest"
     },
-    {
-        browser: "firefox"
+    firefox: {
+        platform: "Windows 10"
+        , browser: "firefox"
         , browserVersion: "latest"
     },
-    {
-        browser: "MicrosoftEdge"
+    edge: {
+        platform: "Windows 10"
+        , browser: "MicrosoftEdge"
         , browserVersion: "latest"
     },
-    {
-        browser: "internet explorer"
+    ie: {
+        platform: "Windows 10"
+        , browser: "internet explorer"
         , browserVersion: "latest"
     }
+}
+
+const all_windows = [
+    windows.chrome
+    , windows.firefox
+    , windows.edge
+    , windows.ie
 ]
 
 // "macOS 10.14"
@@ -56,15 +71,23 @@ const osx = {
     }
 }
 
+const all_osx = [
+    osx.chrome
+    , osx.firefox
+    , osx.safari
+]
+
+const all_browsers =
+    all_windows.concat(all_osx)
 
 function prepare_all_envs(config) {
     var envs = []
 
-    for (i = 0; i < windows.length; i++) {
+    for (i = 0; i < all_windows.length; i++) {
         envs.push({
             browser: windows[i].browser,
             browserVersion: windows[i].browserVersion,
-            platform: "Windows 10",
+            platform: winddows[i].platform,
             build: config.build,
             name: config.name
         })
@@ -148,14 +171,14 @@ async function run_test(driver, url) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
-
+    console.log("Compiling tests")
     await compile_and_embed({
         template: "./tests/automation/templates/gather-styles.html",
         target: "./tmp/test.html",
         elm: ["Tests/Run.elm"],
         elmOptions: { cwd: "./tests" }
     })
-    console.log("Tests done compiling")
+    console.log("Done compiling")
 
     if (program.sauce) {
         const build = program.build
@@ -194,7 +217,6 @@ async function run_test(driver, url) {
         }
 
     } else {
-
         // Run chrome if nothing else is selected
         if (program.chrome || (!program.chrome && !program.firefox)) {
             console.log("Running locally on Chrome...")
@@ -208,7 +230,18 @@ async function run_test(driver, url) {
             var results = await run_test(driver, "file://" + path.resolve('./tmp/test.html'))
             print_results("Local Firefox", results);
         }
-
+        if (program.ie) {
+            console.log("Running locally on IE...")
+            const driver = await prepare_local_driver(windows.ie)
+            var results = await run_test(driver, "file://" + path.resolve('./tmp/test.html'))
+            print_results("Local IE", results);
+        }
+        if (program.edge) {
+            console.log("Running locally on Edge...")
+            const driver = await prepare_local_driver(windows.edge)
+            var results = await run_test(driver, "file://" + path.resolve('./tmp/test.html'))
+            print_results("Local Edge", results);
+        }
     }
 })();
 
