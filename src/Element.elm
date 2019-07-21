@@ -1559,18 +1559,23 @@ If you have more detailed concerns around responsiveness, it probably makes sens
 -}
 classifyDevice : { window | height : Int, width : Int } -> Device
 classifyDevice window =
+    -- Tested in this ellie:
+    -- https://ellie-app.com/68QM7wLW8b9a1
     { class =
         let
             longSide =
                 max window.width window.height
+
+            shortSide =
+                min window.width window.height
         in
-        if longSide <= 600 then
+        if shortSide < 600 then
             Phone
 
-        else if longSide > 600 && longSide <= 1200 then
+        else if longSide <= 1200 then
             Tablet
 
-        else if longSide > 1200 && longSide <= 1800 then
+        else if longSide > 1200 && longSide <= 1920 then
             Desktop
 
         else
