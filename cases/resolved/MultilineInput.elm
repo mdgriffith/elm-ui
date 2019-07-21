@@ -11,31 +11,31 @@ import Html.Events exposing (onClick)
 
 
 type alias Model =
-    { count : Int }
+    { multiline : String
+    , single : String
+    }
 
 
 initialModel : Model
 initialModel =
-    { count = 0 }
+    { multiline = testtxt
+    , single = ""
+    }
 
 
 type Msg
-    = Increment
-    | Decrement
-    | MLChanged String
+    = MultilineChanged String
+    | SingleChanged String
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        Increment ->
-            { model | count = model.count + 1 }
+        MultilineChanged new ->
+            { model | multiline = new }
 
-        Decrement ->
-            { model | count = model.count - 1 }
-
-        MLChanged s ->
-            model
+        SingleChanged new ->
+            { model | single = new }
 
 
 examplePlaceholder =
@@ -86,198 +86,286 @@ label str =
 view : Model -> Html Msg
 view model =
     layout [] <|
-        column
-            [ width (px 1500)
-            , padding 100
-            , spacing 500
-            , centerX
+        column []
+            [ el [ Font.size 32 ] (text "Single Input")
+            , viewSingle model
+            , el [ Font.size 32 ] (text "Multiline")
+            , viewMultiline model
             ]
-            [ rowTest "Heights"
-                [ multiline [ background ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Default"
-                    }
-                , multiline [ background, height shrink ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Height shrink"
-                    }
-                , multiline [ background, height fill ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Height Fill"
-                    }
-                , multiline [ background, height (px 200) ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Height 200px"
-                    }
-                ]
-            , rowTest "Widths"
-                [ multiline []
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Default"
-                    }
-                , multiline [ width fill ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Width fill"
-                    }
-                , multiline [ width shrink ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Width Shrink"
-                    }
-                , multiline [ width (px 300) ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label = label "width 300"
-                    }
-                ]
-            , rowTest "Spacing"
-                [ multiline []
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Default"
-                    }
-                , multiline [ spacing 30, padding 60 ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Spacing 30"
-                    }
-                , multiline [ spacing 0 ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label = label "Spacing 0"
-                    }
-                ]
-            , rowTest "Scrollable viewport with different paddings "
-                [ multiline [ height (px 200), padding 30 ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Height 200, Padding 30"
-                    }
-                , multiline [ height (px 200), padding 60 ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label =
-                        label "Height 200, Padding 60"
-                    }
-                , multiline [ height (px 200), padding 0 ]
-                    { onChange = MLChanged
-                    , text = testtxt
-                    , placeholder = Nothing
-                    , spellcheck = False
-                    , label = label "Height 200, Padding 0"
-                    }
-                ]
-            , rowTest "Placeholders"
-                [ multiline []
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholder
-                    , spellcheck = False
-                    , label =
-                        label "Default"
-                    }
-                , multiline [ height shrink ]
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholder
-                    , spellcheck = False
-                    , label =
-                        label "Height shrink"
-                    }
-                , multiline [ height fill ]
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholder
-                    , spellcheck = False
-                    , label =
-                        label "Height Fill"
-                    }
-                , multiline [ height (px 200) ]
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholder
-                    , spellcheck = False
-                    , label =
-                        label "Height 200px"
-                    }
-                ]
-            , rowTest "Long Placeholders"
-                [ multiline []
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholderLong
-                    , spellcheck = False
-                    , label =
-                        label "Default"
-                    }
-                , multiline [ height shrink ]
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholderLong
-                    , spellcheck = False
-                    , label =
-                        label "Height shrink"
-                    }
-                , multiline [ height fill ]
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholderLong
-                    , spellcheck = False
-                    , label =
-                        label "Height Fill"
-                    }
-                , multiline [ height (px 200) ]
-                    { onChange = MLChanged
-                    , text = ""
-                    , placeholder = Just examplePlaceholderLong
-                    , spellcheck = False
-                    , label =
-                        label "Height 200px"
-                    }
-                ]
+
+
+viewMultiline model =
+    column
+        [ width (px 1500)
+        , padding 100
+        , spacing 500
+        , centerX
+        ]
+        [ rowTest "Heights"
+            [ multiline [ background ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Default"
+                }
+            , multiline [ background, height shrink ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Height shrink"
+                }
+            , multiline [ background, height fill ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Height Fill"
+                }
+            , multiline [ background, height (px 200) ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Height 200px"
+                }
             ]
+        , rowTest "Widths"
+            [ multiline []
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Default"
+                }
+            , multiline [ width fill ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Width fill"
+                }
+            , multiline [ width shrink ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Width Shrink"
+                }
+            , multiline [ width (px 300) ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label = label "width 300"
+                }
+            ]
+        , rowTest "Spacing"
+            [ multiline []
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Default"
+                }
+            , multiline [ spacing 30, padding 60 ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Spacing 30"
+                }
+            , multiline [ spacing 0 ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label = label "Spacing 0"
+                }
+            ]
+        , rowTest "Scrollable viewport with different paddings "
+            [ multiline [ height (px 200), padding 30 ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Height 200, Padding 30"
+                }
+            , multiline [ height (px 200), padding 60 ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label =
+                    label "Height 200, Padding 60"
+                }
+            , multiline [ height (px 200), padding 0 ]
+                { onChange = MultilineChanged
+                , text = model.multiline
+                , placeholder = Nothing
+                , spellcheck = False
+                , label = label "Height 200, Padding 0"
+                }
+            ]
+        , rowTest "Placeholders"
+            [ multiline []
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholder
+                , spellcheck = False
+                , label =
+                    label "Default"
+                }
+            , multiline [ height shrink ]
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholder
+                , spellcheck = False
+                , label =
+                    label "Height shrink"
+                }
+            , multiline [ height fill ]
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholder
+                , spellcheck = False
+                , label =
+                    label "Height Fill"
+                }
+            , multiline [ height (px 200) ]
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholder
+                , spellcheck = False
+                , label =
+                    label "Height 200px"
+                }
+            ]
+        , rowTest "Long Placeholders"
+            [ multiline []
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholderLong
+                , spellcheck = False
+                , label =
+                    label "Default"
+                }
+            , multiline [ height shrink ]
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholderLong
+                , spellcheck = False
+                , label =
+                    label "Height shrink"
+                }
+            , multiline [ height fill ]
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholderLong
+                , spellcheck = False
+                , label =
+                    label "Height Fill"
+                }
+            , multiline [ height (px 200) ]
+                { onChange = MultilineChanged
+                , text = ""
+                , placeholder = Just examplePlaceholderLong
+                , spellcheck = False
+                , label =
+                    label "Height 200px"
+                }
+            ]
+        ]
+
+
+singleInput attrs labelTxt model =
+    Input.text attrs
+        { onChange = SingleChanged
+        , text = model
+        , label =
+            labelAbove
+                [ width (px 100)
+                , Font.italic
+                ]
+                (text labelTxt)
+        , placeholder =
+            Just
+                (Input.placeholder [ Font.color (rgb 0.8 0.8 0.8) ]
+                    (text "Here is my single input")
+                )
+        }
+
+
+singleInputLongPlaceholder attrs labelTxt model =
+    Input.text attrs
+        { onChange = SingleChanged
+        , text = model
+        , label =
+            labelAbove
+                [ width (px 100)
+                , Font.italic
+                ]
+                (text labelTxt)
+        , placeholder =
+            Just
+                (Input.placeholder [ Font.color (rgb 0.8 0.8 0.8) ]
+                    (text "Here is my single input with a placeholder that is super long")
+                )
+        }
+
+
+viewSingle model =
+    column
+        [ width (px 1500)
+        , padding 100
+        , spacing 500
+        , centerX
+        ]
+        [ rowTest "Heights"
+            [ singleInput [] "Default" model.single
+            , singleInput [ height shrink ] "Height shrink" model.single
+            , singleInput [ height fill ] "Height Fill" model.single
+            , singleInput [ height (px 200) ] "Height 200px" model.single
+            ]
+        , rowTest "Widths"
+            [ singleInput [] "Default" model.single
+            , singleInput [ width fill ] "Width fill" model.single
+            , singleInput [ width shrink ] "Width Shrink" model.single
+            , singleInput [ width (px 200) ] "width 200" model.single
+            ]
+        , rowTest "Spacing (no effect)"
+            [ singleInput [] "Default" model.single
+            , singleInput [ spacing 60 ] "Spacing 30" model.single
+            , singleInput [ spacing 0 ] "Spacing 0" model.single
+            ]
+        , rowTest "Padding"
+            [ singleInput [] "Default" model.single
+            , singleInput [ padding 60 ] "Padding 30" model.single
+            , singleInput [ padding 0 ] "Padding 0" model.single
+            ]
+        , rowTest "Scrollable viewport with different paddings "
+            [ singleInput [ height (px 200), padding 30 ] "Height 200, Padding 30" model.single
+            , singleInput [ height (px 200), padding 60 ] "Height 200, Padding 60" model.single
+            , singleInput [ height (px 200), padding 0 ] "Height 200, Padding 0" model.single
+            ]
+        , rowTest "Long Placeholders"
+            [ singleInputLongPlaceholder [] "Default" model.single
+            , singleInputLongPlaceholder [ height shrink ] "Height shrink" model.single
+            , singleInputLongPlaceholder [ height fill ] "Height Fill" model.single
+            , singleInputLongPlaceholder [ height (px 200) ] "Height 200px" model.single
+            ]
+        ]
 
 
 main : Program () Model Msg
