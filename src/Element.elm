@@ -1558,20 +1558,16 @@ classifyDevice : { window | height : Int, width : Int } -> Device
 classifyDevice window =
     { class =
         let
-            shortSide =
-                if window.width < window.height then
-                    window.width
-
-                else
-                    window.height
+            longSide =
+                max window.width window.height
         in
-        if shortSide <= 600 then
+        if longSide <= 600 then
             Phone
 
-        else if shortSide > 600 && shortSide <= 1200 then
+        else if longSide > 600 && longSide <= 1200 then
             Tablet
 
-        else if shortSide > 1200 && shortSide <= 1800 then
+        else if longSide > 1200 && longSide <= 1800 then
             Desktop
 
         else
