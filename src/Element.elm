@@ -1553,6 +1553,9 @@ type Orientation
 
 
 {-| Takes in a Window.Size and returns a device profile which can be used for responsiveness.
+
+If you have more detailed concerns around responsiveness, it probably makes sense to copy this function into your codebase and modify as needed.
+
 -}
 classifyDevice : { window | height : Int, width : Int } -> Device
 classifyDevice window =
