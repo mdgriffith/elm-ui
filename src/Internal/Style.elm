@@ -1350,6 +1350,9 @@ baseSheet =
                 , Descriptor (dot classes.heightExact)
                     [ Prop "flex-basis" "auto"
                     ]
+                , Descriptor (dot classes.column)
+                    [ Prop "flex-basis" "auto"
+                    ]
                 ]
             , Child (dot classes.heightFill)
                 [ Prop "flex-grow" "100000"
