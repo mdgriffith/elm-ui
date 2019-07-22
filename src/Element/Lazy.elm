@@ -1,4 +1,4 @@
-module Element.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy5)
+module Element.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy5, lazy6)
 
 {-| Same as `Html.lazy`. In case you're unfamiliar, here's a note from the `Html` library!
 
@@ -18,7 +18,7 @@ benchmark to be sure!
 
 ---
 
-@docs lazy, lazy2, lazy3, lazy4, lazy5
+@docs lazy, lazy2, lazy3, lazy4, lazy5, lazy6
 
 -}
 
@@ -56,6 +56,12 @@ lazy5 fn a b c d e =
     Unstyled <| VirtualDom.lazy7 apply5 fn a b c d e
 
 
+{-| -}
+lazy6 : (a -> b -> c -> d -> e -> f -> Element msg) -> a -> b -> c -> d -> e -> f -> Element msg
+lazy6 fn a b c d e f =
+    Unstyled <| VirtualDom.lazy8 apply6 fn a b c d e f
+
+
 apply1 fn a =
     embed (fn a)
 
@@ -74,6 +80,10 @@ apply4 fn a b c d =
 
 apply5 fn a b c d e =
     embed (fn a b c d e)
+
+
+apply6 fn a b c d e f =
+    embed (fn a b c d e f)
 
 
 {-| -}
