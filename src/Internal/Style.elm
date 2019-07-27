@@ -255,6 +255,7 @@ classes =
     , inputMultiline = "iml"
     , inputMultilineParent = "imlp"
     , inputMultilineFiller = "imlf"
+    , inputMultilineWrapper = "implw"
 
     -- link
     , link = "lnk"
@@ -1562,9 +1563,24 @@ baseSheet =
             , Prop "width" "100%"
             , Prop "background-color" "transparent"
             ]
+        , Descriptor (dot classes.inputMultilineWrapper)
+            -- Get this.
+            -- This allows multiline input to anchor scrolling to the bottom of the node
+            -- when in a scrolling viewport, and the user is adding content.
+            --
+            -- How crazy is this solution?
+            -- [ Prop "display" "flex"
+            -- , Prop "flex-direction" "column-reverse"
+            -- ]
+            [ Descriptor "::after"
+                [ Prop "content" "''"
+                , Prop "overflow-anchor" "auto"
+                ]
+            ]
         , Descriptor (dot classes.inputMultilineParent)
             [ Prop "white-space" "pre-wrap"
             , Prop "cursor" "text"
+            , Prop "overflow-anchor" "none"
             , Child (dot classes.inputMultilineFiller)
                 [ Prop "white-space" "pre-wrap"
                 , Prop "color" "transparent"

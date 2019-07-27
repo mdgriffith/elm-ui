@@ -856,22 +856,6 @@ textHelper textInput attrs textOptions =
                 _ ->
                     False
 
-        getHeight attr =
-            case attr of
-                Internal.Height h ->
-                    Just h
-
-                _ ->
-                    Nothing
-
-        isHeightContent attr =
-            case attr of
-                Internal.Height Internal.Content ->
-                    True
-
-                _ ->
-                    False
-
         getPadding attr =
             case attr of
                 Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
@@ -898,7 +882,7 @@ textHelper textInput attrs textOptions =
                         |> List.filterMap getHeight
                         |> List.reverse
                         |> List.head
-                        |> Maybe.map ((==) Internal.Content)
+                        |> Maybe.map isShrink
                         |> Maybe.withDefault False
 
         parentPadding =
@@ -975,6 +959,7 @@ textHelper textInput attrs textOptions =
                             [ Element.width Element.fill
                             , Internal.htmlClass classes.focusedWithin
                             , Element.scrollbarY
+                            , Internal.htmlClass classes.inputMultilineWrapper
                             ]
                          )
                             ++ redistributed.parent
@@ -1048,6 +1033,15 @@ textHelper textInput attrs textOptions =
         )
         textOptions.label
         wrappedInput
+
+
+getHeight attr =
+    case attr of
+        Internal.Height h ->
+            Just h
+
+        _ ->
+            Nothing
 
 
 negateBox box =
