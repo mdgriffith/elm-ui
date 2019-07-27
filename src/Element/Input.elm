@@ -1002,7 +1002,13 @@ textHelper textInput attrs textOptions =
                                                 ]
 
                                      else
-                                        [ Internal.unstyled (Html.text textOptions.text) ]
+                                        [ Internal.unstyled
+                                            (Html.span [ Html.Attributes.class classes.inputMultilineFiller ]
+                                                -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
+                                                [ Html.text (textOptions.text ++ "\u{00A0}")
+                                                ]
+                                            )
+                                        ]
                                     )
                                 )
                             ]
@@ -1323,7 +1329,7 @@ redistributeOver isMultiline stacked attr els =
         Internal.StyleClass _ (Internal.FontFamily _ _) ->
             { els | fullParent = attr :: els.fullParent }
 
-        Internal.StyleClass _ _ ->
+        Internal.StyleClass flag cls ->
             { els | parent = attr :: els.parent }
 
         Internal.NoAttribute ->

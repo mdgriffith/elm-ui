@@ -2166,8 +2166,8 @@ rootStyle =
             , SansSerif
             ]
     in
-    [ StyleClass Flag.bgColor (Colored ("bg-color-" ++ formatColorClass (Rgba 1 1 1 0)) "background-color" (Rgba 1 1 1 0))
-    , StyleClass Flag.fontColor (Colored ("font-color-" ++ formatColorClass (Rgba 0 0 0 1)) "color" (Rgba 0 0 0 1))
+    [ StyleClass Flag.bgColor (Colored ("bg-" ++ formatColorClass (Rgba 1 1 1 0)) "background-color" (Rgba 1 1 1 0))
+    , StyleClass Flag.fontColor (Colored ("fc-" ++ formatColorClass (Rgba 0 0 0 1)) "color" (Rgba 0 0 0 1))
     , StyleClass Flag.fontSize (FontSize 20)
     , StyleClass Flag.fontFamily <|
         FontFamily (List.foldl renderFontClassName "font-" families)
@@ -2727,29 +2727,11 @@ renderStyleRule options rule maybePseudo =
                 ]
 
         Colored class prop color ->
-            -- This is because the trick we're using to make a txtarea be height:content
-            -- stops the inheritance chain for font color.
-            -- So we need to pack our bags, hike up our socks and jump over the break.
-            if prop == "color" then
-                List.concat
-                    [ renderStyle options
-                        maybePseudo
-                        ("." ++ class)
-                        [ Property prop (formatColor color)
-                        ]
-                    , renderStyle options
-                        maybePseudo
-                        ("." ++ class ++ " ." ++ classes.inputMultilineParent ++ " ." ++ classes.inputMultiline)
-                        [ Property prop (formatColor color)
-                        ]
-                    ]
-
-            else
-                renderStyle options
-                    maybePseudo
-                    ("." ++ class)
-                    [ Property prop (formatColor color)
-                    ]
+            renderStyle options
+                maybePseudo
+                ("." ++ class)
+                [ Property prop (formatColor color)
+                ]
 
         SpacingStyle cls x y ->
             let

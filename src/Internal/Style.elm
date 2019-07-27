@@ -254,6 +254,7 @@ classes =
     , inputText = "it"
     , inputMultiline = "iml"
     , inputMultilineParent = "imlp"
+    , inputMultilineFiller = "imlf"
 
     -- link
     , link = "lnk"
@@ -1564,7 +1565,7 @@ baseSheet =
         , Descriptor (dot classes.inputMultilineParent)
             [ Prop "white-space" "pre-wrap"
             , Prop "cursor" "text"
-            , Descriptor (dot classes.paragraph)
+            , Child (dot classes.inputMultilineFiller)
                 [ Prop "white-space" "pre-wrap"
                 , Prop "color" "transparent"
                 ]
