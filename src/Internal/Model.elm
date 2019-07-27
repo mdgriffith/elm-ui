@@ -1144,15 +1144,16 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             -- previously we rendered a <p> tag, though apparently this invalidates the html if it has <div>s inside.
                             -- Since we can't guaranteee that there are no divs, we need another strategy.
                             -- While it's not documented in many places, there apparently is a paragraph aria role
-                            -- maybe it doesn't do anything, but it might help.
                             -- https://github.com/w3c/aria/blob/11f85f41a5b621fdbe85fc9bcdcd270e653a48ba/common/script/roleInfo.js
+                            -- Though we'll need to wait till it gets released in an official wai-aria spec to use it.
+                            -- If it's used at the moment, then Lighthouse complains (likely rightfully) that role paragraph is not recognized.
                             gatherAttrRecursive
                                 classes
                                 node
                                 has
                                 transform
                                 styles
-                                (VirtualDom.attribute "role" "paragraph" :: attrs)
+                                attrs
                                 children
                                 remaining
 
