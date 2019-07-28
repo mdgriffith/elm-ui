@@ -1567,20 +1567,19 @@ baseSheet =
             -- Get this.
             -- This allows multiline input to anchor scrolling to the bottom of the node
             -- when in a scrolling viewport, and the user is adding content.
+            -- however, it only works in chrome.  In firefox, it prevents scrolling.
             --
-            -- How crazy is this solution?
+            -- But how crazy is this solution?
             -- [ Prop "display" "flex"
             -- , Prop "flex-direction" "column-reverse"
             -- ]
-            [ Descriptor "::after"
-                [ Prop "content" "''"
-                , Prop "overflow-anchor" "auto"
-                ]
+            [ -- to increase specificity to beat another rule
+              Descriptor (dot classes.single)
+                [ Prop "flex-basis" "auto" ]
             ]
         , Descriptor (dot classes.inputMultilineParent)
             [ Prop "white-space" "pre-wrap"
             , Prop "cursor" "text"
-            , Prop "overflow-anchor" "none"
             , Child (dot classes.inputMultilineFiller)
                 [ Prop "white-space" "pre-wrap"
                 , Prop "color" "transparent"

@@ -872,7 +872,7 @@ textHelper textInput attrs textOptions =
                 _ ->
                     Nothing
 
-        heightContent =
+        heightConstrained =
             case textInput.type_ of
                 TextInputNode inputType ->
                     False
@@ -882,7 +882,7 @@ textHelper textInput attrs textOptions =
                         |> List.filterMap getHeight
                         |> List.reverse
                         |> List.head
-                        |> Maybe.map isShrink
+                        |> Maybe.map isConstrained
                         |> Maybe.withDefault False
 
         parentPadding =
@@ -950,18 +950,16 @@ textHelper textInput attrs textOptions =
                     Internal.element
                         Internal.asEl
                         Internal.div
-                        ((if heightContent then
-                            [ Element.width Element.fill
-                            , Internal.htmlClass classes.focusedWithin
-                            ]
+                        ((if heightConstrained then
+                            (::) Element.scrollbarY
 
                           else
+                            identity
+                         )
                             [ Element.width Element.fill
                             , Internal.htmlClass classes.focusedWithin
-                            , Element.scrollbarY
                             , Internal.htmlClass classes.inputMultilineWrapper
                             ]
-                         )
                             ++ redistributed.parent
                         )
                         (Internal.Unkeyed
@@ -1188,6 +1186,24 @@ isShrink len =
 
         Internal.Max _ l ->
             isShrink l
+
+
+isConstrained len =
+    case len of
+        Internal.Content ->
+            False
+
+        Internal.Px _ ->
+            True
+
+        Internal.Fill _ ->
+            True
+
+        Internal.Min _ l ->
+            isConstrained l
+
+        Internal.Max _ l ->
+            True
 
 
 isPixel len =
