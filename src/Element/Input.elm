@@ -976,7 +976,10 @@ textHelper textInput attrs textOptions =
                                     (if textOptions.text == "" then
                                         case textOptions.placeholder of
                                             Nothing ->
-                                                []
+                                                -- Without this, firefox will make the text area lose focus
+                                                -- if the input is empty and you mash the keyboard
+                                                [ Element.text "\u{00A0}"
+                                                ]
 
                                             Just place ->
                                                 [ renderPlaceholder place
