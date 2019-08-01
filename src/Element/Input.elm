@@ -1235,17 +1235,17 @@ redistributeOver isMultiline stacked attr els =
             { els | parent = attr :: els.parent }
 
         Internal.Width width ->
-            if stacked then
-                { els | fullParent = attr :: els.fullParent }
-
-            else if isFill width then
+            if isFill width then
                 { els
                     | fullParent = attr :: els.fullParent
                     , parent = attr :: els.parent
+                    , input = attr :: els.input
                 }
 
-            else if isPixel width then
-                { els | parent = attr :: els.parent }
+            else if stacked then
+                { els
+                    | fullParent = attr :: els.fullParent
+                }
 
             else
                 { els
