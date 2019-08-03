@@ -1111,7 +1111,7 @@ calcMoveToCompensateForPadding attrs =
             Internal.NoAttribute
 
         Just vSpace ->
-            Element.moveUp (floor (toFloat vSpace / 2)))
+            Element.moveUp (toFloat (floor (toFloat vSpace / 2)))
 
 
 {-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
