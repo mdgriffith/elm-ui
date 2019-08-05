@@ -882,6 +882,9 @@ elDescription =
           --   Prop "align-self" "stretch !important"
           Prop "width" "100%"
         ]
+    , Child (dot classes.widthFillPortion)
+        [ Prop "width" "100%"
+        ]
     , Child (dot classes.widthContent)
         [ Prop "align-self" "flex-start"
         ]
