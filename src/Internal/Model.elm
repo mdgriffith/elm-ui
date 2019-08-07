@@ -1818,7 +1818,10 @@ staticRoot : OptionRecord -> VirtualDom.Node msg
 staticRoot opts =
     case opts.mode of
         Layout ->
-            VirtualDom.node "style" [] [ VirtualDom.text Internal.Style.rules ]
+            -- wrap the style node in a div to prevent `Dark Reader` from blowin up the dom.
+            VirtualDom.node "div"
+                []
+                [ VirtualDom.node "style" [] [ VirtualDom.text Internal.Style.rules ] ]
 
         NoStaticStyleSheet ->
             VirtualDom.text ""
@@ -2345,10 +2348,22 @@ toStyleSheet : OptionRecord -> List Style -> VirtualDom.Node msg
 toStyleSheet options styleSheet =
     case options.mode of
         Layout ->
-            VirtualDom.node "style" [] [ VirtualDom.text (toStyleSheetString options styleSheet) ]
+            -- wrap the style node in a div to prevent `Dark Reader` from blowin up the dom.
+            VirtualDom.node "div"
+                []
+                [ VirtualDom.node "style"
+                    []
+                    [ VirtualDom.text (toStyleSheetString options styleSheet) ]
+                ]
 
         NoStaticStyleSheet ->
-            VirtualDom.node "style" [] [ VirtualDom.text (toStyleSheetString options styleSheet) ]
+            -- wrap the style node in a div to prevent `Dark Reader` from blowin up the dom.
+            VirtualDom.node "div"
+                []
+                [ VirtualDom.node "style"
+                    []
+                    [ VirtualDom.text (toStyleSheetString options styleSheet) ]
+                ]
 
         WithVirtualCss ->
             VirtualDom.node "elm-ui-rules"
