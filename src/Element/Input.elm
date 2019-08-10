@@ -321,7 +321,7 @@ The `onPress` handler will be fired either `onClick` or when the element is focu
             , Element.focused
                 [ Background.color purple ]
             ]
-            { onPress = Just ClickMsg
+            { onPress = ButtonPressed
             , label = text "My Button"
             }
 
@@ -329,7 +329,7 @@ The `onPress` handler will be fired either `onClick` or when the element is focu
 button :
     List (Attribute msg)
     ->
-        { onPress : Maybe msg
+        { onPress : msg
         , label : Element msg
         }
     -> Element msg
@@ -356,15 +356,9 @@ button attrs { onPress, label } =
             :: focusDefault attrs
             :: Internal.Describe Internal.Button
             :: Internal.Attr (Html.Attributes.tabindex 0)
-            :: (case onPress of
-                    Nothing ->
-                        Internal.Attr (Html.Attributes.disabled True) :: attrs
-
-                    Just msg ->
-                        Events.onClick msg
-                            :: onEnter msg
-                            :: attrs
-               )
+            :: Events.onClick onPress
+            :: onEnter onPress
+            :: attrs
         )
         (Internal.Unkeyed [ label ])
 
