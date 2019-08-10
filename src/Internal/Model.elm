@@ -2660,6 +2660,10 @@ renderStyle options maybePseudo selector props =
                         ++ "-fs  {"
                         ++ renderedProps
                         ++ "\n}"
+                    , selector
+                        ++ "-fs:focus-within {"
+                        ++ renderedProps
+                        ++ "\n}"
                     , ".focusable-parent:focus ~ "
                         ++ "."
                         ++ classes.any

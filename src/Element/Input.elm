@@ -957,7 +957,11 @@ textHelper textInput attrs textOptions =
                             identity
                          )
                             [ Element.width Element.fill
-                            , Internal.htmlClass classes.focusedWithin
+                            , if List.any hasFocusStyle withDefaults then
+                                Internal.NoAttribute
+
+                              else
+                                Internal.htmlClass classes.focusedWithin
                             , Internal.htmlClass classes.inputMultilineWrapper
                             ]
                             ++ redistributed.parent
@@ -1005,7 +1009,12 @@ textHelper textInput attrs textOptions =
                         Internal.asEl
                         Internal.div
                         (Element.width Element.fill
-                            :: Internal.htmlClass classes.focusedWithin
+                            :: (if List.any hasFocusStyle withDefaults then
+                                    Internal.NoAttribute
+
+                                else
+                                    Internal.htmlClass classes.focusedWithin
+                               )
                             :: List.concat
                                 [ redistributed.parent
                                 , case textOptions.placeholder of
