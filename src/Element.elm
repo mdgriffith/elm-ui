@@ -19,7 +19,6 @@ module Element exposing
     , above, below, onRight, onLeft, inFront, behindContent
     , Attr, Decoration, mouseOver, mouseDown, focused
     , Device, DeviceClass(..), Orientation(..), classifyDevice
-    , modular
     , map, mapAttribute
     , html, htmlAttribute
     )
@@ -196,11 +195,6 @@ Install the `Browser` package, and set up a subscription for [`Browser.Events.on
 You'll also need to retrieve the initial window size. You can either use [`Browser.Dom.getViewport`](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Dom#getViewport) or pass in `window.innerWidth` and `window.innerHeight` as flags to your program, which is the preferred way. This requires minor setup on the JS side, but allows you to avoid the state where you don't have window info.
 
 @docs Device, DeviceClass, Orientation, classifyDevice
-
-
-# Scaling
-
-@docs modular
 
 
 ## Mapping
@@ -1635,37 +1629,6 @@ classifyDevice window =
         else
             Landscape
     }
-
-
-{-| When designing it's nice to use a modular scale to set spacial rythms.
-
-    scaled =
-        Element.modular 16 1.25
-
-A modular scale starts with a number, and multiplies it by a ratio a number of times.
-Then, when setting font sizes you can use:
-
-    Font.size (scaled 1) -- results in 16
-
-    Font.size (scaled 2) -- 16 * 1.25 results in 20
-
-    Font.size (scaled 4) -- 16 * 1.25 ^ (4 - 1) results in 31.25
-
-We can also provide negative numbers to scale below 16px.
-
-    Font.size (scaled -1) -- 16 * 1.25 ^ (-1) results in 12.8
-
--}
-modular : Float -> Float -> Int -> Float
-modular normal ratio rescale =
-    if rescale == 0 then
-        normal
-
-    else if rescale < 0 then
-        normal * ratio ^ toFloat rescale
-
-    else
-        normal * ratio ^ (toFloat rescale - 1)
 
 
 {-| -}
