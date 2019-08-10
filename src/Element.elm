@@ -10,8 +10,8 @@ module Element exposing
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
     , transparent, alpha, pointer
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
+    , viewport
     , clip, clipX, clipY
-    , scrollbars, scrollbarX, scrollbarY
     , layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
     , link, newTabLink, download, downloadAs
     , image
@@ -124,15 +124,17 @@ Where there are two elements on the left, one on the right, and one in the cente
 @docs moveUp, moveDown, moveRight, moveLeft, rotate, scale
 
 
-# Clipping and Scrollbars
+# Viewports
+
+For scrolling element, we're going to borrow some terminology from 3D graphics just like the Elm [Browser](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Dom) package does.
+
+Essentially a `viewport` is the window that you're looking through. If the content is larger than the viewport, then scrollbars will appear.
+
+@docs viewport
 
 Clip the content if it overflows.
 
 @docs clip, clipX, clipY
-
-Add a scrollbar if the content is larger than the element.
-
-@docs scrollbars, scrollbarX, scrollbarY
 
 
 # Rendering
@@ -1478,14 +1480,18 @@ alpha o =
     Internal.StyleClass Flag.transparency <| Internal.Transparency ("transparency-" ++ Internal.floatClass transparency) transparency
 
 
-
--- {-| -}
--- hidden : Bool -> Attribute msg
--- hidden on =
---     if on then
---         Internal.class "hidden"
---     else
---         Internal.NoAttribute
+{-| -}
+viewport : List (Attribute msg) -> Element msg -> Element msg
+viewport attrs child =
+    Internal.element
+        Internal.asEl
+        Internal.div
+        (scrollbars
+            :: width fill
+            :: height fill
+            :: attrs
+        )
+        (Internal.Unkeyed [ child ])
 
 
 {-| -}
