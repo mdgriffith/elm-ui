@@ -24,11 +24,11 @@ main =
                 }
             , Element.Input.button [ Element.focused [] ]
                 { label = Element.text "Button"
-                , onPress = Nothing
+                , onPress = ()
                 }
             , Element.Input.button []
                 { label = Element.text "Button"
-                , onPress = Nothing
+                , onPress = ()
                 }
             ]
         )
