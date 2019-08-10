@@ -1,7 +1,6 @@
 module Element.Font exposing
     ( color, size
     , family, Font, typeface, serif, sansSerif, monospace
-    , external
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
@@ -35,8 +34,6 @@ module Element.Font exposing
 ## Typefaces
 
 @docs family, Font, typeface, serif, sansSerif, monospace
-
-@docs external
 
 
 ## Alignment and Spacing
@@ -167,35 +164,6 @@ sizeByCapital =
 full : Attribute msg
 full =
     Internal.htmlClass classes.fullSize
-
-
-{-| **Note** it's likely that `Font.external` will cause a flash on your page on loading.
-
-To bypass this, import your fonts using a separate stylesheet and just use `Font.typeface`.
-
-It's likely that `Font.external` will be removed or redesigned in the future to avoid the flashing.
-
-`Font.external` can be used to import font files. Let's say you found a neat font on <http://fonts.google.com>:
-
-    import Element
-    import Element.Font as Font
-
-    view =
-        Element.el
-            [ Font.family
-                [ Font.external
-                    { name = "Roboto"
-                    , url = "https://fonts.googleapis.com/css?family=Roboto"
-                    }
-                , Font.sansSerif
-                ]
-            ]
-            (Element.text "Woohoo, I'm stylish text")
-
--}
-external : { url : String, name : String } -> Font
-external { url, name } =
-    Internal.ImportFont name url
 
 
 {-| Font sizes are always given as `px`.
