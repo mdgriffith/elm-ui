@@ -34,6 +34,7 @@ main =
               -- , deduplications
               --   renderPipeline
               gatheringAttributes
+            , lotsOfElements
 
             --   flagOperations
             ]
@@ -44,86 +45,15 @@ flagOperations =
         [ Benchmark.benchmark "check if present" <|
             \_ ->
                 Flag.present Flag.height Flag.none
-        , Benchmark.benchmark "add to flagt" <|
+        , Benchmark.benchmark "add to flag" <|
             \_ ->
                 Flag.add Flag.height Flag.none
         ]
 
 
-gatheringAttributes =
-    Benchmark.describe "Gathering Attributes"
-        [ Benchmark.benchmark "existing - gatherAttrRecursive" <|
-            \_ ->
-                Internal.gatherAttrRecursive
-                    (Internal.contextClasses Internal.AsEl)
-                    Internal.Generic
-                    Flag.none
-                    Internal.Untransformed
-                    []
-                    []
-                    Internal.NoNearbyChildren
-                    [ Element.width Element.shrink
-                    , Element.height Element.shrink
-                    ]
-        , Benchmark.benchmark "Simple list filterMap" <|
-            \_ ->
-                List.filterMap
-                    identity
-                    [ Just "thing"
-                    , Just "other width"
-                    ]
-        , Benchmark.benchmark "Simple list map" <|
-            \_ ->
-                List.map
-                    identity
-                    [ Just "thing"
-                    , Just "other width"
-                    ]
-        , Benchmark.benchmark "Foldl base speed" <|
-            \_ ->
-                List.foldl
-                    (::)
-                    [ Just "thing"
-                    , Just "other width"
-                    ]
-        , Benchmark.benchmark "Recursive" <|
-            \_ ->
-                recurse
-                    (::)
-                    [ Just "thing"
-                    , Just "other width"
-                    ]
-        , Benchmark.benchmark "foldl - new record each iteration" <|
-            \_ ->
-                List.foldl flipFoldl
-                    { attributes = "class"
-                    , styles = []
-                    , node = "Node"
-                    , children = Nothing
-                    , has = Flag.none
-                    }
-                    -- we reverse first because we have to for the attr api.
-                    (List.reverse
-                        [ Just "thing"
-                        , Just "other width"
-                        ]
-                    )
-        , Benchmark.benchmark "foldl - update" <|
-            \_ ->
-                List.foldl flipFoldlUpdate
-                    { attributes = "class"
-                    , styles = []
-                    , node = "Node"
-                    , children = Nothing
-                    , has = Flag.none
-                    }
-                    -- we reverse first because we have to for the attr api.
-                    (List.reverse
-                        [ Just "thing"
-                        , Just "other width"
-                        ]
-                    )
-        , Benchmark.benchmark "String Concatenation" <|
+basics =
+    Benchmark.describe "Basics"
+        [ Benchmark.benchmark "String Concatenation" <|
             \_ ->
                 "This"
                     ++ "this"
@@ -145,7 +75,180 @@ gatheringAttributes =
                     , "this"
                     , "this"
                     ]
+        , Benchmark.benchmark "Simple list filterMap" <|
+            \_ ->
+                List.filterMap
+                    identity
+                    [ Just "thing"
+                    , Just "other width"
+                    ]
+        , Benchmark.benchmark "Simple list map" <|
+            \_ ->
+                List.map
+                    identity
+                    [ Just "thing"
+                    , Just "other width"
+                    ]
         ]
+
+
+recurseVsFoldl =
+    Benchmark.describe "Recurse vs Foldl"
+        [ Benchmark.benchmark "Foldl base speed" <|
+            \_ ->
+                List.foldl
+                    (::)
+                    [ Just "thing"
+                    , Just "other width"
+                    ]
+        , Benchmark.benchmark "Recursive" <|
+            \_ ->
+                recurse
+                    (::)
+                    [ Just "thing"
+                    , Just "other width"
+                    ]
+        ]
+
+
+oneThousand =
+    List.repeat 1000 (el [] (text "hello"))
+
+
+lotsOfElements =
+    Benchmark.describe "Lots of Children"
+        [ Benchmark.benchmark "1000 Row" <|
+            \_ ->
+                Element.row []
+                    (List.repeat 1000 (el [] (text "hello")))
+        , Benchmark.benchmark "Baseline 1000 - " <|
+            \_ ->
+                List.repeat 1000 (el [] (text "hello"))
+        , Benchmark.benchmark "1000 Row -  Overhead" <|
+            \_ ->
+                Element.row []
+                    oneThousand
+        , Benchmark.benchmark "1000 Div" <|
+            \_ ->
+                Html.div []
+                    (List.repeat 1000 (Html.div [] [ Html.text "hello" ]))
+        ]
+
+
+gatheringAttributes =
+    Benchmark.describe "Gather Attributes"
+        [ Benchmark.benchmark "Existing - gatherAttrRecursive" <|
+            \_ ->
+                Internal.gatherAttrRecursive
+                    (Internal.contextClasses Internal.AsEl)
+                    Internal.Generic
+                    Flag.none
+                    Internal.Untransformed
+                    []
+                    []
+                    Internal.NoNearbyChildren
+                    [ Element.width Element.shrink
+                    , Element.height Element.shrink
+                    ]
+        , Benchmark.benchmark "Mocked - foldl - new record each iteration" <|
+            \_ ->
+                List.foldl flipFoldl
+                    { attributes = "class"
+                    , styles = []
+                    , node = "Node"
+                    , children = Nothing
+                    , has = Flag.none
+                    }
+                    -- we reverse first because we have to for the attr api.
+                    (List.reverse
+                        [ Just "thing"
+                        , Just "other width"
+                        ]
+                    )
+        , Benchmark.benchmark "Mocked - foldl - update" <|
+            \_ ->
+                List.foldl flipFoldlUpdate
+                    { attributes = "class"
+                    , styles = []
+                    , node = "Node"
+                    , children = Nothing
+                    , has = Flag.none
+                    }
+                    -- we reverse first because we have to for the attr api.
+                    (List.reverse
+                        [ Just "thing"
+                        , Just "other width"
+                        ]
+                    )
+        , Benchmark.benchmark "Mocked - recurse - new record each iteration" <|
+            \_ ->
+                recurseGather
+                    -- we reverse first because we have to for the attr api.
+                    (List.reverse
+                        [ Just "thing"
+                        , Just "other width"
+                        ]
+                    )
+                    { attributes = "class"
+                    , styles = []
+                    , node = "Node"
+                    , children = Nothing
+                    , has = Flag.none
+                    }
+        , Benchmark.benchmark "Mocked - recurse - update" <|
+            \_ ->
+                recurseGatherUpdate
+                    -- we reverse first because we have to for the attr api.
+                    (List.reverse
+                        [ Just "thing"
+                        , Just "other width"
+                        ]
+                    )
+                    { attributes = "class"
+                    , styles = []
+                    , node = "Node"
+                    , children = Nothing
+                    , has = Flag.none
+                    }
+        ]
+
+
+recurseGather remaining found =
+    case remaining of
+        [] ->
+            { attributes = "class" ++ found.attributes
+            , styles = Just 1 :: found.styles
+            , node = found.node
+            , children = Nothing
+            , has = Flag.add Flag.height found.has
+            }
+
+        fst :: rem ->
+            recurseGather rem
+                { attributes = "class" ++ found.attributes
+                , styles = Just 1 :: found.styles
+                , node = found.node
+                , children = Nothing
+                , has = Flag.add Flag.height found.has
+                }
+
+
+recurseGatherUpdate remaining found =
+    case remaining of
+        [] ->
+            { found
+                | attributes = "class" ++ found.attributes
+                , styles = Just 1 :: found.styles
+                , has = Flag.add Flag.height found.has
+            }
+
+        fst :: rem ->
+            recurseGatherUpdate rem
+                { found
+                    | attributes = "class" ++ found.attributes
+                    , styles = Just 1 :: found.styles
+                    , has = Flag.add Flag.height found.has
+                }
 
 
 flipFoldl result found =
