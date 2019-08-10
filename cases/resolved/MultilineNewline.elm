@@ -49,7 +49,7 @@ viewInput model =
     Input.multiline
         [ padding 50
         , height (shrink |> maximum 300)
-        , width (px 600)
+        , width fill
         , centerX
         , centerY
         ]
