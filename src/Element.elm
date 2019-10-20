@@ -10,8 +10,7 @@ module Element exposing
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
     , transparent, alpha, pointer
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
-    , viewport
-    , clip, clipX, clipY
+    , viewport, clipped
     , layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
     , link, newTabLink, download, downloadAs
     , image
@@ -93,7 +92,7 @@ Alignment can be used to align an `Element` within another `Element`.
 
     Element.el [ centerX, alignTop ] (text "I'm centered and aligned top!")
 
-If alignment is set on elements in a layout such as `row`, then the element will push the other elements in that direction. Here's an example.
+If alignment is set on elements in a layout such as a `row`, then the element will push the other elements in that direction. Here's an example.
 
     Element.row []
         [ Element.el [] Element.none
@@ -129,11 +128,7 @@ For scrolling element, we're going to borrow some terminology from 3D graphics j
 
 Essentially a `viewport` is the window that you're looking through. If the content is larger than the viewport, then scrollbars will appear.
 
-@docs viewport
-
-Clip the content if it overflows.
-
-@docs clip, clipX, clipY
+@docs viewport, clipped
 
 
 # Rendering
@@ -170,9 +165,10 @@ Let's say we want a dropdown menu. Essentially we want to say: _put this element
         ]
 
 This will result in
-
-    |- I'm normal! -|
-       I'm below
+/---------------
+|- I'm normal! -|
+---------------/
+I'm below
 
 Where `"I'm Below"` doesn't change the size of `Element.row`.
 
@@ -197,12 +193,12 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 @docs Device, DeviceClass, Orientation, classifyDevice
 
 
-## Mapping
+# Mapping
 
 @docs map, mapAttribute
 
 
-## Compatibility
+# Compatibility
 
 @docs html, htmlAttribute
 
@@ -1504,6 +1500,26 @@ scrollbarY =
 scrollbarX : Attribute msg
 scrollbarX =
     Internal.Class Flag.overflow classes.scrollbarsX
+
+
+{-| Clip the content if it overflows.
+
+Similar to `viewport`, this element will fill the space it's given.
+
+If the content overflows this element, it will be clipped.
+
+-}
+clipped : List (Attribute msg) -> Element msg -> Element msg
+clipped attrs child =
+    Internal.element
+        Internal.asEl
+        Internal.div
+        (clip
+            :: width fill
+            :: height fill
+            :: attrs
+        )
+        (Internal.Unkeyed [ child ])
 
 
 {-| -}
