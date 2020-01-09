@@ -352,10 +352,22 @@ button attrs { onPress, label } =
                     ++ " "
                     ++ classes.noTextSelection
                 )
-            :: Element.pointer
+            :: (case onPress of
+                    Nothing ->
+                        Internal.NoAttribute
+
+                    Just _ ->
+                        Element.pointer
+               )
             :: focusDefault attrs
             :: Internal.Describe Internal.Button
-            :: Internal.Attr (Html.Attributes.tabindex 0)
+            :: (case onPress of
+                    Nothing ->
+                        Internal.NoAttribute
+
+                    Just _ ->
+                        Internal.Attr (Html.Attributes.tabindex 0)
+               )
             :: (case onPress of
                     Nothing ->
                         Internal.Attr (Html.Attributes.disabled True) :: attrs
