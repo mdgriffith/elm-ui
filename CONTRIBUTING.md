@@ -23,8 +23,3 @@ Here's a basic template in [ellie](https://ellie-app.com/3fhCyrxjLw3a1) to get y
 One of the more challenging parts of the project like this is gathering information.
 
 If you know of good resources about accessibility, internationalization, design, or [any of the topics listed in the research folder](https://github.com/mdgriffith/elm-ui/tree/master/notes/research), send them my way either via PR to those documents or on slack.
-
-
-# Helpful Projects
-
-Check out the [projects](https://github.com/mdgriffith/elm-ui/tree/master/notes/projects) folder for project contributions that could be useful for `elm-ui`.
