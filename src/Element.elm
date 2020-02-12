@@ -467,7 +467,7 @@ type alias Option =
     Internal.Option
 
 
-{-| Elm UI embeds two StyleSheets, one that is constant, and one that changes dynamically based on styles collected from the elments being rendered.
+{-| Elm UI embeds two StyleSheets, one that is constant, and one that changes dynamically based on styles collected from the elements being rendered.
 
 This option will stop the static/constant stylesheet from rendering.
 
