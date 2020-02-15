@@ -376,9 +376,9 @@ type alias Variant =
 {-| You can use this to set a single variant on an element itself such as:
 
     el
-        [ Font.variant Font.smallcaps
+        [ Font.variant Font.smallCaps
         ]
-        (text "rendered with smallcaps")
+        (text "rendered with smallCaps")
 
 **Note** These will **not** stack. If you want multiple variants, you should use `Font.variantList`.
 
