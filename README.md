@@ -62,8 +62,7 @@ myElement =
 
 The work is based off of a rewrite of the [Style Elements](https://github.com/mdgriffith/style-elements) library.  A lot of that work was originally released under the [Stylish Elephants](https://github.com/mdgriffith/stylish-elephants) project.
 
-## Learn from the cookbook
+## Community Cookbook
 
-Visit the [elm-ui-cookbook repository](https://github.com/rofrol/elm-ui-cookbook) which collect more and more examples of elm-ui in action; this is a great resource if you are starting out `elm-ui` and want some practical guidance.
-
+The community around elm-ui is maintaining a collection of elm-ui examples called the [elm-ui-cookbook](https://github.com/rofrol/elm-ui-cookbook). If you are just starting out with `elm-ui`, or get stuck on specific things, this can be a great resource.
 
