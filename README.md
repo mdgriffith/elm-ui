@@ -64,5 +64,5 @@ The work is based off of a rewrite of the [Style Elements](https://github.com/md
 
 ## Community Cookbook
 
-The community around elm-ui is maintaining a collection of elm-ui examples called the [elm-ui-cookbook](https://github.com/rofrol/elm-ui-cookbook). If you are just starting out with `elm-ui`, or get stuck on specific things, this can be a great resource.
+The community around `elm-ui` is maintaining a collection of examples called the [elm-ui-cookbook](https://github.com/rofrol/elm-ui-cookbook). If you are just starting out with `elm-ui`, or get stuck on specific things, this can be a great resource.
 
