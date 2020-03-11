@@ -6,8 +6,8 @@ These can be run using [`elm-test`](https://github.com/elm-explorations/test) an
 
 ```bash
 # in the root elm-ui directory
-yarn install
-yarn run test
+yarn install   # or npm install
+yarn run test  # or npm run test
 ```
 
 **Note** you need to be at the `elm-ui` root dir.
