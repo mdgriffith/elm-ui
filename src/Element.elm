@@ -1608,16 +1608,20 @@ We can also provide negative numbers to scale below 16px.
     Font.size (scaled -1) -- 16 * 1.25 ^ (-1) results in 12.8
 
 -}
-modular : Float -> Float -> Int -> Float
+modular : Float -> Float -> Int -> Int
 modular normal ratio rescale =
-    if rescale == 0 then
-        normal
+    let
+        float =
+            if rescale == 0 then
+                normal
 
-    else if rescale < 0 then
-        normal * ratio ^ toFloat rescale
+            else if rescale < 0 then
+                normal * ratio ^ toFloat rescale
 
-    else
-        normal * ratio ^ (toFloat rescale - 1)
+            else
+                normal * ratio ^ (toFloat rescale - 1)
+    in
+    round float
 
 
 {-| -}
