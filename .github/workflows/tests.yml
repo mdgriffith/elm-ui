@@ -31,5 +31,5 @@ jobs:
     - name: Elm test suite
       run: npm run test
     
-#     - name: Rendering test suite
-#       run: npm run test-rendering
+    - name: Rendering test suite
+      run: npm run test-rendering
