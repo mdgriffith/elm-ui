@@ -467,11 +467,11 @@ type alias Option =
     Internal.Option
 
 
-{-| Elm UI embeds two StyleSheets, one that is constant, and one that changes dynamically based on styles collected from the elments being rendered.
+{-| Elm UI embeds two StyleSheets, one that is constant, and one that changes dynamically based on styles collected from the elements being rendered.
 
 This option will stop the static/constant stylesheet from rendering.
 
-If you're embedding multiple elm-ui `layout` elements, you need to guarantee that only one is rendering the static style sheet and that it's above ll the others in the DOM tree.
+If you're embedding multiple elm-ui `layout` elements, you need to guarantee that only one is rendering the static style sheet and that it's above all the others in the DOM tree.
 
 -}
 noStaticStyleSheet : Option
