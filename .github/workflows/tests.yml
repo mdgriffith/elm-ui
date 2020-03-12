@@ -27,9 +27,11 @@ jobs:
 
     - name: Install
       run: npm install
-
-    - name: Elm test suite
-      run: npm run test
+    
+    - name: Echo
+      run: echo "successfully installed"
+#     - name: Elm test suite
+#       run: npm run test
     
 #     - name: Rendering test suite
 #       run: npm run test-rendering
