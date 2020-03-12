@@ -32,4 +32,4 @@ jobs:
       run: npm run test
     
     - name: Rendering test suite
-      run: npm run test-rendering
+      run: npm run test-render
