@@ -5,8 +5,8 @@
     "main": "index.js",
     "scripts": {
         "test": "elm-test",
-        "test-render": "node tests/automation/run.js --chrome",
-        "test-render-sauce": "source sauce.env; node tests/automation/run.js --sauce",
+        "test-render": "node tests/rendering/automation/run.js --chrome",
+        "test-render-sauce": "source sauce.env; node tests/rendering/automation/run.js --sauce",
         "bench": "node benchmarks/runtime/index.js"
     },
     "repository": {
@@ -22,7 +22,7 @@
     "dependencies": {
         "chalk": "^2.4.2",
         "commander": "^2.20.0",
-        "elm-test": "^0.19.0-rev6",
+        "elm-test": "^0.19.1-revision2",
         "node-elm-compiler": "^5.0.3",
         "puppeteer": "^1.18.0",
         "selenium-webdriver": "^4.0.0-alpha.4"

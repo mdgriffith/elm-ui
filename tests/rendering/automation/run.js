@@ -173,10 +173,10 @@ async function run_test(driver, url) {
     }
     console.log("Compiling tests")
     await compile_and_embed({
-        template: "./tests/automation/templates/gather-styles.html",
+        template: "./tests/rendering/automation/templates/gather-styles.html",
         target: "./tmp/test.html",
-        elm: ["Tests/Run.elm"],
-        elmOptions: { cwd: "./tests" }
+        elm: ["src/Tests/Run.elm"],
+        elmOptions: { cwd: "./tests/rendering" }
     })
     console.log("Done compiling")
 
@@ -191,7 +191,7 @@ async function run_test(driver, url) {
         var results = []
 
         // Publish to netlify
-        childProcess.execSync("sh tests/automation/publish-file.sh", {
+        childProcess.execSync("sh tests/rendering/automation/publish-file.sh", {
             env: {
                 FILE: "test.html",
                 BUILD: program.build,

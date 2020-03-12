@@ -1,4 +1,30 @@
-module Testable exposing (Attr(..), BoundingBox, Element(..), Found, LayoutContext(..), Location(..), Style, Surroundings, addAttribute, applyLabels, compareFormattedColor, createAttributeTest, createTest, formatColor, formatColorWithAlpha, getElementId, getIds, getSpacing, idAttr, levelToString, render, renderAttribute, renderElement, runTests, toTest)
+module Testable exposing
+    ( Attr(..)
+    , BoundingBox
+    , Element(..)
+    , Found
+    , LayoutContext(..)
+    , Location(..)
+    , Style
+    , Surroundings
+    , addAttribute
+    , applyLabels
+    , compareFormattedColor
+    , createAttributeTest
+    , createTest
+    , formatColor
+    , formatColorWithAlpha
+    , getElementId
+    , getIds
+    , getSpacing
+    , idAttr
+    , levelToString
+    , render
+    , renderAttribute
+    , renderElement
+    , runTests
+    , toTest
+    )
 
 {-| -}
 

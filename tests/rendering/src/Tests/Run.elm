@@ -1,4 +1,4 @@
-port module Tests.Run exposing (main)
+module Tests.Run exposing (main)
 
 {-| -}
 
