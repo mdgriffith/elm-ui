@@ -150,9 +150,6 @@ async function prepare_local_driver(env) {
         .setFirefoxOptions(firefoxOptions)
         .build();
 
-    // Allow waits up to 5 minutes
-    await driver.manage().timeouts().implicitlyWait(300, TimeUnit.SECONDS);
-
     return driver;
 }
 
