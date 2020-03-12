@@ -33,3 +33,6 @@ jobs:
     
     - name: Rendering test suite
       run: npm run test-render
+    
+    - name: Rendering test suite on saucelabs
+      run: npm run test-render-sauce
