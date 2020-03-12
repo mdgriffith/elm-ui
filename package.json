@@ -5,8 +5,8 @@
     "main": "index.js",
     "scripts": {
         "test": "elm-test",
-        "test-render": "node tests/rendering/automation/run.js --chrome",
-        "test-render-sauce": "source sauce.env; node tests/rendering/automation/run.js --sauce",
+        "test-render": "node tests-rendering/automation/run.js --chrome",
+        "test-render-sauce": "source sauce.env; node tests-rendering/automation/run.js --sauce",
         "bench": "node benchmarks/runtime/index.js"
     },
     "repository": {

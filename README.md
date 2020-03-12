@@ -55,9 +55,6 @@ myElement =
         (text "stylish!")
 ```
 
-
-
-
 ## History
 
 The work is based off of a rewrite of the [Style Elements](https://github.com/mdgriffith/style-elements) library.  A lot of that work was originally released under the [Stylish Elephants](https://github.com/mdgriffith/stylish-elephants) project.
@@ -68,4 +65,6 @@ The community around `elm-ui` is maintaining a collection of examples called the
 
 ## Contributing
 
-Want to help out fixing bugs or reporting issues? Please add issues you find, and if you want to verify code you want to contribute, please read how to run the tests [here](https://github.com/mdgriffith/elm-ui/blob/master/notes/RUNNING_TESTS.md).
+Want to help out fixing bugs or reporting issues?
+
+Please add issues you find, and if you want to verify code you want to contribute, please read how to run the tests [here](https://github.com/mdgriffith/elm-ui/blob/master/notes/RUNNING_TESTS.md).

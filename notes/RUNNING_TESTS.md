@@ -18,15 +18,25 @@ yarn run test  # or npm run test
 
 In order to do this, we need a different testing environment.
 
-So, the tests in `elm-ui/tests/Tests` will render output, then harvest bounding boxes form the browser, and run the test on the resulting data.
+So, the tests in `elm-ui/tests-rendering/src/Tests` will render output, then harvest bounding boxes form the browser, and run the test on the resulting data.
 
 Run this locally via:
 
 ```bash
-yarn install
-yarn test-render
+yarn install # or npm install
+yarn test-render # or npm run test-render
+```
+
+**Note** if you run this, it runs by default in headless chrome, so you won't see a browser actually open.  Ideally you'll just see something like this:
 
 ```
+Compiling tests
+Done compiling
+Running locally on Chrome...
+Local Chrome -> All 18029 tests passed
+```
+
+That's right. We have 18,029 tests. Whew.
 
 # Running on Sauce Labs
 

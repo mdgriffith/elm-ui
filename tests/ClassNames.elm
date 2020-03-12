@@ -3,12 +3,12 @@ module ClassNames exposing (suite)
 {-| -}
 
 import Expect
-import Html
-import Internal.Flag as Flag
+import Html exposing (Html)
 import Internal.Style
-import Test
+import Test exposing (Test)
 
 
+suite : Test
 suite =
     Test.describe "Classname Collisions"
         [ Test.test "No duplicates" <|
@@ -17,6 +17,7 @@ suite =
         ]
 
 
+main : Html msg
 main =
     Html.div []
         [ Html.text "The following names collide"
@@ -25,6 +26,7 @@ main =
         ]
 
 
+viewPair : ( String, String ) -> Html msg
 viewPair ( name, description ) =
     Html.div []
         [ Html.text name

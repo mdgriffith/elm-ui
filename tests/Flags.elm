@@ -3,7 +3,6 @@ module Flags exposing (suite)
 {-| -}
 
 import Expect
-import Html
 import Internal.Flag as Flag
 import Test
 

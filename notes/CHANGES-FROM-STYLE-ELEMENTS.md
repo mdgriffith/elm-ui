@@ -1,9 +1,6 @@
 # Compared to Style Elements
 
-
 This was a MAJOR rewrite of Style Elements.
-
-
 
 * **Major Performance improvement** - Style Elements v5 is much faster than v4 due to a better rendering strategy and generating very minimal html. The rewritten architecture also allows me to explore a few other optimizations, so things may get even faster than they are now.
 
