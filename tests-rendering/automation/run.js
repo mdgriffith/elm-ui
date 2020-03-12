@@ -49,7 +49,9 @@ const all_windows = [
     windows.chrome
     , windows.firefox
     , windows.edge
-    , windows.ie
+    // i.e. takes forever and seems to make selenium timeout :/
+    // not really sure how to extend the timeout.
+    // , windows.ie
 ]
 
 // "macOS 10.14"
@@ -85,9 +87,9 @@ function prepare_all_envs(config) {
 
     for (i = 0; i < all_windows.length; i++) {
         envs.push({
-            browser: windows[i].browser,
-            browserVersion: windows[i].browserVersion,
-            platform: winddows[i].platform,
+            browser: all_windows[i].browser,
+            browserVersion: all_windows[i].browserVersion,
+            platform: all_windows[i].platform,
             build: config.build,
             name: config.name
         })
@@ -148,6 +150,9 @@ async function prepare_local_driver(env) {
         .setFirefoxOptions(firefoxOptions)
         .build();
 
+    // Allow waits up to 5 minutes
+    await driver.manage().timeouts().implicitlyWait(300, TimeUnit.SECONDS);
+
     return driver;
 }
 
@@ -156,7 +161,7 @@ async function run_test(driver, url) {
     try {
         await driver.manage().window().setRect({ width: 1200, height: 800, x: 0, y: 0 });
         await driver.get(url);
-        await driver.wait(until.titleIs('tests finished'), 120 * 1000);
+        await driver.wait(until.titleIs('tests finished'), 240 * 1000);
         results = await driver.executeScript("return test_results")
     } finally {
         await driver.quit();
