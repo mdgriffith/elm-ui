@@ -19,6 +19,8 @@ if [ -z "$(git status --porcelain)" ]; then
 else 
   cd "$DIRECTORY"
   # Uncommitted changes
+  git config --global user.email "$GIT_EMAIL"
+  git config --global user.name "$GIT_NAME"
   git add .
   git commit -m "Elm UI test for $NAME on $BUILD"
   git push origin master
