@@ -35,4 +35,4 @@ jobs:
       run: npm run test-render
     
     - name: Rendering test suite on saucelabs
-      run: npm run test-render-sauce
+      run: npm run test-render-sauce-automated -- --build=2.0.0 --name=development
