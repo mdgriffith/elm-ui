@@ -34,5 +34,9 @@ jobs:
     - name: Rendering test suite
       run: npm run test-render
     
+    - uses: webfactory/ssh-agent@v0.2.0
+      with:
+          ssh-private-key: ${{ secrets.ELM_UI_TESTING_SSH_PRIVATE_KEY }}
+        
     - name: Rendering test suite on saucelabs
       run: npm run test-render-sauce-automated -- --build=2.0.0 --name=development
