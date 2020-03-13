@@ -212,6 +212,8 @@ async function run_test(driver, url) {
                 SSH_AGENT_PID: process.env.SSH_AGENT_PID
             }
         })
+        throw "Stop here pls"
+
         var url = `http://elm-ui-testing.netlify.com/tests/${program.build}/${program.name}/`
         console.log(`Running sauce labs test:`)
         console.log(`    ${url}`)
