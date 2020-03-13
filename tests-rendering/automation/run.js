@@ -192,6 +192,8 @@ async function run_test(driver, url) {
 
         var results = []
 
+        childProcess.execSync("sh tests-rendering/automation/add-key-to-ssh.sh");
+
         // Publish to netlify
         childProcess.execSync("sh tests-rendering/automation/publish-file.sh", {
             env: {

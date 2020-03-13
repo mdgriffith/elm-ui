@@ -7,8 +7,8 @@
         "test": "elm-test",
         "test-render": "node tests-rendering/automation/run.js --chrome",
         "test-render-sauce": "source sauce.env; node tests-rendering/automation/run.js --sauce",
-        "test-render-sauce-automated-old": "node tests-rendering/automation/run.js --sauce",
-        "test-render-sauce-automated": "bash tests-rendering/automation/add-key-to-ssh.sh",
+        "test-render-sauce-automated": "node tests-rendering/automation/run.js --sauce",
+        "test-render-sauce-automated-check-ssh": "bash tests-rendering/automation/add-key-to-ssh.sh",
         "bench": "node benchmarks/runtime/index.js"
     },
     "repository": {
