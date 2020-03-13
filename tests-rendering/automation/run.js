@@ -192,14 +192,24 @@ async function run_test(driver, url) {
 
         var results = []
 
-        childProcess.execSync("sh tests-rendering/automation/add-key-to-ssh.sh");
+        childProcess.execSync("sh tests-rendering/automation/add-key-to-ssh.sh", {
+            env: {
+                FILE: "test.html",
+                BUILD: program.build,
+                NAME: program.name,
+                SSH_AUTH_SOCK: process.env.SSH_AUTH_SOCK,
+                SSH_AGENT_PID: process.env.SSH_AGENT_PID
+            }
+        });
 
         // Publish to netlify
         childProcess.execSync("sh tests-rendering/automation/publish-file.sh", {
             env: {
                 FILE: "test.html",
                 BUILD: program.build,
-                NAME: program.name
+                NAME: program.name,
+                SSH_AUTH_SOCK: process.env.SSH_AUTH_SOCK,
+                SSH_AGENT_PID: process.env.SSH_AGENT_PID
             }
         })
         var url = `http://elm-ui-testing.netlify.com/tests/${program.build}/${program.name}/`
