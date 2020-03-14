@@ -40,3 +40,6 @@ jobs:
         
     - name: Rendering test suite on saucelabs
       run: npm run test-render-sauce-automated -- --build=2.0.0 --name=development
+      env:
+        SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+        SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
