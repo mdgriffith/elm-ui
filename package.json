@@ -8,6 +8,7 @@
         "test-render": "node tests-rendering/automation/run.js --chrome",
         "test-render-sauce": "source sauce.env; node tests-rendering/automation/run.js --sauce",
         "test-render-sauce-automated": "node tests-rendering/automation/run.js --sauce",
+        "test-doc-preview": "bash tests-rendering/automation/doc-preview.sh",
         "bench": "node benchmarks/runtime/index.js"
     },
     "repository": {
