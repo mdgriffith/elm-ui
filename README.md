@@ -1,10 +1,7 @@
 ![](https://github.com/mdgriffith/elm-ui/workflows/Test%20Suite/badge.svg)
 
-# Join the Elm UI Slack!
 
-First, if you have a question about how to do something with the library, join `#elm-ui` on the [Elm Slack](https://elmlang.herokuapp.com/)!  There are usually a number of people who are willing to help out, myself included.
-
-Also, check out the talk that goes with the library, [Building a Better Design Toolkit](https://www.youtube.com/watch?v=Ie-gqwSHQr0&t=2s)
+Check out the talk that goes with the library, [Building a Better Design Toolkit](https://www.youtube.com/watch?v=Ie-gqwSHQr0&t=2s)
 
 # A New Language for Layout and Interface
 
@@ -56,6 +53,10 @@ myElement =
         ]
         (text "stylish!")
 ```
+
+# Join the Elm UI Slack!
+
+First, if you have a question about how to do something with the library, join `#elm-ui` on the [Elm Slack](https://elmlang.herokuapp.com/)!  There are usually a number of people who are willing to help out, myself included.
 
 ## History
 
