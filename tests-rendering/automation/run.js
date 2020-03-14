@@ -210,6 +210,7 @@ async function run_test(driver, url) {
                 NAME: program.name,
                 GIT_EMAIL: "automation@elm-ui.com",
                 GIT_NAME: "Elm UI Automation",
+                HOME: ".",
                 SSH_AUTH_SOCK: process.env.SSH_AUTH_SOCK,
                 SSH_AGENT_PID: process.env.SSH_AGENT_PID
             }
