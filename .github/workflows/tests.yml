@@ -37,9 +37,6 @@ jobs:
     - name: Elm test suite
       run: npm run test
     
-    - name: Rendering test suite
-      run: npm run test-render
-    
     - uses: webfactory/ssh-agent@v0.2.0
       with:
           ssh-private-key: ${{ secrets.ELM_UI_TESTING_SSH_PRIVATE_KEY }}
