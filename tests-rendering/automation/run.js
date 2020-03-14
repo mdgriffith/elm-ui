@@ -192,16 +192,6 @@ async function run_test(driver, url) {
 
         var results = []
 
-        // childProcess.execSync("sh tests-rendering/automation/add-key-to-ssh.sh", {
-        //     env: {
-        //         FILE: "test.html",
-        //         BUILD: program.build,
-        //         NAME: program.name,
-        //         SSH_AUTH_SOCK: process.env.SSH_AUTH_SOCK,
-        //         SSH_AGENT_PID: process.env.SSH_AGENT_PID
-        //     }
-        // });
-
         // Publish to netlify
         childProcess.execSync("sh tests-rendering/automation/publish-file.sh", {
             env: {
@@ -210,12 +200,11 @@ async function run_test(driver, url) {
                 NAME: program.name,
                 GIT_EMAIL: "automation@elm-ui.com",
                 GIT_NAME: "Elm UI Automation",
-                HOME: ".",
+                HOME: process.env.HOME,
                 SSH_AUTH_SOCK: process.env.SSH_AUTH_SOCK,
                 SSH_AGENT_PID: process.env.SSH_AGENT_PID
             }
         })
-        throw "Stop here pls"
 
         var url = `http://elm-ui-testing.netlify.com/tests/${program.build}/${program.name}/`
         console.log(`Running sauce labs test:`)
