@@ -25,10 +25,10 @@ jobs:
         cache-name: cache-node-modules
       with:
         path: node_modules
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-testing-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
+          ${{ runner.os }}-testing-${{ env.cache-name }}-
+          ${{ runner.os }}-testing-
           ${{ runner.os }}-
 
     - name: Install
