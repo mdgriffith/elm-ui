@@ -142,7 +142,7 @@ viewLinks data =
 viewSingleLink result =
     Html.a
         [ Attr.href result.link
-        , Html.style "padding-right" "30px"
+        , Attr.style "padding-right" "30px"
         ]
         [ Html.text result.name ]
 
