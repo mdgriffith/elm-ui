@@ -1,3 +1,5 @@
+![](https://github.com/mdgriffith/elm-ui/workflows/Test%20Suite/badge.svg)
+
 # Join the Elm UI Slack!
 
 First, if you have a question about how to do something with the library, join `#elm-ui` on the [Elm Slack](https://elmlang.herokuapp.com/)!  There are usually a number of people who are willing to help out, myself included.
