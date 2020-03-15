@@ -27,7 +27,7 @@ jobs:
           ${{ runner.os }}-node-
 
     - name: Install
-      run: npm install
+      run: npm ci
     
     - name: Elm test suite
       run: npm run test
