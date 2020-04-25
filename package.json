@@ -9,7 +9,8 @@
     "test-render-sauce": "source sauce.env; node tests-rendering/automation/run.js --sauce",
     "test-render-sauce-automated": "node tests-rendering/automation/run.js --sauce",
     "test-doc-preview": "bash tests-rendering/automation/doc-preview.sh",
-    "bench": "node benchmarks/runtime/index.js"
+    "bench": "node benchmarks/runtime/index.js",
+    "list-issues": "hub issue -f \"%i,%U,%t%n\" > issues.csv"
   },
   "repository": {
     "type": "git",
