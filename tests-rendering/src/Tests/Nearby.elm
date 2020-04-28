@@ -71,7 +71,7 @@ view =
                 ([ Font.color white
                  , width (px 50)
                  , height (px 50)
-                 , Background.color (rgba 52 101 164 0.8)
+                 , Background.color white
                  ]
                     ++ attrs
                 )
