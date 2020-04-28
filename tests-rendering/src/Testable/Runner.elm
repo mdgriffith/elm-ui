@@ -1,4 +1,4 @@
-port module Testable.Runner exposing (TestableProgram, program, show)
+port module Testable.Runner exposing (Msg, TestableProgram, program, show)
 
 {-| -}
 

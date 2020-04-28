@@ -19,8 +19,11 @@ module Testable.Element exposing
     , inFront
     , isVisible
     , label
+    , layout
     , maximum
     , minimum
+    , moveDown
+    , moveUp
     , none
     , onLeft
     , onRight
@@ -28,6 +31,8 @@ module Testable.Element exposing
     , paddingXY
     , paragraph
     , px
+    , rgb
+    , rgba
     , row
     , shrink
     , spacing
@@ -54,6 +59,14 @@ import Element
 import Expect
 import Html.Attributes
 import Testable
+import Testable.Runner
+
+
+layout : List (Testable.Attr msg) -> Testable.Element Testable.Runner.Msg -> Testable.Runner.TestableProgram
+layout attrs elem =
+    Testable.Runner.program
+        [ ( "Open Case", elem )
+        ]
 
 
 text : String -> Testable.Element msg
@@ -91,6 +104,14 @@ textColumn =
     Testable.TextColumn
 
 
+moveUp x =
+    Testable.Attr (Element.moveUp x)
+
+
+moveDown x =
+    Testable.Attr (Element.moveDown x)
+
+
 type Length
     = Px Int
     | Fill Int
@@ -105,6 +126,14 @@ minimum =
 
 maximum =
     Maximum
+
+
+rgb =
+    Element.rgb
+
+
+rgba =
+    Element.rgba
 
 
 px : Int -> Length
