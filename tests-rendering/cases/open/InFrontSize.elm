@@ -1,5 +1,16 @@
 module InFrontSize exposing (main)
 
+{-|
+
+
+# inFront elements with width fill are contained within the parent's border
+
+<https://github.com/mdgriffith/elm-ui/issues/201>
+
+Though they're expected to be the actual size of the parent.
+
+-}
+
 import Testable.Element exposing (..)
 import Testable.Element.Background as Background
 import Testable.Element.Border as Border
