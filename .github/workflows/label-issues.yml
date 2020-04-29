@@ -1,0 +1,49 @@
+name: "Set Issue Label"
+on:
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#bug"]'
+          labels: '["bug"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#feature-suggestion"]'
+          labels: '["feature-suggestion"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#has-ellie"]'
+          labels: '["has-ellie"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#has-test"]'
+          labels: '["has-test"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#pain-point"]'
+          labels: '["pain-point"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#test-incorrectly-passing"]'
+          labels: '["test-incorrectly-passing"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#test-not-compiling"]'
+          labels: '["test-not-compiling"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: Amwam/issue-comment-action@v1.3.1
+        with:
+          keywords: '["#unexpected"]'
+          labels: '["unexpected"]'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
