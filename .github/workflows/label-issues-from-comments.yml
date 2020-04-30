@@ -1,4 +1,4 @@
-name: "Set Issue Label"
+name: "Label issue from comment keyword"
 on:
   issue_comment:
     types: [created, edited]
@@ -19,10 +19,9 @@ jobs:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
       - uses: Amwam/issue-comment-action@v1.3.1
         with:
-          keywords: '["#has-ellie"]'
+          keywords: '["#has-ellie", "https://ellie-app.com/"]'
           labels: '["has-ellie"]'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-
       - uses: Amwam/issue-comment-action@v1.3.1
         with:
           keywords: '["#no-ellie"]'
