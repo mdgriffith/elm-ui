@@ -19,8 +19,8 @@ If you add a comment to an issue that references a label, that label will be ass
   - **Has Test** - `#has-test` - Once we have an ellie for the problem, we want a version of that code in the codebase so I can easily take a look.
     - The thing to do is to open a PR that copies that ellie into the [`tests-rendering/cases/open`](https://github.com/mdgriffith/elm-ui/tree/master/tests-rendering/cases/open) directory.  Give it a succinct, human name.
     - Rename the `Element.*` imports as `Testable.Element.*`
-    - Add a link to the issue, the title of the issue, and the body of the issue to the module comment.  [Here's an example](https://github.com/mdgriffith/elm-ui/tree/master/tests-rendering/cases/open/InFrontSize)
-  - Test is compiling - Optionally you can see if the test is compiling by first `cd tests-rendering` and then running `elm make cases/open/{The file}.elm --open --dir=view -- --output=view/elm.js --debug` 
+    - Add a link to the issue, the title of the issue, and the body of the issue to the module comment.  [Here's an example](https://github.com/mdgriffith/elm-ui/tree/master/tests-rendering/cases/open/InFrontSize.elm)
+  - Test is compiling - Optionally you can see if the test is compiling by first `cd tests-rendering` and then running `elm-live cases/open/{The file}.elm --open --dir=view -- --output=view/elm.js --debug` 
     - If it does not compile, flag the issue as `#test-not-compiling`.  Don't worry about fixing it unless it's really obvious what needs to happen.
   - Check if the test passes.  Do that by opening `tests-rendering/cases/view/view.html` after running the above compilation.  If it says all passes, likely you should flag the issue as `#test-incorrectly-passing`.
   - If it's failing, you can flag as `#test-failing`
