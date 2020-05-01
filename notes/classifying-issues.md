@@ -22,7 +22,7 @@ If you add a comment to an issue that references a label, that label will be ass
     - Add a link to the issue, the title of the issue, and the body of the issue to the module comment.  [Here's an example](https://github.com/mdgriffith/elm-ui/tree/master/tests-rendering/cases/open/InFrontSize)
   - Test is compiling - Optionally you can see if the test is compiling by first `cd tests-rendering` and then running `elm make cases/open/{The file}.elm --open --dir=view -- --output=view/elm.js --debug` 
     - If it does not compile, flag the issue as `#test-not-compiling`.  Don't worry about fixing it unless it's really obvious what needs to happen.
-  - Check if the test passes.  Do that by opening `tests-rendering/cases/view/index.html` after running the above compilation.  If it says all passes, likely you should flag the issue as `#test-incorrectly-passing`.
+  - Check if the test passes.  Do that by opening `tests-rendering/cases/view/view.html` after running the above compilation.  If it says all passes, likely you should flag the issue as `#test-incorrectly-passing`.
   - If it's failing, you can flag as `#test-failing`
 
 
