@@ -41,11 +41,19 @@ Do you ever have a gradient with more than two alpha steps?
 Maybe you'd actually like to adjust the falloff curve instead of have it be linear?
 Maybe there's an even better way to represent this?
 
-    -- Will eventually want to cover radial gradients, but a similar approach to the above is likely easy.
+    Will eventually want to cover radial gradients, but a similar approach to the above is likely easy.
 
 Took a look at [background blend modes](https://developer.mozilla.org/en-US/docs/Web/CSS/background-blend-mode), which can be used to dynamically color images, like the [header image here](https://professional-rentals.com/).
 
-The blend modes are vaguely influenced by background opacity.
+The blend modes are influenced by background or element opacity.
+
+In that way, we could have something like
+
+    Background.blend 0.5 color
+
+Which would set a color mode and set the background opacity.  I'd need to play around with it, but seems kinda cool!
+
+
 
 
 ## Element.Border
