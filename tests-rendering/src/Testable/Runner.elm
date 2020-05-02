@@ -3,27 +3,23 @@ port module Testable.Runner exposing (Msg, TestableProgram, program, show)
 {-| -}
 
 import Browser
-import Char
 import Dict exposing (Dict)
 import Element
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as Events
 import Element.Font as Font
 import Html exposing (Html)
-import Parser exposing ((|.), (|=))
+import Html.Attributes
 import Process
-import Random
-import Set
 import Task
-import Test.Runner
-import Test.Runner.Failure as Failure
 import Testable
 import Time
 
 
 show : Testable.Element msg -> Html msg
 show =
-    Testable.render
+    Testable.toHtml
 
 
 type alias TestableProgram =
@@ -56,6 +52,7 @@ program tests =
                 ( { current = current
                   , upcoming = upcoming
                   , finished = []
+                  , highlightDomId = Nothing
                   }
                 , Task.perform (always Analyze)
                     (Process.sleep 32
@@ -80,6 +77,7 @@ type alias Model msg =
     { current : Maybe ( String, Testable.Element msg )
     , upcoming : List ( String, Testable.Element msg )
     , finished : List (WithResults (Testable.Element msg))
+    , highlightDomId : Maybe String
     }
 
 
@@ -87,49 +85,44 @@ type alias WithResults thing =
     { element : thing
     , label : String
     , results :
-        List
-            ( String
-            , Maybe
-                { given : Maybe String
-                , description : String
-                , reason : Failure.Reason
-                }
-            )
+        List Testable.LayoutTest
     }
 
 
-prepareResults :
+encodeForReport :
     List (WithResults (Testable.Element msg))
     ->
         List
             { label : String
             , results :
                 List
-                    ( String
-                    , Maybe
-                        { given : Maybe String
-                        , description : String
-                        }
-                    )
+                    { description : String
+                    , passing : Bool
+                    , todo : Bool
+                    }
             }
-prepareResults withResults =
+encodeForReport withResults =
     let
-        prepareNode ( x, maybeResult ) =
-            ( x
-            , case maybeResult of
-                Nothing ->
-                    Nothing
+        prepareExpectation layoutTest exp =
+            case exp of
+                Testable.Todo description ->
+                    { description = description
+                    , passing = False
+                    , todo = True
+                    }
 
-                Just res ->
-                    Just
-                        { given = res.given
-                        , description = res.description
-                        }
-            )
+                Testable.Expect details ->
+                    { description = details.description
+                    , passing = details.result
+                    , todo = False
+                    }
+
+        prepareNode layoutTest =
+            List.map (prepareExpectation layoutTest) layoutTest.expectations
 
         prepare { label, results } =
             { label = label
-            , results = List.map prepareNode results
+            , results = List.concatMap prepareNode results
             }
     in
     List.map prepare withResults
@@ -138,6 +131,7 @@ prepareResults withResults =
 type Msg
     = NoOp
     | Analyze
+    | HighlightDomID (Maybe String)
     | RefreshBoundingBox
         (List
             { id : String
@@ -151,14 +145,8 @@ type Msg
 runTest : Dict String Testable.Found -> String -> Testable.Element msg -> WithResults (Testable.Element msg)
 runTest boxes label element =
     let
-        tests =
-            Testable.toTest label boxes element
-
-        seed =
-            Random.initialSeed 227852860
-
         results =
-            Testable.runTests seed tests
+            Testable.runTests boxes element
     in
     { element = element
     , label = label
@@ -171,6 +159,11 @@ update msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
+
+        HighlightDomID newId ->
+            ( { model | highlightDomId = newId }
+            , Cmd.none
+            )
 
         RefreshBoundingBox boxes ->
             case model.current of
@@ -203,7 +196,7 @@ update msg model =
                                 | current = Nothing
                                 , finished = model.finished ++ [ currentResults ]
                               }
-                            , report (prepareResults (currentResults :: model.finished))
+                            , report (encodeForReport (currentResults :: model.finished))
                             )
 
                         newCurrent :: remaining ->
@@ -246,23 +239,42 @@ view model =
                                     [ Element.spacing 20
                                     , Element.padding 20
                                     , Element.width (Element.px 800)
-
-                                    -- , Background.color Color.grey
                                     ]
                                     [ Element.none ]
 
                         finished :: remaining ->
-                            if False then
-                                viewResultsInline finished
-
-                            else
-                                Element.layout [] <|
-                                    Element.column
+                            Element.layout
+                                [ Font.size 16
+                                , Element.inFront (Element.html (viewElementHighlight model))
+                                ]
+                            <|
+                                Element.row [ Element.width Element.fill ]
+                                    [ Element.el
+                                        [ Element.width Element.fill
+                                        ]
+                                        (Element.el
+                                            [ Element.centerX
+                                            , Element.padding 100
+                                            , Border.dashed
+                                            , Border.width 2
+                                            , Border.color palette.lightGrey
+                                            , Element.inFront
+                                                (Element.el
+                                                    [ Font.size 14
+                                                    , Font.color palette.lightGrey
+                                                    ]
+                                                    (Element.text "test case")
+                                                )
+                                            ]
+                                            (Testable.toElement finished.element)
+                                        )
+                                    , Element.column
                                         [ Element.spacing 20
                                         , Element.padding 20
-                                        , Element.width (Element.px 800)
+                                        , Element.width Element.fill
                                         ]
                                         (List.map viewResult (finished :: remaining))
+                                    ]
                     ]
                 }
 
@@ -274,162 +286,181 @@ view model =
         Just ( label, current ) ->
             { title = "running"
             , body =
-                [ Testable.render current ]
+                [ Testable.toHtml current ]
             }
 
 
-viewResultsInline : WithResults (Testable.Element Msg) -> Html Msg
-viewResultsInline testable =
-    Html.div
-        []
-        [ viewResultsAnnotationStylesheet testable.results
-        , Testable.render testable.element
-        ]
+viewElementHighlight model =
+    case model.highlightDomId of
+        Nothing ->
+            Html.text ""
 
+        Just highlightDomId ->
+            let
+                elementHighlight =
+                    highlightDomId ++ " { outline: solid;  }"
 
-{-| Our ID is part of our label. This could be fixed farther down the chain, but I think it'd be pretty involved.
+                testId =
+                    highlightDomId
+                        |> String.dropLeft 1
+                        |> String.append "#tests-"
 
-So, now we can just parse the id out of the label.
+                testHighlight =
+                    testId ++ " { outline: dashed;  }"
 
--}
-parseId str =
-    str
-        |> Parser.run
-            (Parser.succeed identity
-                |. Parser.chompWhile (\c -> c /= '#')
-                |= Parser.variable
-                    { start = \c -> c == '#'
-                    , inner = \c -> Char.isAlphaNum c || c == '-'
-                    , reserved = Set.empty
-                    }
-            )
-        |> Result.toMaybe
-
-
-viewResultsAnnotationStylesheet results =
-    let
-        toStyleClass ( label, maybeFailure ) =
-            case maybeFailure of
-                Nothing ->
-                    ""
-
-                Just failure ->
-                    case parseId label of
-                        Nothing ->
-                            Debug.log "NO ID FOUND" label
-
-                        Just id ->
-                            id ++ " { background-color:red; outline: dashed; };"
-
-        styleSheet =
-            results
-                |> List.map toStyleClass
-                |> String.join ""
-    in
-    Html.node "style"
-        []
-        [ Html.text styleSheet
-        ]
+                styleSheet =
+                    String.join "\n"
+                        [ elementHighlight
+                        , testHighlight
+                        ]
+            in
+            Html.node "style"
+                []
+                [ Html.text styleSheet
+                ]
 
 
 viewResult : WithResults (Testable.Element Msg) -> Element.Element Msg
 viewResult testable =
     let
-        isPassing result =
-            case Tuple.second result of
-                Nothing ->
+        isExpectationPassing result =
+            case result of
+                Testable.Todo label ->
                     True
 
-                Just _ ->
-                    False
+                Testable.Expect details ->
+                    details.result
+
+        isPassing layoutTest =
+            List.any isExpectationPassing layoutTest.expectations
 
         ( passing, failing ) =
             List.partition isPassing testable.results
-
-        viewSingle result =
-            case result of
-                ( label, Nothing ) ->
-                    Element.el
-                        [ Background.color palette.green
-                        , Font.color palette.black
-                        , Element.paddingXY 20 10
-                        , Element.alignLeft
-                        , Border.rounded 3
-                        ]
-                    <|
-                        Element.text ("Success! - " ++ label)
-
-                ( label, Just ({ given, description } as reason) ) ->
-                    Element.column
-                        [ Background.color palette.red
-                        , Font.color palette.black
-                        , Element.paddingXY 20 10
-                        , Element.alignLeft
-                        , Element.width Element.shrink
-
-                        -- , Element.spacing 25
-                        , Border.rounded 3
-                        ]
-                        [ Element.el [ Element.width Element.fill ] <| Element.text label
-                        , Element.el [ Element.width Element.fill ] <| Element.text (viewReason reason)
-                        ]
     in
     Element.column
-        [ Border.width 1
-        , Border.color palette.lightGrey
-        , Element.padding 20
-        , Element.height Element.shrink
-        , Element.alignLeft
+        [ Element.alignLeft
         , Element.spacing 16
         ]
-        [ Element.el [ Font.bold, Font.size 64 ] (Element.text testable.label)
+        [ Element.el [ Font.size 24 ] (Element.text testable.label)
         , Element.column [ Element.alignLeft, Element.spacing 20 ]
-            (failing
-                |> List.map viewSingle
+            (List.map viewLayoutTest failing)
+        , Element.column
+            [ Element.alignLeft, Element.spacing 16 ]
+            (passing
+                |> groupBy .elementDomId
+                |> List.map viewLayoutTestGroup
             )
-        , Element.el
-            [ Element.alignLeft
-            , Element.spacing 20
-            , Background.color palette.green
-            , Font.color palette.black
-            , Element.paddingXY 20 10
-            , Element.alignLeft
-            , Border.rounded 3
-            ]
-            (Element.text (String.fromInt (List.length passing) ++ " tests passing!"))
         ]
 
 
-viewReason { description, reason } =
-    case reason of
-        Failure.Custom ->
-            description
+groupBy fn list =
+    groupWhile (\one two -> fn one == fn two) list
+        |> List.map
+            (\( fst, remaining ) ->
+                { id = fn fst
+                , members = fst :: remaining
+                }
+            )
 
-        Failure.Equality one two ->
-            description ++ " " ++ one ++ " " ++ two
 
-        Failure.Comparison one two ->
-            description ++ " " ++ one ++ " " ++ two
+groupWhile : (a -> a -> Bool) -> List a -> List ( a, List a )
+groupWhile isSameGroup items =
+    List.foldr
+        (\x acc ->
+            case acc of
+                [] ->
+                    [ ( x, [] ) ]
 
-        Failure.ListDiff expected actual ->
-            "expected\n"
-                ++ String.join "    \n" expected
-                ++ "actual\n"
-                ++ String.join "    \n" actual
+                ( y, restOfGroup ) :: groups ->
+                    if isSameGroup x y then
+                        ( x, y :: restOfGroup ) :: groups
 
-        Failure.CollectionDiff { expected, actual, extra, missing } ->
-            String.join "\n"
-                [ formatKeyValue "expected" expected
-                , formatKeyValue "actual" actual
-                , formatKeyValue "extra" (String.join ", " extra)
-                , formatKeyValue "missing" (String.join ", " missing)
-                ]
+                    else
+                        ( x, [] ) :: acc
+        )
+        []
+        items
 
-        Failure.TODO ->
-            description
 
-        Failure.Invalid _ ->
-            description
+viewLayoutTestGroup group =
+    let
+        testId =
+            group.id
+                |> String.dropLeft 1
+                |> String.append "tests-"
+    in
+    Element.column
+        [ Element.spacing 8
+        , Element.htmlAttribute (Html.Attributes.id testId)
+        , Events.onMouseEnter (HighlightDomID (Just group.id))
+        , Events.onMouseLeave (HighlightDomID Nothing)
+        , Element.htmlAttribute (Html.Attributes.style "user-select" "none")
+        ]
+        [ Element.el [ Font.color palette.lightGrey ] (Element.text group.id)
+        , Element.column
+            [ Element.spacing 8
+            , Element.paddingXY 32 0
+            ]
+            (List.map viewLayoutTest group.members)
+        ]
+
+
+type alias Grouped thing =
+    { id : String
+    , members : List thing
+    }
+
+
+viewLayoutTest layoutTest =
+    Element.column
+        [ Element.spacing 8
+        ]
+        [ Element.row [ Element.spacing 8 ]
+            [ Element.el [ Font.bold ] (Element.text layoutTest.label)
+
+            -- , Element.el [ Font.color palette.lightGrey ] (Element.text layoutTest.elementDomId)
+            ]
+        , Element.column [ Element.spacing 8 ]
+            (List.map viewLayoutExpectation layoutTest.expectations)
+        ]
+
+
+viewLayoutExpectation expectation =
+    case expectation of
+        Testable.Todo label ->
+            Element.row [ Element.spacing 4 ]
+                [ todo, Element.text label ]
+
+        Testable.Expect details ->
+            if details.result then
+                Element.row [ Element.spacing 4 ]
+                    [ pass, Element.text details.description ]
+
+            else
+                Element.row [ Element.spacing 4 ]
+                    [ fail, Element.text details.description ]
+
+
+badge color text =
+    Element.el
+        [ Background.color color
+        , Font.color palette.black
+        , Element.paddingXY 4 8
+        , Border.rounded 2
+        ]
+        (Element.text text)
+
+
+todo =
+    badge palette.lightGrey "todo"
+
+
+pass =
+    badge palette.green "pass"
+
+
+fail =
+    badge palette.red "fail"
 
 
 formatKeyValue : String -> String -> String
@@ -442,12 +473,10 @@ port report :
         { label : String
         , results :
             List
-                ( String
-                , Maybe
-                    { given : Maybe String
-                    , description : String
-                    }
-                )
+                { description : String
+                , passing : Bool
+                , todo : Bool
+                }
         }
     -> Cmd msg
 

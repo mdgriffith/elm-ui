@@ -15,15 +15,16 @@ color clr =
         { label = "font color-" ++ Testable.formatColor clr
         , attr = Font.color clr
         , test =
-            \context _ ->
+            \context ->
                 let
                     selfFontColor =
                         context.self.style
                             |> Dict.get "color"
                             |> Maybe.withDefault "notfound"
                 in
-                Expect.true ("Color Match - " ++ (Testable.formatColor clr ++ " vs " ++ selfFontColor))
+                [ Testable.true ("Color Match - " ++ (Testable.formatColor clr ++ " vs " ++ selfFontColor))
                     (Testable.compareFormattedColor clr selfFontColor)
+                ]
         }
 
 
@@ -33,7 +34,7 @@ size i =
         { label = "font size-" ++ String.fromInt i
         , attr = Font.size i
         , test =
-            \context _ ->
+            \context ->
                 let
                     selfFontSize =
                         context.self.style
@@ -43,6 +44,7 @@ size i =
                     formattedInt =
                         String.fromInt i
                 in
-                Expect.true ("Size Match - " ++ (formattedInt ++ " vs " ++ selfFontSize))
+                [ Testable.true ("Size Match - " ++ (formattedInt ++ " vs " ++ selfFontSize))
                     (formattedInt == selfFontSize)
+                ]
         }

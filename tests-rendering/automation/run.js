@@ -265,31 +265,29 @@ function renderEnvName(env) {
   return `${env.platform}, ${env.browser} ${env.browserVersion}`;
 }
 
-function print_results(label, results) {
+function print_results(label, tests) {
   var total_passed = 0;
   var total_failed = 0;
   var i;
   if (program.verbose) {
     console.log(label);
   }
-  for (i = 0; i < results.length; i++) {
+  for (i = 0; i < tests.length; i++) {
     var passed = 0;
     var failed = 0;
-    for (j = 0; j < results[i].results.length; j++) {
-      if (results[i].results[j][1] == null) {
+    for (j = 0; j < tests[i].results.length; j++) {
+      if (tests[i].results[j].passing) {
         passed = passed + 1;
       } else {
         if (failed == 0) {
           if (!program.verbose) {
             console.log(label);
           }
-          console.log(results[i].label);
+          console.log(tests[i].label);
         }
         failed = failed + 1;
-        console.log(
-          "    " + chalk.red("fail") + " -> " + results[i].results[j][0]
-        );
-        console.log("        " + results[i].results[j][1].description);
+        console.log("    " + chalk.red("fail") + " ->");
+        console.log("        " + tests[i].results[j][1].description);
       }
     }
     total_passed = total_passed + passed;
@@ -300,7 +298,7 @@ function print_results(label, results) {
       console.log(chalk.red(`    ${failed} tests failed`));
       console.log();
     } else if (program.verbose) {
-      console.log(results[i].label + chalk.green(`    ${passed} tests passed`));
+      console.log(tests[i].label + chalk.green(`    ${passed} tests passed`));
     }
   }
   if (total_failed == 0) {

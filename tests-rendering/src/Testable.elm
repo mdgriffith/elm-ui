@@ -4,40 +4,32 @@ module Testable exposing
     , Element(..)
     , Found
     , LayoutContext(..)
+    , LayoutExpectation(..)
+    , LayoutTest
     , Location(..)
     , Style
     , Surroundings
-    , addAttribute
-    , applyLabels
     , compareFormattedColor
-    , createAttributeTest
-    , createTest
+    , equal
     , formatColor
     , formatColorWithAlpha
-    , getElementId
     , getIds
     , getSpacing
-    , idAttr
-    , levelToString
-    , render
-    , renderAttribute
-    , renderElement
     , runTests
-    , toTest
+    , toElement
+    , toHtml
+    , todo
+    , true
     )
 
 {-| -}
 
 import Dict exposing (Dict)
 import Element exposing (Color)
-import Expect
 import Html exposing (Html)
 import Html.Attributes
 import Internal.Model as Internal
-import Random
 import Test exposing (Test)
-import Test.Runner
-import Test.Runner.Failure
 
 
 type Element msg
@@ -52,18 +44,20 @@ type Element msg
 
 type Attr msg
     = Attr (Element.Attribute msg)
-    | AttrTest (Surroundings -> Test)
+    | AttrTest
+        { test : Surroundings -> List LayoutExpectation
+        , label : String
+        }
     | Batch (List (Attr msg))
     | Spacing Int
     | Nearby
         { location : Location
         , element : Element msg
-        , test : Surroundings -> () -> Expect.Expectation
+        , test : Surroundings -> List LayoutExpectation
         , label : String
         }
-    | Label String
     | LabeledTest
-        { test : Surroundings -> () -> Expect.Expectation
+        { test : Surroundings -> List LayoutExpectation
         , label : String
         , attr : Element.Attribute msg
         }
@@ -125,6 +119,46 @@ type alias BoundingBox =
     }
 
 
+type LayoutExpectation
+    = Expect
+        { description : String
+        , result : Bool
+        }
+    | Todo String
+
+
+type alias LayoutTest =
+    { elementDomId : String
+    , label : String
+    , expectations : List LayoutExpectation
+    }
+
+
+
+{- Expectations -}
+
+
+equal : a -> a -> LayoutExpectation
+equal one two =
+    Expect
+        { description = "Are equal"
+        , result = one == two
+        }
+
+
+true : String -> Bool -> LayoutExpectation
+true label passing =
+    Expect
+        { description = label
+        , result = passing
+        }
+
+
+todo : String -> LayoutExpectation
+todo =
+    Todo
+
+
 
 {- Retrieve Ids -}
 
@@ -183,8 +217,13 @@ getElementId level el =
 {- Render as Html -}
 
 
-render : Element msg -> Html msg
-render el =
+toElement : Element msg -> Element.Element msg
+toElement el =
+    renderElement [ 0, 0 ] el
+
+
+toHtml : Element msg -> Html msg
+toHtml el =
     Element.layout [ idAttr "0" ] <|
         renderElement [ 0, 0 ] el
 
@@ -253,9 +292,6 @@ renderAttribute level attrIndex attr =
         Spacing _ ->
             []
 
-        Label _ ->
-            []
-
         Nearby { location, element } ->
             case location of
                 Above ->
@@ -288,30 +324,35 @@ renderAttribute level attrIndex attr =
 {- Convert to Test -}
 
 
-toTest : String -> Dict String Found -> Element msg -> Test
-toTest label harvested el =
+runTests : Dict String Found -> Element msg -> List LayoutTest
+runTests harvested el =
     let
         maybeFound =
             Dict.get "se-0" harvested
     in
     case maybeFound of
         Nothing ->
-            Test.describe label
-                [ Test.test "Find Root" <|
-                    \_ -> Expect.fail "unable to find root"
-                ]
+            [ { elementDomId = "se-0"
+              , label = "Finding root element"
+              , expectations =
+                    [ Expect
+                        { description = "Locating root element for rendering tests"
+                        , result = False
+                        }
+                    ]
+              }
+            ]
 
         Just root ->
-            Test.describe label <|
-                createTest
-                    { siblings = []
-                    , parent = root
-                    , cache = harvested
-                    , parentSpacing = 0
-                    , level = [ 0, 0 ]
-                    , element = el
-                    , location = InEl
-                    }
+            createTest
+                { siblings = []
+                , parent = root
+                , cache = harvested
+                , parentSpacing = 0
+                , level = [ 0, 0 ]
+                , element = el
+                , location = InEl
+                }
 
 
 levelToString : List Int -> String
@@ -331,7 +372,7 @@ createTest :
     , location : LayoutContext
     , parentSpacing : Int
     }
-    -> List Test
+    -> List LayoutTest
 createTest { siblings, parent, cache, level, element, location, parentSpacing } =
     let
         spacing =
@@ -341,7 +382,7 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
         id =
             levelToString level
 
-        testChildren : Found -> List (Element msg) -> List Test
+        testChildren : Found -> List (Element msg) -> List LayoutTest
         testChildren found children =
             let
                 childrenFound =
@@ -369,13 +410,13 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                 { a
                     | index : Int
                     , previous : List Found
-                    , tests : List Test
+                    , tests : List LayoutTest
                     , upcoming : List Found
                 }
             ->
                 { index : Int
                 , previous : List Found
-                , tests : List Test
+                , tests : List LayoutTest
                 , upcoming : List Found
                 }
         applyChildTest found child childTest =
@@ -439,7 +480,7 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                         rest
             }
 
-        tests : Found -> List (Attr msg) -> List (Element msg) -> List Test
+        tests : Found -> List (Attr msg) -> List (Element msg) -> List LayoutTest
         tests self attributes children =
             let
                 findBBox elem ( i, gathered ) =
@@ -479,7 +520,6 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
 
                 attributeTests =
                     attributes
-                        |> applyLabels
                         |> List.indexedMap
                             -- Found -> Dict String Found -> List Int -> Int -> Surroundings -> Attr msg -> List Test
                             (\i attr ->
@@ -511,7 +551,16 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                     []
 
                 _ ->
-                    [ Test.test ("Unable to find " ++ id) (always <| Expect.fail "failed id lookup") ]
+                    [ { elementDomId = id
+                      , label = "Finding element in DOM"
+                      , expectations =
+                            [ Expect
+                                { description = "Locating element for rendering test"
+                                , result = False
+                                }
+                            ]
+                      }
+                    ]
 
         Just self ->
             case element of
@@ -537,59 +586,31 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                     []
 
 
-applyLabels : List (Attr msg) -> List (Attr msg)
-applyLabels attrs =
-    let
-        toLabel attr =
-            case attr of
-                Label label ->
-                    Just label
-
-                _ ->
-                    Nothing
-
-        newLabels =
-            attrs
-                |> List.filterMap toLabel
-                |> String.join ", "
-
-        applyLabel newLabel attr =
-            case attr of
-                LabeledTest labeled ->
-                    LabeledTest
-                        { labeled
-                            | label =
-                                if newLabel == "" then
-                                    labeled.label
-
-                                else
-                                    newLabel ++ ", " ++ labeled.label
-                        }
-
-                x ->
-                    x
-    in
-    List.map (applyLabel newLabels) attrs
-
-
-createAttributeTest : Found -> Dict String Found -> List Int -> Int -> Surroundings -> Attr msg -> List Test
+createAttributeTest :
+    Found
+    -> Dict String Found
+    -> List Int
+    -> Int
+    -> Surroundings
+    -> Attr msg
+    -> List LayoutTest
 createAttributeTest parent cache level attrIndex surroundings attr =
     let
-        indexLabel =
-            levelToString (attrIndex :: level)
+        domId =
+            "#" ++ levelToString level
     in
     case attr of
         Attr _ ->
             []
 
-        Label _ ->
-            []
-
         Spacing _ ->
             []
 
-        AttrTest test ->
-            [ test surroundings
+        AttrTest details ->
+            [ { elementDomId = domId
+              , label = details.label
+              , expectations = details.test surroundings
+              }
             ]
 
         Nearby nearby ->
@@ -600,7 +621,15 @@ createAttributeTest parent cache level attrIndex surroundings attr =
                 , parentSpacing = 0
                 , level = attrIndex :: -1 :: level
                 , location = IsNearby nearby.location
-                , element = addAttribute (AttrTest (\context -> Test.test (nearby.label ++ "  #" ++ indexLabel) (nearby.test context))) nearby.element
+                , element =
+                    addAttribute
+                        (AttrTest
+                            { label = nearby.label
+                            , test =
+                                nearby.test
+                            }
+                        )
+                        nearby.element
                 }
 
         Batch batch ->
@@ -609,7 +638,10 @@ createAttributeTest parent cache level attrIndex surroundings attr =
                 |> List.concat
 
         LabeledTest { label, test } ->
-            [ Test.test (label ++ "  #" ++ indexLabel) (test surroundings)
+            [ { elementDomId = domId
+              , label = label
+              , expectations = test surroundings
+              }
             ]
 
 
@@ -638,46 +670,43 @@ addAttribute attr el =
             Text str
 
 
-runTests :
-    Random.Seed
-    -> Test
-    ->
-        List
-            ( String
-            , Maybe
-                { given : Maybe String
-                , description : String
-                , reason : Test.Runner.Failure.Reason
-                }
-            )
-runTests seed tests =
-    let
-        run runner =
-            let
-                ran =
-                    List.map Test.Runner.getFailureReason (runner.run ())
-            in
-            List.map2 Tuple.pair runner.labels ran
 
-        results =
-            case Test.Runner.fromTest 100 seed tests of
-                Test.Runner.Plain rnrs ->
-                    List.map run rnrs
-
-                Test.Runner.Only rnrs ->
-                    List.map run rnrs
-
-                Test.Runner.Skipping rnrs ->
-                    List.map run rnrs
-
-                Test.Runner.Invalid invalid ->
-                    let
-                        _ =
-                            Debug.log "Invalid tests" invalid
-                    in
-                    []
-    in
-    List.concat results
+-- runTests :
+--     Random.Seed
+--     -> Test
+--     ->
+--         List
+--             ( String
+--             , Maybe
+--                 { given : Maybe String
+--                 , description : String
+--                 , reason : Test.Runner.Failure.Reason
+--                 }
+--             )
+-- runTests seed tests =
+--     let
+--         run runner =
+--             let
+--                 ran =
+--                     List.map Test.Runner.getFailureReason (runner.run ())
+--             in
+--             List.map2 Tuple.pair runner.labels ran
+--         results =
+--             case Test.Runner.fromTest 100 seed tests of
+--                 Test.Runner.Plain rnrs ->
+--                     List.map run rnrs
+--                 Test.Runner.Only rnrs ->
+--                     List.map run rnrs
+--                 Test.Runner.Skipping rnrs ->
+--                     List.map run rnrs
+--                 Test.Runner.Invalid invalid ->
+--                     let
+--                         _ =
+--                             Debug.log "Invalid tests" invalid
+--                     in
+--                     []
+--     in
+--     List.concat results
 
 
 compareFormattedColor : Color -> String -> Bool
