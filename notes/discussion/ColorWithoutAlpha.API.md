@@ -1,10 +1,11 @@
-# Possible API Changes
+# API sketch for separating out alpha from Color
 
 **Motivation**
 
 If we separate out alpha from the core color type, we can
 
 1. Have a unified `Color` type that works in all contexts, including in webGL situations where transparency may be handled differently, or not at all.
+
 2. Encourage people to use actual color mixing functions where possible or to enumerate their colors concretely.
    - The point here is that alpha mixing can sometimes lead to colors that don't look great or are unexpected.
 
