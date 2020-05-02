@@ -1,31 +1,27 @@
-module Main exposing (main)
+module WeirdCentering exposing (main)
 
-import Browser
-import Element
-import Element.Background as Background
-import Element.Input as Input
-import Html exposing (Html, button, div, text)
-import Html.Events exposing (onClick)
+import Html exposing (Html)
+import Testable.Element exposing (..)
+import Testable.Element.Background as Background
 
 
-main : Html msg
 main =
-    Element.layout [] <|
-        Element.column []
-            [ Element.text "Example with centerX:"
-            , Element.row
-                [ Element.width Element.fill ]
-                [ Element.row [ Element.centerX, Background.color <| Element.rgb255 0 200 0 ]
-                    [ Element.paragraph [ Element.width Element.shrink ] [ Element.text "Hello world" ]
-                    , Element.paragraph [ Element.width Element.shrink ] [ Element.text "Hello world" ]
+    layout [] <|
+        column []
+            [ text "Example with centerX:"
+            , row
+                [ width fill ]
+                [ row [ centerX, Background.color <| rgb 0 1 0 ]
+                    [ paragraph [ width shrink ] [ text "Hello world" ]
+                    , paragraph [ width shrink ] [ text "Hello world" ]
                     ]
                 ]
-            , Element.text "Example without centerX:"
-            , Element.row
-                [ Element.width Element.fill ]
-                [ Element.row [ Background.color <| Element.rgb255 0 200 0 ]
-                    [ Element.paragraph [ Element.width Element.shrink ] [ Element.text "Hello world" ]
-                    , Element.paragraph [ Element.width Element.shrink ] [ Element.text "Hello world" ]
+            , text "Example without centerX:"
+            , row
+                [ width fill ]
+                [ row [ Background.color <| rgb 0 1 0 ]
+                    [ paragraph [ width shrink ] [ text "Hello world" ]
+                    , paragraph [ width shrink ] [ text "Hello world" ]
                     ]
                 ]
             ]
