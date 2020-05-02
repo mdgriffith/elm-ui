@@ -1,6 +1,24 @@
-
 # Possible API Changes
 
+**Motivation**
+
+If we separate out alpha from the core color type, we can
+
+1. Have a unified `Color` type that works in all contexts, including in webGL situations where transparency may be handled differently, or not at all.
+2. Encourage people to use actual color mixing functions where possible or to enumerate their colors concretely.
+   - The point here is that alpha mixing can sometimes lead to colors that don't look great or are unexpected.
+
+Ultimately I want the position of `elm-ui` to be something like the following:
+
+1. `rgb`(both value based and hex) is more of an interop format than a color space you'd actually want to modify things in. Think, when have you ever thought "oh, just bump the red channel down a bit and you'll be good"?
+
+   - As an interop format, it means it's what you're going to be copying from tools or receiving from a designer.
+   - These tools generally have the ability to mix things properly.
+   - By mixing things concretely, designers have more control over their ultimate design.
+
+2. Transparency in most of these cases is still necessary or at the least convenient. It's not too difficult to treat that separately than the identity of a color value.
+
+3. Ultimately we want to encourage people to use a colorspace like [HSLuv](https://package.elm-lang.org/packages/kuon/elm-hsluv/latest/). Basically any of the colorspaces that are based in [CIEXYZ colorspace](https://en.wikipedia.org/wiki/CIE_1931_color_space). They're much easier to use. - May not really seem related to alpha channels, but the idea is that doing things like `lightening` a color is much easier in these other colorspaces.
 
 ## Element.Font
 
@@ -11,13 +29,12 @@
     -- if they really want it
     Font.opacity : Float -> Attribute msg
 
-    Font.shadow : 
+    Font.shadow :
         { offset : (Float, Float)
         , blur : Float
         , color : Color
         , opacity : Float
         } -> Attribute msg
-
 
 ## Element.Background
 
@@ -27,11 +44,10 @@
     -- over an image background.
     Background.opacity : Float -> Attribute
 
-
 For gradients, we can have opacity as a separate set of steps.
-This actually makes it _easier_ to do something like a rainbow that linearly fades away.  We don't have to figure out the exact opacity that the 5th color has.
+This actually makes it _easier_ to do something like a rainbow that linearly fades away. We don't have to figure out the exact opacity that the 5th color has.
 
-    Background.gradient : 
+    Background.gradient :
         { angle : Float
         , colors : List Color
         , opacity : List Float
@@ -51,14 +67,11 @@ In that way, we could have something like
 
     Background.blend 0.5 color
 
-Which would set a color mode and set the background opacity.  I'd need to play around with it, but seems kinda cool!
-
-
-
+Which would set a color mode and set the background opacity. I'd need to play around with it, but seems kinda cool!
 
 ## Element.Border
 
-Sometimes a transparent border is used as a placeholder, and then we change a color on `mouseOver`.  This is to avoid layout movement in the resulting animation.
+Sometimes a transparent border is used as a placeholder, and then we change a color on `mouseOver`. This is to avoid layout movement in the resulting animation.
 
     Border.color : Color -> Attribute
 
@@ -72,7 +85,7 @@ Sometimes a transparent border is used as a placeholder, and then we change a co
         , opacity : Float
         }
 
-    Border.manyShadows : 
+    Border.manyShadows :
         List
             { offset : (Float, Float)
             , blur : Float
@@ -88,8 +101,7 @@ Sometimes a transparent border is used as a placeholder, and then we change a co
         , opacity : Float
         }
 
-
-# Discussion and Usecases 
+# Discussion and Usecases
 
 The main question about binding alpha with color is:
 
@@ -97,10 +109,9 @@ The main question about binding alpha with color is:
 
 Or would you want to set these things explicitly and independently of each other?
 
-
 ## Tinting and shading (i.e. lightening and darkening)
 
-*Note* - not sure what package would house these functions.
+_Note_ - not sure what package would house these functions.
 
 We usually get in the habit of using alpha for an ad-hoc lightener/darkener.
 This can easily be replicated with functions that actually operate on colors in elm.
@@ -113,12 +124,9 @@ With the idea that this function should use the luminance from CIELUV instead of
 
 We also use alpha as an ad hoc way to mix two colors (i.e. [turn a font subtley green on a green background](https://medium.com/refactoring-ui/7-practical-tips-for-cheating-at-design-40c736799886#9cdf).
 
-    el 
+    el
         [ Background.color bg
         -- explicitly mix the two!
         , Font.color (Color.mix 0.2 white bg)
         ]
         (text "Howdy")
-
-
-
