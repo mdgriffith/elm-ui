@@ -132,6 +132,9 @@ Instead of implicit submission behavior, [try making an `onEnter` event handler 
 
 And no one has to look up obtuse html documentation to understand the behavior of their code :).
 
+# File Inputs
+
+Presently, elm-ui does not expose a replacement for `<input type="file">`; in the meantime, an `Input.button` and `elm/file`'s `File.Select` may meet your needs.
 
 # Disabling Inputs
 
