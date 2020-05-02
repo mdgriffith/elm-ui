@@ -8,6 +8,8 @@ If we separate out alpha from the core color type, we can
 
 2. Encourage people to use actual color mixing functions where possible or to enumerate their colors concretely.
    - The point here is that alpha mixing can sometimes lead to colors that don't look great or are unexpected.
+   
+3. With a totally opaque color type, we can calculate contrast for accessibility evaluation easily.  An alpha channel means we'd have to emulate browser mixing to do that, which I'm not sure is consistent.
 
 Ultimately I want the position of `elm-ui` to be something like the following:
 
