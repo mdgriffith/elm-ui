@@ -58,7 +58,6 @@ In order to run the test:
 
 import Dict
 import Element
-import Expect
 import Html.Attributes
 import Testable
 import Testable.Runner
@@ -67,7 +66,7 @@ import Testable.Runner
 layout : List (Testable.Attr msg) -> Testable.Element Testable.Runner.Msg -> Testable.Runner.TestableProgram
 layout attrs elem =
     Testable.Runner.program
-        [ ( "Open Case", elem )
+        [ ( "Tests Run", elem )
         ]
 
 
@@ -77,18 +76,18 @@ text =
 
 
 el : List (Testable.Attr msg) -> Testable.Element msg -> Testable.Element msg
-el =
-    Testable.El
+el attrs =
+    Testable.El (implicitWidthHeightShrink attrs)
 
 
 row : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.Element msg
-row =
-    Testable.Row
+row attrs =
+    Testable.Row (implicitWidthHeightShrink attrs)
 
 
 column : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.Element msg
-column =
-    Testable.Column
+column attrs =
+    Testable.Column (implicitWidthHeightShrink attrs)
 
 
 none : Testable.Element msg
@@ -102,8 +101,8 @@ paragraph =
 
 
 textColumn : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.Element msg
-textColumn =
-    Testable.TextColumn
+textColumn attrs =
+    Testable.TextColumn (implicitWidthHeightShrink attrs)
 
 
 {-| Old labeling mechanism that i removed to hastily
@@ -182,6 +181,7 @@ transparent on =
             else
                 "opaque"
         , attr = Element.transparent on
+        , id = Testable.NoId
         , test =
             \context ->
                 let
@@ -204,9 +204,9 @@ transparent on =
 {-| -}
 isVisible : Testable.Attr msg
 isVisible =
-    Testable.LabeledTest
+    Testable.AttrTest
         { label = "is-visible"
-        , attr = Element.htmlAttribute (Html.Attributes.style "not" "applicable")
+        , id = Testable.NoId
         , test =
             \context ->
                 [ Testable.equal context.self.isVisible True ]
@@ -219,6 +219,7 @@ alpha a =
     Testable.LabeledTest
         { label = "alpha-" ++ String.fromFloat a
         , attr = Element.alpha a
+        , id = Testable.NoId
         , test =
             \context ->
                 let
@@ -237,6 +238,7 @@ padding pad =
     Testable.LabeledTest
         { label = "padding " ++ String.fromInt pad
         , attr = Element.padding pad
+        , id = Testable.NoId
         , test =
             \found ->
                 [ Testable.true ("Padding " ++ String.fromInt pad ++ " is present")
@@ -257,6 +259,7 @@ paddingXY x y =
     Testable.LabeledTest
         { label = "paddingXY " ++ String.fromInt x ++ ", " ++ String.fromInt y
         , attr = Element.paddingXY x y
+        , id = Testable.NoId
         , test =
             \found ->
                 [ Testable.true ("PaddingXY (" ++ String.fromInt x ++ ", " ++ String.fromInt y ++ ") is present")
@@ -332,6 +335,7 @@ widthHelper maybeMin maybeMax len =
             -- Pixel values should ignore min and max?
             Testable.LabeledTest
                 { label = "width " ++ String.fromInt val ++ "px" ++ minLabel ++ maxLabel
+                , id = Testable.IsWidth
                 , attr =
                     Element.width
                         (Element.px val
@@ -353,6 +357,7 @@ widthHelper maybeMin maybeMax len =
 
                     else
                         "width fill-" ++ String.fromInt portion ++ minLabel ++ maxLabel
+                , id = Testable.IsWidth
                 , attr =
                     Element.width
                         (Element.fillPortion portion
@@ -407,6 +412,7 @@ widthHelper maybeMin maybeMax len =
                             |> addMin
                             |> addMax
                         )
+                , id = Testable.IsWidth
                 , test =
                     \context ->
                         let
@@ -428,12 +434,17 @@ widthHelper maybeMin maybeMax len =
                         if totalChildren == 0 then
                             -- TODO: The issue is that we have a hard time measuring `text` elements
                             -- So if a element has a text child, then it's width isn't going to show up in the system.
-                            [ expectRoundedEquality context.self.bbox.width context.self.bbox.width ]
+                            [ Testable.Todo "Calculate text size for width-shrink calculation"
+                            ]
 
                         else
                             -- This fails if this element is actually a column
                             -- So we need to capture what this element is in order to do this calculation.
-                            [ expectRoundedEquality (totalChildren + horizontalPadding + spacingValue) context.self.bbox.width ]
+                            [ expectRoundedEquality
+                                { expected = totalChildren + horizontalPadding + spacingValue
+                                , found = context.self.bbox.width
+                                }
+                            ]
                 }
 
 
@@ -502,6 +513,7 @@ heightHelper maybeMin maybeMax len =
                             |> addMin
                             |> addMax
                         )
+                , id = Testable.IsHeight
                 , test =
                     \found ->
                         [ Testable.true ("exact height is exact: " ++ String.fromInt (floor found.self.bbox.height) ++ "," ++ String.fromInt val)
@@ -520,6 +532,7 @@ heightHelper maybeMin maybeMax len =
                             |> addMin
                             |> addMax
                         )
+                , id = Testable.IsHeight
                 , test =
                     \context ->
                         [ if List.member context.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
@@ -568,16 +581,17 @@ heightHelper maybeMin maybeMax len =
                             |> addMin
                             |> addMax
                         )
+                , id = Testable.IsHeight
                 , test =
                     \context ->
                         let
-                            childWidth child =
+                            childHeight child =
                                 -- TODO: add margin values to heights
                                 child.bbox.height
 
                             totalChildren =
                                 context.children
-                                    |> List.map childWidth
+                                    |> List.map childHeight
                                     |> List.sum
 
                             verticalPadding =
@@ -589,12 +603,17 @@ heightHelper maybeMin maybeMax len =
                         if totalChildren == 0 then
                             -- TODO: The issue is that we have a hard time measuring `text` elements
                             -- So if a element has a text child, then it's height isn't going to show up in the system.
-                            [ expectRoundedEquality context.self.bbox.height context.self.bbox.height ]
+                            [ Testable.Todo "Calculate expected height shrink"
+                            ]
 
                         else
                             -- This fails if this element is actually a column
                             -- So we need to capture what this element is in order to do this calculation.
-                            [ expectRoundedEquality (totalChildren + verticalPadding + spacingValue) context.self.bbox.height ]
+                            [ expectRoundedEquality
+                                { expected = totalChildren + verticalPadding + spacingValue
+                                , found = context.self.bbox.height
+                                }
+                            ]
                 }
 
 
@@ -615,6 +634,7 @@ spacing space =
         , Testable.LabeledTest
             { label = "spacing: " ++ String.fromInt space
             , attr = Element.spacing space
+            , id = Testable.NoId
             , test =
                 \found ->
                     let
@@ -693,6 +713,7 @@ alignLeft =
     Testable.LabeledTest
         { label = "alignLeft"
         , attr = Element.alignLeft
+        , id = Testable.NoId
         , test =
             \found ->
                 [ if List.member found.location [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
@@ -707,13 +728,15 @@ alignLeft =
                         ]
                   then
                     expectRoundedEquality
-                        found.self.bbox.left
-                        found.parent.bbox.left
+                        { found = found.self.bbox.left
+                        , expected = found.parent.bbox.left
+                        }
 
                   else if List.length found.siblings == 0 then
                     expectRoundedEquality
-                        found.self.bbox.left
-                        (found.parent.bbox.left + found.parent.bbox.padding.left)
+                        { found = found.self.bbox.left
+                        , expected = found.parent.bbox.left + found.parent.bbox.padding.left
+                        }
 
                   else
                     case found.location of
@@ -731,13 +754,15 @@ alignLeft =
                                         |> List.sum
                             in
                             expectRoundedEquality
-                                found.self.bbox.left
-                                (found.parent.bbox.left + (found.parent.bbox.padding.left + widthsOnLeft + spacings))
+                                { found = found.self.bbox.left
+                                , expected = found.parent.bbox.left + (found.parent.bbox.padding.left + widthsOnLeft + spacings)
+                                }
 
                         _ ->
                             expectRoundedEquality
-                                found.self.bbox.left
-                                (found.parent.bbox.left + found.parent.bbox.padding.left)
+                                { found = found.self.bbox.left
+                                , expected = found.parent.bbox.left + found.parent.bbox.padding.left
+                                }
                 ]
         }
 
@@ -748,6 +773,7 @@ centerX =
     Testable.LabeledTest
         { label = "centerX"
         , attr = Element.centerX
+        , id = Testable.NoId
         , test =
             \found ->
                 let
@@ -764,8 +790,9 @@ centerX =
 
                 else if List.length found.siblings == 0 then
                     [ expectRoundedEquality
-                        selfCenter
-                        parentCenter
+                        { found = selfCenter
+                        , expected = parentCenter
+                        }
                     ]
 
                 else
@@ -800,12 +827,17 @@ centerX =
                                           )
                             in
                             [ expectRoundedEquality
-                                selfCenter
-                                expectedCenter
+                                { found = selfCenter
+                                , expected = expectedCenter
+                                }
                             ]
 
                         _ ->
-                            [ expectRoundedEquality selfCenter parentCenter ]
+                            [ expectRoundedEquality
+                                { found = selfCenter
+                                , expected = parentCenter
+                                }
+                            ]
         }
 
 
@@ -815,6 +847,7 @@ alignRight =
     Testable.LabeledTest
         { label = "alignRight"
         , attr = Element.alignRight
+        , id = Testable.NoId
         , test =
             \found ->
                 if List.member found.location [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
@@ -829,14 +862,16 @@ alignRight =
                         ]
                 then
                     [ expectRoundedEquality
-                        found.self.bbox.right
-                        found.parent.bbox.right
+                        { found = found.self.bbox.right
+                        , expected = found.parent.bbox.right
+                        }
                     ]
 
                 else if List.length found.siblings == 0 then
                     [ expectRoundedEquality
-                        found.self.bbox.right
-                        (found.parent.bbox.right + found.parent.bbox.padding.right)
+                        { found = found.self.bbox.right
+                        , expected = found.parent.bbox.right + found.parent.bbox.padding.right
+                        }
                     ]
 
                 else
@@ -855,14 +890,16 @@ alignRight =
                                         |> List.sum
                             in
                             [ expectRoundedEquality
-                                found.self.bbox.right
-                                (found.parent.bbox.right - (found.parent.bbox.padding.right + widthsOnRight + spacings))
+                                { found = found.self.bbox.right
+                                , expected = found.parent.bbox.right - (found.parent.bbox.padding.right + widthsOnRight + spacings)
+                                }
                             ]
 
                         _ ->
                             [ expectRoundedEquality
-                                found.self.bbox.right
-                                (found.parent.bbox.right + found.parent.bbox.padding.right)
+                                { found = found.self.bbox.right
+                                , expected = found.parent.bbox.right + found.parent.bbox.padding.right
+                                }
                             ]
         }
 
@@ -873,6 +910,7 @@ alignTop =
     Testable.LabeledTest
         { label = "alignTop"
         , attr = Element.alignTop
+        , id = Testable.NoId
         , test =
             \found ->
                 if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
@@ -887,14 +925,16 @@ alignTop =
                         ]
                 then
                     [ expectRoundedEquality
-                        found.self.bbox.top
-                        found.parent.bbox.top
+                        { found = found.self.bbox.top
+                        , expected = found.parent.bbox.top
+                        }
                     ]
 
                 else if List.length found.siblings == 0 then
                     [ expectRoundedEquality
-                        found.self.bbox.top
-                        (found.parent.bbox.top + found.parent.bbox.padding.top)
+                        { found = found.self.bbox.top
+                        , expected = found.parent.bbox.top + found.parent.bbox.padding.top
+                        }
                     ]
 
                 else
@@ -913,14 +953,16 @@ alignTop =
                                         |> List.sum
                             in
                             [ expectRoundedEquality
-                                found.self.bbox.top
-                                (found.parent.bbox.top + (found.parent.bbox.padding.top + heightsAbove + spacings))
+                                { found = found.self.bbox.top
+                                , expected = found.parent.bbox.top + (found.parent.bbox.padding.top + heightsAbove + spacings)
+                                }
                             ]
 
                         _ ->
                             [ expectRoundedEquality
-                                found.self.bbox.top
-                                found.parent.bbox.top
+                                { found = found.self.bbox.top
+                                , expected = found.parent.bbox.top
+                                }
                             ]
         }
 
@@ -931,6 +973,7 @@ alignBottom =
     Testable.LabeledTest
         { label = "alignBottom"
         , attr = Element.alignBottom
+        , id = Testable.NoId
         , test =
             \found ->
                 if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
@@ -945,14 +988,16 @@ alignBottom =
                         ]
                 then
                     [ expectRoundedEquality
-                        found.self.bbox.bottom
-                        found.parent.bbox.bottom
+                        { found = found.self.bbox.bottom
+                        , expected = found.parent.bbox.bottom
+                        }
                     ]
 
                 else if List.length found.siblings == 0 then
                     [ expectRoundedEquality
-                        found.self.bbox.bottom
-                        (found.parent.bbox.bottom + found.parent.bbox.padding.bottom)
+                        { found = found.self.bbox.bottom
+                        , expected = found.parent.bbox.bottom + found.parent.bbox.padding.bottom
+                        }
                     ]
 
                 else
@@ -971,22 +1016,25 @@ alignBottom =
                                         |> List.sum
                             in
                             [ expectRoundedEquality
-                                found.self.bbox.bottom
-                                (found.parent.bbox.bottom - (found.parent.bbox.padding.bottom + heightsBelow + spacings))
+                                { found = found.self.bbox.bottom
+                                , expected = found.parent.bbox.bottom - (found.parent.bbox.padding.bottom + heightsBelow + spacings)
+                                }
                             ]
 
                         _ ->
                             [ expectRoundedEquality
-                                found.self.bbox.bottom
-                                (found.parent.bbox.bottom + found.parent.bbox.padding.bottom)
+                                { found = found.self.bbox.bottom
+                                , expected = found.parent.bbox.bottom + found.parent.bbox.padding.bottom
+                                }
                             ]
         }
 
 
-expectRoundedEquality x y =
+expectRoundedEquality : { expected : Float, found : Float } -> Testable.LayoutExpectation
+expectRoundedEquality { expected, found } =
     Testable.true
-        ("within 1 of each other " ++ floatToString x ++ ", " ++ floatToString y)
-        (abs (x - y) < 1)
+        ("expected " ++ floatToString expected ++ ", found " ++ floatToString found)
+        (abs (expected - found) < 1)
 
 
 floatToString : Float -> String
@@ -1000,6 +1048,7 @@ centerY =
     Testable.LabeledTest
         { label = "centerY"
         , attr = Element.centerY
+        , id = Testable.NoId
         , test =
             \found ->
                 let
@@ -1014,8 +1063,9 @@ centerY =
 
                 else if List.length found.siblings == 0 then
                     [ expectRoundedEquality
-                        selfCenter
-                        parentCenter
+                        { found = selfCenter
+                        , expected = parentCenter
+                        }
                     ]
 
                 else
@@ -1050,12 +1100,17 @@ centerY =
                                           )
                             in
                             [ expectRoundedEquality
-                                selfCenter
-                                expectedCenter
+                                { found = selfCenter
+                                , expected = expectedCenter
+                                }
                             ]
 
                         _ ->
-                            [ expectRoundedEquality selfCenter parentCenter ]
+                            [ expectRoundedEquality
+                                { found = selfCenter
+                                , expected = parentCenter
+                                }
+                            ]
         }
 
 
@@ -1068,7 +1123,11 @@ above element =
         , label = "above"
         , test =
             \found ->
-                [ expectRoundedEquality found.self.bbox.bottom found.parent.bbox.top ]
+                [ expectRoundedEquality
+                    { found = found.self.bbox.bottom
+                    , expected = found.parent.bbox.top
+                    }
+                ]
         }
 
 
@@ -1081,7 +1140,11 @@ below element =
         , label = "below"
         , test =
             \found ->
-                [ expectRoundedEquality found.self.bbox.top found.parent.bbox.bottom ]
+                [ expectRoundedEquality
+                    { found = found.self.bbox.top
+                    , expected = found.parent.bbox.bottom
+                    }
+                ]
         }
 
 
@@ -1094,7 +1157,11 @@ onRight element =
         , label = "onRight"
         , test =
             \found ->
-                [ expectRoundedEquality found.self.bbox.left found.parent.bbox.right ]
+                [ expectRoundedEquality
+                    { found = found.self.bbox.left
+                    , expected = found.parent.bbox.right
+                    }
+                ]
         }
 
 
@@ -1107,7 +1174,11 @@ onLeft element =
         , label = "onLeft"
         , test =
             \found ->
-                [ expectRoundedEquality found.self.bbox.right found.parent.bbox.left ]
+                [ expectRoundedEquality
+                    { found = found.self.bbox.right
+                    , expected = found.parent.bbox.left
+                    }
+                ]
         }
 
 
@@ -1173,3 +1244,85 @@ behindContent element =
             \found ->
                 [ withinHelper found ]
         }
+
+
+
+{- Implicit width/height calcualtions -}
+
+
+implicitWidthHeightShrink attrs =
+    let
+        withImplicits =
+            implicitTest (widthHelper Nothing Nothing Shrink)
+                :: implicitTest (heightHelper Nothing Nothing Shrink)
+                :: attrs
+    in
+    skipOverridden withImplicits
+
+
+attrId attr =
+    case attr of
+        Testable.LabeledTest details ->
+            details.id
+
+        Testable.AttrTest details ->
+            details.id
+
+        _ ->
+            Testable.NoId
+
+
+skipOverridden ls =
+    List.foldr
+        (\attr ( found, caught ) ->
+            let
+                ( skip, has ) =
+                    case attrId attr of
+                        Testable.NoId ->
+                            ( False, found )
+
+                        Testable.IsWidth ->
+                            ( found.hasWidth
+                            , { hasWidth = True
+                              , hasHeight = found.hasHeight
+                              }
+                            )
+
+                        Testable.IsHeight ->
+                            ( found.hasHeight
+                            , { hasWidth = found.hasWidth
+                              , hasHeight = True
+                              }
+                            )
+            in
+            ( has
+            , if skip then
+                caught
+
+              else
+                attr :: caught
+            )
+        )
+        ( { hasWidth = False
+          , hasHeight = False
+          }
+        , []
+        )
+        ls
+        |> Tuple.second
+        |> List.reverse
+
+
+{-| This is taking a normal test and rmoving its ability to attach a real `Element` attribute.
+-}
+implicitTest attr =
+    case attr of
+        Testable.LabeledTest details ->
+            Testable.AttrTest
+                { test = details.test
+                , label = "Implicit -> " ++ details.label
+                , id = details.id
+                }
+
+        otherwise ->
+            otherwise

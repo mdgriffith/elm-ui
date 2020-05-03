@@ -13,6 +13,7 @@ color clr =
     Testable.LabeledTest
         { label = "background color"
         , attr = Background.color clr
+        , id = Testable.NoId
         , test =
             \context ->
                 let
@@ -21,7 +22,7 @@ color clr =
                             |> Dict.get "background-color"
                             |> Maybe.withDefault "notfound"
                 in
-                [ Testable.true ("expected: " ++ (Testable.formatColor clr ++ ", found:" ++ selfBackgroundColor))
+                [ Testable.true ("expected " ++ (Testable.formatColor clr ++ ", found " ++ selfBackgroundColor))
                     (Testable.compareFormattedColor clr selfBackgroundColor)
                 ]
         }

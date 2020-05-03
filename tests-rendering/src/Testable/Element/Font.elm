@@ -5,7 +5,6 @@ module Testable.Element.Font exposing (color)
 import Dict
 import Element exposing (Color)
 import Element.Font as Font
-import Expect
 import Testable
 
 
@@ -14,6 +13,7 @@ color clr =
     Testable.LabeledTest
         { label = "font color-" ++ Testable.formatColor clr
         , attr = Font.color clr
+        , id = Testable.NoId
         , test =
             \context ->
                 let
@@ -33,6 +33,7 @@ size i =
     Testable.LabeledTest
         { label = "font size-" ++ String.fromInt i
         , attr = Font.size i
+        , id = Testable.NoId
         , test =
             \context ->
                 let

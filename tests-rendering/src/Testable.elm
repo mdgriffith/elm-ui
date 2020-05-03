@@ -1,5 +1,6 @@
 module Testable exposing
     ( Attr(..)
+    , AttributeId(..)
     , BoundingBox
     , Element(..)
     , Found
@@ -42,11 +43,27 @@ type Element msg
     | Empty
 
 
+{-| We have an attribute id in order to remove tests when an overriding attribtue is assigned.
+
+Basically, we want to implictly test for height/width shrink.
+
+But we want to skip this test if width/height is already set.
+
+This allows us to do that by comparing identities.
+
+-}
+type AttributeId
+    = NoId
+    | IsWidth
+    | IsHeight
+
+
 type Attr msg
     = Attr (Element.Attribute msg)
     | AttrTest
         { test : Surroundings -> List LayoutExpectation
         , label : String
+        , id : AttributeId
         }
     | Batch (List (Attr msg))
     | Spacing Int
@@ -60,6 +77,7 @@ type Attr msg
         { test : Surroundings -> List LayoutExpectation
         , label : String
         , attr : Element.Attribute msg
+        , id : AttributeId
         }
 
 
@@ -627,6 +645,7 @@ createAttributeTest parent cache level attrIndex surroundings attr =
                             { label = nearby.label
                             , test =
                                 nearby.test
+                            , id = NoId
                             }
                         )
                         nearby.element

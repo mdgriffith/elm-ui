@@ -287,7 +287,7 @@ function print_results(label, tests) {
         }
         failed = failed + 1;
         console.log("    " + chalk.red("fail") + " ->");
-        console.log("        " + tests[i].results[j][1].description);
+        console.log("        " + tests[i].results[j].description);
       }
     }
     total_passed = total_passed + passed;

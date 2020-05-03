@@ -258,6 +258,7 @@ view model =
                                             , Border.dashed
                                             , Border.width 2
                                             , Border.color palette.lightGrey
+                                            , Font.size 20
                                             , Element.inFront
                                                 (Element.el
                                                     [ Font.size 14
@@ -342,11 +343,9 @@ viewResult testable =
         , Element.spacing 16
         ]
         [ Element.el [ Font.size 24 ] (Element.text testable.label)
-        , Element.column [ Element.alignLeft, Element.spacing 20 ]
-            (List.map viewLayoutTest failing)
         , Element.column
             [ Element.alignLeft, Element.spacing 16 ]
-            (passing
+            (testable.results
                 |> groupBy .elementDomId
                 |> List.map viewLayoutTestGroup
             )
