@@ -46,7 +46,7 @@ program tests =
                 cur :: remaining ->
                     ( Just cur, remaining )
     in
-    Browser.document
+    Browser.element
         { init =
             always
                 ( { current = current
@@ -136,8 +136,9 @@ type Msg
         (List
             { id : String
             , bbox : Testable.BoundingBox
-            , isVisible : Bool
             , style : List ( String, String )
+            , isVisible : Bool
+            , textMetrics : List TextMetrics
             }
         )
 
@@ -225,70 +226,61 @@ update msg model =
                     )
 
 
-view : Model Msg -> Browser.Document Msg
+view : Model Msg -> Html.Html Msg
 view model =
     case model.current of
         Nothing ->
             if List.isEmpty model.upcoming then
-                { title = "tests finished"
-                , body =
-                    [ case model.finished of
-                        [] ->
-                            Element.layout [] <|
-                                Element.column
+                case model.finished of
+                    [] ->
+                        Element.layout [] <|
+                            Element.column
+                                [ Element.spacing 20
+                                , Element.padding 20
+                                , Element.width (Element.px 800)
+                                ]
+                                [ Element.none ]
+
+                    finished :: remaining ->
+                        Element.layout
+                            [ Font.size 16
+                            , Element.inFront (Element.html (viewElementHighlight model))
+                            ]
+                        <|
+                            Element.row [ Element.width Element.fill ]
+                                [ Element.el
+                                    [ Element.width Element.fill
+                                    ]
+                                    (Element.el
+                                        [ Element.centerX
+                                        , Element.padding 100
+                                        , Border.dashed
+                                        , Border.width 2
+                                        , Border.color palette.lightGrey
+                                        , Font.size 20
+                                        , Element.inFront
+                                            (Element.el
+                                                [ Font.size 14
+                                                , Font.color palette.lightGrey
+                                                ]
+                                                (Element.text "test case")
+                                            )
+                                        ]
+                                        (Testable.toElement finished.element)
+                                    )
+                                , Element.column
                                     [ Element.spacing 20
                                     , Element.padding 20
-                                    , Element.width (Element.px 800)
+                                    , Element.width Element.fill
                                     ]
-                                    [ Element.none ]
-
-                        finished :: remaining ->
-                            Element.layout
-                                [ Font.size 16
-                                , Element.inFront (Element.html (viewElementHighlight model))
+                                    (List.map viewResult (finished :: remaining))
                                 ]
-                            <|
-                                Element.row [ Element.width Element.fill ]
-                                    [ Element.el
-                                        [ Element.width Element.fill
-                                        ]
-                                        (Element.el
-                                            [ Element.centerX
-                                            , Element.padding 100
-                                            , Border.dashed
-                                            , Border.width 2
-                                            , Border.color palette.lightGrey
-                                            , Font.size 20
-                                            , Element.inFront
-                                                (Element.el
-                                                    [ Font.size 14
-                                                    , Font.color palette.lightGrey
-                                                    ]
-                                                    (Element.text "test case")
-                                                )
-                                            ]
-                                            (Testable.toElement finished.element)
-                                        )
-                                    , Element.column
-                                        [ Element.spacing 20
-                                        , Element.padding 20
-                                        , Element.width Element.fill
-                                        ]
-                                        (List.map viewResult (finished :: remaining))
-                                    ]
-                    ]
-                }
 
             else
-                { title = "tests finished"
-                , body = []
-                }
+                Html.text ""
 
         Just ( label, current ) ->
-            { title = "running"
-            , body =
-                [ Testable.toHtml current ]
-            }
+            Testable.toHtml current
 
 
 viewElementHighlight model =
@@ -492,7 +484,17 @@ port styles :
         , bbox : Testable.BoundingBox
         , style : List ( String, String )
         , isVisible : Bool
+        , textMetrics : List TextMetrics
         }
      -> msg
     )
     -> Sub msg
+
+
+type alias TextMetrics =
+    { actualBoundingBoxAscent : Float
+    , actualBoundingBoxDescent : Float
+    , actualBoundingBoxLeft : Float
+    , actualBoundingBoxRight : Float
+    , width : Float
+    }

@@ -6,10 +6,45 @@
     <script type="text/javascript" src="./elm.js"></script>
   </head>
   <style></style>
-  <body id="root"></body>
+  <body id="root">
+    <div id="elm-home"></div>
+    <canvas id="canvas"></canvas>
+  </body>
 
   <script type="text/javascript">
-    var app = Elm.WeirdCentering.init();
+    // Calculations for canvas
+    var PIXEL_RATIO = (function () {
+      var ctx = document.createElement("canvas").getContext("2d"),
+        dpr = window.devicePixelRatio || 1,
+        bsr =
+          ctx.webkitBackingStorePixelRatio ||
+          ctx.mozBackingStorePixelRatio ||
+          ctx.msBackingStorePixelRatio ||
+          ctx.oBackingStorePixelRatio ||
+          ctx.backingStorePixelRatio ||
+          1;
+
+      return dpr / bsr;
+    })();
+
+    function createHiDPICanvas(w, h, id, ratio) {
+      if (!ratio) {
+        ratio = PIXEL_RATIO;
+      }
+      let can = document.getElementById(id);
+      can.width = w * ratio;
+      can.height = h * ratio;
+      can.style.width = w + "px";
+      can.style.height = h + "px";
+      can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+      return can;
+    }
+    // create a canvas for text measurements
+    let canvas = createHiDPICanvas(200, 100, "canvas");
+    // Starting Elm App,
+    var app = Elm.WeirdCentering.init({
+      node: document.getElementById("elm-home"),
+    });
 
     var test_results = "waiting..";
 
@@ -29,10 +64,17 @@
         }
         var style = getStyle(element);
         var bbox = getBoundingBox(element);
+        var metrics = getTextMetrics(element);
 
         var visible = isVisible(id, bbox);
 
-        var result = { bbox: bbox, style: style, id: id, isVisible: visible };
+        var result = {
+          textMetrics: metrics,
+          bbox: bbox,
+          style: style,
+          id: id,
+          isVisible: visible,
+        };
         results.push(result);
       }
       app.ports.styles.send(results);
@@ -99,6 +141,34 @@
         height: bbox.height,
         padding: padding,
       };
+    }
+    function getTextMetrics(element) {
+      // Given our element, we want to return the text metrics on the text within.
+      // If it is an element we want to measure:
+      // we want to get the font family
+      // and the font size.
+      // We're going to presume that the font is loaded.
+      let childrenTextMetrics = [];
+      for (i = 0; i < element.children.length; i++) {
+        if (element.children[i].classList.contains("t")) {
+          let style = window.getComputedStyle(element, null);
+          let fontSize = style.getPropertyValue("font-size");
+          let fontFamily = style.getPropertyValue("font-family");
+          let ctx = canvas.getContext("2d");
+
+          ctx.font = fontSize + " " + fontFamily; //"16px Roboto";
+          let text = ctx.measureText(element.children[i].innerText);
+
+          childrenTextMetrics.push({
+            actualBoundingBoxAscent: text.actualBoundingBoxAscent,
+            actualBoundingBoxDescent: text.actualBoundingBoxDescent,
+            actualBoundingBoxLeft: text.actualBoundingBoxLeft,
+            actualBoundingBoxRight: text.actualBoundingBoxRight,
+            width: text.width,
+          });
+        }
+      }
+      return childrenTextMetrics;
     }
   </script>
 </html>
