@@ -3,6 +3,7 @@ module Testable exposing
     , AttributeId(..)
     , BoundingBox
     , Element(..)
+    , ElementType(..)
     , Found
     , LayoutContext(..)
     , LayoutExpectation(..)
@@ -10,13 +11,16 @@ module Testable exposing
     , Location(..)
     , Style
     , Surroundings
+    , TextMetrics
     , compareFormattedColor
+    , elementTypeToString
     , equal
     , formatColor
     , formatColorWithAlpha
     , getIds
     , getSpacing
     , runTests
+    , textHeight
     , toElement
     , toHtml
     , todo
@@ -43,6 +47,66 @@ type Element msg
     | Empty
 
 
+type ElementType
+    = ElType
+    | RowType
+    | ColumnType
+    | TextColumnType
+    | ParagraphType
+    | TextType
+    | EmptyType
+
+
+elementTypeToString : ElementType -> String
+elementTypeToString elem =
+    case elem of
+        ElType ->
+            "El"
+
+        RowType ->
+            "Row"
+
+        ColumnType ->
+            "Column"
+
+        TextColumnType ->
+            "TextColumn"
+
+        ParagraphType ->
+            "Paragraph"
+
+        TextType ->
+            "Text"
+
+        EmptyType ->
+            "Empty"
+
+
+toElementType : Element msg -> ElementType
+toElementType elem =
+    case elem of
+        El _ _ ->
+            ElType
+
+        Row _ _ ->
+            RowType
+
+        Column _ _ ->
+            ColumnType
+
+        TextColumn _ _ ->
+            TextColumnType
+
+        Paragraph _ _ ->
+            ParagraphType
+
+        Text _ ->
+            TextType
+
+        Empty ->
+            EmptyType
+
+
 {-| We have an attribute id in order to remove tests when an overriding attribtue is assigned.
 
 Basically, we want to implictly test for height/width shrink.
@@ -61,7 +125,7 @@ type AttributeId
 type Attr msg
     = Attr (Element.Attribute msg)
     | AttrTest
-        { test : Surroundings -> List LayoutExpectation
+        { test : Surroundings msg -> List LayoutExpectation
         , label : String
         , id : AttributeId
         }
@@ -70,11 +134,11 @@ type Attr msg
     | Nearby
         { location : Location
         , element : Element msg
-        , test : Surroundings -> List LayoutExpectation
+        , test : Surroundings msg -> List LayoutExpectation
         , label : String
         }
     | LabeledTest
-        { test : Surroundings -> List LayoutExpectation
+        { test : Surroundings msg -> List LayoutExpectation
         , label : String
         , attr : Element.Attribute msg
         , id : AttributeId
@@ -97,14 +161,15 @@ type LayoutContext
     | InColumn
 
 
-type alias Surroundings =
+type alias Surroundings msg =
     { siblings : List Found
     , parent : Found
     , children : List Found
     , self : Found
+    , selfElement : Element msg
 
     -- These values are needed to perform some types of tests.
-    , location : LayoutContext
+    , parentLayout : LayoutContext
     , parentSpacing : Int
     }
 
@@ -113,7 +178,22 @@ type alias Found =
     { bbox : BoundingBox
     , style : Style
     , isVisible : Bool
+    , textMetrics : List TextMetrics
     }
+
+
+type alias TextMetrics =
+    { actualBoundingBoxAscent : Float
+    , actualBoundingBoxDescent : Float
+    , actualBoundingBoxLeft : Float
+    , actualBoundingBoxRight : Float
+    , width : Float
+    }
+
+
+textHeight metrics =
+    metrics.actualBoundingBoxAscent
+        + metrics.actualBoundingBoxDescent
 
 
 {-| -}
@@ -147,6 +227,7 @@ type LayoutExpectation
 
 type alias LayoutTest =
     { elementDomId : String
+    , elementType : ElementType
     , label : String
     , expectations : List LayoutExpectation
     }
@@ -351,6 +432,7 @@ runTests harvested el =
     case maybeFound of
         Nothing ->
             [ { elementDomId = "se-0"
+              , elementType = EmptyType
               , label = "Finding root element"
               , expectations =
                     [ Expect
@@ -548,8 +630,9 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                                     { siblings = siblings
                                     , parent = parent
                                     , self = self
+                                    , selfElement = element
                                     , children = childrenFoundData
-                                    , location = location
+                                    , parentLayout = location
                                     , parentSpacing = parentSpacing
                                     }
                                     attr
@@ -570,6 +653,7 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
 
                 _ ->
                     [ { elementDomId = id
+                      , elementType = EmptyType
                       , label = "Finding element in DOM"
                       , expectations =
                             [ Expect
@@ -609,7 +693,7 @@ createAttributeTest :
     -> Dict String Found
     -> List Int
     -> Int
-    -> Surroundings
+    -> Surroundings msg
     -> Attr msg
     -> List LayoutTest
 createAttributeTest parent cache level attrIndex surroundings attr =
@@ -626,6 +710,8 @@ createAttributeTest parent cache level attrIndex surroundings attr =
 
         AttrTest details ->
             [ { elementDomId = domId
+              , elementType =
+                    toElementType surroundings.selfElement
               , label = details.label
               , expectations = details.test surroundings
               }
@@ -658,6 +744,7 @@ createAttributeTest parent cache level attrIndex surroundings attr =
 
         LabeledTest { label, test } ->
             [ { elementDomId = domId
+              , elementType = toElementType surroundings.selfElement
               , label = label
               , expectations = test surroundings
               }
@@ -687,45 +774,6 @@ addAttribute attr el =
 
         Text str ->
             Text str
-
-
-
--- runTests :
---     Random.Seed
---     -> Test
---     ->
---         List
---             ( String
---             , Maybe
---                 { given : Maybe String
---                 , description : String
---                 , reason : Test.Runner.Failure.Reason
---                 }
---             )
--- runTests seed tests =
---     let
---         run runner =
---             let
---                 ran =
---                     List.map Test.Runner.getFailureReason (runner.run ())
---             in
---             List.map2 Tuple.pair runner.labels ran
---         results =
---             case Test.Runner.fromTest 100 seed tests of
---                 Test.Runner.Plain rnrs ->
---                     List.map run rnrs
---                 Test.Runner.Only rnrs ->
---                     List.map run rnrs
---                 Test.Runner.Skipping rnrs ->
---                     List.map run rnrs
---                 Test.Runner.Invalid invalid ->
---                     let
---                         _ =
---                             Debug.log "Invalid tests" invalid
---                     in
---                     []
---     in
---     List.concat results
 
 
 compareFormattedColor : Color -> String -> Bool

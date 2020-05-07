@@ -96,8 +96,8 @@ none =
 
 
 paragraph : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.Element msg
-paragraph =
-    Testable.Paragraph
+paragraph attrs =
+    Testable.Paragraph (implicitWidthHeightShrink attrs)
 
 
 textColumn : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.Element msg
@@ -366,7 +366,7 @@ widthHelper maybeMin maybeMax len =
                         )
                 , test =
                     \context ->
-                        if List.member context.location [ Testable.IsNearby Testable.OnRight, Testable.IsNearby Testable.OnLeft ] then
+                        if List.member context.parentLayout [ Testable.IsNearby Testable.OnRight, Testable.IsNearby Testable.OnLeft ] then
                             [ Testable.true "width fill doesn't apply to onright/onleft elements" True ]
 
                         else
@@ -374,7 +374,7 @@ widthHelper maybeMin maybeMax len =
                                 parentAvailableWidth =
                                     context.parent.bbox.width - (context.self.bbox.padding.left + context.self.bbox.padding.right)
                             in
-                            [ case context.location of
+                            [ case context.parentLayout of
                                 Testable.IsNearby _ ->
                                     Testable.true "Nearby Element has fill width"
                                         ((floor context.parent.bbox.width == floor context.self.bbox.width)
@@ -415,36 +415,110 @@ widthHelper maybeMin maybeMax len =
                 , id = Testable.IsWidth
                 , test =
                     \context ->
-                        let
-                            childWidth child =
-                                -- TODO: add margin values to widths
-                                child.bbox.width
+                        case context.selfElement of
+                            Testable.El _ _ ->
+                                let
+                                    childWidth child =
+                                        child.bbox.width
 
-                            totalChildren =
-                                context.children
-                                    |> List.map childWidth
-                                    |> List.sum
+                                    totalChildren =
+                                        context.children
+                                            |> List.map childWidth
+                                            |> List.append (List.map .width context.self.textMetrics)
+                                            |> List.sum
 
-                            horizontalPadding =
-                                context.self.bbox.padding.left + context.self.bbox.padding.right
+                                    horizontalPadding =
+                                        context.self.bbox.padding.left + context.self.bbox.padding.right
+                                in
+                                [ expectRoundedEquality
+                                    { expected = totalChildren + horizontalPadding
+                                    , found = context.self.bbox.width
+                                    }
+                                ]
 
-                            spacingValue =
-                                toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
-                        in
-                        if totalChildren == 0 then
-                            -- TODO: The issue is that we have a hard time measuring `text` elements
-                            -- So if a element has a text child, then it's width isn't going to show up in the system.
-                            [ Testable.Todo "Calculate text size for width-shrink calculation"
-                            ]
+                            Testable.Row _ _ ->
+                                -- width of row is the sum of all children widths
+                                -- both text elements and others.
+                                let
+                                    childWidth child =
+                                        child.bbox.width
 
-                        else
-                            -- This fails if this element is actually a column
-                            -- So we need to capture what this element is in order to do this calculation.
-                            [ expectRoundedEquality
-                                { expected = totalChildren + horizontalPadding + spacingValue
-                                , found = context.self.bbox.width
-                                }
-                            ]
+                                    totalChildren =
+                                        context.children
+                                            |> List.map childWidth
+                                            |> List.append (List.map .width context.self.textMetrics)
+                                            |> List.sum
+
+                                    horizontalPadding =
+                                        context.self.bbox.padding.left + context.self.bbox.padding.right
+
+                                    spacingValue =
+                                        toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
+                                in
+                                [ expectRoundedEquality
+                                    { expected = totalChildren + horizontalPadding + spacingValue
+                                    , found = context.self.bbox.width
+                                    }
+                                ]
+
+                            Testable.Column _ _ ->
+                                -- The width of the column is the width of the widest child.
+                                let
+                                    childWidth child =
+                                        child.bbox.width
+                                            + context.self.bbox.padding.left
+                                            + context.self.bbox.padding.right
+
+                                    textChildren =
+                                        List.map
+                                            (\txt ->
+                                                txt.width
+                                                    + context.self.bbox.padding.left
+                                                    + context.self.bbox.padding.right
+                                            )
+                                            context.self.textMetrics
+
+                                    allChildren =
+                                        context.children
+                                            |> List.map childWidth
+                                            |> List.append textChildren
+                                in
+                                [ expectRoundedEquality
+                                    { expected = Maybe.withDefault 0 (List.maximum allChildren)
+                                    , found = context.self.bbox.width
+                                    }
+                                ]
+
+                            Testable.TextColumn _ _ ->
+                                []
+
+                            Testable.Paragraph _ _ ->
+                                -- This should be the size it's text,
+                                -- unless it takes up all available space, in which case it should wrap.
+                                let
+                                    childWidth child =
+                                        child.bbox.width
+
+                                    totalChildren =
+                                        context.children
+                                            |> List.map childWidth
+                                            |> List.append (List.map .width context.self.textMetrics)
+                                            |> List.sum
+
+                                    horizontalPadding =
+                                        context.self.bbox.padding.left + context.self.bbox.padding.right
+                                in
+                                [ expectRoundedEquality
+                                    { expected = totalChildren + horizontalPadding
+                                    , found = context.self.bbox.width
+                                    }
+                                ]
+
+                            Testable.Text _ ->
+                                []
+
+                            Testable.Empty ->
+                                []
                 }
 
 
@@ -535,7 +609,7 @@ heightHelper maybeMin maybeMax len =
                 , id = Testable.IsHeight
                 , test =
                     \context ->
-                        [ if List.member context.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
+                        [ if List.member context.parentLayout [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                             Testable.true "height fill doesn't apply to above/below elements" True
 
                           else
@@ -543,7 +617,7 @@ heightHelper maybeMin maybeMax len =
                                 parentAvailableHeight =
                                     context.parent.bbox.height - (context.self.bbox.padding.top + context.self.bbox.padding.bottom)
                             in
-                            case context.location of
+                            case context.parentLayout of
                                 Testable.IsNearby _ ->
                                     Testable.true "Nearby Element has fill height"
                                         ((floor context.parent.bbox.height == floor context.self.bbox.height)
@@ -584,36 +658,86 @@ heightHelper maybeMin maybeMax len =
                 , id = Testable.IsHeight
                 , test =
                     \context ->
-                        let
-                            childHeight child =
-                                -- TODO: add margin values to heights
-                                child.bbox.height
+                        case context.selfElement of
+                            Testable.El _ _ ->
+                                let
+                                    childHeight child =
+                                        -- TODO: add margin values to heights
+                                        child.bbox.height
 
-                            totalChildren =
-                                context.children
-                                    |> List.map childHeight
-                                    |> List.sum
+                                    totalChildren =
+                                        context.children
+                                            |> List.map childHeight
+                                            |> List.append (List.map Testable.textHeight context.self.textMetrics)
+                                            |> List.sum
 
-                            verticalPadding =
-                                context.self.bbox.padding.top + context.self.bbox.padding.bottom
+                                    verticalPadding =
+                                        context.self.bbox.padding.top + context.self.bbox.padding.bottom
 
-                            spacingValue =
-                                toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
-                        in
-                        if totalChildren == 0 then
-                            -- TODO: The issue is that we have a hard time measuring `text` elements
-                            -- So if a element has a text child, then it's height isn't going to show up in the system.
-                            [ Testable.Todo "Calculate expected height shrink"
-                            ]
+                                    spacingValue =
+                                        toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
+                                in
+                                [ expectRoundedEquality
+                                    { expected = totalChildren + verticalPadding + spacingValue
+                                    , found = context.self.bbox.height
+                                    }
+                                ]
 
-                        else
-                            -- This fails if this element is actually a column
-                            -- So we need to capture what this element is in order to do this calculation.
-                            [ expectRoundedEquality
-                                { expected = totalChildren + verticalPadding + spacingValue
-                                , found = context.self.bbox.height
-                                }
-                            ]
+                            Testable.Row _ _ ->
+                                let
+                                    childHeight child =
+                                        child.bbox.height
+
+                                    totalChildren =
+                                        context.children
+                                            |> List.map childHeight
+                                            |> List.append (List.map Testable.textHeight context.self.textMetrics)
+                                            |> List.maximum
+                                            |> Maybe.withDefault 0
+
+                                    verticalPadding =
+                                        context.self.bbox.padding.top + context.self.bbox.padding.bottom
+                                in
+                                [ expectRoundedEquality
+                                    { expected = totalChildren + verticalPadding
+                                    , found = context.self.bbox.height
+                                    }
+                                ]
+
+                            Testable.Column _ _ ->
+                                let
+                                    childHeight child =
+                                        child.bbox.height
+
+                                    totalChildren =
+                                        context.children
+                                            |> List.map childHeight
+                                            |> List.append (List.map Testable.textHeight context.self.textMetrics)
+                                            |> List.sum
+
+                                    verticalPadding =
+                                        context.self.bbox.padding.top + context.self.bbox.padding.bottom
+
+                                    spacingValue =
+                                        toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
+                                in
+                                [ expectRoundedEquality
+                                    { expected = totalChildren + verticalPadding + spacingValue
+                                    , found = context.self.bbox.height
+                                    }
+                                ]
+
+                            Testable.TextColumn _ _ ->
+                                []
+
+                            Testable.Paragraph _ _ ->
+                                []
+
+                            Testable.Text _ ->
+                                []
+
+                            Testable.Empty ->
+                                []
                 }
 
 
@@ -716,11 +840,11 @@ alignLeft =
         , id = Testable.NoId
         , test =
             \found ->
-                [ if List.member found.location [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
+                [ if List.member found.parentLayout [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
                     Testable.true "alignLeft doesn't apply to elements that are onLeft or onRight" True
 
                   else if
-                    List.member found.location
+                    List.member found.parentLayout
                         [ Testable.IsNearby Testable.InFront
                         , Testable.IsNearby Testable.Behind
                         , Testable.IsNearby Testable.Above
@@ -739,7 +863,7 @@ alignLeft =
                         }
 
                   else
-                    case found.location of
+                    case found.parentLayout of
                         Testable.InRow ->
                             let
                                 siblingsOnLeft =
@@ -785,7 +909,7 @@ centerX =
                     parentCenter =
                         found.parent.bbox.left + (found.parent.bbox.width / 2)
                 in
-                if List.member found.location [ Testable.IsNearby Testable.OnRight, Testable.IsNearby Testable.OnLeft ] then
+                if List.member found.parentLayout [ Testable.IsNearby Testable.OnRight, Testable.IsNearby Testable.OnLeft ] then
                     [ Testable.true "centerX doesn't apply to elements that are onLeft or onRight" True ]
 
                 else if List.length found.siblings == 0 then
@@ -796,7 +920,7 @@ centerX =
                     ]
 
                 else
-                    case found.location of
+                    case found.parentLayout of
                         Testable.InRow ->
                             let
                                 siblingsOnLeft =
@@ -850,11 +974,11 @@ alignRight =
         , id = Testable.NoId
         , test =
             \found ->
-                if List.member found.location [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
+                if List.member found.parentLayout [ Testable.IsNearby Testable.OnLeft, Testable.IsNearby Testable.OnRight ] then
                     [ Testable.true "alignRight doesn't apply to elements that are onLeft or onRight" True ]
 
                 else if
-                    List.member found.location
+                    List.member found.parentLayout
                         [ Testable.IsNearby Testable.InFront
                         , Testable.IsNearby Testable.Behind
                         , Testable.IsNearby Testable.Above
@@ -875,7 +999,7 @@ alignRight =
                     ]
 
                 else
-                    case found.location of
+                    case found.parentLayout of
                         Testable.InRow ->
                             let
                                 siblingsOnRight =
@@ -913,11 +1037,11 @@ alignTop =
         , id = Testable.NoId
         , test =
             \found ->
-                if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
+                if List.member found.parentLayout [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                     [ Testable.true "alignTop doesn't apply to elements that are above or below" True ]
 
                 else if
-                    List.member found.location
+                    List.member found.parentLayout
                         [ Testable.IsNearby Testable.InFront
                         , Testable.IsNearby Testable.Behind
                         , Testable.IsNearby Testable.OnRight
@@ -938,7 +1062,7 @@ alignTop =
                     ]
 
                 else
-                    case found.location of
+                    case found.parentLayout of
                         Testable.InColumn ->
                             let
                                 siblingsAbove =
@@ -976,11 +1100,11 @@ alignBottom =
         , id = Testable.NoId
         , test =
             \found ->
-                if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
+                if List.member found.parentLayout [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                     [ Testable.true "alignBottom doesn't apply to elements that are above or below" True ]
 
                 else if
-                    List.member found.location
+                    List.member found.parentLayout
                         [ Testable.IsNearby Testable.InFront
                         , Testable.IsNearby Testable.Behind
                         , Testable.IsNearby Testable.OnRight
@@ -1001,7 +1125,7 @@ alignBottom =
                     ]
 
                 else
-                    case found.location of
+                    case found.parentLayout of
                         Testable.InColumn ->
                             let
                                 siblingsBelow =
@@ -1058,7 +1182,7 @@ centerY =
                     parentCenter =
                         found.parent.bbox.top + (found.parent.bbox.height / 2)
                 in
-                if List.member found.location [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
+                if List.member found.parentLayout [ Testable.IsNearby Testable.Above, Testable.IsNearby Testable.Below ] then
                     [ Testable.true "centerY doesn't apply to elements that are above or below" True ]
 
                 else if List.length found.siblings == 0 then
@@ -1069,7 +1193,7 @@ centerY =
                     ]
 
                 else
-                    case found.location of
+                    case found.parentLayout of
                         Testable.InColumn ->
                             let
                                 siblingsOnTop =

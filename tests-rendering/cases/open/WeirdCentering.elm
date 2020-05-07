@@ -7,13 +7,23 @@ import Testable.Element.Background as Background
 
 main =
     layout [] <|
+        -- row [] [ el [] (text "Example with centerX:") ]
         column []
             [ text "Example with centerX:"
             , row
                 [ width fill ]
-                [ row [ centerX, Background.color <| rgb 0 1 0 ]
-                    [ paragraph [ width shrink ] [ text "Hello world" ]
-                    , paragraph [ width shrink ] [ text "Hello world" ]
+                [ row
+                    [ centerX
+                    , Background.color <| rgb 0 1 0
+                    ]
+                    [ paragraph
+                        [ width shrink
+                        ]
+                        [ text "Hello world" ]
+                    , paragraph
+                        [ width shrink
+                        ]
+                        [ text "Hello world" ]
                     ]
                 ]
             , text "Example without centerX:"

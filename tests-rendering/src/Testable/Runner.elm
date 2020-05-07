@@ -138,7 +138,7 @@ type Msg
             , bbox : Testable.BoundingBox
             , style : List ( String, String )
             , isVisible : Bool
-            , textMetrics : List TextMetrics
+            , textMetrics : List Testable.TextMetrics
             }
         )
 
@@ -180,6 +180,7 @@ update msg model =
                             , { style = Dict.fromList box.style
                               , bbox = box.bbox
                               , isVisible = box.isVisible
+                              , textMetrics = box.textMetrics
                               }
                             )
 
@@ -339,9 +340,24 @@ viewResult testable =
             [ Element.alignLeft, Element.spacing 16 ]
             (testable.results
                 |> groupBy .elementDomId
-                |> List.map viewLayoutTestGroup
+                |> List.map (expandDetails >> viewLayoutTestGroup)
             )
         ]
+
+
+expandDetails group =
+    case group.members of
+        [] ->
+            { id = group.id
+            , elementType = Testable.EmptyType
+            , members = group.members
+            }
+
+        top :: _ ->
+            { id = group.id
+            , elementType = top.elementType
+            , members = group.members
+            }
 
 
 groupBy fn list =
@@ -387,7 +403,10 @@ viewLayoutTestGroup group =
         , Events.onMouseLeave (HighlightDomID Nothing)
         , Element.htmlAttribute (Html.Attributes.style "user-select" "none")
         ]
-        [ Element.el [ Font.color palette.lightGrey ] (Element.text group.id)
+        [ Element.row [ Element.spacing 16 ]
+            [ Element.el [] (Element.text (Testable.elementTypeToString group.elementType))
+            , Element.el [ Font.color palette.lightGrey ] (Element.text group.id)
+            ]
         , Element.column
             [ Element.spacing 8
             , Element.paddingXY 32 0
@@ -484,17 +503,8 @@ port styles :
         , bbox : Testable.BoundingBox
         , style : List ( String, String )
         , isVisible : Bool
-        , textMetrics : List TextMetrics
+        , textMetrics : List Testable.TextMetrics
         }
      -> msg
     )
     -> Sub msg
-
-
-type alias TextMetrics =
-    { actualBoundingBoxAscent : Float
-    , actualBoundingBoxDescent : Float
-    , actualBoundingBoxLeft : Float
-    , actualBoundingBoxRight : Float
-    , width : Float
-    }
