@@ -9,19 +9,28 @@ const http = require("http");
 
 var filepath = null;
 program
-
+  .option("--run", "run all the tests")
   .arguments("<filepath>")
   .action(function (p) {
-    filepath = p;
+    filepath = path.join("./cases/open", p);
   })
   .parse(process.argv);
 
 (async () => {
-  var dir = "tmp";
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir);
+  if (filepath == null) {
+    console.log("Open Cases");
+    console.log("");
+    fs.readdirSync("./tests-rendering/cases/open").forEach((file) => {
+      if (file.endsWith("elm")) {
+        console.log("  " + file);
+      }
+    });
+    console.log("");
+    return;
   }
-
+  if (program.run) {
+    filepath = "src/";
+  }
   console.log("Compiling tests");
   let content = await build.compile_to_string({
     template: "./tests-rendering/automation/templates/gather-styles.html",
