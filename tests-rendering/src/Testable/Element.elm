@@ -707,7 +707,7 @@ heightHelper maybeMin maybeMax len =
                                     }
                                 ]
 
-                            Testable.Column _ _ ->
+                            Testable.Column colAttrs _ ->
                                 let
                                     childHeight child =
                                         child.bbox.height
@@ -721,11 +721,14 @@ heightHelper maybeMin maybeMax len =
                                     verticalPadding =
                                         context.self.bbox.padding.top + context.self.bbox.padding.bottom
 
-                                    spacingValue =
-                                        toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
+                                    spacingAmount =
+                                        Testable.getSpacingFromAttributes colAttrs
+
+                                    totalSpacing =
+                                        toFloat spacingAmount * (toFloat (List.length context.children) - 1)
                                 in
                                 [ expectRoundedEquality
-                                    { expected = totalChildren + verticalPadding + spacingValue
+                                    { expected = totalChildren + verticalPadding + totalSpacing
                                     , found = context.self.bbox.height
                                     }
                                 ]
