@@ -19,6 +19,7 @@ module Testable exposing
     , formatColorWithAlpha
     , getIds
     , getSpacing
+    , getSpacingFromAttributes
     , runTests
     , textHeight
     , toElement
@@ -481,6 +482,10 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
 
         id =
             levelToString level
+                |> Debug.log "id"
+
+        _ =
+            Debug.log "element" element
 
         testChildren : Found -> List (Element msg) -> List LayoutTest
         testChildren found children =
@@ -620,6 +625,7 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
 
                 attributeTests =
                     attributes
+                        |> Debug.log "attributes"
                         |> List.indexedMap
                             -- Found -> Dict String Found -> List Int -> Int -> Surroundings -> Attr msg -> List Test
                             (\i attr ->
@@ -698,8 +704,13 @@ createAttributeTest :
     -> List LayoutTest
 createAttributeTest parent cache level attrIndex surroundings attr =
     let
+        _ =
+            Debug.log "attribute test" attr
+
         domId =
-            "#" ++ levelToString level
+            "#"
+                ++ levelToString level
+                |> Debug.log "domid"
     in
     case attr of
         Attr _ ->
@@ -739,7 +750,7 @@ createAttributeTest parent cache level attrIndex surroundings attr =
 
         Batch batch ->
             batch
-                |> List.indexedMap (\i attribute -> createAttributeTest parent cache (attrIndex :: level) i surroundings attribute)
+                |> List.indexedMap (\i attribute -> createAttributeTest parent cache level i surroundings attribute)
                 |> List.concat
 
         LabeledTest { label, test } ->
@@ -810,6 +821,21 @@ formatColor (Internal.Rgba red green blue alpha) =
             ++ (", " ++ String.fromInt (round (green * 255)))
             ++ (", " ++ String.fromInt (round (blue * 255)))
             ++ ")"
+
+
+getSpacingFromAttributes attrs =
+    case attrs of
+        [] ->
+            0
+
+        (Spacing i) :: remain ->
+            i
+
+        (Batch batched) :: remain ->
+            getSpacingFromAttributes (batched ++ remain)
+
+        _ :: remain ->
+            getSpacingFromAttributes remain
 
 
 getSpacing : Element msg -> Maybe Int

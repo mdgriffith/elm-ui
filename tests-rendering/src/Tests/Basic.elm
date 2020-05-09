@@ -5,7 +5,7 @@ module Tests.Basic exposing (view)
 import Element as Actual
 import Html
 import Testable
-import Testable.Element as Element exposing (..)
+import Testable.Element exposing (..)
 import Testable.Element.Background as Background
 import Testable.Element.Font as Font
 import Testable.Runner

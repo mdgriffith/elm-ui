@@ -246,11 +246,17 @@ view model =
                         Element.layout
                             [ Font.size 16
                             , Element.inFront (Element.html (viewElementHighlight model))
+                            , Element.height Element.fill
                             ]
                         <|
-                            Element.row [ Element.width Element.fill ]
+                            Element.row [ Element.width Element.fill, Element.height Element.fill ]
                                 [ Element.el
-                                    [ Element.width Element.fill
+                                    [ Element.width 
+                                        (Element.fill
+                                        |> Element.maximum 900)
+                                    , Element.alignTop
+                                     , Element.height Element.fill
+                                    , Element.scrollbars
                                     ]
                                     (Element.el
                                         [ Element.centerX
@@ -273,6 +279,8 @@ view model =
                                     [ Element.spacing 20
                                     , Element.padding 20
                                     , Element.width Element.fill
+                                    , Element.height Element.fill
+                                    , Element.scrollbarY
                                     ]
                                     (List.map viewResult (finished :: remaining))
                                 ]
@@ -292,7 +300,7 @@ viewElementHighlight model =
         Just highlightDomId ->
             let
                 elementHighlight =
-                    highlightDomId ++ " { outline: solid;  }"
+                    highlightDomId ++ " { outline: solid black;  }"
 
                 testId =
                     highlightDomId
@@ -300,7 +308,7 @@ viewElementHighlight model =
                         |> String.append "#tests-"
 
                 testHighlight =
-                    testId ++ " { outline: dashed;  }"
+                    testId ++ " { outline: dashed black;  }"
 
                 styleSheet =
                     String.join "\n"

@@ -436,7 +436,7 @@ widthHelper maybeMin maybeMax len =
                                     }
                                 ]
 
-                            Testable.Row _ _ ->
+                            Testable.Row rowAttrs _ ->
                                 -- width of row is the sum of all children widths
                                 -- both text elements and others.
                                 let
@@ -452,11 +452,14 @@ widthHelper maybeMin maybeMax len =
                                     horizontalPadding =
                                         context.self.bbox.padding.left + context.self.bbox.padding.right
 
-                                    spacingValue =
-                                        toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
+                                    spacingAmount =
+                                        Testable.getSpacingFromAttributes rowAttrs
+
+                                    totalSpacing =
+                                        toFloat spacingAmount * (toFloat (List.length context.children) - 1)
                                 in
                                 [ expectRoundedEquality
-                                    { expected = totalChildren + horizontalPadding + spacingValue
+                                    { expected = totalChildren + horizontalPadding + totalSpacing
                                     , found = context.self.bbox.width
                                     }
                                 ]

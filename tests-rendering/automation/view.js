@@ -10,6 +10,7 @@ const http = require("http");
 var filepath = null;
 program
   .option("--run", "run all the tests")
+  .option("--debug", "run with debug on")
   .arguments("<filepath>")
   .action(function (p) {
     filepath = path.join("./cases/open", p);
@@ -17,7 +18,7 @@ program
   .parse(process.argv);
 
 (async () => {
-  if (filepath == null) {
+  if (filepath == null && !program.run) {
     console.log("Open Cases");
     console.log("");
     fs.readdirSync("./tests-rendering/cases/open").forEach((file) => {
@@ -29,13 +30,13 @@ program
     return;
   }
   if (program.run) {
-    filepath = "src/";
+    filepath = "./src/Tests/Run.elm";
   }
   console.log("Compiling tests");
   let content = await build.compile_to_string({
     template: "./tests-rendering/automation/templates/gather-styles.html",
     elm: filepath,
-    elmOptions: { cwd: "./tests-rendering" },
+    elmOptions: { cwd: "./tests-rendering", debug: program.debug },
   });
   console.log("Finished compiling");
   //   console.log(content);
@@ -45,7 +46,7 @@ program
     content = build.compile_to_string({
       template: "./tests-rendering/automation/templates/gather-styles.html",
       elm: filepath,
-      elmOptions: { cwd: "./tests-rendering" },
+      elmOptions: { cwd: "./tests-rendering", debug: program.debug },
     });
   });
   console.log("Serving on http://localhost:8080");
