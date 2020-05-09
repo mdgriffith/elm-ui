@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "elm-test",
+    "view-test": "node tests-rendering/automation/view.js",
     "test-render": "node tests-rendering/automation/run.js --chrome",
     "test-render-sauce": "source sauce.env; node tests-rendering/automation/run.js --sauce",
     "test-render-sauce-automated": "node tests-rendering/automation/run.js --sauce",

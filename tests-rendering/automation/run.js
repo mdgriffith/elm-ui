@@ -1,4 +1,3 @@
-const compileToString = require("node-elm-compiler").compileToString;
 const { Builder, By, Key, until } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 const firefox = require("selenium-webdriver/firefox");
@@ -7,6 +6,7 @@ const program = require("commander");
 const path = require("path");
 const chalk = require("chalk");
 const childProcess = require("child_process");
+const compile_and_embed = require("./build.js").compile_and_embed;
 
 program
   .option("-s, --sauce", "run tests on sauce labs")
@@ -102,17 +102,6 @@ function prepare_all_envs(config) {
   return envs;
 }
 
-async function compile_and_embed(config) {
-  var template = fs.readFileSync(config.template);
-  // we embed the compiled js to avoid having to start a server to read the app.
-  await compileToString(config.elm, config.elmOptions).then(function (
-    compiled_elm_code
-  ) {
-    const compiled = eval(`\`${template}\``);
-    fs.writeFileSync(config.target, compiled);
-  });
-}
-
 function prepare_sauce_driver(env) {
   const username = process.env.SAUCE_USERNAME;
   const accessKey = process.env.SAUCE_ACCESS_KEY;
@@ -174,7 +163,7 @@ async function run_test(driver, url) {
   await compile_and_embed({
     template: "./tests-rendering/automation/templates/gather-styles.html",
     target: "./tmp/test.html",
-    elm: ["src/Tests/Run.elm"],
+    elm: "src/Tests/Run.elm",
     elmOptions: { cwd: "./tests-rendering" },
   });
   console.log("Done compiling");

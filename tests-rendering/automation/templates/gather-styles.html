@@ -6,17 +6,149 @@
     <script>
       ${compiled_elm_code}
     </script>
+    <script>
+      // Helpers
+      // Calculations for canvas
+      var PIXEL_RATIO = (function () {
+        var ctx = document.createElement("canvas").getContext("2d"),
+          dpr = window.devicePixelRatio || 1,
+          bsr =
+            ctx.webkitBackingStorePixelRatio ||
+            ctx.mozBackingStorePixelRatio ||
+            ctx.msBackingStorePixelRatio ||
+            ctx.oBackingStorePixelRatio ||
+            ctx.backingStorePixelRatio ||
+            1;
+
+        return dpr / bsr;
+      })();
+
+      function createHiDPICanvas(w, h, id, ratio) {
+        if (!ratio) {
+          ratio = PIXEL_RATIO;
+        }
+        let can = document.getElementById(id);
+        can.width = w * ratio;
+        can.height = h * ratio;
+        can.style.width = w + "px";
+        can.style.height = h + "px";
+        can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+        return can;
+      }
+
+      function isVisible(id, bbox) {
+        var current = document.getElementById(id);
+        var result = 0;
+        if (current == document.elementFromPoint(bbox["left"], bbox["top"])) {
+          result++;
+        }
+        if (
+          current == document.elementFromPoint(bbox["left"], bbox["bottom"] - 1)
+        ) {
+          result++;
+        }
+        if (
+          current == document.elementFromPoint(bbox["right"] - 1, bbox["top"])
+        ) {
+          result++;
+        }
+        if (
+          current ==
+          document.elementFromPoint(bbox["right"] - 1, bbox["bottom"] - 1)
+        ) {
+          result++;
+        }
+
+        if (result == 4) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      function getStyle(element) {
+        var props = [];
+        var style = window.getComputedStyle(element);
+        for (var i = style.length; i--; ) {
+          var name = style.item(i);
+          var value = style.getPropertyValue(name);
+          props.push([name, value]);
+        }
+        return props;
+      }
+
+      function getBoundingBox(element) {
+        var bbox = element.getBoundingClientRect();
+        var style = window.getComputedStyle(element, null);
+
+        var padding = {
+          top: parseFloat(style.getPropertyValue("padding-top")),
+          bottom: parseFloat(style.getPropertyValue("padding-bottom")),
+          left: parseFloat(style.getPropertyValue("padding-left")),
+          right: parseFloat(style.getPropertyValue("padding-right")),
+        };
+
+        return {
+          top: bbox.top,
+          bottom: bbox.bottom,
+          left: bbox.left,
+          right: bbox.right,
+          width: bbox.width,
+          height: bbox.height,
+          padding: padding,
+        };
+      }
+      function getTextMetrics(element) {
+        // Given our element, we want to return the text metrics on the text within.
+        // If it is an element we want to measure:
+        // we want to get the font family
+        // and the font size.
+        // We're going to presume that the font is loaded.
+        let childrenTextMetrics = [];
+        for (i = 0; i < element.children.length; i++) {
+          if (element.children[i].classList.contains("t")) {
+            let style = window.getComputedStyle(element, null);
+            let fontSize = style.getPropertyValue("font-size");
+            let fontFamily = style.getPropertyValue("font-family");
+            let ctx = canvas.getContext("2d");
+
+            ctx.font = fontSize + " " + fontFamily; //"16px Roboto";
+            let text = ctx.measureText(element.children[i].innerText);
+
+            childrenTextMetrics.push({
+              actualBoundingBoxAscent: text.actualBoundingBoxAscent,
+              actualBoundingBoxDescent: text.actualBoundingBoxDescent,
+              actualBoundingBoxLeft: text.actualBoundingBoxLeft,
+              actualBoundingBoxRight: text.actualBoundingBoxRight,
+              width: text.width,
+            });
+          }
+        }
+        return childrenTextMetrics;
+      }
+    </script>
   </head>
   <style></style>
-  <body id="root"></body>
+  <body id="root">
+    <body id="root">
+      <div id="elm-home"></div>
+      <canvas id="canvas"></canvas>
+    </body>
+  </body>
 
   <script type="text/javascript">
-    var app = Elm.Tests.Run.init();
+    // Starting Elm App,
+    var app = Elm.${module_name}.init({
+      node: document.getElementById("elm-home"),
+    });
+
+
+    // create a canvas for text measurements
+    let canvas = createHiDPICanvas(200, 100, "canvas");
 
     var test_results = "waiting..";
 
     app.ports.report.subscribe(function (results) {
-      // these are extracted by the script that runs the browser automation.
       test_results = results;
     });
 
@@ -32,76 +164,20 @@
         }
         var style = getStyle(element);
         var bbox = getBoundingBox(element);
+        var metrics = getTextMetrics(element);
 
         var visible = isVisible(id, bbox);
 
-        var result = { bbox: bbox, style: style, id: id, isVisible: visible };
+        var result = {
+          textMetrics: metrics,
+          bbox: bbox,
+          style: style,
+          id: id,
+          isVisible: visible,
+        };
         results.push(result);
       }
       app.ports.styles.send(results);
     });
-
-    function isVisible(id, bbox) {
-      var current = document.getElementById(id);
-      var result = 0;
-      if (current == document.elementFromPoint(bbox["left"], bbox["top"])) {
-        result++;
-      }
-      if (
-        current == document.elementFromPoint(bbox["left"], bbox["bottom"] - 1)
-      ) {
-        result++;
-      }
-      if (
-        current == document.elementFromPoint(bbox["right"] - 1, bbox["top"])
-      ) {
-        result++;
-      }
-      if (
-        current ==
-        document.elementFromPoint(bbox["right"] - 1, bbox["bottom"] - 1)
-      ) {
-        result++;
-      }
-
-      if (result == 4) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    function getStyle(element) {
-      var props = [];
-      var style = window.getComputedStyle(element);
-      for (var i = style.length; i--; ) {
-        var name = style.item(i);
-        var value = style.getPropertyValue(name);
-        props.push([name, value]);
-      }
-      return props;
-    }
-
-    function getBoundingBox(element) {
-      var bbox = element.getBoundingClientRect();
-      var style = window.getComputedStyle(element, null);
-
-      var padding = {
-        top: parseFloat(style.getPropertyValue("padding-top")),
-        bottom: parseFloat(style.getPropertyValue("padding-bottom")),
-        left: parseFloat(style.getPropertyValue("padding-left")),
-        right: parseFloat(style.getPropertyValue("padding-right")),
-      };
-
-      return {
-        top: bbox.top,
-        bottom: bbox.bottom,
-        left: bbox.left,
-        right: bbox.right,
-        width: bbox.width,
-        height: bbox.height,
-        padding: padding,
-      };
-    }
   </script>
 </html>
