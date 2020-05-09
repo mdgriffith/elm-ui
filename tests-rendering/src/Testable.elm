@@ -482,10 +482,6 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
 
         id =
             levelToString level
-                |> Debug.log "id"
-
-        _ =
-            Debug.log "element" element
 
         testChildren : Found -> List (Element msg) -> List LayoutTest
         testChildren found children =
@@ -625,7 +621,6 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
 
                 attributeTests =
                     attributes
-                        |> Debug.log "attributes"
                         |> List.indexedMap
                             -- Found -> Dict String Found -> List Int -> Int -> Surroundings -> Attr msg -> List Test
                             (\i attr ->
@@ -704,13 +699,8 @@ createAttributeTest :
     -> List LayoutTest
 createAttributeTest parent cache level attrIndex surroundings attr =
     let
-        _ =
-            Debug.log "attribute test" attr
-
         domId =
-            "#"
-                ++ levelToString level
-                |> Debug.log "domid"
+            "#" ++ levelToString level
     in
     case attr of
         Attr _ ->
