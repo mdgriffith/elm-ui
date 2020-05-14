@@ -33,4 +33,8 @@ main =
             [ width fill
             , height <| px 200
             ]
-            [ el [ Border.width 3, Border.color <| rgb 0 0 0 ] <| text "an element" ]
+            [ el
+                []
+              <|
+                text "an element"
+            ]
