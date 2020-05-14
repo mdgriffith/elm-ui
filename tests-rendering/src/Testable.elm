@@ -20,6 +20,7 @@ module Testable exposing
     , getIds
     , getSpacing
     , getSpacingFromAttributes
+    , lessThanOrEqual
     , runTests
     , textHeight
     , toElement
@@ -192,9 +193,21 @@ type alias TextMetrics =
     }
 
 
+{-| The font metrics we currently have are `actual`, meaning for the text actually rendered, not the font as a whole.
+
+We also know the font size is 20, so we're just going to return 20.
+
+TODO: improve font metric collection using something like opentype.js
+
+-}
 textHeight metrics =
-    metrics.actualBoundingBoxAscent
-        + metrics.actualBoundingBoxDescent
+    let
+        actualHeight =
+            metrics.actualBoundingBoxAscent
+                + metrics.actualBoundingBoxDescent
+    in
+    -- actualHeight / 20
+    20
 
 
 {-| -}
@@ -236,6 +249,19 @@ type alias LayoutTest =
 
 
 {- Expectations -}
+
+
+floatToString : Float -> String
+floatToString x =
+    String.fromFloat (toFloat (round (x * 100)) / 100)
+
+
+lessThanOrEqual : String -> Float -> Float -> LayoutExpectation
+lessThanOrEqual label one two =
+    Expect
+        { description = label ++ "  " ++ floatToString one ++ " <= " ++ floatToString two
+        , result = one <= two
+        }
 
 
 equal : a -> a -> LayoutExpectation
@@ -324,7 +350,12 @@ toElement el =
 
 toHtml : Element msg -> Html msg
 toHtml el =
-    Element.layout [ idAttr "0" ] <|
+    Element.layout
+        [ idAttr "0"
+        , Element.width (Element.px 1000)
+        , Element.height (Element.px 1000)
+        ]
+    <|
         renderElement [ 0, 0 ] el
 
 

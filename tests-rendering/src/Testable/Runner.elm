@@ -52,10 +52,11 @@ program tests =
                 ( { current = current
                   , upcoming = upcoming
                   , finished = []
+                  , selected = 0
                   , highlightDomId = Nothing
                   }
                 , Task.perform (always Analyze)
-                    (Process.sleep 32
+                    (Process.sleep 64
                         |> Task.andThen
                             (always Time.now)
                     )
@@ -77,6 +78,7 @@ type alias Model msg =
     { current : Maybe ( String, Testable.Element msg )
     , upcoming : List ( String, Testable.Element msg )
     , finished : List (WithResults (Testable.Element msg))
+    , selected : Int
     , highlightDomId : Maybe String
     }
 
@@ -131,6 +133,7 @@ encodeForReport withResults =
 type Msg
     = NoOp
     | Analyze
+    | Select Int
     | HighlightDomID (Maybe String)
     | RefreshBoundingBox
         (List
@@ -163,6 +166,11 @@ update msg model =
 
         HighlightDomID newId ->
             ( { model | highlightDomId = newId }
+            , Cmd.none
+            )
+
+        Select index ->
+            ( { model | selected = index }
             , Cmd.none
             )
 
@@ -208,7 +216,7 @@ update msg model =
                                 , upcoming = remaining
                               }
                             , Task.perform (always Analyze)
-                                (Process.sleep 32
+                                (Process.sleep 64
                                     |> Task.andThen
                                         (always Time.now)
                                 )
@@ -232,64 +240,80 @@ view model =
     case model.current of
         Nothing ->
             if List.isEmpty model.upcoming then
-                case model.finished of
-                    [] ->
-                        Element.layout [] <|
-                            Element.column
-                                [ Element.spacing 20
-                                , Element.padding 20
-                                , Element.width (Element.px 800)
-                                ]
-                                [ Element.none ]
+                let
+                    selected =
+                        getByIndex model.selected model.finished
 
-                    finished :: remaining ->
-                        Element.layout
-                            [ Font.size 16
-                            , Element.inFront (Element.html (viewElementHighlight model))
+                    -- |> Debug.log "selected"
+                in
+                Element.layout
+                    [ Font.size 16
+                    , Element.inFront (Element.html (viewElementHighlight model))
+                    , Element.height Element.fill
+                    ]
+                <|
+                    Element.row [ Element.width Element.fill, Element.height Element.fill ]
+                        [ Element.el
+                            [ Element.width
+                                (Element.fill
+                                    |> Element.maximum 900
+                                )
+                            , Element.alignTop
                             , Element.height Element.fill
+                            , Element.scrollbars
                             ]
-                        <|
-                            Element.row [ Element.width Element.fill, Element.height Element.fill ]
-                                [ Element.el
-                                    [ Element.width 
-                                        (Element.fill
-                                        |> Element.maximum 900)
-                                    , Element.alignTop
-                                     , Element.height Element.fill
-                                    , Element.scrollbars
-                                    ]
+                            (Element.el
+                                [ Element.centerX
+                                , Element.padding 100
+                                , Border.dashed
+                                , Border.width 2
+                                , Border.color palette.lightGrey
+                                , Font.size 20
+                                , Element.inFront
                                     (Element.el
-                                        [ Element.centerX
-                                        , Element.padding 100
-                                        , Border.dashed
-                                        , Border.width 2
-                                        , Border.color palette.lightGrey
-                                        , Font.size 20
-                                        , Element.inFront
-                                            (Element.el
-                                                [ Font.size 14
-                                                , Font.color palette.lightGrey
-                                                ]
-                                                (Element.text "test case")
-                                            )
+                                        [ Font.size 14
+                                        , Font.color palette.lightGrey
                                         ]
-                                        (Testable.toElement finished.element)
+                                        (Element.text "test case")
                                     )
-                                , Element.column
-                                    [ Element.spacing 20
-                                    , Element.padding 20
-                                    , Element.width Element.fill
-                                    , Element.height Element.fill
-                                    , Element.scrollbarY
-                                    ]
-                                    (List.map viewResult (finished :: remaining))
                                 ]
+                                (case selected of
+                                    Nothing ->
+                                        Element.text "nothing selected"
+
+                                    Just sel ->
+                                        Testable.toElement sel.element
+                                )
+                            )
+                        , Element.column
+                            [ Element.spacing 20
+                            , Element.padding 20
+                            , Element.width Element.fill
+                            , Element.height Element.fill
+                            , Element.scrollbarY
+                            ]
+                            (List.indexedMap (viewResult model.selected) model.finished)
+                        ]
 
             else
                 Html.text ""
 
         Just ( label, current ) ->
             Testable.toHtml current
+
+
+getByIndex i ls =
+    List.foldl
+        (\elem ( index, found ) ->
+            if i == index then
+                ( index + 1, Just elem )
+
+            else
+                ( index + 1, found )
+        )
+        ( 0, Nothing )
+        ls
+        |> Tuple.second
 
 
 viewElementHighlight model =
@@ -322,35 +346,58 @@ viewElementHighlight model =
                 ]
 
 
-viewResult : WithResults (Testable.Element Msg) -> Element.Element Msg
-viewResult testable =
-    let
-        isExpectationPassing result =
-            case result of
-                Testable.Todo label ->
-                    True
+viewResult : Int -> Int -> WithResults (Testable.Element Msg) -> Element.Element Msg
+viewResult selectedIndex index testable =
+    if index == selectedIndex then
+        Element.column
+            [ Element.alignLeft
+            , Element.spacing 16
+            ]
+            [ Element.el [ Font.size 24 ] (Element.text testable.label)
+            , Element.column
+                [ Element.alignLeft, Element.spacing 16 ]
+                (testable.results
+                    |> groupBy .elementDomId
+                    |> List.map (expandDetails >> viewLayoutTestGroup)
+                )
+            ]
 
-                Testable.Expect details ->
-                    details.result
+    else
+        let
+            isExpectationPassing result =
+                case result of
+                    Testable.Todo label ->
+                        True
 
-        isPassing layoutTest =
-            List.any isExpectationPassing layoutTest.expectations
+                    Testable.Expect details ->
+                        details.result
 
-        ( passing, failing ) =
-            List.partition isPassing testable.results
-    in
-    Element.column
-        [ Element.alignLeft
-        , Element.spacing 16
-        ]
-        [ Element.el [ Font.size 24 ] (Element.text testable.label)
-        , Element.column
-            [ Element.alignLeft, Element.spacing 16 ]
-            (testable.results
-                |> groupBy .elementDomId
-                |> List.map (expandDetails >> viewLayoutTestGroup)
-            )
-        ]
+            isPassing layoutTest =
+                List.all isExpectationPassing layoutTest.expectations
+
+            ( passing, failing ) =
+                List.partition isPassing testable.results
+        in
+        Element.column
+            [ Element.alignLeft
+            , Element.spacing 16
+            , Element.pointer
+            , Events.onClick (Select index)
+            ]
+            [ Element.row [ Element.spacing 16 ]
+                [ Element.el [ Font.size 24 ] (Element.text testable.label)
+                , Element.text (String.fromInt (List.length passing) ++ " passing")
+                , let
+                    failingCount =
+                        List.length failing
+                  in
+                  if failingCount == 0 then
+                    Element.none
+
+                  else
+                    Element.text (String.fromInt (List.length failing) ++ " failing")
+                ]
+            ]
 
 
 expandDetails group =

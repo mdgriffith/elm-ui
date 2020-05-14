@@ -1,4 +1,4 @@
-module Testable.Element.Font exposing (color)
+module Testable.Element.Font exposing (bold, color, size)
 
 {-| -}
 
@@ -6,6 +6,11 @@ import Dict
 import Element exposing (Color)
 import Element.Font as Font
 import Testable
+
+
+bold : Testable.Attr msg
+bold =
+    Testable.Attr Font.bold
 
 
 color : Color -> Testable.Attr msg

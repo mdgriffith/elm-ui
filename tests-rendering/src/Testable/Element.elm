@@ -20,6 +20,7 @@ module Testable.Element exposing
     , isVisible
     , label
     , layout
+    , link
     , maximum
     , minimum
     , moveDown
@@ -97,12 +98,36 @@ none =
 
 paragraph : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.Element msg
 paragraph attrs =
-    Testable.Paragraph (implicitWidthHeightShrink attrs)
+    let
+        withImplicits =
+            implicitTest (widthHelper Nothing Nothing (Fill 1))
+                :: implicitTest (heightHelper Nothing Nothing Shrink)
+                :: attrs
+    in
+    Testable.Paragraph (skipOverridden withImplicits)
 
 
 textColumn : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.Element msg
 textColumn attrs =
-    Testable.TextColumn (implicitWidthHeightShrink attrs)
+    let
+        withImplicits =
+            implicitTest (widthHelper (Just 500) (Just 750) (Fill 1))
+                :: implicitTest (heightHelper Nothing Nothing Shrink)
+                :: attrs
+    in
+    Testable.TextColumn (skipOverridden withImplicits)
+
+
+link :
+    List (Testable.Attr msg)
+    ->
+        { url : String
+        , label : Testable.Element msg
+        }
+    -> Testable.Element msg
+link attrs details =
+    -- TODO: this is not actually a link element!!
+    Testable.El (implicitWidthHeightShrink attrs) details.label
 
 
 {-| Old labeling mechanism that i removed to hastily
@@ -344,7 +369,10 @@ widthHelper maybeMin maybeMax len =
                         )
                 , test =
                     \found ->
-                        [ Testable.true "exact width is exact" (floor found.self.bbox.width == val)
+                        [ expectRoundedEquality
+                            { expected = toFloat val
+                            , found = found.self.bbox.width
+                            }
                         , Testable.true "min/max is upheld" (minMaxTest (floor found.self.bbox.width))
                         ]
                 }
@@ -400,6 +428,9 @@ widthHelper maybeMin maybeMax len =
                                     Testable.true "element has fill width" <|
                                         (floor spacePerPortion == floor context.self.bbox.width)
                                             || minMaxTest (floor context.self.bbox.width)
+                            , Testable.lessThanOrEqual "not larger than parent"
+                                context.self.bbox.width
+                                context.parent.bbox.width
                             ]
                 }
 
@@ -434,6 +465,9 @@ widthHelper maybeMin maybeMax len =
                                     { expected = totalChildren + horizontalPadding
                                     , found = context.self.bbox.width
                                     }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.width
+                                    context.parent.bbox.width
                                 ]
 
                             Testable.Row rowAttrs _ ->
@@ -462,6 +496,9 @@ widthHelper maybeMin maybeMax len =
                                     { expected = totalChildren + horizontalPadding + totalSpacing
                                     , found = context.self.bbox.width
                                     }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.width
+                                    context.parent.bbox.width
                                 ]
 
                             Testable.Column _ _ ->
@@ -490,10 +527,41 @@ widthHelper maybeMin maybeMax len =
                                     { expected = Maybe.withDefault 0 (List.maximum allChildren)
                                     , found = context.self.bbox.width
                                     }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.width
+                                    context.parent.bbox.width
                                 ]
 
                             Testable.TextColumn _ _ ->
-                                []
+                                -- The width of the column is the width of the widest child.
+                                let
+                                    childWidth child =
+                                        child.bbox.width
+                                            + context.self.bbox.padding.left
+                                            + context.self.bbox.padding.right
+
+                                    textChildren =
+                                        List.map
+                                            (\txt ->
+                                                txt.width
+                                                    + context.self.bbox.padding.left
+                                                    + context.self.bbox.padding.right
+                                            )
+                                            context.self.textMetrics
+
+                                    allChildren =
+                                        context.children
+                                            |> List.map childWidth
+                                            |> List.append textChildren
+                                in
+                                [ expectRoundedEquality
+                                    { expected = Maybe.withDefault 0 (List.maximum allChildren)
+                                    , found = context.self.bbox.width
+                                    }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.width
+                                    context.parent.bbox.width
+                                ]
 
                             Testable.Paragraph _ _ ->
                                 -- This should be the size it's text,
@@ -515,6 +583,9 @@ widthHelper maybeMin maybeMax len =
                                     { expected = totalChildren + horizontalPadding
                                     , found = context.self.bbox.width
                                     }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.width
+                                    context.parent.bbox.width
                                 ]
 
                             Testable.Text _ ->
@@ -593,8 +664,10 @@ heightHelper maybeMin maybeMax len =
                 , id = Testable.IsHeight
                 , test =
                     \found ->
-                        [ Testable.true ("exact height is exact: " ++ String.fromInt (floor found.self.bbox.height) ++ "," ++ String.fromInt val)
-                            (floor found.self.bbox.height == val)
+                        [ expectRoundedEquality
+                            { expected = toFloat val
+                            , found = found.self.bbox.height
+                            }
                         , Testable.true "min/max holds true"
                             (minMaxTest (floor found.self.bbox.height))
                         ]
@@ -665,46 +738,60 @@ heightHelper maybeMin maybeMax len =
                             Testable.El _ _ ->
                                 let
                                     childHeight child =
-                                        -- TODO: add margin values to heights
                                         child.bbox.height
-
-                                    totalChildren =
-                                        context.children
-                                            |> List.map childHeight
-                                            |> List.append (List.map Testable.textHeight context.self.textMetrics)
-                                            |> List.sum
-
-                                    verticalPadding =
-                                        context.self.bbox.padding.top + context.self.bbox.padding.bottom
-
-                                    spacingValue =
-                                        toFloat context.parentSpacing * (toFloat (List.length context.children) - 1)
                                 in
-                                [ expectRoundedEquality
-                                    { expected = totalChildren + verticalPadding + spacingValue
-                                    , found = context.self.bbox.height
-                                    }
+                                [ if List.isEmpty context.children then
+                                    -- context.self.textMetrics
+                                    --     |> List.map Testable.textHeight
+                                    --     |> List.sum
+                                    -- TODO: apparently the font metrics we have are for the literal characters rendered
+                                    -- not for the font itself.
+                                    -- so for now, we are stubbing this in as 20, which is the default font size.
+                                    Testable.true "expected multiple of 20"
+                                        ((round context.self.bbox.height |> modBy 20) == 0)
+
+                                  else
+                                    expectRoundedEquality
+                                        { expected =
+                                            context.children
+                                                |> List.map childHeight
+                                                |> List.sum
+                                                |> (\h -> h + context.self.bbox.padding.top + context.self.bbox.padding.bottom)
+                                        , found = context.self.bbox.height
+                                        }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.height
+                                    context.parent.bbox.height
                                 ]
 
                             Testable.Row _ _ ->
                                 let
                                     childHeight child =
                                         child.bbox.height
-
-                                    totalChildren =
-                                        context.children
-                                            |> List.map childHeight
-                                            |> List.append (List.map Testable.textHeight context.self.textMetrics)
-                                            |> List.maximum
-                                            |> Maybe.withDefault 0
-
-                                    verticalPadding =
-                                        context.self.bbox.padding.top + context.self.bbox.padding.bottom
                                 in
-                                [ expectRoundedEquality
-                                    { expected = totalChildren + verticalPadding
-                                    , found = context.self.bbox.height
-                                    }
+                                [ if List.isEmpty context.children then
+                                    -- context.self.textMetrics
+                                    --     |> List.map Testable.textHeight
+                                    --     |> List.sum
+                                    -- TODO: apparently the font metrics we have are for the literal characters rendered
+                                    -- not for the font itself.
+                                    -- so for now, we are stubbing this in as 20, which is the default font size.
+                                    Testable.true "expected multiple of 20"
+                                        ((round context.self.bbox.height |> modBy 20) == 0)
+
+                                  else
+                                    expectRoundedEquality
+                                        { expected =
+                                            context.children
+                                                |> List.map childHeight
+                                                |> List.maximum
+                                                |> Maybe.withDefault 0
+                                                |> (\h -> h + context.self.bbox.padding.top + context.self.bbox.padding.bottom)
+                                        , found = context.self.bbox.height
+                                        }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.height
+                                    context.parent.bbox.height
                                 ]
 
                             Testable.Column colAttrs _ ->
@@ -731,13 +818,22 @@ heightHelper maybeMin maybeMax len =
                                     { expected = totalChildren + verticalPadding + totalSpacing
                                     , found = context.self.bbox.height
                                     }
+                                , Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.height
+                                    context.parent.bbox.height
                                 ]
 
                             Testable.TextColumn _ _ ->
-                                []
+                                [ Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.height
+                                    context.parent.bbox.height
+                                ]
 
                             Testable.Paragraph _ _ ->
-                                []
+                                [ Testable.lessThanOrEqual "not larger than parent"
+                                    context.self.bbox.height
+                                    context.parent.bbox.height
+                                ]
 
                             Testable.Text _ ->
                                 []
