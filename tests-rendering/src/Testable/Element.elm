@@ -402,36 +402,74 @@ widthHelper maybeMin maybeMax len =
                                 parentAvailableWidth =
                                     context.parent.bbox.width - (context.self.bbox.padding.left + context.self.bbox.padding.right)
                             in
-                            [ case context.parentLayout of
-                                Testable.IsNearby _ ->
-                                    Testable.true "Nearby Element has fill width"
-                                        ((floor context.parent.bbox.width == floor context.self.bbox.width)
-                                            || minMaxTest (floor context.self.bbox.width)
-                                        )
+                            List.concat
+                                [ case context.parentLayout of
+                                    Testable.IsNearby _ ->
+                                        [ Testable.true "Nearby Element has fill width"
+                                            ((floor context.parent.bbox.width == floor context.self.bbox.width)
+                                                || minMaxTest (floor context.self.bbox.width)
+                                            )
+                                        ]
 
-                                Testable.InColumn ->
-                                    Testable.true "Element within column has fill width"
-                                        ((floor parentAvailableWidth == floor context.self.bbox.width)
-                                            || minMaxTest (floor context.self.bbox.width)
-                                        )
+                                    Testable.InColumn ->
+                                        [ Testable.true "Element within column has fill width"
+                                            ((floor parentAvailableWidth == floor context.self.bbox.width)
+                                                || minMaxTest (floor context.self.bbox.width)
+                                            )
+                                        ]
 
-                                Testable.InEl ->
-                                    Testable.true "Element within element has fill width" <|
-                                        (floor parentAvailableWidth == floor context.self.bbox.width)
-                                            || minMaxTest (floor context.self.bbox.width)
+                                    Testable.InEl ->
+                                        [ Testable.true "Element within element has fill width" <|
+                                            (floor parentAvailableWidth == floor context.self.bbox.width)
+                                                || minMaxTest (floor context.self.bbox.width)
+                                        ]
 
-                                _ ->
-                                    let
-                                        spacePerPortion =
-                                            parentAvailableWidth / toFloat (List.length context.siblings + 1)
-                                    in
-                                    Testable.true "element has fill width" <|
-                                        (floor spacePerPortion == floor context.self.bbox.width)
-                                            || minMaxTest (floor context.self.bbox.width)
-                            , Testable.lessThanOrEqual "not larger than parent"
-                                context.self.bbox.width
-                                context.parent.bbox.width
-                            ]
+                                    _ ->
+                                        let
+                                            spacePerPortion =
+                                                parentAvailableWidth / toFloat (List.length context.siblings + 1)
+                                        in
+                                        [ Testable.true "element has fill width" <|
+                                            (floor spacePerPortion == floor context.self.bbox.width)
+                                                || minMaxTest (floor context.self.bbox.width)
+                                        ]
+                                , [ Testable.lessThanOrEqual "not larger than parent"
+                                        context.self.bbox.width
+                                        context.parent.bbox.width
+                                  ]
+                                , case context.selfElement of
+                                    Testable.Paragraph _ _ ->
+                                        -- A paragraph with width fill
+                                        -- we want to test for correct text wrapping here.
+                                        --
+                                        let
+                                            childWidth child =
+                                                child.bbox.width
+
+                                            totalChildren =
+                                                context.children
+                                                    |> List.map childWidth
+                                                    |> List.append (List.map .width context.self.textMetrics)
+                                                    |> List.sum
+
+                                            horizontalPadding =
+                                                context.self.bbox.padding.left + context.self.bbox.padding.right
+
+                                            totalCalculatedWidth =
+                                                totalChildren + horizontalPadding
+
+                                            expectedLines =
+                                                ceiling (totalCalculatedWidth / context.self.bbox.width)
+                                        in
+                                        [ Testable.rounded "text wrapping, checking height"
+                                            { expected = toFloat (expectedLines * 22)
+                                            , found = context.self.bbox.height
+                                            }
+                                        ]
+
+                                    _ ->
+                                        []
+                                ]
                 }
 
         Shrink ->
@@ -460,8 +498,16 @@ widthHelper maybeMin maybeMax len =
 
                                     horizontalPadding =
                                         context.self.bbox.padding.left + context.self.bbox.padding.right
+
+                                    _ =
+                                        Debug.log "widths"
+                                            { children =
+                                                context.children
+                                                    |> List.map childWidth
+                                            , text = List.map .width context.self.textMetrics
+                                            }
                                 in
-                                [ expectRoundedEquality
+                                [ Testable.rounded "equals children"
                                     { expected = totalChildren + horizontalPadding
                                     , found = context.self.bbox.width
                                     }
@@ -746,9 +792,11 @@ heightHelper maybeMin maybeMax len =
                                     --     |> List.sum
                                     -- TODO: apparently the font metrics we have are for the literal characters rendered
                                     -- not for the font itself.
-                                    -- so for now, we are stubbing this in as 20, which is the default font size.
-                                    Testable.true "expected multiple of 20"
-                                        ((round context.self.bbox.height |> modBy 20) == 0)
+                                    -- so for now, we are stubbing this in as 20, which is the default font size + line height.
+                                    Testable.rounded "expected multiple of 20"
+                                        { expected = context.self.bbox.height
+                                        , found = toFloat (List.length context.self.textMetrics * 20)
+                                        }
 
                                   else
                                     expectRoundedEquality

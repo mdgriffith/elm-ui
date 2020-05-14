@@ -21,6 +21,7 @@ module Testable exposing
     , getSpacing
     , getSpacingFromAttributes
     , lessThanOrEqual
+    , rounded
     , runTests
     , textHeight
     , toElement
@@ -262,6 +263,13 @@ lessThanOrEqual label one two =
         { description = label ++ "  " ++ floatToString one ++ " <= " ++ floatToString two
         , result = one <= two
         }
+
+
+rounded : String -> { expected : Float, found : Float } -> LayoutExpectation
+rounded label { expected, found } =
+    true
+        (label ++ "| expected " ++ floatToString expected ++ ", found " ++ floatToString found)
+        (abs (expected - found) < 1)
 
 
 equal : a -> a -> LayoutExpectation
