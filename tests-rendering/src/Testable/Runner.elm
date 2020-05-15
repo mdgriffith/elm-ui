@@ -1,4 +1,12 @@
-port module Testable.Runner exposing (Msg, TestableProgram, program, show)
+port module Testable.Runner exposing
+    ( Msg
+    , Testable
+    , TestableProgram
+    , program
+    , show
+    , testable
+    , rename
+    )
 
 {-| -}
 
@@ -26,6 +34,22 @@ type alias TestableProgram =
     Program () (Model Msg) Msg
 
 
+{-| This should be a real type, but I'm too busy atm.
+-}
+type alias Testable =
+    ( String, Testable.Element Msg )
+
+
+rename : String -> Testable -> Testable
+rename newName ( _, el ) =
+    ( newName, el )
+
+
+testable : String -> Testable.Element Msg -> Testable
+testable =
+    Tuple.pair
+
+
 palette =
     { white = Element.rgb 1 1 1
     , red = Element.rgb 1 0 0
@@ -35,7 +59,7 @@ palette =
     }
 
 
-program : List ( String, Testable.Element Msg ) -> TestableProgram
+program : List Testable -> TestableProgram
 program tests =
     let
         ( current, upcoming ) =
@@ -347,16 +371,16 @@ viewElementHighlight model =
 
 
 viewResult : Int -> Int -> WithResults (Testable.Element Msg) -> Element.Element Msg
-viewResult selectedIndex index testable =
+viewResult selectedIndex index myTest =
     if index == selectedIndex then
         Element.column
             [ Element.alignLeft
             , Element.spacing 16
             ]
-            [ Element.el [ Font.size 24 ] (Element.text testable.label)
+            [ Element.el [ Font.size 24 ] (Element.text myTest.label)
             , Element.column
                 [ Element.alignLeft, Element.spacing 16 ]
-                (testable.results
+                (myTest.results
                     |> groupBy .elementDomId
                     |> List.map (expandDetails >> viewLayoutTestGroup)
                 )
@@ -376,7 +400,7 @@ viewResult selectedIndex index testable =
                 List.all isExpectationPassing layoutTest.expectations
 
             ( passing, failing ) =
-                List.partition isPassing testable.results
+                List.partition isPassing myTest.results
         in
         Element.column
             [ Element.alignLeft
@@ -385,7 +409,7 @@ viewResult selectedIndex index testable =
             , Events.onClick (Select index)
             ]
             [ Element.row [ Element.spacing 16 ]
-                [ Element.el [ Font.size 24 ] (Element.text testable.label)
+                [ Element.el [ Font.size 24 ] (Element.text myTest.label)
                 , Element.text (String.fromInt (List.length passing) ++ " passing")
                 , let
                     failingCount =
