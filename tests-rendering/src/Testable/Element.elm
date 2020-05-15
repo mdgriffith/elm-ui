@@ -41,6 +41,7 @@ module Testable.Element exposing
     , spacing
     , text
     , textColumn
+    , toProgram
     , transparent
     , width
     )
@@ -64,11 +65,16 @@ import Testable
 import Testable.Runner
 
 
-layout : List (Testable.Attr msg) -> Testable.Element Testable.Runner.Msg -> Testable.Runner.TestableProgram
+{-| This is used when we want to run all tests in a test suite instead of one at a time.
+-}
+toProgram : Testable.Runner.Testable -> Testable.Runner.TestableProgram
+toProgram testable =
+    Testable.Runner.program [ testable ]
+
+
+layout : List (Testable.Attr msg) -> Testable.Element Testable.Runner.Msg -> Testable.Runner.Testable
 layout attrs elem =
-    Testable.Runner.program
-        [ ( "Tests Run", elem )
-        ]
+    Testable.Runner.testable "Test" elem
 
 
 text : String -> Testable.Element msg
