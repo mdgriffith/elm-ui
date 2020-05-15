@@ -9,16 +9,16 @@ const http = require("http");
 
 var filepath = null;
 program
-  .option("--run", "run all the tests")
+  .option("--all", "run all the tests")
   .option("--debug", "run with debug on")
   .arguments("<filepath>")
   .action(function (p) {
-    filepath = path.join("./cases/open", p);
+    test_filepath = path.join("./tests-rendering/cases/open", p);
   })
   .parse(process.argv);
 
 (async () => {
-  if (filepath == null && !program.run) {
+  if (test_filepath == null && !program.run) {
     console.log("Open Cases");
     console.log("");
     fs.readdirSync("./tests-rendering/cases/open").forEach((file) => {
@@ -29,15 +29,27 @@ program
     console.log("");
     return;
   }
-  if (program.run) {
-    filepath = "./src/Tests/Run.elm";
+
+  if (program.all) {
+    filepath = "./src/Tests/All.elm";
+  } else {
+    filepath = "src/Tests/Run.elm";
+    build.create_runner({
+      elm: test_filepath,
+      template: "./tests-rendering/automation/templates/Run.elm",
+      target: "./tests-rendering/src/Tests/Run.elm",
+    });
   }
-  console.log("Compiling tests");
+
+  //
+  // Compile and serve
+
   let content = await build.compile_to_string({
     template: "./tests-rendering/automation/templates/gather-styles.html",
     elm: filepath,
     elmOptions: { cwd: "./tests-rendering", debug: program.debug },
   });
+
   console.log("Finished compiling");
   //   console.log(content);
 

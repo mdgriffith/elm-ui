@@ -2,9 +2,9 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Rendering Benchmark Viewer</title>
+    <title>Elm UI Rendering Test</title>
     <script>
-      ${compiled_elm_code}
+      ~~_compiled_elm_code_~~
     </script>
     <script>
       // Helpers
@@ -138,10 +138,9 @@
 
   <script type="text/javascript">
     // Starting Elm App,
-    var app = Elm.${module_name}.init({
+    var app = Elm.~~_module_name_~~.init({
       node: document.getElementById("elm-home"),
     });
-
 
     // create a canvas for text measurements
     let canvas = createHiDPICanvas(200, 100, "canvas");
