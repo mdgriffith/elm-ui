@@ -1606,7 +1606,7 @@ baseSheet =
                     [ Prop "z-index" "-1"
                     ]
                 ]
-            , Child (dot classes.text)
+            , AllChildren (dot classes.text)
                 [ Prop "display" "inline"
                 , Prop "white-space" "normal"
                 ]
@@ -1622,6 +1622,14 @@ baseSheet =
             , AllChildren (dot classes.single)
                 [ Prop "display" "inline"
                 , Prop "white-space" "normal"
+
+                -- Inline block allows the width of the item to be set
+                -- but DOES NOT like wrapping text in a standard, normal, sane way.
+                -- We're sorta counting that if an exact width has been set,
+                -- people aren't expecting proper text wrapping for this element
+                , Descriptor (dot classes.widthExact)
+                    [ Prop "display" "inline-block"
+                    ]
                 , Descriptor (dot classes.inFront)
                     [ Prop "display" "flex"
                     ]
@@ -1646,15 +1654,7 @@ baseSheet =
                     ]
                 ]
             , Child (dot classes.row)
-                [ Prop "display" "inline-flex"
-                , Prop "align-items" "baseline"
-                , Child (dot classes.single)
-                    [ Prop "display" "inline-block"
-                    , Child (dot classes.text)
-                        [ Prop "display" "inline"
-                        , Prop "white-space" "normal"
-                        ]
-                    ]
+                [ Prop "display" "inline"
                 ]
             , Child (dot classes.column)
                 [ Prop "display" "inline-flex"
