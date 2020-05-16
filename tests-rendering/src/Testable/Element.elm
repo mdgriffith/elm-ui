@@ -10,6 +10,7 @@ module Testable.Element exposing
     , below
     , centerX
     , centerY
+    , clip
     , column
     , el
     , expectRoundedEquality
@@ -37,6 +38,9 @@ module Testable.Element exposing
     , rgb
     , rgba
     , row
+    , scrollbarX
+    , scrollbarY
+    , scrollbars
     , shrink
     , spacing
     , text
@@ -134,6 +138,28 @@ link :
 link attrs details =
     -- TODO: this is not actually a link element!!
     Testable.El (implicitWidthHeightShrink attrs) details.label
+
+
+clip =
+    Testable.Attr Element.clip
+
+
+{-| -}
+scrollbars : Testable.Attr msg
+scrollbars =
+    Testable.Attr Element.scrollbars
+
+
+{-| -}
+scrollbarY : Testable.Attr msg
+scrollbarY =
+    Testable.Attr Element.scrollbarY
+
+
+{-| -}
+scrollbarX : Testable.Attr msg
+scrollbarX =
+    Testable.Attr Element.scrollbarX
 
 
 {-| Old labeling mechanism that i removed to hastily
