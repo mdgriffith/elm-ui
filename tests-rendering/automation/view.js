@@ -8,6 +8,7 @@ const chokidar = require("chokidar");
 const http = require("http");
 
 var filepath = null;
+var test_filepath = null;
 program
   .option("--all", "run all the tests")
   .option("--debug", "run with debug on")
@@ -18,7 +19,7 @@ program
   .parse(process.argv);
 
 (async () => {
-  if (test_filepath == null && !program.run) {
+  if (test_filepath && test_filepath == null && !program.run) {
     console.log("Open Cases");
     console.log("");
     fs.readdirSync("./tests-rendering/cases/open").forEach((file) => {

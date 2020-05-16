@@ -68,6 +68,7 @@ async function get_module_name(config) {
 }
 
 async function create_runner(config) {
+  console.log("create runner", config);
   const elm_entry_module = fs.readFileSync(config.elm, "utf8");
 
   let module_name = elm_entry_module
