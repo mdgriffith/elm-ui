@@ -10,6 +10,7 @@ type Class
 type Rule
     = Prop String String
     | Child String (List Rule)
+    | AllChildren String (List Rule)
     | Supports ( String, String ) (List ( String, String ))
     | Descriptor String (List Rule)
     | Adjacent String (List Rule)
@@ -556,6 +557,15 @@ renderRules (Intermediate parent) rulesToRender =
                         | others =
                             renderRules
                                 (emptyIntermediate (parent.selector ++ " > " ++ child) "")
+                                childRules
+                                :: rendered.others
+                    }
+
+                AllChildren child childRules ->
+                    { rendered
+                        | others =
+                            renderRules
+                                (emptyIntermediate (parent.selector ++ " " ++ child) "")
                                 childRules
                                 :: rendered.others
                     }
@@ -1601,7 +1611,16 @@ baseSheet =
                 [ Prop "display" "inline"
                 , Prop "white-space" "normal"
                 ]
-            , Child (dot classes.single)
+            , AllChildren (dot classes.paragraph)
+                [ Prop "display" "inline"
+                , Descriptor "::after"
+                    [ Prop "content" "none"
+                    ]
+                , Descriptor "::before"
+                    [ Prop "content" "none"
+                    ]
+                ]
+            , AllChildren (dot classes.single)
                 [ Prop "display" "inline"
                 , Prop "white-space" "normal"
                 , Descriptor (dot classes.inFront)
@@ -1626,15 +1645,25 @@ baseSheet =
                     [ Prop "display" "inline"
                     , Prop "white-space" "normal"
                     ]
+
+                -- , Child (dot classes.single)
+                --     [ Prop "display" "inline"
+                --     , Child (dot classes.text)
+                --         [ Prop "display" "inline"
+                --         , Prop "white-space" "normal"
+                --         ]
+                --     ]
+                ]
+            , Child (dot classes.row)
+                [ Prop "display" "inline-flex"
+                , Prop "align-items" "baseline"
                 , Child (dot classes.single)
-                    [ Child (dot classes.text)
+                    [ Prop "display" "inline-block"
+                    , Child (dot classes.text)
                         [ Prop "display" "inline"
                         , Prop "white-space" "normal"
                         ]
                     ]
-                ]
-            , Child (dot classes.row)
-                [ Prop "display" "inline-flex"
                 ]
             , Child (dot classes.column)
                 [ Prop "display" "inline-flex"
