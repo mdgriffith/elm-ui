@@ -27,11 +27,12 @@ Versions
 
 import Testable.Element as Element exposing (..)
 import Testable.Element.Font as Font
+import Testable.Generator
 
 
 view =
     layout [] <|
-        column []
+        column [ spacing 48 ]
             [ paragraph []
                 [ text "This is a paragraph with a "
                 , el [ Font.bold ] <| text "child"
@@ -41,10 +42,102 @@ view =
                 [ text "This is a paragraph with a "
                 , link []
                     { label =
+                        el [ Font.bold ]
+                            (text Testable.Generator.lorem)
+                    , url = "http://example.com"
+                    }
+                , text " of depth two."
+                ]
+            , el [ Font.size 32 ] (text "Many nested els")
+            , paragraph []
+                [ text "This is a paragraph with a "
+                , link []
+                    { label =
+                        el [ Font.bold ]
+                            (text Testable.Generator.lorem)
+                    , url = "http://example.com"
+                    }
+                , text " of depth two."
+                , el [] (el [] (el [] (text Testable.Generator.lorem)))
+                , el [] (el [] (el [] (el [] (text Testable.Generator.lorem))))
+                ]
+            , el [ Font.size 32 ] (text "NestedParas in els")
+            , paragraph []
+                [ text "This is a paragraph with a "
+                , link []
+                    { label =
+                        el [ Font.bold ]
+                            (text Testable.Generator.lorem)
+                    , url = "http://example.com"
+                    }
+                , text " of depth two."
+                , el [] (el [] (el [] (text Testable.Generator.lorem)))
+                , el []
+                    (paragraph []
+                        [ el []
+                            (el [] (text Testable.Generator.lorem))
+                        ]
+                    )
+                ]
+            , el [ Font.size 32 ] (text "Nested with link")
+            , paragraph []
+                [ text "This is a paragraph with a "
+                , link []
+                    { label =
                         el [ Font.bold ] <|
                             text "child"
                     , url = "http://example.com"
                     }
                 , text " of depth two."
+                ]
+            , el [ Font.size 32 ] (text "Para with boxes")
+            , paragraph []
+                [ text Testable.Generator.short
+                , Testable.Generator.box
+                , text Testable.Generator.short
+
+                -- , text Testable.Generator.lorem
+                , Testable.Generator.box
+                ]
+            , el [ Font.size 32 ] (text "Row with boxes")
+            , paragraph []
+                [ text Testable.Generator.short
+                , row []
+                    [ Testable.Generator.box
+                    , text Testable.Generator.short
+                    , Testable.Generator.box
+
+                    -- , text Testable.Generator.lorem
+                    ]
+                , text Testable.Generator.short
+
+                -- , text Testable.Generator.lorem
+                , Testable.Generator.box
+                , paragraph []
+                    [ text "This is a paragraph with a "
+                    , el [ Font.bold ] <| text "child"
+                    , text " of depth one."
+                    ]
+                ]
+            , el [ Font.size 32 ] (text "Row with boxes")
+            , paragraph []
+                [ text Testable.Generator.short
+                , row []
+                    [ Testable.Generator.box
+
+                    -- , text Testable.Generator.lorem
+                    , Testable.Generator.box
+
+                    -- , text Testable.Generator.lorem
+                    ]
+                , text Testable.Generator.short
+
+                -- , text Testable.Generator.lorem
+                , Testable.Generator.box
+                , paragraph []
+                    [ text "This is a paragraph with a "
+                    , el [ Font.bold ] <| text "child"
+                    , text " of depth one."
+                    ]
                 ]
             ]

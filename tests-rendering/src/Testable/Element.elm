@@ -136,8 +136,9 @@ link :
         }
     -> Testable.Element msg
 link attrs details =
-    -- TODO: this is not actually a link element!!
-    Testable.El (implicitWidthHeightShrink attrs) details.label
+    Testable.Link details.url
+        (implicitWidthHeightShrink attrs)
+        details.label
 
 
 clip =
@@ -570,6 +571,35 @@ widthHelper maybeMin maybeMax len =
                                       )
                                     ]
 
+                            Testable.Link _ _ _ ->
+                                let
+                                    childWidth child =
+                                        child.bbox.width
+
+                                    totalChildren =
+                                        context.children
+                                            |> List.map childWidth
+                                            |> List.append (List.map .width context.self.textMetrics)
+                                            |> List.sum
+
+                                    horizontalPadding =
+                                        context.self.bbox.padding.left + context.self.bbox.padding.right
+                                in
+                                listIf
+                                    [ ( (context.parentLayout /= Testable.InParagraph)
+                                            && (context.parentLayout /= Testable.InTextCol)
+                                      , Testable.rounded "equals children"
+                                            { expected = totalChildren + horizontalPadding
+                                            , found = context.self.bbox.width
+                                            }
+                                      )
+                                    , ( context.parentLayout /= Testable.AtRoot
+                                      , Testable.lessThanOrEqual "not larger than parent"
+                                            context.self.bbox.width
+                                            context.parent.bbox.width
+                                      )
+                                    ]
+
                             Testable.Row rowAttrs _ ->
                                 -- width of row is the sum of all children widths
                                 -- both text elements and others.
@@ -856,6 +886,34 @@ heightHelper maybeMin maybeMax len =
                     \context ->
                         case context.selfElement of
                             Testable.El _ _ ->
+                                let
+                                    childHeight child =
+                                        child.bbox.height
+                                in
+                                if List.isEmpty context.children then
+                                    -- context.self.textMetrics
+                                    --     |> List.map Testable.textHeight
+                                    --     |> List.sum
+                                    -- TODO: apparently the font metrics we have are for the literal characters rendered
+                                    -- not for the font itself.
+                                    [ Testable.todo "calculate height from actual text metrics"
+                                    ]
+
+                                else
+                                    [ expectRoundedEquality
+                                        { expected =
+                                            context.children
+                                                |> List.map childHeight
+                                                |> List.sum
+                                                |> (\h -> h + context.self.bbox.padding.top + context.self.bbox.padding.bottom)
+                                        , found = context.self.bbox.height
+                                        }
+                                    , Testable.lessThanOrEqual "not larger than parent"
+                                        context.self.bbox.height
+                                        context.parent.bbox.height
+                                    ]
+
+                            Testable.Link _ _ _ ->
                                 let
                                     childHeight child =
                                         child.bbox.height

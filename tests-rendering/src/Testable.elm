@@ -42,6 +42,7 @@ import Test exposing (Test)
 
 type Element msg
     = El (List (Attr msg)) (Element msg)
+    | Link String (List (Attr msg)) (Element msg)
     | Row (List (Attr msg)) (List (Element msg))
     | Column (List (Attr msg)) (List (Element msg))
     | TextColumn (List (Attr msg)) (List (Element msg))
@@ -89,6 +90,9 @@ toElementType : Element msg -> ElementType
 toElementType elem =
     case elem of
         El _ _ ->
+            ElType
+
+        Link _ _ _ ->
             ElType
 
         Row _ _ ->
@@ -331,6 +335,9 @@ getElementId level el =
         El attrs child ->
             id :: getElementId (0 :: level) child ++ attributeIDs attrs
 
+        Link _ attrs child ->
+            id :: getElementId (0 :: level) child ++ attributeIDs attrs
+
         Row attrs children ->
             id :: childrenIDs children ++ attributeIDs attrs
 
@@ -394,6 +401,13 @@ renderElement level el =
             Element.el
                 (id :: makeAttributes attrs)
                 (renderElement (0 :: level) child)
+
+        Link url attrs child ->
+            Element.link
+                (id :: makeAttributes attrs)
+                { url = url
+                , label = renderElement (0 :: level) child
+                }
 
         Row attrs children ->
             Element.row
@@ -586,6 +600,9 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                                 El _ _ ->
                                     InEl
 
+                                Link _ _ _ ->
+                                    InEl
+
                                 Row _ _ ->
                                     InRow
 
@@ -712,6 +729,9 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                 El attrs child ->
                     tests self attrs [ child ]
 
+                Link _ attrs child ->
+                    tests self attrs [ child ]
+
                 Row attrs children ->
                     tests self attrs children
 
@@ -799,6 +819,9 @@ addAttribute attr el =
     case el of
         El attrs child ->
             El (attr :: attrs) child
+
+        Link url attrs child ->
+            Link url (attr :: attrs) child
 
         Row attrs children ->
             Row (attr :: attrs) children
@@ -893,6 +916,9 @@ getSpacing el =
     in
     case el of
         El attrs _ ->
+            filterAttrs attrs
+
+        Link _ attrs _ ->
             filterAttrs attrs
 
         Row attrs _ ->
