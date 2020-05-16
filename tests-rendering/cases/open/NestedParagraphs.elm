@@ -1,4 +1,4 @@
-module Main exposing (..)
+module NestedParagraphs exposing (view)
 
 {-| Paragraph with children more than one level deep breaks flow
 
@@ -29,7 +29,7 @@ import Testable.Element as Element exposing (..)
 import Testable.Element.Font as Font
 
 
-main =
+view =
     layout [] <|
         column []
             [ paragraph []

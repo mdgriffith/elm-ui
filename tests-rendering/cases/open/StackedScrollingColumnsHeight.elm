@@ -16,13 +16,11 @@ to scroll or if both have enough content to scroll.
 
 -}
 
-import Html exposing (Html)
 import Testable.Element exposing (..)
 import Testable.Element.Background as Background
 
 
-main : Html msg
-main =
+view =
     layout [ height fill ] <|
         column [ height fill ]
             [ column

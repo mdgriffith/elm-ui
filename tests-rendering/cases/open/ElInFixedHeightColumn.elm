@@ -1,4 +1,4 @@
-module ElInFixedHeightColumn exposing (..)
+module ElInFixedHeightColumn exposing (view)
 
 {-| el inside a fixed height column is rendered with zero height in Safari
 
@@ -7,11 +7,12 @@ module ElInFixedHeightColumn exposing (..)
 If I put an el into a column of fixed height, the el is rendered with zero height
 in Safari:
 
-layout [] <|
-column
-[ width fill
-, height <| px 200
-][ el [ Border.width 3, Border.color <| rgb255 0 0 0 ] <| text "an element" ]
+    layout [] <|
+        column
+            [ width fill
+            , height <| px 200
+            ]
+            [ el [ Border.width 3, Border.color <| rgb255 0 0 0 ] <| text "an element" ]
 
 Adding htmlAttribute <| Attr.style "flex-basis" "auto" to the el is a workaround
 that fixes the problem in this instance.
@@ -27,7 +28,7 @@ import Testable.Element exposing (..)
 import Testable.Element.Border as Border
 
 
-main =
+view =
     layout [] <|
         column
             [ width fill

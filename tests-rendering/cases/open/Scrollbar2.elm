@@ -1,4 +1,4 @@
-module Main exposing (main, myElement, sidebar)
+module Scrollbar2 exposing (main, myElement, sidebar)
 
 import Element exposing (Element, alignRight, centerY, column, el, fill, height, padding, px, rgb255, row, spacing, text, width)
 import Element.Background as Background

@@ -1,4 +1,4 @@
-module InFrontSize exposing (main)
+module InFrontSize exposing (view)
 
 {-|
 
@@ -16,7 +16,7 @@ import Testable.Element.Background as Background
 import Testable.Element.Border as Border
 
 
-main =
+view =
     layout []
         (el
             [ width (px 100)

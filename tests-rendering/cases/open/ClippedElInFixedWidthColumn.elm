@@ -25,7 +25,7 @@ Adding htmlAttribute <| Attr.style "flex-basis" "auto" to clipped el is a workar
 import Testable.Element exposing (..)
 
 
-main =
+view =
     layout [ width fill, height fill ] <|
         column [ width <| px 300 ]
             [ el [ clip ] <| text "The quick brown fox" ]

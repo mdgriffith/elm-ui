@@ -2,6 +2,12 @@ module Tests.All exposing (main)
 
 {-| -}
 
+import ClippedElInFixedWidthColumn
+import ElInFixedHeightColumn
+import InFrontSize
+import NestedParagraphs
+import SafariBugIssue147
+import StackedScrollingColumnsHeight
 import Testable.Generator
 import Testable.Runner
 import Tests.Basic
@@ -13,6 +19,7 @@ import Tests.RowAlignment
 import Tests.RowSpacing
 import Tests.TextWrapping
 import Tests.Transparency
+import WeirdCentering
 
 
 main : Testable.Runner.TestableProgram
@@ -30,6 +37,19 @@ main =
           -- , Tuple.pair "Row Alignment" Tests.RowAlignment.view
           -- , Tuple.pair "Column Spacing" Tests.ColumnSpacing.view
           -- , Tuple.pair "Row Spacing" Tests.RowSpacing.view
-          [ Tuple.pair "Paragraph wrapping" Tests.TextWrapping.view
-          ]
+          --   [ Tuple.pair "Paragraph wrapping" Tests.TextWrapping.view
+          --   ]
+          -- ,
+          issues
         ]
+
+
+issues =
+    [ Testable.Runner.rename "Weird Centering" WeirdCentering.view
+    , Testable.Runner.rename "Stacked scrolling columns height" StackedScrollingColumnsHeight.view
+    , Testable.Runner.rename "Safari bug issue147" SafariBugIssue147.view
+    , Testable.Runner.rename "Nested paragraphs" NestedParagraphs.view
+    , Testable.Runner.rename "In front size" InFrontSize.view
+    , Testable.Runner.rename "El in fixed height column" ElInFixedHeightColumn.view
+    , Testable.Runner.rename "Clipped el in fixed width column" ClippedElInFixedWidthColumn.view
+    ]

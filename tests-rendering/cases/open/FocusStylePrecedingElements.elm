@@ -1,4 +1,4 @@
-module FocusStylePrecedingElements exposing (main)
+module FocusStylePrecedingElements exposing (view)
 
 {-|
 
@@ -27,7 +27,7 @@ import Testable.Element.Font as Font
 import Testable.Element.Input as Input
 
 
-main =
+view =
     layout [] <|
         column []
             [ Input.button [] { onPress = Nothing, label = text "Button" }

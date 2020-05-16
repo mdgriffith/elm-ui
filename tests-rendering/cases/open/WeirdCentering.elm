@@ -1,13 +1,11 @@
-module WeirdCentering exposing (main)
+module WeirdCentering exposing (view)
 
-import Html exposing (Html)
 import Testable.Element exposing (..)
 import Testable.Element.Background as Background
 
 
-main =
+view =
     layout [] <|
-        -- row [] [ el [] (text "Example with centerX:") ]
         column []
             [ text "Example with centerX:"
             , row

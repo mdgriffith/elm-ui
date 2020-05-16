@@ -1,4 +1,4 @@
-module SafariBugIssue147 exposing (main)
+module SafariBugIssue147 exposing (view)
 
 {-|
 
@@ -24,12 +24,10 @@ I was able to pinpoint the issue using git bisect to this fd08f1a commit, which 
 
 -}
 
-import Browser
-import Html exposing (Html)
 import Testable.Element exposing (..)
 
 
-main =
+view =
     layout [ height fill ] <|
         column
             [ height fill ]
