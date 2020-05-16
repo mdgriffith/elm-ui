@@ -988,14 +988,15 @@ tableHelper attrs config =
 
 {-| A paragraph will layout all children as wrapped, inline elements.
 
-    import Element
+    import Element exposing (el, paragraph, text)
     import Element.Font as Font
 
-    Element.paragraph []
-        [ text "lots of text ...."
-        , el [ Font.bold ] (text "this is bold")
-        , text "lots of text ...."
-        ]
+    view =
+        paragraph []
+            [ text "lots of text ...."
+            , el [ Font.bold ] (text "this is bold")
+            , text "lots of text ...."
+            ]
 
 This is really useful when you want to markup text by having some parts be bold, or some be links, or whatever you so desire.
 
@@ -1003,17 +1004,18 @@ Also, if a child element has `alignLeft` or `alignRight`, then it will be moved 
 
 This makes it particularly easy to do something like a [dropped capital](https://en.wikipedia.org/wiki/Initial).
 
-    import Element
+    import Element exposing (alignLeft, el, padding, paragraph, text)
     import Element.Font as Font
 
-    Element.paragraph []
-        [ el
-            [ alignLeft
-            , padding 5
+    view =
+        paragraph []
+            [ el
+                [ alignLeft
+                , padding 5
+                ]
+                (text "S")
+            , text "o much text ...."
             ]
-            (text "S")
-        , text "o much text ...."
-        ]
 
 Which will look something like
 
