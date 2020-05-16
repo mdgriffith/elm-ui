@@ -1361,13 +1361,12 @@ baseSheet =
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
             , Child (dot classes.any)
-                [ Prop "flex-basis" "0%"
-                , Descriptor (dot classes.heightExact)
-                    [ Prop "flex-basis" "auto"
-                    ]
-                , Descriptor (dot classes.column)
-                    [ Prop "flex-basis" "auto"
-                    ]
+                -- *Note* - While rows have flex-basis 0%,
+                -- which allows for the children of a row to default to their content size
+                -- This apparently is a different story for columns.
+                -- Safari has an issue if this is flex-basis: 0%, as it goes entirely to 0,
+                -- instead of the expected content size.
+                [ Prop "flex-basis" "auto"
                 ]
             , Child (dot classes.heightFill)
                 [ Prop "flex-grow" "100000"
