@@ -28,17 +28,24 @@ main =
 
 
 view =
-    column [ paddingXY 0 100, spacing 16 ]
-        [ paragraph []
-            [ text Testable.Generator.lorem
+    el [] <|
+        paragraph []
+            [ Testable.Generator.box
             ]
-        , paragraph []
-            [ text Testable.Generator.lorem
-            , text Testable.Generator.lorem
-            ]
-        , paragraph []
-            [ text Testable.Generator.lorem
-            , paragraph []
-                [ text Testable.Generator.lorem ]
-            ]
-        ]
+
+
+
+-- column [ spacing 16 ]
+--     [ paragraph []
+--         [ el [] (text Testable.Generator.short)
+--         ]
+--     -- , paragraph []
+--     --     [ text Testable.Generator.lorem
+--     --     , text Testable.Generator.lorem
+--     --     ]
+--     -- , paragraph []
+--     --     [ text Testable.Generator.lorem
+--     --     , paragraph []
+--     --         [ text Testable.Generator.lorem ]
+--     --     ]
+--     ]

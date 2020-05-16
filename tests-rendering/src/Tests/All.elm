@@ -18,7 +18,9 @@ import Tests.Transparency
 main : Testable.Runner.TestableProgram
 main =
     (Testable.Runner.program << List.concat)
-        [ -- Testable.Generator.element "Basics" []
+        [ --Testable.Generator.element "Basics"
+          --[]
+          -- , Testable.Generator.element "Align " []
           --     Tuple.pair "Basic Element" Tests.Basic.view
           -- , Tuple.pair "Nearby" Tests.Nearby.view
           -- , Tuple.pair "Element Alignment" Tests.ElementAlignment.view

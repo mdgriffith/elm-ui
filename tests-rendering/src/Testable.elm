@@ -162,6 +162,9 @@ type LayoutContext
     | InRow
     | InEl
     | InColumn
+    | InParagraph
+    | InTextCol
+    | AtRoot
 
 
 type alias Surroundings msg =
@@ -491,7 +494,7 @@ runTests harvested el =
                 , parentSpacing = 0
                 , level = [ 0, 0 ]
                 , element = el
-                , location = InEl
+                , location = AtRoot
                 }
 
 
@@ -590,10 +593,10 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                                     InColumn
 
                                 TextColumn _ _ ->
-                                    InColumn
+                                    InTextCol
 
                                 Paragraph _ _ ->
-                                    InRow
+                                    InParagraph
 
                                 Text _ ->
                                     InEl

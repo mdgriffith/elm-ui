@@ -3,9 +3,9 @@ port module Testable.Runner exposing
     , Testable
     , TestableProgram
     , program
+    , rename
     , show
     , testable
-    , rename
     )
 
 {-| -}
@@ -108,7 +108,8 @@ type alias Model msg =
 
 
 type alias WithResults thing =
-    { element : thing
+    { index : Int
+    , element : thing
     , label : String
     , results :
         List Testable.LayoutTest
@@ -170,13 +171,14 @@ type Msg
         )
 
 
-runTest : Dict String Testable.Found -> String -> Testable.Element msg -> WithResults (Testable.Element msg)
-runTest boxes label element =
+runTest : Int -> Dict String Testable.Found -> String -> Testable.Element msg -> WithResults (Testable.Element msg)
+runTest index boxes label element =
     let
         results =
             Testable.runTests boxes element
     in
-    { element = element
+    { index = index
+    , element = element
     , label = label
     , results = results
     }
@@ -222,7 +224,7 @@ update msg model =
                                 |> Dict.fromList
 
                         currentResults =
-                            runTest foundData label current
+                            runTest (List.length model.finished) foundData label current
                     in
                     case model.upcoming of
                         [] ->
@@ -267,8 +269,6 @@ view model =
                 let
                     selected =
                         getByIndex model.selected model.finished
-
-                    -- |> Debug.log "selected"
                 in
                 Element.layout
                     [ Font.size 16
@@ -316,7 +316,10 @@ view model =
                             , Element.height Element.fill
                             , Element.scrollbarY
                             ]
-                            (List.indexedMap (viewResult model.selected) model.finished)
+                            (model.finished
+                                |> List.sortBy hasFailure
+                                |> List.map (viewResult model.selected)
+                            )
                         ]
 
             else
@@ -370,9 +373,35 @@ viewElementHighlight model =
                 ]
 
 
-viewResult : Int -> Int -> WithResults (Testable.Element Msg) -> Element.Element Msg
-viewResult selectedIndex index myTest =
-    if index == selectedIndex then
+hasFailure : WithResults (Testable.Element Msg) -> Int
+hasFailure myTest =
+    if
+        List.any
+            (not << isPassing)
+            myTest.results
+    then
+        0
+
+    else
+        1
+
+
+isExpectationPassing result =
+    case result of
+        Testable.Todo label ->
+            True
+
+        Testable.Expect details ->
+            details.result
+
+
+isPassing layoutTest =
+    List.all isExpectationPassing layoutTest.expectations
+
+
+viewResult : Int -> WithResults (Testable.Element Msg) -> Element.Element Msg
+viewResult selectedIndex myTest =
+    if myTest.index == selectedIndex then
         Element.column
             [ Element.alignLeft
             , Element.spacing 16
@@ -388,17 +417,6 @@ viewResult selectedIndex index myTest =
 
     else
         let
-            isExpectationPassing result =
-                case result of
-                    Testable.Todo label ->
-                        True
-
-                    Testable.Expect details ->
-                        details.result
-
-            isPassing layoutTest =
-                List.all isExpectationPassing layoutTest.expectations
-
             ( passing, failing ) =
                 List.partition isPassing myTest.results
         in
@@ -406,10 +424,10 @@ viewResult selectedIndex index myTest =
             [ Element.alignLeft
             , Element.spacing 16
             , Element.pointer
-            , Events.onClick (Select index)
+            , Events.onClick (Select myTest.index)
             ]
             [ Element.row [ Element.spacing 16 ]
-                [ Element.el [ Font.size 24 ] (Element.text myTest.label)
+                [ Element.el [ Font.size 16 ] (Element.text myTest.label)
                 , Element.text (String.fromInt (List.length passing) ++ " passing")
                 , let
                     failingCount =

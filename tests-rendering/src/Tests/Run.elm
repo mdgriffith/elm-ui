@@ -1,32 +1,14 @@
 module Tests.Run exposing (main)
 
-{-| -}
+{-| _NOTE_ this is auto-generated!  Notouchy!
+-}
 
-import Testable.Generator
+import ElInFixedHeightColumn
 import Testable.Runner
-import Tests.Basic
-import Tests.ColumnAlignment
-import Tests.ColumnSpacing
-import Tests.ElementAlignment
-import Tests.Nearby
-import Tests.RowAlignment
-import Tests.RowSpacing
-import Tests.TextWrapping
-import Tests.Transparency
 
 
 main : Testable.Runner.TestableProgram
 main =
-    (Testable.Runner.program << List.concat)
-        [ -- Testable.Generator.element "Basics" []
-          --     Tuple.pair "Basic Element" Tests.Basic.view
-          -- , Tuple.pair "Nearby" Tests.Nearby.view
-          -- , Tuple.pair "Element Alignment" Tests.ElementAlignment.view
-          -- , Tuple.pair "Transparency" Tests.Transparency.view
-          -- , Tuple.pair "Column Alignment" Tests.ColumnAlignment.view
-          -- -- This has 12k cases, so it runs slow and sometimes crashes IE
-          -- , Tuple.pair "Row Alignment" Tests.RowAlignment.view
-          -- , Tuple.pair "Column Spacing" Tests.ColumnSpacing.view
-          -- , Tuple.pair "Row Spacing" Tests.RowSpacing.view
-          [ Tuple.pair "Paragraph wrapping" Tests.TextWrapping.view ]
+    Testable.Runner.program 
+        [ Testable.Runner.rename " El In Fixed Height Column" ElInFixedHeightColumn.view
         ]
