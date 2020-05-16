@@ -1645,14 +1645,6 @@ baseSheet =
                     [ Prop "display" "inline"
                     , Prop "white-space" "normal"
                     ]
-
-                -- , Child (dot classes.single)
-                --     [ Prop "display" "inline"
-                --     , Child (dot classes.text)
-                --         [ Prop "display" "inline"
-                --         , Prop "white-space" "normal"
-                --         ]
-                --     ]
                 ]
             , Child (dot classes.row)
                 [ Prop "display" "inline-flex"
