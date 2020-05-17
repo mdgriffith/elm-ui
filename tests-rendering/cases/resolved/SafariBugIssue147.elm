@@ -29,8 +29,9 @@ import Testable.Element exposing (..)
 
 view =
     layout [ height fill ] <|
-        column
-            [ height fill ]
-            [ el [] <| text "Element that Safari gives height 0, if inside an el and not just text."
-            , text "Text below the el above"
-            ]
+        el [ height fill ] <|
+            column
+                [ height fill ]
+                [ el [] <| text "Element that Safari gives height 0, if inside an el and not just text."
+                , text "Text below the el above"
+                ]

@@ -102,9 +102,31 @@ view =
             , el [ Font.size 32 ] (text "Row with boxes")
             , paragraph []
                 [ text Testable.Generator.short
-                , row []
+                , row [ spacing 25 ]
                     [ Testable.Generator.box
                     , text Testable.Generator.short
+                    , Testable.Generator.box
+
+                    -- , text Testable.Generator.lorem
+                    ]
+                , text Testable.Generator.short
+
+                -- , text Testable.Generator.lorem
+                , Testable.Generator.box
+                , paragraph []
+                    [ text "This is a paragraph with a "
+                    , el [ Font.bold ] <| text "child"
+                    , text " of depth one."
+                    ]
+                ]
+            , el [ Font.size 32 ] (text "Row with boxes and lots of content")
+            , paragraph []
+                [ column [ alignLeft ]
+                    [ Testable.Generator.box, Testable.Generator.box, Testable.Generator.box ]
+                , text Testable.Generator.short
+                , row [ spacing 25 ]
+                    [ Testable.Generator.box
+                    , text Testable.Generator.lorem
                     , Testable.Generator.box
 
                     -- , text Testable.Generator.lorem
