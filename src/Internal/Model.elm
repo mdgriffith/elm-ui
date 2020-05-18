@@ -2642,34 +2642,14 @@ renderStyle options maybePseudo selector props =
                         renderedProps =
                             List.foldl (renderProps False) "" props
                     in
-                    [ selector
-                        ++ "-fs:focus {"
+                    [ selector ++ "-fs:focus {" ++ renderedProps ++ "\n}"
+                    , ("." ++ classes.any ++ ":focus " ++ selector ++ "-fs  {")
                         ++ renderedProps
                         ++ "\n}"
-                    , "."
-                        ++ classes.any
-                        ++ ":focus ~ "
-                        ++ selector
-                        ++ "-fs:not(.focus)  {"
+                    , (selector ++ "-fs:focus-within {")
                         ++ renderedProps
                         ++ "\n}"
-                    , "."
-                        ++ classes.any
-                        ++ ":focus "
-                        ++ selector
-                        ++ "-fs  {"
-                        ++ renderedProps
-                        ++ "\n}"
-                    , selector
-                        ++ "-fs:focus-within {"
-                        ++ renderedProps
-                        ++ "\n}"
-                    , ".focusable-parent:focus ~ "
-                        ++ "."
-                        ++ classes.any
-                        ++ " "
-                        ++ selector
-                        ++ "-fs {"
+                    , (".focusable-parent:focus ~ " ++ "." ++ classes.any ++ " " ++ selector ++ "-fs {")
                         ++ renderedProps
                         ++ "\n}"
                     ]
