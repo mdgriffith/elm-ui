@@ -1571,7 +1571,7 @@ baseSheet =
                             )
             ]
         , Descriptor (dot classes.inputMultiline)
-            [ Prop "white-space" "pre-wrap"
+            [ Prop "white-space" "pre-wrap !important"
             , Prop "height" "100%"
             , Prop "width" "100%"
             , Prop "background-color" "transparent"
@@ -1591,10 +1591,10 @@ baseSheet =
                 [ Prop "flex-basis" "auto" ]
             ]
         , Descriptor (dot classes.inputMultilineParent)
-            [ Prop "white-space" "pre-wrap"
+            [ Prop "white-space" "pre-wrap !important"
             , Prop "cursor" "text"
             , Child (dot classes.inputMultilineFiller)
-                [ Prop "white-space" "pre-wrap"
+                [ Prop "white-space" "pre-wrap !important"
                 , Prop "color" "transparent"
                 ]
             ]
