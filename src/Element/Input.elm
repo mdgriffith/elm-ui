@@ -132,9 +132,11 @@ Instead of implicit submission behavior, [try making an `onEnter` event handler 
 
 And no one has to look up obtuse html documentation to understand the behavior of their code :).
 
+
 # File Inputs
 
 Presently, elm-ui does not expose a replacement for `<input type="file">`; in the meantime, an `Input.button` and `elm/file`'s `File.Select` may meet your needs.
+
 
 # Disabling Inputs
 
@@ -866,10 +868,10 @@ textHelper textInput attrs textOptions =
                     -- when things are off by a pixel or two.
                     -- (or at least when the browser *thinks* it's off by a pixel or two)
                     Just
-                        { top = max 0 (floor (toFloat t - 3))
-                        , right = max 0 (floor (toFloat r - 3))
-                        , bottom = max 0 (floor (toFloat b - 3))
-                        , left = max 0 (floor (toFloat l - 3))
+                        { top = max 0 (floor (t - 3))
+                        , right = max 0 (floor (r - 3))
+                        , bottom = max 0 (floor (b - 3))
+                        , left = max 0 (floor (l - 3))
                         }
 
                 _ ->
@@ -1312,23 +1314,36 @@ redistributeOver isMultiline stacked attr els =
                         Element.htmlAttribute
                             (Html.Attributes.style
                                 "height"
-                                ("calc(1.0em + " ++ String.fromInt (2 * min t b) ++ "px)")
+                                ("calc(1.0em + " ++ String.fromFloat (2 * min t b) ++ "px)")
                             )
 
                     newLineHeight =
                         Element.htmlAttribute
                             (Html.Attributes.style
                                 "line-height"
-                                ("calc(1.0em + " ++ String.fromInt (2 * min t b) ++ "px)")
+                                ("calc(1.0em + " ++ String.fromFloat (2 * min t b) ++ "px)")
                             )
 
+                    newTop =
+                        t - min t b
+
+                    newBottom =
+                        b - min t b
+
                     reducedVerticalPadding =
-                        Element.paddingEach
-                            { top = t - min t b
-                            , right = r
-                            , bottom = b - min t b
-                            , left = l
-                            }
+                        Internal.StyleClass Flag.padding
+                            (Internal.PaddingStyle
+                                (Internal.paddingNameFloat
+                                    newTop
+                                    r
+                                    newBottom
+                                    l
+                                )
+                                newTop
+                                r
+                                newBottom
+                                l
+                            )
                 in
                 { els
                     | parent = reducedVerticalPadding :: els.parent
