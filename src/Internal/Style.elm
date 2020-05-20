@@ -1231,6 +1231,7 @@ baseSheet =
             -- If it's 1, it bumps up to something like 1.2
             [ Prop "line-height" "1.05"
             , Prop "background" "transparent"
+            , Prop "text-align" "inherit"
             ]
         , Descriptor (dot classes.single)
             elDescription
