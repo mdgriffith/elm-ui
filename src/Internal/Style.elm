@@ -257,6 +257,7 @@ classes =
     , inputMultilineParent = "imlp"
     , inputMultilineFiller = "imlf"
     , inputMultilineWrapper = "implw"
+    , inputLabel = "lbl"
 
     -- link
     , link = "lnk"
@@ -1357,6 +1358,9 @@ baseSheet =
             -- Must be below the alignment rules or else it interferes
             , Descriptor (dot classes.spaceEvenly)
                 [ Prop "justify-content" "space-between"
+                ]
+            , Descriptor (dot classes.inputLabel)
+                [ Prop "align-items" "baseline"
                 ]
             ]
         , Descriptor (dot classes.column)

@@ -1612,28 +1612,28 @@ applyLabel attrs label input =
                     Internal.element
                         Internal.asColumn
                         (Internal.NodeName "label")
-                        attrs
+                        (Internal.htmlClass classes.inputLabel :: attrs)
                         (Internal.Unkeyed [ labelElement, input ])
 
                 Below ->
                     Internal.element
                         Internal.asColumn
                         (Internal.NodeName "label")
-                        attrs
+                        (Internal.htmlClass classes.inputLabel :: attrs)
                         (Internal.Unkeyed [ input, labelElement ])
 
                 OnRight ->
                     Internal.element
                         Internal.asRow
                         (Internal.NodeName "label")
-                        attrs
+                        (Internal.htmlClass classes.inputLabel :: attrs)
                         (Internal.Unkeyed [ input, labelElement ])
 
                 OnLeft ->
                     Internal.element
                         Internal.asRow
                         (Internal.NodeName "label")
-                        attrs
+                        (Internal.htmlClass classes.inputLabel :: attrs)
                         (Internal.Unkeyed [ labelElement, input ])
 
 
