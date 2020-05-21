@@ -1606,6 +1606,7 @@ baseSheet =
         , Descriptor (dot classes.paragraph)
             [ Prop "display" "block"
             , Prop "white-space" "normal"
+            , Prop "overflow-wrap" "break-word"
             , Descriptor (dot classes.hasBehind)
                 [ Prop "z-index" "0"
                 , Child (dot classes.behind)
