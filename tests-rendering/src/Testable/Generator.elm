@@ -20,12 +20,68 @@ element : String -> List (Testable.Attr msg) -> List ( String, Testable.Element 
 element label attrs =
     -- [ ( label, paragraph attrs [ short ] )
     -- ]
+    mapEveryCombo
+        (\( selfLabel, makeSelf ) ( childLabel, child ) ->
+            ( label ++ " - " ++ selfLabel ++ " > " ++ childLabel
+            , makeSelf attrs child
+            )
+        )
+        layouts
+        contents
+
+
+{-| Given a list of attributes, generate every context this list of attributes could be in.
+
+So, this means,
+
+    - every element type
+    - in every element type
+
+-}
+elementInLayout : String -> List (Testable.Attr msg) -> List ( String, Testable.Element msg )
+elementInLayout label attrs =
+    -- [ ( label, paragraph attrs [ short ] )
+    -- ]
     mapEveryCombo3
         (\( layoutLabel, makeLayout ) ( selfLabel, makeSelf ) ( childLabel, child ) ->
             ( label ++ " - " ++ layoutLabel ++ " > " ++ selfLabel ++ " > " ++ childLabel
             , makeLayout [] (makeSelf attrs child)
             )
         )
+        layouts
+        layouts
+        contents
+
+
+{-| Sometimes we want to try a whole bunch of combinations of attributes
+
+This makes it a bit easier to construct
+
+-}
+elementWith : String -> List ( String, List (Testable.Attr msg) ) -> List ( String, Testable.Element msg )
+elementWith label labelAttrs =
+    mapEveryCombo3
+        (\( attrLabel, attrs ) ( selfLabel, makeSelf ) ( childLabel, child ) ->
+            ( label ++ " - " ++ selfLabel ++ " with " ++ attrLabel ++ " > " ++ childLabel
+            , makeSelf attrs child
+            )
+        )
+        labelAttrs
+        layouts
+        contents
+
+
+{-| This varies the layout element that an element is in.
+-}
+elementInLayoutWith : String -> List ( String, List (Testable.Attr msg) ) -> List ( String, Testable.Element msg )
+elementInLayoutWith label labelAttrs =
+    mapEveryCombo4
+        (\( attrLabel, attrs ) ( layoutLabel, makeLayout ) ( selfLabel, makeSelf ) ( childLabel, child ) ->
+            ( label ++ " - " ++ layoutLabel ++ " > " ++ selfLabel ++ " with " ++ attrLabel ++ " > " ++ childLabel
+            , makeLayout [] (makeSelf attrs child)
+            )
+        )
+        labelAttrs
         layouts
         layouts
         contents
@@ -56,19 +112,30 @@ layouts =
 
 
 nearbys =
-    [ inFront
-    , above
-    , onLeft
-    , onRight
-    , below
-    , behindContent
+    [ ( "inFront", inFront )
+    , ( "above", above )
+    , ( "onLeft", onLeft )
+    , ( "onRight", onRight )
+    , ( "below", below )
+    , ( "behindContent", behindContent )
+    ]
+
+
+alignments =
+    [ Tuple.pair "alignLeft" alignLeft
+    , Tuple.pair "alignRight" alignRight
+    , Tuple.pair "alignTop" alignTop
+    , Tuple.pair "alignBottom" alignBottom
+    , Tuple.pair "centerX" centerX
+    , Tuple.pair "centerY" centerY
     ]
 
 
 contents =
     [ ( "none", none )
     , ( "short text", text short )
-    , ( "long text", text lorem )
+
+    -- , ( "long text", text lorem )
     , ( "box"
       , box
       )
@@ -113,6 +180,26 @@ mapEveryCombo3 fn listOne listTwo listThree =
                     List.map
                         (\three ->
                             fn one two three
+                        )
+                        listThree
+                )
+                listTwo
+        )
+        listOne
+
+
+mapEveryCombo4 fn listOne listTwo listThree listFour =
+    List.concatMap
+        (\one ->
+            List.concatMap
+                (\two ->
+                    List.concatMap
+                        (\three ->
+                            List.map
+                                (\four ->
+                                    fn one two three four
+                                )
+                                listFour
                         )
                         listThree
                 )
