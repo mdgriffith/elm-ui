@@ -149,6 +149,9 @@
 
     app.ports.report.subscribe(function (results) {
       test_results = results;
+      // NOTE -  this is the signal to the automation that it is cool to retrieve results now
+      // So don't remove this like you did before :D
+      document.title = "tests finished";
     });
 
     app.ports.analyze.subscribe(function (ids) {

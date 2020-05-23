@@ -1,4 +1,4 @@
-module SafariBugIssue147 exposing (view)
+module Layout.SafariBugIssue147 exposing (view)
 
 {-|
 
