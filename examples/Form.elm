@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Form exposing (..)
 
 {-| -}
 
@@ -80,7 +80,14 @@ view model =
         [ Font.size 20
         ]
     <|
-        Element.column [ width (px 800), height shrink, centerY, centerX, spacing 36, padding 10, explain Debug.todo ]
+        Element.column
+            [ width (px 800)
+            , height shrink
+            , centerY
+            , centerX
+            , spacing 36
+            , padding 10
+            ]
             [ el
                 [ Region.heading 1
                 , alignLeft
@@ -117,7 +124,7 @@ view model =
                 , onChange = \new -> Update { model | username = new }
                 , label = Input.labelAbove [ Font.size 14 ] (text "Username")
                 }
-            , Input.currentPassword [ spacing 12, width shrink ]
+            , Input.currentPassword [ spacing 12 ]
                 { text = model.password
                 , placeholder = Nothing
                 , onChange = \new -> Update { model | password = new }
@@ -193,7 +200,8 @@ view model =
                 , Border.color darkBlue
                 , paddingXY 32 16
                 , Border.rounded 3
-                , width fill
+
+                -- , width fill
                 ]
                 { onPress = Nothing
                 , label = Element.text "Place your lunch order!"
