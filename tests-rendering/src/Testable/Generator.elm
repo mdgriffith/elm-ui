@@ -40,8 +40,6 @@ So, this means,
 -}
 elementInLayout : String -> List (Testable.Attr msg) -> List ( String, Testable.Element msg )
 elementInLayout label attrs =
-    -- [ ( label, paragraph attrs [ short ] )
-    -- ]
     mapEveryCombo3
         (\( layoutLabel, makeLayout ) ( selfLabel, makeSelf ) ( childLabel, child ) ->
             ( label ++ " - " ++ layoutLabel ++ " > " ++ selfLabel ++ " > " ++ childLabel
@@ -73,16 +71,25 @@ elementWith label labelAttrs =
 
 {-| This varies the layout element that an element is in.
 -}
-elementInLayoutWith : String -> List ( String, List (Testable.Attr msg) ) -> List ( String, Testable.Element msg )
+elementInLayoutWith :
+    String
+    ->
+        List
+            ( String
+            , { self : List (Testable.Attr msg)
+              , parent : List (Testable.Attr msg)
+              }
+            )
+    -> List ( String, Testable.Element msg )
 elementInLayoutWith label labelAttrs =
     mapEveryCombo4
         (\( attrLabel, attrs ) ( layoutLabel, makeLayout ) ( selfLabel, makeSelf ) ( childLabel, child ) ->
             ( label ++ " - " ++ layoutLabel ++ " > " ++ selfLabel ++ " with " ++ attrLabel ++ " > " ++ childLabel
-            , makeLayout [] (makeSelf attrs child)
+            , makeLayout attrs.parent (makeSelf attrs.self child)
             )
         )
         labelAttrs
-        layouts
+        allLayouts
         layouts
         contents
 
@@ -111,6 +118,70 @@ layouts =
     ]
 
 
+allElements =
+    [ ( "el"
+      , \attrs child ->
+            el attrs child
+      )
+    , ( "row"
+      , \attrs child ->
+            row attrs [ child ]
+      )
+    , ( "col"
+      , \attrs child ->
+            column attrs [ child ]
+      )
+    , ( "para"
+      , \attrs child ->
+            paragraph attrs [ child ]
+      )
+    , ( "txtCol"
+      , \attrs child ->
+            textColumn attrs [ child ]
+      )
+    ]
+
+
+allLayouts =
+    [ ( "el"
+      , \attrs child ->
+            el attrs child
+      )
+    , ( "row 3, self 1"
+      , \attrs child ->
+            row attrs [ child, box, box ]
+      )
+    , ( "row 3, self 2"
+      , \attrs child ->
+            row attrs [ box, child, box ]
+      )
+    , ( "row 3, self 3"
+      , \attrs child ->
+            row attrs [ box, box, child ]
+      )
+    , ( "col 3, self 1"
+      , \attrs child ->
+            column attrs [ child, box, box ]
+      )
+    , ( "col 3, self 2"
+      , \attrs child ->
+            column attrs [ box, child, box ]
+      )
+    , ( "col 3, self 3"
+      , \attrs child ->
+            column attrs [ box, box, child ]
+      )
+    , ( "para"
+      , \attrs child ->
+            paragraph attrs [ child ]
+      )
+    , ( "txtCol"
+      , \attrs child ->
+            textColumn attrs [ child ]
+      )
+    ]
+
+
 nearbys =
     [ ( "inFront", inFront )
     , ( "above", above )
@@ -122,13 +193,48 @@ nearbys =
 
 
 alignments =
+    horizontal ++ vertical
+
+
+horizontal =
     [ Tuple.pair "alignLeft" alignLeft
     , Tuple.pair "alignRight" alignRight
-    , Tuple.pair "alignTop" alignTop
-    , Tuple.pair "alignBottom" alignBottom
     , Tuple.pair "centerX" centerX
+    ]
+
+
+vertical =
+    [ Tuple.pair "alignTop" alignTop
+    , Tuple.pair "alignBottom" alignBottom
     , Tuple.pair "centerY" centerY
     ]
+
+
+extractLabel maybe =
+    maybe
+
+
+allAlignments =
+    mapEveryCombo
+        (\maybeOne maybeTwo ->
+            let
+                labels =
+                    List.filterMap (Maybe.map Tuple.first)
+                        [ maybeOne
+                        , maybeTwo
+                        ]
+
+                attrs =
+                    List.filterMap (Maybe.map Tuple.second)
+                        [ maybeOne
+                        , maybeTwo
+                        ]
+            in
+            Tuple.pair (String.join "++" labels)
+                attrs
+        )
+        (Nothing :: List.map Just horizontal)
+        (Nothing :: List.map Just vertical)
 
 
 contents =
@@ -250,3 +356,43 @@ lengths =
         |> maximum 100
         |> minimum 50
     ]
+
+
+type Generated thing
+    = Generated (List (Labeled thing))
+
+
+type alias Labeled thing =
+    ( String, thing )
+
+
+with : List (Labeled a) -> List (Labeled (a -> b)) -> List (Labeled b)
+with first funcs =
+    List.concatMap
+        (\( lbl, fst ) ->
+            List.map
+                (\( fnLbl, fn ) ->
+                    Tuple.pair (fnLbl ++ "+" ++ lbl) (fn fst)
+                )
+                funcs
+        )
+        first
+
+
+generate : String -> generated -> List (Labeled generated)
+generate lbl fn =
+    [ Tuple.pair lbl fn
+    ]
+
+
+test : List (Labeled (Testable.Element msg))
+test =
+    generate "Alignments"
+        (\align ->
+            el align none
+        )
+        |> with allAlignments
+
+
+
+-- |>
