@@ -66,38 +66,31 @@ view =
           , Tuple.pair "el with all nearbys and alignments" master
           , Tuple.pair "paragraph with all nearbys and alignments" masterParagraph
           ]
-        , Testable.Generator.elementWith "Nearbys"
-            (Testable.Generator.nearbys
-                |> List.map
-                    (\( nearbyLabel, nearby ) ->
-                        Tuple.pair nearbyLabel
-                            [ nearby (box [])
-                            , width (px 200)
-                            , height (px 200)
-                            , Background.color red
-                            ]
-                    )
+        , Testable.Generator.generate "Nearbys"
+            (\element nearby ->
+                element
+                    [ nearby (box [])
+                    , width (px 200)
+                    , height (px 200)
+                    , Background.color red
+                    ]
+                    none
             )
-        , Testable.Generator.elementWith "Nearbys with alignment"
-            (Testable.Generator.mapEveryCombo
-                (\( nearbyLabel, nearby ) ( alignmentLabel, align ) ->
-                    Tuple.pair (nearbyLabel ++ " ++ " ++ alignmentLabel)
-                        [ nearby (box [ align ])
-                        , width (px 200)
-                        , height (px 200)
-                        , Background.color red
-                        ]
-                )
-                Testable.Generator.nearbys
-                Testable.Generator.alignments
+            |> Testable.Generator.with Testable.Generator.allElements
+            |> Testable.Generator.with Testable.Generator.nearbys
+        , Testable.Generator.generate "Nearbys with alignment"
+            (\element nearby align ->
+                element
+                    [ nearby (box [ align ])
+                    , width (px 200)
+                    , height (px 200)
+                    , Background.color red
+                    ]
+                    none
             )
-
-        -- , nearby above "above" box
-        -- , nearby below "below" box
-        -- , nearby inFront "inFront" box
-        -- , nearby onRight "onRight" box
-        -- , nearby onLeft "onLeft" box
-        -- , nearby behindContent "behindContent" transparentBox
+            |> Testable.Generator.with Testable.Generator.allElements
+            |> Testable.Generator.with Testable.Generator.nearbys
+            |> Testable.Generator.with Testable.Generator.alignments
         ]
 
 
@@ -130,18 +123,6 @@ little name attrs =
             ++ attrs
         )
         none
-
-
-transparentBox attrs =
-    el
-        ([ Font.color white
-         , width (px 50)
-         , height (px 50)
-         , Background.color white
-         ]
-            ++ attrs
-        )
-        (text "hi")
 
 
 master =
@@ -196,241 +177,3 @@ masterParagraph =
             , inFront (little "infront-center-bottom" [ alignBottom, centerX ])
             , inFront (little "infront-right-bottom" [ alignBottom, alignRight ])
             ]
-
-
-nearbyOld location name render =
-    column [ spacing 32, label "column" ]
-        [ el [ padding 20, Background.color green, Font.color white ] (text name)
-        , row [ height (px 100), width fill, spacing 50 ]
-            [ render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignLeft
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , centerX
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignRight
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignTop
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , centerY
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignBottom
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            ]
-        , text "widths/heights"
-        , row [ height (px 100), width fill, spacing 50, label "Row" ]
-            [ render
-                [ location
-                    (el
-                        [ label name
-                        , width fill
-                        , height fill
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height fill
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ label "render"
-                , location
-                    (el
-                        [ label name
-                        , width fill
-                        , height (px 20)
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height shrink
-                        , Background.color darkCharcoal
-                        , Font.color white
-                        ]
-                        (text "h-shrink")
-                    )
-                ]
-            , render
-                [ location
-                    (el
-                        [ label name
-                        , width shrink
-                        , height (px 20)
-                        , Background.color darkCharcoal
-                        , Font.color white
-                        ]
-                        (text "w-shrink")
-                    )
-                ]
-            ]
-        , text "on paragraph"
-        , row [ width fill, spacing 50, label "Row" ]
-            [ p
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , p
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignLeft
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , p
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , centerX
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , p
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignRight
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , p
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignTop
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , p
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , centerY
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            , p
-                [ location
-                    (el
-                        [ label name
-                        , width (px 20)
-                        , height (px 20)
-                        , alignBottom
-                        , Background.color darkCharcoal
-                        ]
-                        none
-                    )
-                ]
-            ]
-        ]
