@@ -1,4 +1,4 @@
-module ZIndexRegression exposing (main)
+module Nearby.ZIndexRegression exposing (main)
 
 import Element exposing (..)
 import Element.Background as Background

@@ -1,4 +1,4 @@
-module OtherInFrontIssue exposing (main)
+module Nearby.OtherInFrontIssue exposing (main)
 
 import Browser
 import Element exposing (Element)

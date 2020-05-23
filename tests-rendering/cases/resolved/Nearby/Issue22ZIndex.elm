@@ -1,4 +1,4 @@
-module Issue22ZIndex exposing (main)
+module Nearby.Issue22ZIndex exposing (main)
 
 import Browser
 import Element as Ui exposing (..)

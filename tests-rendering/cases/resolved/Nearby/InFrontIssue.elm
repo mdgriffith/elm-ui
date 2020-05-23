@@ -1,4 +1,4 @@
-module InFrontIssue exposing (main)
+module Nearby.InFrontIssue exposing (view)
 
 import Browser
 import Element as Ui exposing (..)
@@ -7,26 +7,8 @@ import Element.Font as Font
 import Html exposing (Html)
 
 
-type alias Model =
-    {}
-
-
-initialModel : Model
-initialModel =
-    {}
-
-
-type Msg
-    = NoOp
-
-
-update : Msg -> Model -> Model
-update msg model =
-    model
-
-
-view : Model -> Html Msg
-view model =
+view : Html Msg
+view =
     let
         a =
             el
@@ -80,12 +62,3 @@ view model =
         , paddingXY 0 30
         ]
         b
-
-
-main : Program () Model Msg
-main =
-    Browser.sandbox
-        { init = initialModel
-        , view = view
-        , update = update
-        }

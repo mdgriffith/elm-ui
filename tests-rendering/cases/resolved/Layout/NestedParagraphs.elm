@@ -1,4 +1,4 @@
-module NestedParagraphs exposing (view)
+module Layout.NestedParagraphs exposing (view)
 
 {-| Paragraph with children more than one level deep breaks flow
 
