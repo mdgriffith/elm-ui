@@ -330,6 +330,8 @@ The `onPress` handler will be fired either `onClick` or when the element is focu
             , label = text "My Button"
             }
 
+**Note** If you have an icon button but want it to be accessible, consider adding a [`Region.description`](Element-Region#description), which will describe the button to screen readers.
+
 -}
 button :
     List (Attribute msg)

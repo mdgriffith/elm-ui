@@ -101,7 +101,11 @@ announce =
     Internal.Describe LivePolite
 
 
-{-| -}
+{-| Adds an `aria-label`, which is used by accessibility software to identity otherwise unlabeled elements.
+
+A common use for this would be to label buttons that only have an icon.
+
+-}
 description : String -> Attribute msg
 description =
     Internal.Describe << Internal.Label
