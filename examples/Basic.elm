@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Basic exposing (..)
 
 {-| -}
 

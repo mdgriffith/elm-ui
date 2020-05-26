@@ -1,5 +1,4 @@
-module Element exposing
-    ( Element, none, text, el
+module Element exposing ( Element, none, text, el
     , row, wrappedRow, column
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
@@ -15,7 +14,7 @@ module Element exposing
     , layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
     , link, newTabLink, download, downloadAs
     , image
-    , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
+    , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb, hex, hexOrRed
     , above, below, onRight, onLeft, inFront, behindContent
     , Attr, Decoration, mouseOver, mouseDown, focused
     , Device, DeviceClass(..), Orientation(..), classifyDevice
@@ -214,9 +213,17 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 
 import Html exposing (Html)
 import Html.Attributes
+import Array
+import Parser exposing (chompWhile, getChompedString, succeed, problem, Parser, (|.), (|=), run, end)
+import List.Extra exposing (elemIndex)
+import Result
+import Result.Extra exposing (combine)
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
+
+--TODO remove
+import Debug
 
 
 {-| -}
@@ -263,6 +270,120 @@ rgba255 red green blue a =
         (toFloat blue / 255)
         a
 
+
+{-| Parse hashtag of a hex code.
+
+-}
+hashtag : Parser ()
+hashtag =
+    chompWhile (\c -> c == '#')
+
+{- | -}
+concatChars a b =
+    String.concat [String.fromChar a, String.fromChar b]
+
+{- | Check if a hex code has the correct length.
+
+-}
+checkHexCode : String -> Result String String
+checkHexCode code =
+  let
+    strLen = String.length code
+  in
+    if strLen == 3 then
+        let
+            fullCode = String.join "" <| List.map (\c -> concatChars c c) <| String.toList code
+        in
+            Ok <| String.toUpper fullCode
+    else if strLen == 6 then
+        Ok <| String.toUpper code
+    else
+        Err "A color hex code has to be 3 or 6 characters long."
+
+{- | Will convert hexadecimal number to int.
+
+Assumes String has been checked using checkHexCode and HexParser.
+
+Will drop any chars that are not hex digits.
+-}
+checkedHexToInt : String -> Int
+checkedHexToInt code =
+    let
+        hexDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
+        charList = String.toList code
+        maybeIntList = List.map (\c -> elemIndex c hexDigits) charList
+        intList = List.filterMap identity maybeIntList
+        powerList = List.reverse (List.map (\x -> 16^x) <| List.range 0 (List.length intList - 1))
+        -- convert using base 16
+        fullInt = List.foldl (+) 0 <| List.map2 (\num pow -> num * pow) intList powerList
+    in
+        fullInt
+
+{- | Will convert hex String to Color.
+
+Assumes String has been checked using checkHexCode and hexParser.
+
+Will drop any chars that are not hex digits.
+
+Will Error if String does not have 6 chars.
+-}
+hexStrToColor : String -> Result String Color
+hexStrToColor str =
+    let
+        charList = String.toList str
+    in
+        case charList of
+            rA::rB::gA::gB::bA::bB::[] ->
+                Ok <| rgb255
+                        (checkedHexToInt <| concatChars rA rB)
+                        (checkedHexToInt <| concatChars gA gB)
+                        (checkedHexToInt <| concatChars bA bB)
+            _ ->
+                Err "Hex String should have 6 characters."
+
+{- | Parse Hex String containing 3 or 6 characters, optionally starting with a hashtag.
+
+All Chars must be valid hex digits.
+-}
+hexParser : Parser String
+hexParser =
+    succeed identity
+        |. hashtag
+        |= getChompedString (chompWhile Char.isHexDigit)
+        |. end
+
+{- | Convert valid hex String into Color
+
+Hex String may start with hashtag, must be 3 or 6 characters long with all characters being hex digits.
+
+Use hexOrRed if you do not want to deal with Result handling.
+-}
+hex : String -> Result String Color
+hex codeStr =
+    let
+        parseRes = run hexParser codeStr
+    in
+        case parseRes of
+            Ok parsedCodeStr ->
+                let
+                    lengthResult = checkHexCode parsedCodeStr
+                in
+                    case lengthResult of
+                        Ok hexStr ->
+                            let
+                                colorResult = hexStrToColor hexStr
+                            in
+                                colorResult
+                        
+                        Err e -> Err e
+            Err e -> Err "Not all characters in hex string were hex digits."
+            
+{- | Convert valid hex String into Color, will return the Color red for invalid hex strings.
+
+-}
+hexOrRed : String -> Color
+hexOrRed codeStr =
+    Result.withDefault (rgb255 255 0 0) (hex codeStr)
 
 {-| Create a color from an RGB record.
 -}

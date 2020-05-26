@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Form exposing (..)
 
 {-| -}
 
@@ -12,11 +12,11 @@ import Element.Region as Region
 
 
 white =
-    Element.rgb 1 1 1
+    Element.rgb255 255 255 255
 
 
 grey =
-    Element.rgb 0.9 0.9 0.9
+    Element.hexOrRed "#eee"
 
 
 blue =
@@ -24,11 +24,11 @@ blue =
 
 
 red =
-    Element.rgb 0.8 0 0
+    Element.rgb255 204 0 0
 
 
 darkBlue =
-    Element.rgb 0 0 0.9
+    Element.hexOrRed "0b2a91"
 
 
 main =
