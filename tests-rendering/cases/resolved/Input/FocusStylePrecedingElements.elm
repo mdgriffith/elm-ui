@@ -1,4 +1,4 @@
-module FocusStylePrecedingElements exposing (view)
+module FocusStylePrecedingElements exposing (main)
 
 {-|
 
@@ -22,12 +22,12 @@ Disabling it produces the correct focus behaviour.
 
 -}
 
-import Testable.Element exposing (..)
-import Testable.Element.Font as Font
-import Testable.Element.Input as Input
+import Element exposing (..)
+import Element.Font as Font
+import Element.Input as Input
 
 
-view =
+main =
     layout [] <|
         column []
             [ Input.button [] { onPress = Nothing, label = text "Button" }

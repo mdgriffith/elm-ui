@@ -17,6 +17,7 @@ program
   .option("--build [value]", "Set build number for sauce labs")
   .option("--name [value]", "Set run name for sauce labs")
   .option("--verbose", "Print out all test results")
+  .option("--headless", "run tests without showing the browser")
   .parse(process.argv);
 
 // 'Windows 10'
@@ -126,8 +127,13 @@ function prepare_sauce_driver(env) {
 }
 
 async function prepare_local_driver(env) {
-  const firefoxOptions = new firefox.Options().headless();
-  const chromeOptions = new chrome.Options().headless();
+  const firefoxOptions = new firefox.Options();
+  const chromeOptions = new chrome.Options();
+
+  if (program.headless) {
+    firefoxOptions.headless();
+    chromeOptions.headless();
+  }
 
   let driver = await new Builder()
     .forBrowser(env.browser)
@@ -163,7 +169,7 @@ async function run_test(driver, url) {
   await compile_and_embed({
     template: "./tests-rendering/automation/templates/gather-styles.html",
     target: "./tmp/test.html",
-    elm: "src/Tests/Run.elm",
+    elm: "src/Tests/All.elm",
     elmOptions: { cwd: "./tests-rendering" },
   });
   console.log("Done compiling");

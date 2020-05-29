@@ -1323,11 +1323,6 @@ newTabLink attrs { url, label } =
 
 
 {-| A link to download a file.
-
-**Note** If you're using `Browser.application`, then this won't be enough to actually trigger a file download due to how `Browser.Navigation` works.
-
-[Here's a description of what needs to happen](https://github.com/elm/html/issues/175).
-
 -}
 download :
     List (Attribute msg)
