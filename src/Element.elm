@@ -153,7 +153,7 @@ Add a scrollbar if the content is larger than the element.
 
 In order to use attributes like `Font.color` and `Background.color`, you'll need to make some colors!
 
-@docs Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
+@docs Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb, hex, hexOrRed
 
 
 # Nearby Elements
