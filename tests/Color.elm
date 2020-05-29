@@ -1,8 +1,9 @@
 module Color exposing (suite)
 
+import Element exposing (hex, hexOrRed, rgb255)
 import Expect
 import Test exposing (Test, test)
-import Element exposing (hex, rgb255)
+
 
 suite : Test
 suite =
@@ -37,6 +38,9 @@ suite =
         , test "3 digit hex code black" <|
             \_ ->
                 Expect.equal (Ok <| rgb255 0 0 0) (hex "#000")
+        , test "3 digit hex code black no hashtag lowercase hexOrRed" <|
+            \_ ->
+                Expect.equal (rgb255 0 0 0) (hexOrRed "000")
         , test "3 digit hex code red" <|
             \_ ->
                 Expect.equal (Ok <| rgb255 255 0 0) (hex "#F00")
@@ -49,6 +53,9 @@ suite =
         , test "fail on 5 digit hex code" <|
             \_ ->
                 Expect.equal (Err "A color hex code has to be 3 or 6 characters long.") (hex "f0000")
+        , test "Return red on 5 digit hex code for hexOrRed" <|
+            \_ ->
+                Expect.equal (rgb255 255 0 0) (hexOrRed "f0000")
         , test "fail on 2 digit hex code" <|
             \_ ->
                 Expect.equal (Err "A color hex code has to be 3 or 6 characters long.") (hex "a1")
@@ -64,10 +71,10 @@ suite =
         , test "fail on invalid hex characters with 3 digits" <|
             \_ ->
                 Expect.equal (Err "Not all characters in hex string were hex digits.") (hex "zaf")
-        , test "fail on spceial invalid hex characters" <|
+        , test "fail on special invalid hex characters" <|
             \_ ->
                 Expect.equal (Err "Not all characters in hex string were hex digits.") (hex ".abcde")
-        , test "fail on spceial invalid hex characters 2" <|
+        , test "fail on special invalid hex characters 2" <|
             \_ ->
                 Expect.equal (Err "Not all characters in hex string were hex digits.") (hex ".*/:)~")
         ]

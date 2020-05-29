@@ -270,39 +270,35 @@ rgba255 red green blue a =
         (toFloat blue / 255)
         a
 
-
-{-| Parse hashtag of a hex code.
-
--}
-hashtag : Parser ()
-hashtag =
-    chompWhile (\c -> c == '#')
-
 {- | -}
+concatChars : Char -> Char -> String
 concatChars a b =
     String.concat [String.fromChar a, String.fromChar b]
 
 {- | Check if a hex code has the correct length.
 
 -}
-checkHexCode : String -> Result String String
-checkHexCode code =
+checkHexCodeLength : String -> Result String String
+checkHexCodeLength code =
   let
     strLen = String.length code
   in
     if strLen == 3 then
         let
-            fullCode = String.join "" <| List.map (\c -> concatChars c c) <| String.toList code
+            fullCode = 
+                String.join ""
+                <| List.map (\c -> concatChars c c)
+                <| String.toList code
         in
-            Ok <| String.toUpper fullCode
+            Ok <| fullCode
     else if strLen == 6 then
-        Ok <| String.toUpper code
+        Ok <| code
     else
         Err "A color hex code has to be 3 or 6 characters long."
 
 {- | Will convert hexadecimal number to int.
 
-Assumes String has been checked using checkHexCode and HexParser.
+Assumes String has been checked using checkHexCodeLength and HexParser.
 
 Will drop any chars that are not hex digits.
 -}
@@ -311,8 +307,8 @@ checkedHexToInt code =
     let
         hexDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
         charList = String.toList code
-        maybeIntList = List.map (\c -> elemIndex c hexDigits) charList
-        intList = List.filterMap identity maybeIntList
+        maybeIndexList = List.map (\c -> elemIndex c hexDigits) charList
+        intList = List.filterMap identity maybeIndexList
         powerList = List.reverse (List.map (\x -> 16^x) <| List.range 0 (List.length intList - 1))
         -- convert using base 16
         fullInt = List.foldl (+) 0 <| List.map2 (\num pow -> num * pow) intList powerList
@@ -321,7 +317,7 @@ checkedHexToInt code =
 
 {- | Will convert hex String to Color.
 
-Assumes String has been checked using checkHexCode and hexParser.
+Assumes String has been checked using checkHexCodeLength and hexParser.
 
 Will drop any chars that are not hex digits.
 
@@ -341,6 +337,13 @@ hexStrToColor str =
             _ ->
                 Err "Hex String should have 6 characters."
 
+{-| Parse hashtag of a hex code.
+
+-}
+hashtag : Parser ()
+hashtag =
+    chompWhile (\c -> c == '#')
+    
 {- | Parse Hex String containing 3 or 6 characters, optionally starting with a hashtag.
 
 All Chars must be valid hex digits.
@@ -366,20 +369,16 @@ hex codeStr =
         case parseRes of
             Ok parsedCodeStr ->
                 let
-                    lengthResult = checkHexCode parsedCodeStr
+                    lengthCheckResult = checkHexCodeLength parsedCodeStr
                 in
-                    case lengthResult of
+                    case lengthCheckResult of
                         Ok hexStr ->
-                            let
-                                colorResult = hexStrToColor hexStr
-                            in
-                                colorResult
+                            hexStrToColor <| String.toUpper <| hexStr
                         
                         Err e -> Err e
             Err e -> Err "Not all characters in hex string were hex digits."
             
 {- | Convert valid hex String into Color, will return the Color red for invalid hex strings.
-
 -}
 hexOrRed : String -> Color
 hexOrRed codeStr =
