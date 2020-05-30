@@ -275,7 +275,7 @@ concatChars : Char -> Char -> String
 concatChars a b =
     String.concat [String.fromChar a, String.fromChar b]
 
-{- | Check if a hex code has the correct length.
+{-| Check if a hex code has the correct length.
 
 -}
 checkHexCodeLength : String -> Result String String
@@ -296,7 +296,7 @@ checkHexCodeLength code =
     else
         Err "A color hex code has to be 3 or 6 characters long."
 
-{- | Will convert hexadecimal number to int.
+{-| Will convert hexadecimal number to int.
 
 Assumes String has been checked using checkHexCodeLength and HexParser.
 
@@ -315,7 +315,7 @@ checkedHexToInt code =
     in
         fullInt
 
-{- | Will convert hex String to Color.
+{-| Will convert hex String to Color.
 
 Assumes String has been checked using checkHexCodeLength and hexParser.
 
@@ -344,7 +344,7 @@ hashtag : Parser ()
 hashtag =
     chompWhile (\c -> c == '#')
     
-{- | Parse Hex String containing 3 or 6 characters, optionally starting with a hashtag.
+{-| Parse Hex String containing 3 or 6 characters, optionally starting with a hashtag.
 
 All Chars must be valid hex digits.
 -}
@@ -355,7 +355,7 @@ hexParser =
         |= getChompedString (chompWhile Char.isHexDigit)
         |. end
 
-{- | Convert valid hex String into Color
+{-| Convert valid hex String into Color
 
 Hex String may start with hashtag, must be 3 or 6 characters long with all characters being hex digits.
 
@@ -378,7 +378,7 @@ hex codeStr =
                         Err e -> Err e
             Err e -> Err "Not all characters in hex string were hex digits."
             
-{- | Convert valid hex String into Color, will return the Color red for invalid hex strings.
+{-| Convert valid hex String into Color, will return the Color red for invalid hex strings.
 -}
 hexOrRed : String -> Color
 hexOrRed codeStr =
