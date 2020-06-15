@@ -257,6 +257,10 @@ a {
   text-decoration: underline;
 }
 
+.se.dashed {
+  text-decoration: dashed;
+}
+
 .se.width-content {
   width: auto;
 }

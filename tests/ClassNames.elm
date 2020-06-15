@@ -155,6 +155,7 @@ allClassNameFns =
     , ( .textHeavy, "textHeavy" )
     , ( .italic, "italic" )
     , ( .strike, "strike" )
+    , ( .dashed, "dashed" )
     , ( .underline, "underline" )
     , ( .textUnitalicized, "textUnitalicized" )
 

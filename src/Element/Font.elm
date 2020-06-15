@@ -3,7 +3,7 @@ module Element.Font exposing
     , family, Font, typeface, serif, sansSerif, monospace
     , external
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
-    , underline, strike, italic, unitalicized
+    , underline, dashed, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
     , Variant, variant, variantList, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
@@ -46,7 +46,7 @@ module Element.Font exposing
 
 ## Font Styles
 
-@docs underline, strike, italic, unitalicized
+@docs underline, dashed, strike, italic, unitalicized
 
 
 ## Font Weight
@@ -262,6 +262,11 @@ justify =
 underline : Attribute msg
 underline =
     Internal.htmlClass classes.underline
+
+{-| -}
+dashed : Attribute msg
+dashed =
+    Internal.htmlClass classes.dashed
 
 
 {-| -}
