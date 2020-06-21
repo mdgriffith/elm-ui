@@ -6,6 +6,7 @@ module Internal.Flag exposing
     , alignBottom
     , alignRight
     , behind
+    , bg
     , bgColor
     , bgGradient
     , bgImage
@@ -323,3 +324,7 @@ heightTextAreaContent =
 
 fontVariant =
     flag 48
+
+
+bg =
+    flag 49
