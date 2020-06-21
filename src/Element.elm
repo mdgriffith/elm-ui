@@ -20,6 +20,7 @@ module Element exposing
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , map, mapAttribute
     , html, htmlAttribute
+    , clip, scrollbarY
     )
 
 {-|
