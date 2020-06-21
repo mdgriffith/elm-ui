@@ -925,7 +925,6 @@ baseSheet =
         , Descriptor (dot classes.column)
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
-            , Prop "contain" "content"
             , Child (dot classes.any)
                 -- *Note* - While rows have flex-basis 0%,
                 -- which allows for the children of a row to default to their content size
