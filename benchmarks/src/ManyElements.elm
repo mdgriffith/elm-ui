@@ -315,7 +315,10 @@ elmUI name count =
     , view =
         \model ->
             Element.layout []
-                (Element.column [ spacing 8, centerX ]
+                (Element.column
+                    [ spacing ((model.index |> modBy 2) * 8)
+                    , centerX
+                    ]
                     (List.map (viewEl model.index) model.elements)
                 )
     , update =
