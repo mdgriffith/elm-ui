@@ -427,16 +427,17 @@ maximum i l =
     Internal.Max i l
 
 
-{-| `fillPortion` is currently just a proxy for `flex-grow`, which is sometimes misunderstood to specify length
-as a portion of the parent's length, relative to siblings' `flex-grow` values. In fact, `flex-grow` only governs 
-distribution of *excess* space along the parent's central flex axis—that is, space that remains *after* the 
-children have been rendered once. So, `fillPortion` does not yet behave exactly as its name implies (unless you're 
-so fluent in CSS that this is not surprising to you!).
+{-| `fillPortion` is currently just a proxy for `flex-grow`, which is sometimes misunderstood 
+to specify length as a portion of the parent's length, relative to siblings' `flex-grow` values. 
+In fact, `flex-grow` only governs distribution of *excess* space along the parent's central flex 
+axis—that is, space that remains *after* the children have been rendered once. So, `fillPortion` 
+does not yet behave exactly as its name implies (unless you're so fluent in CSS that this is not 
+surprising to you!).
 
-As a workaround, in order to express length as a portion of the parent's central axis and relative to siblings'
-`fillPortion` values, you must also set the width on the children to 0 (probably using a custom css class); this 
-will allow `flex-grow` to distribute the entirety of the parent's length to its children according to their `fillPortion`
-values.
+As a workaround, in order to express length as a portion of the parent's central axis and relative 
+to siblings' `fillPortion` values, you must also set the width on the children to 0 (probably using 
+a custom css class); this will allow `flex-grow` to distribute the entirety of the parent's length 
+to its children according to their `fillPortion` values.
 
 **Also:** `fill == fillPortion 1`
 
