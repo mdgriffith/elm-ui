@@ -1,6 +1,7 @@
 module Element.Background exposing
     ( color, gradient
     , image, uncropped, tiled, tiledX, tiledY
+    , blur
     )
 
 {-|
@@ -13,6 +14,10 @@ module Element.Background exposing
 @docs image, uncropped, tiled, tiledX, tiledY
 
 **Note** if you want more control over a background image than is provided here, you should try just using a normal `Element.image` with something like `Element.behindContent`.
+
+# Effects
+
+@docs blur
 
 -}
 
@@ -125,6 +130,16 @@ gradient { angle, steps } =
                 Internal.Single ("bg-grad-" ++ (String.join "-" <| Internal.floatClass angle :: List.map Internal.formatColorClass steps))
                     "background-image"
                     ("linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Internal.formatColor steps) ++ ")")
+
+{-| Creates a blurred background effect.
+
+-}
+blur : Float -> Attribute msg
+blur radius =
+    Internal.BatchAttr
+        [ VirtualDom.style "-webkit-backdrop-filter" ("blur(" ++ String.fromFloat radius ++ "px)")
+        , VirtualDom.style "backdrop-filter" ("blur(" ++ String.fromFloat radius ++ "px)")
+        ]
 
 
 
