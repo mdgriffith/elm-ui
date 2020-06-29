@@ -52,29 +52,29 @@ suite =
                 Expect.equal (Ok <| rgb255 255 0 0) (hex "f00")
         , test "fail on 5 digit hex code" <|
             \_ ->
-                Expect.equal (Err "A color hex code has to be 3 or 6 characters long.") (hex "f0000")
+                Expect.equal (Err "f0000 does not contain 3 or 6 hex digits.") (hex "f0000")
         , test "Return red on 5 digit hex code for hexOrRed" <|
             \_ ->
                 Expect.equal (rgb255 255 0 0) (hexOrRed "f0000")
         , test "fail on 2 digit hex code" <|
             \_ ->
-                Expect.equal (Err "A color hex code has to be 3 or 6 characters long.") (hex "a1")
+                Expect.equal (Err "a1 does not contain 3 or 6 hex digits.") (hex "a1")
         , test "fail on empty string" <|
             \_ ->
-                Expect.equal (Err "A color hex code has to be 3 or 6 characters long.") (hex "")
+                Expect.equal (Err " does not contain 3 or 6 hex digits.") (hex "")
         , test "fail on invalid hex characters" <|
             \_ ->
-                Expect.equal (Err "Not all characters in hex string were hex digits.") (hex "f1a23g")
+                Expect.equal (Err "f1a23g does not entirely consist of hex digits.") (hex "f1a23g")
         , test "fail on invalid hex characters 2" <|
             \_ ->
-                Expect.equal (Err "Not all characters in hex string were hex digits.") (hex "l1a23f")
+                Expect.equal (Err "l1a23f does not entirely consist of hex digits.") (hex "l1a23f")
         , test "fail on invalid hex characters with 3 digits" <|
             \_ ->
-                Expect.equal (Err "Not all characters in hex string were hex digits.") (hex "zaf")
+                Expect.equal (Err "zaf does not entirely consist of hex digits.") (hex "zaf")
         , test "fail on special invalid hex characters" <|
             \_ ->
-                Expect.equal (Err "Not all characters in hex string were hex digits.") (hex ".abcde")
+                Expect.equal (Err ".abcde does not entirely consist of hex digits.") (hex ".abcde")
         , test "fail on special invalid hex characters 2" <|
             \_ ->
-                Expect.equal (Err "Not all characters in hex string were hex digits.") (hex ".*/:)~")
+                Expect.equal (Err ".*/:)~ does not entirely consist of hex digits.") (hex ".*/:)~")
         ]

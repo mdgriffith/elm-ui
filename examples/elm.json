@@ -9,9 +9,7 @@
         "elm/html": "1.0.0",
         "elm/json": "1.0.0",
         "elm/virtual-dom": "1.0.0",
-        "elm/parser": "1.1.0",
-        "elm-community/list-extra": "8.2.0",
-        "elm-community/result-extra": "2.4.0"
+        "elm-community/list-extra": "8.2.0"
       },
       "indirect": {
         "elm/time": "1.0.0",
