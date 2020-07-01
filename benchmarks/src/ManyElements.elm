@@ -316,7 +316,7 @@ elmUI name count =
         \model ->
             Element.layout []
                 (Element.column
-                    [ spacing ((model.index |> modBy 2) * 8)
+                    [ spacing 8
                     , centerX
                     ]
                     (List.map (viewEl model.index) model.elements)
@@ -360,6 +360,8 @@ viewEl selectedIndex index =
             )
         , padding 24
         , width (px 500)
+
+        -- , width (fillPortion ((selectedIndex |> modBy 2) + 1))
         , height (px 70)
         ]
         (if selectedIndex == index then

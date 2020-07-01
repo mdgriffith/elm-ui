@@ -99,7 +99,7 @@ elmUITwo name count =
         \model ->
             Two.layout []
                 (Two.column
-                    [ Two.spacing ((model.index |> modBy 2) * 8)
+                    [ Two.spacing 8
                     , Two.centerX
                     ]
                     (List.map (viewElTwo model.index) model.elements)
@@ -143,6 +143,8 @@ viewElTwo selectedIndex index =
             )
         , Two.padding 24
         , Two.width (Two.px 500)
+
+        -- , Two.width (Two.fillPortion ((selectedIndex |> modBy 2) + 1))
         , Two.height (Two.px 70)
         ]
         (if selectedIndex == index then
