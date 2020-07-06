@@ -118,6 +118,10 @@ type Rule
     | Batch (List Rule)
 
 
+type Color
+    = Rgb Int Int Int
+
+
 
 {- CLASSES -}
 
@@ -1400,6 +1404,11 @@ quad one two three four =
     one ++ " " ++ two ++ " " ++ three ++ " " ++ four
 
 
+pent : String -> String -> String -> String -> String -> String
+pent one two three four five =
+    one ++ " " ++ two ++ " " ++ three ++ " " ++ four ++ " " ++ five
+
+
 prop : String -> String -> String
 prop name val =
     name ++ ":" ++ val ++ ";"
@@ -1423,6 +1432,60 @@ floatPx x =
 rad : Float -> String
 rad x =
     String.fromFloat x ++ "rad"
+
+
+type alias Shadow =
+    { x : Float
+    , y : Float
+    , size : Float
+    , blur : Float
+    , color : Color
+    }
+
+
+innerShadows : List Shadow -> String
+innerShadows shades =
+    List.foldl joinInnerShadows "" shades
+
+
+joinInnerShadows shadow rendered =
+    if String.isEmpty rendered then
+        "inset " ++ singleShadow shadow
+
+    else
+        rendered ++ ", inset" ++ singleShadow shadow
+
+
+shadows : List Shadow -> String
+shadows shades =
+    List.foldl joinShadows "" shades
+
+
+joinShadows shadow rendered =
+    if String.isEmpty rendered then
+        singleShadow shadow
+
+    else
+        rendered ++ "," ++ singleShadow shadow
+
+
+singleShadow : Shadow -> String
+singleShadow shadow =
+    pent
+        (floatPx shadow.x)
+        (floatPx shadow.y)
+        (floatPx shadow.blur)
+        (floatPx shadow.size)
+        (color shadow.color)
+
+
+color : Color -> String
+color (Rgb red green blue) =
+    "rgb("
+        ++ String.fromInt red
+        ++ ("," ++ String.fromInt green)
+        ++ ("," ++ String.fromInt blue)
+        ++ ")"
 
 
 vars =

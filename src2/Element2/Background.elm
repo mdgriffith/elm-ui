@@ -23,9 +23,9 @@ import Internal.StyleGenerator as Style
 
 
 {-| -}
-color : Two.Color -> Two.Attribute msg
+color : Color -> Two.Attribute msg
 color clr =
-    Two.Style Flag.bgColor (Style.prop "background-color" (Two.formatColor clr))
+    Two.Style Flag.bgColor (Style.prop "background-color" (Style.color clr))
 
 
 {-| Resize the image to fit the containing element while maintaining proportions and cropping the overflow.
@@ -118,18 +118,13 @@ gradient { angle, steps } =
 
         clr :: [] ->
             Two.Style Flag.bgColor
-                (Style.prop "background-color" (Two.formatColor clr))
+                (Style.prop "background-color" (Style.color clr))
 
         _ ->
-            -- Internal.StyleClass Flag.bgGradient <|
-            --     Internal.Single
-            --         ("bg-grad-" ++ (String.join "-" <| Internal.floatClass angle :: List.map Internal.formatColorClass steps))
-            --         "background-image"
-            --         ("linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Two.formatColor steps) ++ ")")
             Two.Style Flag.bgGradient <|
                 Style.prop
                     "background-image"
-                    ("linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Two.formatColor steps) ++ ")")
+                    ("linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps) ++ ")")
 
 
 

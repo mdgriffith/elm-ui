@@ -120,11 +120,11 @@ type RenderMode
 
 {-| -}
 type alias FocusStyle =
-    { borderColor : Maybe Color
-    , backgroundColor : Maybe Color
+    { borderColor : Maybe Style.Color
+    , backgroundColor : Maybe Style.Color
     , shadow :
         Maybe
-            { color : Color
+            { color : Style.Color
             , offset : ( Int, Int )
             , blur : Int
             , size : Int
@@ -139,7 +139,7 @@ focusDefaultStyle =
     , shadow =
         Just
             { color =
-                Rgb 155 203 255
+                Style.Rgb 155 203 255
             , offset = ( 0, 0 )
             , blur = 0
             , size = 3
@@ -167,25 +167,17 @@ element layout attrs children =
         (List.reverse attrs)
 
 
-
---  (List.reverse attrs)
--- elementKeyed : Layout -> List (Attribute msg) -> List ( String, Element msg ) -> Element msg
--- elementKeyed layout attrs children =
---     let
---         { name, htmlAttrs, nearby } =
---             render "div" Flag.none "" [] (contextClasses layout) NoNearbyChildren (List.reverse attrs)
---         renderedChildren =
---             case nearby of
---                 NoNearbyChildren ->
---                     List.map (Tuple.mapSecond unwrap) children
---                 ChildrenBehind behind ->
---                     List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond unwrap) children
---                 ChildrenInFront inFront ->
---                     List.map (Tuple.mapSecond unwrap) children ++ List.map (Tuple.pair "keyed") inFront
---                 ChildrenBehindAndInFront behind inFront ->
---                     List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond unwrap) children ++ List.map (Tuple.pair "keyed") inFront
---     in
---     Element (Html.Keyed.node name htmlAttrs renderedChildren)
+elementKeyed : Layout -> List (Attribute msg) -> List ( String, Element msg ) -> Element msg
+elementKeyed layout attrs children =
+    renderKeyed layout
+        children
+        "div"
+        Flag.none
+        ""
+        []
+        (contextClasses layout)
+        NoNearbyChildren
+        (List.reverse attrs)
 
 
 unwrap : Element msg -> Html.Html msg
@@ -248,14 +240,6 @@ render :
 render layout children name has styles htmlAttrs classes nearby attrs =
     case attrs of
         [] ->
-            -- { name = name
-            -- , htmlAttrs =
-            -- Attr.class classes
-            --     :: Attr.property "style" (Json.Encode.string styles)
-            -- :: htmlAttrs
-            -- , nearby = nearby
-            -- , wrapped = []
-            -- }
             let
                 renderedChildren =
                     case nearby of
@@ -272,7 +256,8 @@ render layout children name has styles htmlAttrs classes nearby attrs =
                             behind ++ List.map unwrap children ++ inFront
             in
             Element
-                (Html.node name
+                (Html.node
+                    name
                     (Attr.class classes
                         :: Attr.property "style" (Json.Encode.string styles)
                         :: htmlAttrs
@@ -356,6 +341,121 @@ render layout children name has styles htmlAttrs classes nearby attrs =
             render layout children name has styles htmlAttrs classes nearby remain
 
 
+renderKeyed :
+    Layout
+    -> List ( String, Element msg )
+    -> String
+    -> Flag.Field
+    -> String
+    -> List (VirtualDom.Attribute msg)
+    -> String
+    -> NearbyChildren msg
+    -> List (Attribute msg)
+    -> Element msg
+renderKeyed layout children name has styles htmlAttrs classes nearby attrs =
+    case attrs of
+        [] ->
+            let
+                renderedChildren =
+                    case nearby of
+                        NoNearbyChildren ->
+                            List.map (Tuple.mapSecond unwrap) children
+
+                        ChildrenBehind behind ->
+                            List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond unwrap) children
+
+                        ChildrenInFront inFront ->
+                            List.map (Tuple.mapSecond unwrap) children ++ List.map (Tuple.pair "keyed") inFront
+
+                        ChildrenBehindAndInFront behind inFront ->
+                            List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond unwrap) children ++ List.map (Tuple.pair "keyed") inFront
+            in
+            Element
+                (Html.Keyed.node
+                    name
+                    (Attr.class classes
+                        :: Attr.property "style" (Json.Encode.string styles)
+                        :: htmlAttrs
+                    )
+                    renderedChildren
+                )
+
+        NoAttribute :: remain ->
+            renderKeyed layout children name has styles htmlAttrs classes nearby remain
+
+        (Attr attr) :: remain ->
+            renderKeyed layout children name has styles (attr :: htmlAttrs) classes nearby remain
+
+        (Link targetBlank url) :: remain ->
+            renderKeyed layout
+                children
+                "a"
+                has
+                styles
+                (Attr.href url
+                    :: Attr.rel "noopener noreferrer"
+                    :: (if targetBlank then
+                            Attr.target "_blank"
+
+                        else
+                            Attr.target "_self"
+                       )
+                    :: htmlAttrs
+                )
+                classes
+                nearby
+                remain
+
+        (Download url downloadName) :: remain ->
+            renderKeyed layout
+                children
+                "a"
+                has
+                styles
+                (Attr.href url
+                    :: Attr.download downloadName
+                    :: htmlAttrs
+                )
+                classes
+                nearby
+                remain
+
+        (NodeName nodeName) :: remain ->
+            renderKeyed layout children nodeName has styles htmlAttrs classes nearby remain
+
+        (Class flag str) :: remain ->
+            if Flag.present flag has then
+                renderKeyed layout children name has styles htmlAttrs classes nearby remain
+
+            else
+                renderKeyed layout children name (Flag.add flag has) styles htmlAttrs (str ++ " " ++ classes) nearby remain
+
+        (Style flag str) :: remain ->
+            if Flag.present flag has then
+                renderKeyed layout children name has styles htmlAttrs classes nearby remain
+
+            else
+                renderKeyed layout children name (Flag.add flag has) (str ++ styles) htmlAttrs classes nearby remain
+
+        (ClassAndStyle flag cls sty) :: remain ->
+            if Flag.present flag has then
+                renderKeyed layout children name has styles htmlAttrs classes nearby remain
+
+            else
+                renderKeyed layout
+                    children
+                    name
+                    (Flag.add flag has)
+                    (sty ++ styles)
+                    htmlAttrs
+                    (cls ++ " " ++ classes)
+                    nearby
+                    remain
+
+        (Nearby loc elem) :: remain ->
+            renderKeyed layout children name has styles htmlAttrs classes nearby remain
+
+
 textElementClasses : String
 textElementClasses =
     Style.classes.any
@@ -421,16 +521,3 @@ contextClasses context =
 
         AsTextColumn ->
             pageClass
-
-
-type Color
-    = Rgb Int Int Int
-
-
-formatColor : Color -> String
-formatColor (Rgb red green blue) =
-    "rgb("
-        ++ String.fromInt red
-        ++ ("," ++ String.fromInt green)
-        ++ ("," ++ String.fromInt blue)
-        ++ ")"

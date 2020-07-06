@@ -19,7 +19,7 @@ module Element2 exposing
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , map, mapAttribute
     , html, htmlAttribute
-    , clip, scrollbarY
+    , clip, clipX, clipY, scrollbarX, scrollbarY
     )
 
 {-|
@@ -208,7 +208,7 @@ import Internal.StyleGenerator as Style
 
 {-| -}
 type alias Color =
-    Two.Color
+    Style.Color
 
 
 {-| Provide the red, green, and blue channels for the color.
@@ -216,9 +216,9 @@ type alias Color =
 Each channel takes a value between 0 and 1.
 
 -}
-rgb : Int -> Int -> Int -> Two.Color
+rgb : Int -> Int -> Int -> Color
 rgb r g b =
-    Two.Rgb r g b
+    Style.Rgb r g b
 
 
 {-| The basic building block of your layout.
@@ -390,6 +390,24 @@ layoutWith { options } attrs content =
             ]
 
 
+
+--  let
+--         families =
+--             [ Typeface "Open Sans"
+--             , Typeface "Helvetica"
+--             , Typeface "Verdana"
+--             , SansSerif
+--             ]
+--     in
+--     [ StyleClass Flag.bgColor (Colored ("bg-" ++ formatColorClass (Rgba 1 1 1 0)) "background-color" (Rgba 1 1 1 0))
+--     , StyleClass Flag.fontColor (Colored ("fc-" ++ formatColorClass (Rgba 0 0 0 1)) "color" (Rgba 0 0 0 1))
+--     , StyleClass Flag.fontSize (FontSize 20)
+--     , StyleClass Flag.fontFamily <|
+--         FontFamily (List.foldl renderFontClassName "font-" families)
+--             families
+--     ]
+
+
 {-| -}
 type alias Option =
     Two.Option
@@ -526,26 +544,6 @@ column =
     --     )
     --     (Internal.Unkeyed children)
     Two.element Two.AsColumn
-
-
-
--- {-| -}
--- columnKeyed : List (Two.Attribute msg) -> List ( String, Two.Element msg ) -> Two.Element msg
--- columnKeyed =
---     -- Internal.element
---     --     Internal.asColumn
---     --     Internal.div
---     --     (Internal.htmlClass
---     --         (classes.contentTop
---     --             ++ " "
---     --             ++ classes.contentLeft
---     --         )
---     --         :: height shrink
---     --         :: width shrink
---     --         :: attrs
---     --     )
---     --     (Internal.Unkeyed children)
---     Two.elementKeyed Two.AsColumn
 
 
 {-| Same as `row`, but will wrap if it takes up too much horizontal space.
@@ -1054,7 +1052,7 @@ image attrs { src, description } =
     --         ]
     --     )
     Two.element Two.AsEl
-        attrs
+        (Two.class Style.classes.imageContainer :: attrs)
         [ Html.img
             [ Html.Attributes.src src
             , Html.Attributes.alt description
@@ -1064,41 +1062,13 @@ image attrs { src, description } =
         ]
 
 
+{-|
 
--- {-|
---     link []
---         { url = "http://fruits.com"
---         , label = text "A link to my favorite fruit provider."
---         }
--- -}
--- link :
---     List (Attribute msg)
---     ->
---         { url : String
---         , label : Element msg
---         }
---     -> Two.Element msg
--- link attrs { url, label } =
--- Internal.element
---     Internal.asEl
---     (Internal.NodeName "a")
---     (Internal.Attr (Html.Attributes.href url)
---         :: Internal.Attr (Html.Attributes.rel "noopener noreferrer")
---         :: width shrink
---         :: height shrink
---         :: Internal.htmlClass
---             (classes.contentCenterX
---                 ++ " "
---                 ++ classes.contentCenterY
---                 ++ " "
---                 ++ classes.link
---             )
---         :: attrs
---     )
---     (Internal.Unkeyed [ label ])
+    el
+        [ link "http://fruits.com" ]
+        (text "A link to my favorite fruit provider.")
 
-
-{-| -}
+-}
 link : String -> Two.Attribute msg
 link =
     Two.Link False
@@ -1108,58 +1078,6 @@ link =
 newTabLink : String -> Two.Attribute msg
 newTabLink =
     Two.Link True
-
-
-
--- {-| -}
--- newTabLink :
---     List (Attribute msg)
---     ->
---         { url : String
---         , label : Element msg
---         }
---     -> Element msg
--- newTabLink attrs { url, label } =
---     Internal.element
---         Internal.asEl
---         (Internal.NodeName "a")
---         (Internal.Attr (Html.Attributes.href url)
---             :: Internal.Attr (Html.Attributes.rel "noopener noreferrer")
---             :: Internal.Attr (Html.Attributes.target "_blank")
---             :: width shrink
---             :: height shrink
---             :: Internal.htmlClass
---                 (classes.contentCenterX
---                     ++ " "
---                     ++ classes.contentCenterY
---                     ++ " "
---                     ++ classes.link
---                 )
---             :: attrs
---         )
---         (Internal.Unkeyed [ label ])
--- {-| A link to download a file.
--- -}
--- download :
---     List (Attribute msg)
---     ->
---         { url : String
---         , label : Element msg
---         }
---     -> Element msg
--- download attrs { url, label } =
---     Internal.element
---         Internal.asEl
---         (Internal.NodeName "a")
---         (Internal.Attr (Html.Attributes.href url)
---             :: Internal.Attr (Html.Attributes.download "")
---             :: width shrink
---             :: height shrink
---             :: Internal.htmlClass classes.contentCenterX
---             :: Internal.htmlClass classes.contentCenterY
---             :: attrs
---         )
---         (Internal.Unkeyed [ label ])
 
 
 {-| A link to download a file.
@@ -1177,29 +1095,6 @@ downloadAs { url, filename } =
 
 
 
--- {-| A link to download a file, but you can specify the filename.
--- -}
--- downloadAs :
---     List (Attribute msg)
---     ->
---         { label : Element msg
---         , filename : String
---         , url : String
---         }
---     -> Element msg
--- downloadAs attrs { url, filename, label } =
---     Internal.element
---         Internal.asEl
---         (Internal.NodeName "a")
---         (Internal.Attr (Html.Attributes.href url)
---             :: Internal.Attr (Html.Attributes.download filename)
---             :: width shrink
---             :: height shrink
---             :: Internal.htmlClass classes.contentCenterX
---             :: Internal.htmlClass classes.contentCenterY
---             :: attrs
---         )
---         (Internal.Unkeyed [ label ])
 {- NEARBYS -}
 
 
@@ -1388,17 +1283,12 @@ moveLeft x =
     -- Internal.TransformComponent Flag.moveX (Internal.MoveX (negate x))
     Two.ClassAndStyle Flag.moveX
         Style.classes.transform
-        (Style.set Style.vars.moveX (Style.floatPx x))
+        (Style.set Style.vars.moveX (Style.floatPx (negate x)))
 
 
 {-| -}
 padding : Int -> Two.Attribute msg
 padding x =
-    -- let
-    --     f =
-    --         toFloat x
-    -- in
-    -- Internal.StyleClass Flag.padding (Internal.PaddingStyle ("p-" ++ String.fromInt x) f f f f)
     Two.Style Flag.padding (Style.prop "padding" (Style.px x))
 
 
@@ -1406,27 +1296,6 @@ padding x =
 -}
 paddingXY : Int -> Int -> Two.Attribute msg
 paddingXY x y =
-    -- if x == y then
-    --     let
-    --         f =
-    --             toFloat x
-    --     in
-    --     Internal.StyleClass Flag.padding (Internal.PaddingStyle ("p-" ++ String.fromInt x) f f f f)
-    -- else
-    --     let
-    --         xFloat =
-    --             toFloat x
-    --         yFloat =
-    --             toFloat y
-    --     in
-    --     Internal.StyleClass Flag.padding
-    --         (Internal.PaddingStyle
-    --             ("p-" ++ String.fromInt x ++ "-" ++ String.fromInt y)
-    --             yFloat
-    --             xFloat
-    --             yFloat
-    --             xFloat
-    --         )
     Two.Style Flag.padding (Style.prop "padding" (Style.pair (Style.px y) (Style.px x)))
 
 
@@ -1455,30 +1324,6 @@ paddingEach { top, right, bottom, left } =
                 (Style.px left)
             )
         )
-
-
-
--- if top == right && top == bottom && top == left then
---     let
---         topFloat =
---             toFloat top
---     in
---     Internal.StyleClass Flag.padding
---         (Internal.PaddingStyle ("p-" ++ String.fromInt top)
---             topFloat
---             topFloat
---             topFloat
---             topFloat
---         )
--- else
---     Internal.StyleClass Flag.padding
---         (Internal.PaddingStyle
---             (Internal.paddingName top right bottom left)
---             (toFloat top)
---             (toFloat right)
---             (toFloat bottom)
---             (toFloat left)
---         )
 
 
 {-| -}
@@ -1571,15 +1416,6 @@ alpha o =
 {-| -}
 viewport : List (Two.Attribute msg) -> Two.Element msg -> Two.Element msg
 viewport attrs child =
-    -- Internal.element
-    --     Internal.asEl
-    --     Internal.div
-    -- (scrollbars
-    --     :: width fill
-    --     :: height fill
-    --     :: attrs
-    -- )
-    --     (Internal.Unkeyed [ child ])
     Two.element Two.AsEl
         (scrollbars
             :: width fill
@@ -1616,15 +1452,6 @@ If the content overflows this element, it will be clipped.
 -}
 clipped : List (Two.Attribute msg) -> Two.Element msg -> Two.Element msg
 clipped attrs child =
-    -- Internal.element
-    --     Internal.asEl
-    --     Internal.div
-    --     (clip
-    --         :: width fill
-    --         :: height fill
-    --         :: attrs
-    --     )
-    --     (Internal.Unkeyed [ child ])
     Two.element Two.AsEl
         (clip
             :: width fill

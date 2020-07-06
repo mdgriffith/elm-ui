@@ -82,17 +82,32 @@ type Font
         }
 
 
+fontName : Font -> String
+fontName font =
+    case font of
+        Serif ->
+            "serif"
+
+        SansSerif ->
+            "sans-serif"
+
+        Monospace ->
+            "monospace"
+
+        Typeface name ->
+            "\"" ++ name ++ "\""
+
+        ImportFont name url ->
+            "\"" ++ name ++ "\""
+
+        FontWith { name } ->
+            "\"" ++ name ++ "\""
+
+
 {-| -}
-color : Two.Color -> Two.Attribute msg
+color : Color -> Two.Attribute msg
 color fontColor =
-    -- Internal.StyleClass
-    --     Flag.fontColor
-    --     (Internal.Colored
-    --         ("fc-" ++ Internal.formatColorClass fontColor)
-    --         "color"
-    --         fontColor
-    --     )
-    Two.Style Flag.fontColor (Style.prop "color" (Two.formatColor fontColor))
+    Two.Style Flag.fontColor (Style.prop "color" (Style.color fontColor))
 
 
 {-|
@@ -111,14 +126,17 @@ color fontColor =
 
 -}
 family : List Font -> Attribute msg
-family families =
-    -- Internal.StyleClass
-    --     Flag.fontFamily
-    --     (Internal.FontFamily
-    --         (List.foldl Internal.renderFontClassName "ff-" families)
-    --         families
-    --     )
-    Two.NoAttribute
+family typefaces =
+    Two.Style Flag.fontFamily (Style.prop "family" (List.foldl renderFont "" typefaces))
+
+
+renderFont : Font -> String -> String
+renderFont face str =
+    if String.isEmpty str then
+        fontName face
+
+    else
+        str ++ ", " ++ fontName face
 
 
 {-| -}
@@ -181,7 +199,6 @@ full =
 -}
 size : Int -> Two.Attribute msg
 size i =
-    -- Internal.StyleClass Flag.fontSize (Internal.FontSize i)
     Two.Style Flag.fontSize (Style.prop "font-size" (Style.px i))
 
 
@@ -189,11 +206,6 @@ size i =
 -}
 letterSpacing : Float -> Attribute msg
 letterSpacing offset =
-    -- Internal.StyleClass Flag.letterSpacing <|
-    --     Internal.Single
-    --         ("ls-" ++ Internal.floatClass offset)
-    --         "letter-spacing"
-    --         (String.fromFloat offset ++ "px")
     Two.Style Flag.letterSpacing (Style.prop "letter-spacing" (Style.floatPx offset))
 
 
@@ -201,8 +213,6 @@ letterSpacing offset =
 -}
 wordSpacing : Float -> Two.Attribute msg
 wordSpacing offset =
-    -- Internal.StyleClass Flag.wordSpacing <|
-    -- Internal.Single ("ws-" ++ Internal.floatClass offset) "word-spacing" (String.fromFloat offset ++ "px")
     Two.Style Flag.wordSpacing (Style.prop "word-spacing" (Style.floatPx offset))
 
 
