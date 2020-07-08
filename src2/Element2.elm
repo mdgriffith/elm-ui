@@ -69,10 +69,10 @@ Padding is the distance between the outer edge and the content, and spacing is t
 
 So, if we have the following row, with some padding and spacing.
 
-    Element.row [ padding 10, spacing 7 ]
-        [ Element.el [] none
-        , Element.el [] none
-        , Element.el [] none
+    row [ padding 10, spacing 7 ]
+        [ el [] none
+        , el [] none
+        , el [] none
         ]
 
 Here's what we can expect:
@@ -90,15 +90,15 @@ Here's what we can expect:
 
 Alignment can be used to align an `Element` within another `Element`.
 
-    Element.el [ centerX, alignTop ] (text "I'm centered and aligned top!")
+    el [ centerX, alignTop ] (text "I'm centered and aligned top!")
 
 If alignment is set on elements in a layout such as a `row`, then the element will push the other elements in that direction. Here's an example.
 
-    Element.row []
-        [ Element.el [] Element.none
-        , Element.el [ alignLeft ] Element.none
-        , Element.el [ centerX ] Element.none
-        , Element.el [ alignRight ] Element.none
+    row []
+        [ el [] none
+        , el [ alignLeft ] none
+        , el [ centerX ] none
+        , el [ alignRight ] none
         ]
 
 will result in a layout like
@@ -157,11 +157,11 @@ In order to use attributes like `Font.color` and `Background.color`, you'll need
 
 Let's say we want a dropdown menu. Essentially we want to say: _put this element below this other element, but don't affect the layout when you do_.
 
-    Element.row []
-        [ Element.el
-            [ Element.below (Element.text "I'm below!")
+    row []
+        [ el
+            [ below (text "I'm below!")
             ]
-            (Element.text "I'm normal!")
+            (text "I'm normal!")
         ]
 
 This will result in
@@ -170,7 +170,7 @@ This will result in
 ---------------/
 I'm below
 
-Where `"I'm Below"` doesn't change the size of `Element.row`.
+Where `"I'm Below"` doesn't change the size of `row`.
 
 This is very useful for things like dropdown menus or tooltips.
 
@@ -225,7 +225,7 @@ rgb r g b =
 
     howdy : Element msg
     howdy =
-        Element.el [] (Element.text "Howdy!")
+        el [] (text "Howdy!")
 
 -}
 type alias Element msg =
