@@ -337,8 +337,17 @@ render layout children name has styles htmlAttrs classes nearby attrs =
                     nearby
                     remain
 
-        (Nearby loc elem) :: remain ->
-            render layout children name has styles htmlAttrs classes nearby remain
+        (Nearby location elem) :: remain ->
+            render
+                layout
+                children
+                name
+                has
+                styles
+                htmlAttrs
+                classes
+                (addNearbyElement location elem nearby)
+                remain
 
 
 renderKeyed :
@@ -452,8 +461,108 @@ renderKeyed layout children name has styles htmlAttrs classes nearby attrs =
                     nearby
                     remain
 
-        (Nearby loc elem) :: remain ->
-            renderKeyed layout children name has styles htmlAttrs classes nearby remain
+        (Nearby location elem) :: remain ->
+            renderKeyed
+                layout
+                children
+                name
+                has
+                styles
+                htmlAttrs
+                classes
+                (addNearbyElement location elem nearby)
+                remain
+
+
+addNearbyElement : Location -> Element msg -> NearbyChildren msg -> NearbyChildren msg
+addNearbyElement location elem existing =
+    let
+        nearby =
+            nearbyElement location elem
+    in
+    case existing of
+        NoNearbyChildren ->
+            case location of
+                Behind ->
+                    ChildrenBehind [ nearby ]
+
+                _ ->
+                    ChildrenInFront [ nearby ]
+
+        ChildrenBehind existingBehind ->
+            case location of
+                Behind ->
+                    ChildrenBehind (nearby :: existingBehind)
+
+                _ ->
+                    ChildrenBehindAndInFront existingBehind [ nearby ]
+
+        ChildrenInFront existingInFront ->
+            case location of
+                Behind ->
+                    ChildrenBehindAndInFront [ nearby ] existingInFront
+
+                _ ->
+                    ChildrenInFront (nearby :: existingInFront)
+
+        ChildrenBehindAndInFront existingBehind existingInFront ->
+            case location of
+                Behind ->
+                    ChildrenBehindAndInFront (nearby :: existingBehind) existingInFront
+
+                _ ->
+                    ChildrenBehindAndInFront existingBehind (nearby :: existingInFront)
+
+
+nearbyElement : Location -> Element msg -> Html.Html msg
+nearbyElement location elem =
+    Html.div
+        [ Attr.class <|
+            case location of
+                Above ->
+                    String.join " "
+                        [ Style.classes.nearby
+                        , Style.classes.single
+                        , Style.classes.above
+                        ]
+
+                Below ->
+                    String.join " "
+                        [ Style.classes.nearby
+                        , Style.classes.single
+                        , Style.classes.below
+                        ]
+
+                OnRight ->
+                    String.join " "
+                        [ Style.classes.nearby
+                        , Style.classes.single
+                        , Style.classes.onRight
+                        ]
+
+                OnLeft ->
+                    String.join " "
+                        [ Style.classes.nearby
+                        , Style.classes.single
+                        , Style.classes.onLeft
+                        ]
+
+                InFront ->
+                    String.join " "
+                        [ Style.classes.nearby
+                        , Style.classes.single
+                        , Style.classes.inFront
+                        ]
+
+                Behind ->
+                    String.join " "
+                        [ Style.classes.nearby
+                        , Style.classes.single
+                        , Style.classes.behind
+                        ]
+        ]
+        [ unwrap elem
+        ]
 
 
 textElementClasses : String
