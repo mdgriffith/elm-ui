@@ -352,7 +352,11 @@ layout : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 layout attrs content =
     Two.unwrap <|
         Two.element Two.AsRoot
-            attrs
+            (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
+                :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
+                :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+                :: attrs
+            )
             [ Html.div []
                 [ Html.node "style"
                     []
@@ -379,11 +383,15 @@ layoutWith { options } attrs content =
     --     child
     Two.unwrap <|
         Two.element Two.AsRoot
-            attrs
+            (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
+                :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
+                :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+                :: attrs
+            )
             [ Html.div []
                 [ Html.node "style"
                     []
-                    [ Html.text Style.locked ]
+                    [ Html.text Style.rules ]
                 ]
                 |> Two.Element
             , content
@@ -1289,14 +1297,26 @@ moveLeft x =
 {-| -}
 padding : Int -> Two.Attribute msg
 padding x =
-    Two.Style Flag.padding (Style.prop "padding" (Style.px x))
+    Two.ClassAndStyle Flag.padding
+        Style.classes.padding
+        (Style.set Style.vars.padTop (Style.px x)
+            ++ Style.set Style.vars.padRight (Style.px x)
+            ++ Style.set Style.vars.padBottom (Style.px x)
+            ++ Style.set Style.vars.padLeft (Style.px x)
+        )
 
 
 {-| Set horizontal and vertical padding.
 -}
 paddingXY : Int -> Int -> Two.Attribute msg
 paddingXY x y =
-    Two.Style Flag.padding (Style.prop "padding" (Style.pair (Style.px y) (Style.px x)))
+    Two.ClassAndStyle Flag.padding
+        Style.classes.padding
+        (Style.set Style.vars.padTop (Style.px y)
+            ++ Style.set Style.vars.padRight (Style.px x)
+            ++ Style.set Style.vars.padBottom (Style.px y)
+            ++ Style.set Style.vars.padLeft (Style.px x)
+        )
 
 
 {-| If you find yourself defining unique paddings all the time, you might consider defining
@@ -1315,14 +1335,12 @@ And then just do
 -}
 paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Two.Attribute msg
 paddingEach { top, right, bottom, left } =
-    Two.Style Flag.padding
-        (Style.prop "padding"
-            (Style.quad
-                (Style.px top)
-                (Style.px right)
-                (Style.px bottom)
-                (Style.px left)
-            )
+    Two.ClassAndStyle Flag.padding
+        Style.classes.padding
+        (Style.set Style.vars.padTop (Style.px top)
+            ++ Style.set Style.vars.padRight (Style.px right)
+            ++ Style.set Style.vars.padBottom (Style.px bottom)
+            ++ Style.set Style.vars.padLeft (Style.px left)
         )
 
 
