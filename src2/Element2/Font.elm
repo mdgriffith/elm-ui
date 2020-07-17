@@ -127,7 +127,7 @@ color fontColor =
 -}
 family : List Font -> Attribute msg
 family typefaces =
-    Two.Style Flag.fontFamily (Style.prop "family" (List.foldl renderFont "" typefaces))
+    Two.Style Flag.fontFamily (Style.prop "font-family" (List.foldl renderFont "" typefaces))
 
 
 renderFont : Font -> String -> String
