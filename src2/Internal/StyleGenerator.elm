@@ -118,6 +118,15 @@ type Rule
     | Batch (List Rule)
 
 
+type Calc
+    = Add Calc Calc
+    | Minus Calc Calc
+    | Multiply Calc Calc
+    | Divide Calc Calc
+    | CalcVar Var
+    | CalcVal String
+
+
 type Color
     = Rgb Int Int Int
 
@@ -178,6 +187,7 @@ classes =
     -- space evenly
     , spacing = "spc"
     , spaceEvenly = "sev"
+    , padding = "pad"
     , container = "ctr"
     , alignContainerRight = "acr"
     , alignContainerBottom = "acb"
@@ -236,6 +246,8 @@ classes =
 
     -- inputText
     , inputText = "it"
+    , inputTextInputWrapper = "itw"
+    , inputTextParent = "itp"
     , inputMultiline = "iml"
     , inputMultilineParent = "imlp"
     , inputMultilineFiller = "imlf"
@@ -789,13 +801,6 @@ baseSheet =
         , Descriptor (dot classes.text)
             [ Prop "white-space" "pre"
             , Prop "display" "inline-block"
-            ]
-        , Descriptor (dot classes.inputText)
-            -- chrome and safari have a minimum recognized line height for text input of 1.05
-            -- If it's 1, it bumps up to something like 1.2
-            [ Prop "line-height" "1.05"
-            , Prop "background" "transparent"
-            , Prop "text-align" "inherit"
             ]
         , Descriptor (dot classes.single)
             elDescription
@@ -1385,7 +1390,9 @@ elDescription =
 variable =
     List.concat
         [ spacing
+        , padding
         , transform
+        , textInput
         ]
 
 
@@ -1497,6 +1504,14 @@ vars =
     , rotate = Var "rotate"
     , heightFill = Var "height-fill"
     , widthFill = Var "width-fill"
+    , padLeft = Var "pad-left"
+    , padRight = Var "pad-right"
+    , padTop = Var "pad-top"
+    , padBottom = Var "pad-bottom"
+    , borderLeft = Var "border-left"
+    , borderRight = Var "border-right"
+    , borderTop = Var "border-top"
+    , borderBottom = Var "border-bottom"
     }
 
 
@@ -1509,13 +1524,17 @@ transform =
     ]
 
 
-type Calc
-    = Add Calc Calc
-    | Minus Calc Calc
-    | Multiply Calc Calc
-    | Divide Calc Calc
-    | CalcVar Var
-    | CalcVal String
+padding =
+    [ Class (dot classes.padding)
+        [ Prop "padding"
+            (quad
+                (renderVar vars.padTop)
+                (renderVar vars.padRight)
+                (renderVar vars.padBottom)
+                (renderVar vars.padLeft)
+            )
+        ]
+    ]
 
 
 spacing =
@@ -1602,6 +1621,98 @@ spacing =
                 (CalcVar vars.spaceY)
             )
         ]
+    ]
+
+
+
+{- Rules:
+
+       <input> ->
+           line-height:  ("calc(1.0em + " ++ String.fromFloat (2 * min padding.top padding.bottom) ++ "px)")
+           padding: (t - min t b) right (b - min t b) left
+
+       border-width:
+           -> parent ++ cover
+       transform:
+           -> parent ++ cover
+
+
+   Approach ->
+
+       All style classes for a text input are assigned to inputTextParent.
+            The parent itself needs to 'forward' some of these properties to certain children.
+
+            1. Font attributes are generally inherited.
+                Font alignment likely needs to be forwarded though.
+
+            2. Borders
+                Border width ->
+                    x -> parent
+                    y -> inputParent
+                    y -> cover
+
+            3. Padding
+                x -> parent
+                y -> inputParent
+                y -> cover
+                if single line -> do math involving line-height
+
+            4. Transform
+                 x -> parent
+                    y -> inputParent
+                    y -> cover
+
+            5. width/height
+
+
+
+-}
+
+
+textInput =
+    -- the parent of the label + input + placeholder
+    [ Class (dot classes.inputTextParent)
+        [ Prop "padding" "0 !important"
+        , Prop "border-width" "0 !important"
+        , Prop "transform" "none"
+        ]
+
+    -- the parent of just input + placeholder
+    , Class (dot classes.inputTextInputWrapper)
+        [ Prop "padding-top" "0"
+        , Prop "padding-bottom" "0"
+        , Variable "padding-left" vars.padLeft
+        , Variable "padding-right" vars.padRight
+        ]
+
+    -- the input itself
+    , Class (dot classes.inputText)
+        [ -- chrome and safari have a minimum recognized line height for text input of 1.05
+          -- If it's 1, it bumps up to something like 1.2
+          --   Prop "line-height" "1.05"
+          -- ,
+          Prop "background" "transparent"
+        , Prop "text-align" "inherit"
+        , Calc "height"
+            (Add
+                (CalcVal "1.0em")
+                (Add
+                    (CalcVar vars.padTop)
+                    (CalcVar vars.padBottom)
+                )
+            )
+        , Calc "line-height"
+            (Add
+                (CalcVal "1.0em")
+                (Add
+                    (CalcVar vars.padTop)
+                    (CalcVar vars.padBottom)
+                )
+            )
+        ]
+
+    -- TODO!
+    -- add scrollbars to textarea if height is constrained
     ]
 
 

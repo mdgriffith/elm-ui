@@ -54,14 +54,14 @@ color clr =
 {-| -}
 width : Int -> Attribute msg
 width v =
-    Two.Style Flag.borderWidth (Style.prop "border-color" (Style.px v))
+    Two.Style Flag.borderWidth (Style.prop "border-width" (Style.px v))
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Two.Style Flag.borderWidth (Style.prop "border-color" (Style.pair (Style.px y) (Style.px x)))
+    Two.Style Flag.borderWidth (Style.prop "border-width" (Style.pair (Style.px y) (Style.px x)))
 
 
 {-| -}
@@ -74,7 +74,7 @@ widthEach :
     -> Attribute msg
 widthEach { bottom, top, left, right } =
     Two.Style Flag.borderWidth
-        (Style.prop "border-color"
+        (Style.prop "border-width"
             (Style.quad (Style.px top)
                 (Style.px right)
                 (Style.px bottom)

@@ -1,4 +1,4 @@
-module Element.Input exposing
+module Element2.Input exposing
     ( focusedOnLoad
     , button
     , checkbox, defaultCheckbox
@@ -190,18 +190,32 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Region as Region
+import Element2
+import Element2.Background as Background2
+import Element2.Border as Border2
+import Element2.Events as Events2
+import Element2.Font as Font2
+import Element2.Region as Region2
 import Html
 import Html.Attributes
 import Html.Events
 import Internal.Flag as Flag
+import Internal.Flag2 as Flag2
 import Internal.Model as Internal
+import Internal.Model2 as Two
 import Internal.Style exposing (classes)
+import Internal.StyleGenerator as Style
 import Json.Decode as Json
 
 
 {-| -}
 type Placeholder msg
     = Placeholder (List (Attribute msg)) (Element msg)
+
+
+{-| -}
+type Placeholder2 msg
+    = Placeholder2 (List (Two.Attribute msg)) (Two.Element msg)
 
 
 white =
@@ -219,10 +233,25 @@ charcoal =
         (133 / 255)
 
 
+white2 =
+    Element2.rgb 255 255 255
+
+
+darkGrey2 =
+    Element2.rgb 186 189 182
+
+
+charcoal2 =
+    Element2.rgb
+        136
+        138
+        133
+
+
 {-| -}
-placeholder : List (Attribute msg) -> Element msg -> Placeholder msg
+placeholder : List (Two.Attribute msg) -> Two.Element msg -> Placeholder2 msg
 placeholder =
-    Placeholder
+    Placeholder2
 
 
 type LabelLocation
@@ -236,6 +265,12 @@ type LabelLocation
 type Label msg
     = Label LabelLocation (List (Attribute msg)) (Element msg)
     | HiddenLabel String
+
+
+{-| -}
+type Label2 msg
+    = Label2 LabelLocation (List (Two.Attribute msg)) (Two.Element msg)
+    | HiddenLabel2 String
 
 
 isStacked : Label msg -> Bool
@@ -260,27 +295,27 @@ isStacked label =
 
 
 {-| -}
-labelRight : List (Attribute msg) -> Element msg -> Label msg
+labelRight : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
 labelRight =
-    Label OnRight
+    Label2 OnRight
 
 
 {-| -}
-labelLeft : List (Attribute msg) -> Element msg -> Label msg
+labelLeft : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
 labelLeft =
-    Label OnLeft
+    Label2 OnLeft
 
 
 {-| -}
-labelAbove : List (Attribute msg) -> Element msg -> Label msg
+labelAbove : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
 labelAbove =
-    Label Above
+    Label2 Above
 
 
 {-| -}
-labelBelow : List (Attribute msg) -> Element msg -> Label msg
+labelBelow : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
 labelBelow =
-    Label Below
+    Label2 Below
 
 
 {-| Sometimes you may need to have a label which is not visible, but is still accessible to screen readers.
@@ -307,6 +342,15 @@ hiddenLabelAttribute label =
 
         Label _ _ _ ->
             Internal.NoAttribute
+
+
+hiddenLabelAttribute2 label =
+    case label of
+        HiddenLabel2 textLabel ->
+            Region2.description textLabel
+
+        Label2 _ _ _ ->
+            Two.NoAttribute
 
 
 {-| A standard button.
@@ -405,26 +449,25 @@ type alias Checkbox msg =
 
 -}
 checkbox :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : Bool -> msg
-        , icon : Bool -> Element msg
+        , icon : Bool -> Two.Element msg
         , checked : Bool
-        , label : Label msg
+        , label : Label2 msg
         }
-    -> Element msg
+    -> Two.Element msg
 checkbox attrs { label, icon, checked, onChange } =
     let
         attributes =
-            [ if isHiddenLabel label then
-                Internal.NoAttribute
+            [ if isHiddenLabel2 label then
+                Two.NoAttribute
 
               else
-                Element.spacing
-                    6
-            , Internal.Attr (Html.Events.onClick (onChange (not checked)))
-            , Region.announce
-            , onKeyLookup <|
+                Element2.spacing 6
+            , Two.Attr (Html.Events.onClick (onChange (not checked)))
+            , Region2.announce
+            , onKeyLookup2 <|
                 \code ->
                     if code == enter then
                         Just <| onChange (not checked)
@@ -434,36 +477,33 @@ checkbox attrs { label, icon, checked, onChange } =
 
                     else
                         Nothing
-            , tabindex 0
-            , Element.pointer
-            , Element.alignLeft
-            , Element.width Element.fill
+            , Two.Attr (Html.Attributes.tabindex 0)
+            , Element2.pointer
+            , Element2.alignLeft
+            , Element2.width Element2.fill
             ]
                 ++ attrs
     in
-    applyLabel attributes
+    applyLabel2 attributes
         label
-        (Internal.element
-            Internal.asEl
-            Internal.div
-            [ Internal.Attr <|
+        (Two.element
+            Two.AsEl
+            [ Two.Attr <|
                 Html.Attributes.attribute "role" "checkbox"
-            , Internal.Attr <|
+            , Two.Attr <|
                 Html.Attributes.attribute "aria-checked" <|
                     if checked then
                         "true"
 
                     else
                         "false"
-            , hiddenLabelAttribute label
-            , Element.centerY
-            , Element.height Element.fill
-            , Element.width Element.shrink
+            , hiddenLabelAttribute2 label
+            , Element2.centerY
+            , Element2.height Element2.fill
+            , Element2.width Element2.shrink
             ]
-            (Internal.Unkeyed
-                [ icon checked
-                ]
-            )
+            [ icon checked
+            ]
         )
 
 
@@ -838,6 +878,162 @@ type alias Text msg =
 
 
 {-| -}
+type alias Text2 msg =
+    { onChange : String -> msg
+    , text : String
+    , placeholder : Maybe (Placeholder2 msg)
+    , label : Label2 msg
+    }
+
+
+{-| -}
+textHelper2 : TextInput -> List (Two.Attribute msg) -> Text2 msg -> Two.Element msg
+textHelper2 textInput attrs textOptions =
+    {- General overview:
+
+          - padding is used by the text area and negated in order to make the padded area clickable.
+
+       We specifically do property redistribution using `redistribute`, which
+
+           redistribute them to the parent, the input, or the cover.
+
+               - fullParent -> Wrapper around label and input
+               - parent -> parent of wrapper
+               - wrapper -> the element that is here to take up space.
+               - cover -> things like placeholders or text areas which are layered on top of input.
+               - input -> actual input element
+
+    -}
+    let
+        withDefaults =
+            defaultTextBoxStyle2 ++ attrs
+
+        redistributed =
+            redistribute2 withDefaults
+
+        inputElement =
+            Two.element
+                Two.AsEl
+                ((case textInput.type_ of
+                    TextInputNode inputType ->
+                        -- Note: Due to a weird edgecase in...Edge...
+                        -- `type` needs to come _before_ `value`
+                        -- More reading: https://github.com/mdgriffith/elm-ui/pull/94/commits/4f493a27001ccc3cf1f2baa82e092c35d3811876
+                        [ Two.NodeName "input"
+                        , Two.Attr (Html.Attributes.type_ inputType)
+                        , Two.class classes.inputText
+                        ]
+
+                    TextArea ->
+                        [ Two.NodeName "textarea"
+                        , Two.Class Flag.overflow Style.classes.clip
+                        , Element2.height Element2.fill
+                        , Two.class classes.inputMultiline
+
+                        -- , calcMoveToCompensateForPadding withDefaults
+                        -- The only reason we do this padding trick is so that when the user clicks in the padding,
+                        -- that the cursor will reset correctly.
+                        -- This could probably be combined with the above `calcMoveToCompensateForPadding`
+                        , Two.Attr (Html.Attributes.style "box-sizing" "content-box")
+                        ]
+                 )
+                    ++ [ Two.Attr (Html.Attributes.value textOptions.text)
+                       , Two.Attr (Html.Events.onInput textOptions.onChange)
+                       , hiddenLabelAttribute2 textOptions.label
+                       , Two.Attr (Html.Attributes.spellcheck textInput.spellchecked)
+                       , case textInput.autofill of
+                            Nothing ->
+                                Two.NoAttribute
+
+                            Just fill ->
+                                Two.Attr (Html.Attributes.attribute "autocomplete" fill)
+                       ]
+                    ++ redistributed.input
+                )
+                []
+
+        wrappedInput =
+            case textInput.type_ of
+                TextArea ->
+                    -- textarea with height-content means that
+                    -- the input element is rendered `inFront` with a transparent background
+                    -- Then the input text is rendered as the space filling element.
+                    Two.element
+                        Two.AsEl
+                        ([ Element2.width Element2.fill
+                         , Two.class classes.focusedWithin
+                         , Two.class classes.inputMultilineWrapper
+                         ]
+                            ++ redistributed.inputParent
+                        )
+                        [ Two.element
+                            Two.AsParagraph
+                            [ Element2.width Element2.fill
+                            , Element2.height Element2.fill
+                            , Element2.inFront inputElement
+                            , Two.class classes.inputMultilineParent
+                            ]
+                            (if textOptions.text == "" then
+                                case textOptions.placeholder of
+                                    Nothing ->
+                                        -- Without this, firefox will make the text area lose focus
+                                        -- if the input is empty and you mash the keyboard
+                                        [ Element2.text "\u{00A0}"
+                                        ]
+
+                                    Just place ->
+                                        [ renderPlaceholder2 place (textOptions.text == "")
+                                        ]
+
+                             else
+                                [ Two.Element
+                                    (Html.span [ Html.Attributes.class classes.inputMultilineFiller ]
+                                        -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
+                                        [ Html.text (textOptions.text ++ "\u{00A0}")
+                                        ]
+                                    )
+                                ]
+                            )
+                        ]
+
+                TextInputNode inputType ->
+                    Two.element
+                        Two.AsEl
+                        (Element2.width Element2.fill
+                            :: Two.class classes.focusedWithin
+                            :: Two.class Style.classes.inputTextInputWrapper
+                            :: List.concat
+                                [ redistributed.inputParent
+                                , case textOptions.placeholder of
+                                    Nothing ->
+                                        []
+
+                                    Just place ->
+                                        [ Element2.behindContent
+                                            (renderPlaceholder2 place (textOptions.text == ""))
+                                        ]
+                                ]
+                        )
+                        [ inputElement ]
+    in
+    applyLabel2
+        (Two.Class Flag.cursor classes.cursorText
+            :: Two.class Style.classes.inputTextParent
+            :: (if isHiddenLabel2 textOptions.label then
+                    Two.NoAttribute
+
+                else
+                    Element2.spacing
+                        5
+               )
+            :: Region2.announce
+            :: redistributed.parent
+        )
+        textOptions.label
+        wrappedInput
+
+
+{-| -}
 textHelper : TextInput -> List (Attribute msg) -> Text msg -> Element msg
 textHelper textInput attrs textOptions =
     let
@@ -1092,6 +1288,32 @@ renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on
                         0
                     )
                ]
+            ++ placeholderAttrs
+        )
+        placeholderEl
+
+
+renderPlaceholder2 (Placeholder2 placeholderAttrs placeholderEl) on =
+    Element2.el
+        ([ Font2.color charcoal2
+         , Two.class
+            (Style.classes.noTextSelection
+                ++ " "
+                ++ Style.classes.passPointerEvents
+                ++ " "
+                ++ Style.classes.padding
+            )
+         , Two.Class Flag.overflow Style.classes.clip
+         , Element2.height Element2.fill
+         , Element2.width Element2.fill
+         , Element2.alpha
+            (if on then
+                1
+
+             else
+                0
+            )
+         ]
             ++ placeholderAttrs
         )
         placeholderEl
@@ -1384,18 +1606,133 @@ redistributeOver isMultiline stacked attr els =
             { els | input = attr :: els.input }
 
 
+{-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
+
+redistribute them to the parent, the input, or the cover.
+
+  - fullParent -> Wrapper around label and input
+  - parent -> parent of wrapper
+  - wrapper -> the element that is here to take up space.
+  - cover -> things like placeholders or text areas which are layered on top of input.
+  - input -> actual input element
+
+^^ old logic
+
+----vv new logic
+
+  - nearbys -> inputParent element
+  - attributes -> `input`
+  - styles and classes ->
+    full parent (with special css to invalidate, and move styles to the proper places)
+
+-}
+redistribute2 :
+    List (Two.Attribute msg)
+    ->
+        { parent : List (Two.Attribute msg)
+        , inputParent : List (Two.Attribute msg)
+        , input : List (Two.Attribute msg)
+        }
+redistribute2 attrs =
+    List.foldl redistributeOver2
+        { parent = []
+        , inputParent = []
+        , input = []
+        }
+        attrs
+        |> (\redist ->
+                { parent = List.reverse redist.parent
+                , inputParent = List.reverse redist.inputParent
+                , input = List.reverse redist.input
+                }
+           )
+
+
+{-|
+
+    --> full parent
+    <label class="ctxt spacing-12-12 s c wf lbl" aria-live="polite">
+      --> actual label
+      <div class="font-size-14 s e">
+        <div class="s t wf hf">Username</div>
+      </div>
+
+      --> parent (wrapper only applies to multiline text)
+      <div class="pad-0-3060-0-3060 br-3 bc-186-189-182-255 bg-255-255-255-255 b-1 hc spacing-12-12 s e wf focus-within">
+
+        --> placeholder (cover)
+        <div class="nb e bh">
+          <div class="p-12 b-1 fc-136-138-133-255 cp bc-0-0-0-0 bg-0-0-0-0 hf transparency-0 s e wf notxt ppe">
+            <div class="s t wf hf">username</div>
+          </div>
+        </div>
+
+        --> actual input
+        <input
+          class="spacing-12-12 s e wf it"
+          type="text"
+          spellcheck="false"
+          style="line-height: calc(1em + 24px); height: calc(1em + 24px);"
+        />
+
+        --> manually attached `nearby`
+        <div class="nb e b">
+          <div class="hc fc-204-0-0-255 font-size-14 ah ar s e wc mv-0-1530-0">
+            <div class="s t wf hf">This one is wrong</div>
+          </div>
+        </div>
+      </div>
+    </label>
+
+-}
+redistributeOver2 attr els =
+    case attr of
+        Two.Nearby _ _ ->
+            { els | inputParent = attr :: els.inputParent }
+
+        Two.NoAttribute ->
+            els
+
+        Two.Attr a ->
+            { els | input = attr :: els.input }
+
+        Two.Class _ _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.Link _ _ ->
+            els
+
+        Two.Download _ _ ->
+            els
+
+        Two.NodeName _ ->
+            els
+
+        Two.Style _ _ ->
+            { els
+                | parent = attr :: els.parent
+                , inputParent = attr :: els.inputParent
+            }
+
+        Two.ClassAndStyle _ _ _ ->
+            { els
+                | parent = attr :: els.parent
+                , inputParent = attr :: els.inputParent
+            }
+
+
 {-| -}
 text :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder2 msg)
+        , label : Label2 msg
         }
-    -> Element msg
+    -> Two.Element msg
 text =
-    textHelper
+    textHelper2
         { type_ = TextInputNode "text"
         , spellchecked = False
         , autofill = Nothing
@@ -1549,17 +1886,17 @@ By default it will have a minimum height of one line and resize based on it's co
 
 -}
 multiline :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder2 msg)
+        , label : Label2 msg
         , spellcheck : Bool
         }
-    -> Element msg
+    -> Two.Element msg
 multiline attrs multi =
-    textHelper
+    textHelper2
         { type_ =
             TextArea
         , spellchecked = multi.spellcheck
@@ -1576,6 +1913,15 @@ multiline attrs multi =
 isHiddenLabel label =
     case label of
         HiddenLabel _ ->
+            True
+
+        _ ->
+            False
+
+
+isHiddenLabel2 label =
+    case label of
+        HiddenLabel2 _ ->
             True
 
         _ ->
@@ -1631,6 +1977,51 @@ applyLabel attrs label input =
                         (Internal.NodeName "label")
                         (Internal.htmlClass classes.inputLabel :: attrs)
                         (Internal.Unkeyed [ labelElement, input ])
+
+
+applyLabel2 : List (Two.Attribute msg) -> Label2 msg -> Two.Element msg -> Two.Element msg
+applyLabel2 attrs label input =
+    case label of
+        HiddenLabel2 labelText ->
+            -- NOTE: This means that the label is applied outside of this function!
+            -- It would be nice to unify this logic, but it's a little tricky
+            Two.element
+                Two.AsColumn
+                (Two.NodeName "label" :: attrs)
+                [ input ]
+
+        Label2 position labelAttrs labelChild ->
+            let
+                labelElement =
+                    Two.element
+                        Two.AsEl
+                        labelAttrs
+                        [ labelChild ]
+            in
+            case position of
+                Above ->
+                    Two.element
+                        Two.AsColumn
+                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        [ labelElement, input ]
+
+                Below ->
+                    Two.element
+                        Two.AsColumn
+                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        [ input, labelElement ]
+
+                OnRight ->
+                    Two.element
+                        Two.AsRow
+                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        [ input, labelElement ]
+
+                OnLeft ->
+                    Two.element
+                        Two.AsRow
+                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        [ labelElement, input ]
 
 
 {-| -}
@@ -2070,6 +2461,25 @@ onKey desiredCode msg =
 
 
 {-| -}
+onKeyLookup2 : (String -> Maybe msg) -> Two.Attribute msg
+onKeyLookup2 lookup =
+    let
+        decode code =
+            case lookup code of
+                Nothing ->
+                    Json.fail "No key matched"
+
+                Just msg ->
+                    Json.succeed msg
+
+        isKey =
+            Json.field "key" Json.string
+                |> Json.andThen decode
+    in
+    Two.Attr <| Html.Events.on "keyup" isKey
+
+
+{-| -}
 onKeyLookup : (String -> Maybe msg) -> Attribute msg
 onKeyLookup lookup =
     let
@@ -2152,6 +2562,19 @@ focusedOnLoad =
 
 
 {- Style Defaults -}
+
+
+defaultTextBoxStyle2 : List (Two.Attribute msg)
+defaultTextBoxStyle2 =
+    [ Element2.paddingXY 12 12
+    , Border2.rounded 3
+    , Border2.color darkGrey2
+    , Background2.color white2
+    , Border2.width 1
+    , Element2.spacing 5
+    , Element2.width Element2.fill
+    , Element2.height Element2.shrink
+    ]
 
 
 defaultTextBoxStyle : List (Attribute msg)
