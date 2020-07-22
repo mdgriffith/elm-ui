@@ -10,25 +10,37 @@ module Internal.Model2 exposing (..)
 import Html
 import Html.Attributes as Attr
 import Html.Keyed
-import Internal.Flag as Flag exposing (Flag)
+import Internal.Flag2 as Flag exposing (Flag)
 import Internal.StyleGenerator as Style
 import Json.Encode
 import VirtualDom
 
 
+{-| Data to potentially pass down.
+
+1.  SpacingX, spacingY (could be 16 bits each if we use bitwise to split things)
+2.  Layout that we're in to know where spacing goes.
+3.  Id context?
+4.  Browser window size? (again using 16 bits for each.)
+5.  Width fill?
+
+(could encode this as a string...or at least the stuff that isn't used much)
+
+-}
 type Element msg
-    = Element (Html.Html msg)
-    | Text String
+    = Element (Int -> Html.Html msg)
 
 
 map : (a -> b) -> Element a -> Element b
 map fn el =
     case el of
-        Text str ->
-            Text str
-
+        -- Text str ->
+        --     Text str
         Element elem ->
-            Element (Html.map fn elem)
+            Element
+                (\s ->
+                    Html.map fn (elem s)
+                )
 
 
 mapAttr : (a -> b) -> Attribute a -> Attribute b
@@ -36,6 +48,15 @@ mapAttr fn attr =
     case attr of
         NoAttribute ->
             NoAttribute
+
+        Spacing flag s ->
+            Spacing flag s
+
+        Padding flag x y ->
+            Padding flag x y
+
+        BorderWidth flag x y ->
+            BorderWidth flag x y
 
         Attr a ->
             Attr (Attr.map fn a)
@@ -87,6 +108,9 @@ type Attribute msg
     | Link Bool String
     | Download String String
     | NodeName String
+    | Spacing Flag Int
+    | Padding Flag Int Int
+    | BorderWidth Flag Int Int
       -- invalidation key and literal class
     | Class Flag String
       -- add to the style property
@@ -154,9 +178,17 @@ type NearbyChildren msg
     | ChildrenBehindAndInFront (List (Html.Html msg)) (List (Html.Html msg))
 
 
+emptyPair : ( Int, Int )
+emptyPair =
+    ( 0, 0 )
+
+
 element : Layout -> List (Attribute msg) -> List (Element msg) -> Element msg
 element layout attrs children =
     render layout
+        0
+        emptyPair
+        emptyPair
         children
         "div"
         Flag.none
@@ -170,6 +202,7 @@ element layout attrs children =
 elementKeyed : Layout -> List (Attribute msg) -> List ( String, Element msg ) -> Element msg
 elementKeyed layout attrs children =
     renderKeyed layout
+        0
         children
         "div"
         Flag.none
@@ -180,38 +213,36 @@ elementKeyed layout attrs children =
         (List.reverse attrs)
 
 
-unwrap : Element msg -> Html.Html msg
-unwrap el =
+unwrap : Int -> Element msg -> Html.Html msg
+unwrap s el =
     case el of
-        Text str ->
-            Html.span [ Attr.class textElementClasses ] [ Html.text str ]
-
+        -- Text str ->
+        --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
         Element html ->
-            html
+            html s
 
 
-wrapText el =
+wrapText s el =
     case el of
-        Text str ->
-            Html.text str
-
+        -- Text str ->
+        --     Html.text str
         Element html ->
-            html
-
-
-text =
-    Text
+            html s
 
 
 
--- text : String -> Element msg
--- text str =
---     Element (Html.span [ Attr.class textElementClasses ] [ Html.text str ])
+-- text =
+--     Text
+
+
+text : String -> Element msg
+text str =
+    Element (\v -> Html.span [ Attr.class textElementClasses ] [ Html.text str ])
 
 
 none : Element msg
 none =
-    Element (Html.text "")
+    Element (always (Html.text ""))
 
 
 type alias Rendered msg =
@@ -228,6 +259,9 @@ type Wrapped
 
 render :
     Layout
+    -> Int
+    -> ( Int, Int )
+    -> ( Int, Int )
     -> List (Element msg)
     -> String
     -> Flag.Field
@@ -237,42 +271,53 @@ render :
     -> NearbyChildren msg
     -> List (Attribute msg)
     -> Element msg
-render layout children name has styles htmlAttrs classes nearby attrs =
+render layout spacing padding border children name has styles htmlAttrs classes nearby attrs =
     case attrs of
         [] ->
-            let
-                renderedChildren =
-                    case nearby of
-                        NoNearbyChildren ->
-                            List.map unwrap children
-
-                        ChildrenBehind behind ->
-                            behind ++ List.map unwrap children
-
-                        ChildrenInFront inFront ->
-                            List.map unwrap children ++ inFront
-
-                        ChildrenBehindAndInFront behind inFront ->
-                            behind ++ List.map unwrap children ++ inFront
-            in
             Element
-                (Html.node
-                    name
-                    (Attr.class classes
-                        :: Attr.property "style" (Json.Encode.string styles)
-                        :: htmlAttrs
-                    )
-                    renderedChildren
+                (\mySpace ->
+                    let
+                        renderedChildren =
+                            case nearby of
+                                NoNearbyChildren ->
+                                    List.map (unwrap spacing) children
+
+                                ChildrenBehind behind ->
+                                    behind ++ List.map (unwrap spacing) children
+
+                                ChildrenInFront inFront ->
+                                    List.map (unwrap spacing) children ++ inFront
+
+                                ChildrenBehindAndInFront behind inFront ->
+                                    behind ++ List.map (unwrap spacing) children ++ inFront
+
+                        finalStyles =
+                            styles
+                                ++ Style.prop "margin" (Style.spacing mySpace)
+                                ++ Style.prop "padding" (Style.compactQuad padding)
+                                ++ Style.prop "border-width" (Style.compactQuad border)
+                    in
+                    Html.node
+                        name
+                        (Attr.class classes
+                            :: Attr.property "style" (Json.Encode.string finalStyles)
+                            :: htmlAttrs
+                        )
+                        renderedChildren
                 )
 
         NoAttribute :: remain ->
-            render layout children name has styles htmlAttrs classes nearby remain
+            render layout spacing padding border children name has styles htmlAttrs classes nearby remain
 
         (Attr attr) :: remain ->
-            render layout children name has styles (attr :: htmlAttrs) classes nearby remain
+            render layout spacing padding border children name has styles (attr :: htmlAttrs) classes nearby remain
 
         (Link targetBlank url) :: remain ->
-            render layout
+            render
+                layout
+                spacing
+                padding
+                border
                 children
                 "a"
                 has
@@ -292,7 +337,11 @@ render layout children name has styles htmlAttrs classes nearby attrs =
                 remain
 
         (Download url downloadName) :: remain ->
-            render layout
+            render
+                layout
+                spacing
+                padding
+                border
                 children
                 "a"
                 has
@@ -306,28 +355,103 @@ render layout children name has styles htmlAttrs classes nearby attrs =
                 remain
 
         (NodeName nodeName) :: remain ->
-            render layout children nodeName has styles htmlAttrs classes nearby remain
+            render
+                layout
+                spacing
+                padding
+                border
+                children
+                nodeName
+                has
+                styles
+                htmlAttrs
+                classes
+                nearby
+                remain
 
         (Class flag str) :: remain ->
             if Flag.present flag has then
-                render layout children name has styles htmlAttrs classes nearby remain
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
 
             else
-                render layout children name (Flag.add flag has) styles htmlAttrs (str ++ " " ++ classes) nearby remain
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    (Flag.add flag has)
+                    styles
+                    htmlAttrs
+                    (str ++ " " ++ classes)
+                    nearby
+                    remain
 
         (Style flag str) :: remain ->
             if Flag.present flag has then
-                render layout children name has styles htmlAttrs classes nearby remain
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
 
             else
-                render layout children name (Flag.add flag has) (str ++ styles) htmlAttrs classes nearby remain
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    (Flag.add flag has)
+                    (str ++ styles)
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
 
         (ClassAndStyle flag cls sty) :: remain ->
             if Flag.present flag has then
-                render layout children name has styles htmlAttrs classes nearby remain
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
 
             else
                 render layout
+                    spacing
+                    padding
+                    border
                     children
                     name
                     (Flag.add flag has)
@@ -340,6 +464,9 @@ render layout children name has styles htmlAttrs classes nearby attrs =
         (Nearby location elem) :: remain ->
             render
                 layout
+                spacing
+                padding
+                border
                 children
                 name
                 has
@@ -349,9 +476,103 @@ render layout children name has styles htmlAttrs classes nearby attrs =
                 (addNearbyElement location elem nearby)
                 remain
 
+        (Spacing flag s) :: remain ->
+            if Flag.present flag has then
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                render
+                    layout
+                    s
+                    padding
+                    border
+                    children
+                    name
+                    (Flag.add flag has)
+                    styles
+                    htmlAttrs
+                    (Style.classes.spacing ++ " " ++ classes)
+                    nearby
+                    remain
+
+        (Padding flag x y) :: remain ->
+            if Flag.present flag has then
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                render
+                    layout
+                    spacing
+                    ( x, y )
+                    border
+                    children
+                    name
+                    (Flag.add flag has)
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+        (BorderWidth flag x y) :: remain ->
+            if Flag.present flag has then
+                render
+                    layout
+                    spacing
+                    padding
+                    border
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                render
+                    layout
+                    spacing
+                    padding
+                    ( x, y )
+                    children
+                    name
+                    (Flag.add flag has)
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
 
 renderKeyed :
     Layout
+    -> Int
     -> List ( String, Element msg )
     -> String
     -> Flag.Field
@@ -361,42 +582,54 @@ renderKeyed :
     -> NearbyChildren msg
     -> List (Attribute msg)
     -> Element msg
-renderKeyed layout children name has styles htmlAttrs classes nearby attrs =
+renderKeyed layout spacing children name has styles htmlAttrs classes nearby attrs =
     case attrs of
         [] ->
             let
                 renderedChildren =
                     case nearby of
                         NoNearbyChildren ->
-                            List.map (Tuple.mapSecond unwrap) children
+                            List.map (Tuple.mapSecond (unwrap spacing)) children
 
                         ChildrenBehind behind ->
-                            List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond unwrap) children
+                            List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond (unwrap spacing)) children
 
                         ChildrenInFront inFront ->
-                            List.map (Tuple.mapSecond unwrap) children ++ List.map (Tuple.pair "keyed") inFront
+                            List.map (Tuple.mapSecond (unwrap spacing)) children ++ List.map (Tuple.pair "keyed") inFront
 
                         ChildrenBehindAndInFront behind inFront ->
-                            List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond unwrap) children ++ List.map (Tuple.pair "keyed") inFront
+                            List.map (Tuple.pair "keyed") behind
+                                ++ List.map (Tuple.mapSecond (unwrap 10)) children
+                                ++ List.map (Tuple.pair "keyed") inFront
             in
             Element
-                (Html.Keyed.node
-                    name
-                    (Attr.class classes
-                        :: Attr.property "style" (Json.Encode.string styles)
-                        :: htmlAttrs
-                    )
-                    renderedChildren
+                (\space ->
+                    let
+                        finalStyles =
+                            if space == 0 then
+                                styles
+
+                            else
+                                styles ++ Style.prop "margin" (Style.spacing space)
+                    in
+                    Html.Keyed.node
+                        name
+                        (Attr.class classes
+                            :: Attr.property "style" (Json.Encode.string finalStyles)
+                            :: htmlAttrs
+                        )
+                        renderedChildren
                 )
 
         NoAttribute :: remain ->
-            renderKeyed layout children name has styles htmlAttrs classes nearby remain
+            renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
 
         (Attr attr) :: remain ->
-            renderKeyed layout children name has styles (attr :: htmlAttrs) classes nearby remain
+            renderKeyed layout spacing children name has styles (attr :: htmlAttrs) classes nearby remain
 
         (Link targetBlank url) :: remain ->
             renderKeyed layout
+                spacing
                 children
                 "a"
                 has
@@ -417,6 +650,7 @@ renderKeyed layout children name has styles htmlAttrs classes nearby attrs =
 
         (Download url downloadName) :: remain ->
             renderKeyed layout
+                spacing
                 children
                 "a"
                 has
@@ -430,28 +664,29 @@ renderKeyed layout children name has styles htmlAttrs classes nearby attrs =
                 remain
 
         (NodeName nodeName) :: remain ->
-            renderKeyed layout children nodeName has styles htmlAttrs classes nearby remain
+            renderKeyed layout spacing children nodeName has styles htmlAttrs classes nearby remain
 
         (Class flag str) :: remain ->
             if Flag.present flag has then
-                renderKeyed layout children name has styles htmlAttrs classes nearby remain
+                renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
 
             else
-                renderKeyed layout children name (Flag.add flag has) styles htmlAttrs (str ++ " " ++ classes) nearby remain
+                renderKeyed layout spacing children name (Flag.add flag has) styles htmlAttrs (str ++ " " ++ classes) nearby remain
 
         (Style flag str) :: remain ->
             if Flag.present flag has then
-                renderKeyed layout children name has styles htmlAttrs classes nearby remain
+                renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
 
             else
-                renderKeyed layout children name (Flag.add flag has) (str ++ styles) htmlAttrs classes nearby remain
+                renderKeyed layout spacing children name (Flag.add flag has) (str ++ styles) htmlAttrs classes nearby remain
 
         (ClassAndStyle flag cls sty) :: remain ->
             if Flag.present flag has then
-                renderKeyed layout children name has styles htmlAttrs classes nearby remain
+                renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
 
             else
                 renderKeyed layout
+                    spacing
                     children
                     name
                     (Flag.add flag has)
@@ -464,6 +699,7 @@ renderKeyed layout children name has styles htmlAttrs classes nearby attrs =
         (Nearby location elem) :: remain ->
             renderKeyed
                 layout
+                spacing
                 children
                 name
                 has
@@ -472,6 +708,87 @@ renderKeyed layout children name has styles htmlAttrs classes nearby attrs =
                 classes
                 (addNearbyElement location elem nearby)
                 remain
+
+        (Spacing flag s) :: remain ->
+            if Flag.present flag has then
+                renderKeyed
+                    layout
+                    spacing
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                renderKeyed
+                    layout
+                    s
+                    children
+                    name
+                    (Flag.add flag has)
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+        (Padding flag x y) :: remain ->
+            if Flag.present flag has then
+                renderKeyed
+                    layout
+                    spacing
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                renderKeyed
+                    layout
+                    spacing
+                    children
+                    name
+                    (Flag.add flag has)
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+        (BorderWidth flag x y) :: remain ->
+            if Flag.present flag has then
+                renderKeyed
+                    layout
+                    spacing
+                    children
+                    name
+                    has
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                renderKeyed
+                    layout
+                    spacing
+                    children
+                    name
+                    (Flag.add flag has)
+                    styles
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
 
 
 addNearbyElement : Location -> Element msg -> NearbyChildren msg -> NearbyChildren msg
@@ -561,7 +878,7 @@ nearbyElement location elem =
                         , Style.classes.behind
                         ]
         ]
-        [ unwrap elem
+        [ unwrap 0 elem
         ]
 
 

@@ -41,21 +41,20 @@ import Internal.Model2 as Two
 -}
 mainContent : Attribute msg
 mainContent =
-    -- Internal.Describe Main
     Two.Attr (Html.Attributes.attribute "role" "main")
 
 
 {-| -}
 aside : Attribute msg
 aside =
-    -- Internal.Describe Complementary
+    -- TODO! if there is more than one of these on a page, it should be labeled.
     Two.Attr (Html.Attributes.attribute "role" "complementary")
 
 
 {-| -}
 navigation : Attribute msg
 navigation =
-    -- Internal.Describe Navigation
+    -- TODO! if there is more than one of these, it should be labeled.
     Two.Attr (Html.Attributes.attribute "role" "navigation")
 
 
@@ -89,10 +88,11 @@ Though it's also smart enough to not conflict with existing nodes.
 
 So, this code
 
-    link [ Region.heading 1 ]
-        { url = "http://fruits.com"
-        , label = text "Best site ever"
-        }
+    el
+        [ Region.heading 1
+        , link "http://fruits.com"
+        ]
+        (text "Best site ever")
 
 will generate
 

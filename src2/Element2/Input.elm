@@ -926,7 +926,7 @@ textHelper2 textInput attrs textOptions =
 
                     TextArea ->
                         [ Two.NodeName "textarea"
-                        , Two.Class Flag.overflow Style.classes.clip
+                        , Two.Class Flag2.overflow Style.classes.clip
                         , Element2.height Element2.fill
                         , Two.class classes.inputMultiline
 
@@ -948,7 +948,7 @@ textHelper2 textInput attrs textOptions =
                             Just fill ->
                                 Two.Attr (Html.Attributes.attribute "autocomplete" fill)
                        ]
-                    ++ redistributed.input
+                    ++ Debug.log "input" redistributed.input
                 )
                 []
 
@@ -982,11 +982,11 @@ textHelper2 textInput attrs textOptions =
                                         ]
 
                                     Just place ->
-                                        [ renderPlaceholder2 place (textOptions.text == "")
+                                        [ renderPlaceholder2 redistributed.placeholder place (textOptions.text == "")
                                         ]
 
                              else
-                                [ Two.Element
+                                [ Element2.html
                                     (Html.span [ Html.Attributes.class classes.inputMultilineFiller ]
                                         -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
                                         [ Html.text (textOptions.text ++ "\u{00A0}")
@@ -1010,14 +1010,14 @@ textHelper2 textInput attrs textOptions =
 
                                     Just place ->
                                         [ Element2.behindContent
-                                            (renderPlaceholder2 place (textOptions.text == ""))
+                                            (renderPlaceholder2 redistributed.placeholder place (textOptions.text == ""))
                                         ]
                                 ]
                         )
                         [ inputElement ]
     in
     applyLabel2
-        (Two.Class Flag.cursor classes.cursorText
+        (Two.Class Flag2.cursor classes.cursorText
             :: Two.class Style.classes.inputTextParent
             :: (if isHiddenLabel2 textOptions.label then
                     Two.NoAttribute
@@ -1293,27 +1293,26 @@ renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on
         placeholderEl
 
 
-renderPlaceholder2 (Placeholder2 placeholderAttrs placeholderEl) on =
+renderPlaceholder2 attrs (Placeholder2 placeholderAttrs placeholderEl) on =
     Element2.el
-        ([ Font2.color charcoal2
-         , Two.class
-            (Style.classes.noTextSelection
-                ++ " "
-                ++ Style.classes.passPointerEvents
-                ++ " "
-                ++ Style.classes.padding
-            )
-         , Two.Class Flag.overflow Style.classes.clip
-         , Element2.height Element2.fill
-         , Element2.width Element2.fill
-         , Element2.alpha
-            (if on then
-                1
+        (attrs
+            ++ [ Font2.color charcoal2
+               , Two.class
+                    (Style.classes.noTextSelection
+                        ++ " "
+                        ++ Style.classes.passPointerEvents
+                    )
+               , Two.Class Flag2.overflow Style.classes.clip
+               , Element2.height Element2.fill
+               , Element2.width Element2.fill
+               , Element2.alpha
+                    (if on then
+                        1
 
-             else
-                0
-            )
-         ]
+                     else
+                        0
+                    )
+               ]
             ++ placeholderAttrs
         )
         placeholderEl
@@ -1632,18 +1631,21 @@ redistribute2 :
         { parent : List (Two.Attribute msg)
         , inputParent : List (Two.Attribute msg)
         , input : List (Two.Attribute msg)
+        , placeholder : List (Two.Attribute msg)
         }
 redistribute2 attrs =
     List.foldl redistributeOver2
         { parent = []
         , inputParent = []
         , input = []
+        , placeholder = []
         }
         attrs
         |> (\redist ->
                 { parent = List.reverse redist.parent
                 , inputParent = List.reverse redist.inputParent
                 , input = List.reverse redist.input
+                , placeholder = List.reverse redist.placeholder
                 }
            )
 
@@ -1687,6 +1689,36 @@ redistribute2 attrs =
 -}
 redistributeOver2 attr els =
     case attr of
+        Two.Spacing _ _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.Padding flag x y ->
+            { els
+                | inputParent = Two.Padding flag x 0 :: els.inputParent
+                , placeholder = attr :: els.placeholder
+                , input =
+                    Two.Style Flag2.height
+                        (Style.prop "height"
+                            ("calc(1em + "
+                                ++ String.fromInt (2 * y)
+                                ++ "px)"
+                            )
+                        )
+                        :: Two.Style Flag2.lineHeight
+                            (Style.prop "line-height"
+                                ("calc(1em + "
+                                    ++ String.fromInt (2 * y)
+                                    ++ "px)"
+                                )
+                            )
+                        :: els.input
+            }
+
+        Two.BorderWidth _ _ _ ->
+            { els
+                | inputParent = attr :: els.inputParent
+            }
+
         Two.Nearby _ _ ->
             { els | inputParent = attr :: els.inputParent }
 
