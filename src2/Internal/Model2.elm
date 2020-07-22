@@ -275,7 +275,7 @@ render layout spacing padding border children name has styles htmlAttrs classes 
     case attrs of
         [] ->
             Element
-                (\mySpace ->
+                (\parentSpacing ->
                     let
                         renderedChildren =
                             case nearby of
@@ -293,9 +293,16 @@ render layout spacing padding border children name has styles htmlAttrs classes 
 
                         finalStyles =
                             styles
-                                ++ Style.prop "margin" (Style.spacing mySpace)
+                                ++ Style.prop "margin" (Style.spacing parentSpacing)
                                 ++ Style.prop "padding" (Style.compactQuad padding)
                                 ++ Style.prop "border-width" (Style.compactQuad border)
+                                ++ (case layout of
+                                        AsParagraph ->
+                                            Style.prop "line-height" ("calc(1em + " ++ String.fromInt spacing ++ "px)")
+
+                                        _ ->
+                                            ""
+                                   )
                     in
                     Html.node
                         name

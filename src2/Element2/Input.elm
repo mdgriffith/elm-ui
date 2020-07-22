@@ -909,7 +909,7 @@ textHelper2 textInput attrs textOptions =
             defaultTextBoxStyle2 ++ attrs
 
         redistributed =
-            redistribute2 withDefaults
+            redistribute2 textInput.type_ withDefaults
 
         inputElement =
             Two.element
@@ -948,7 +948,7 @@ textHelper2 textInput attrs textOptions =
                             Just fill ->
                                 Two.Attr (Html.Attributes.attribute "autocomplete" fill)
                        ]
-                    ++ Debug.log "input" redistributed.input
+                    ++ redistributed.input
                 )
                 []
 
@@ -968,11 +968,13 @@ textHelper2 textInput attrs textOptions =
                         )
                         [ Two.element
                             Two.AsParagraph
-                            [ Element2.width Element2.fill
-                            , Element2.height Element2.fill
-                            , Element2.inFront inputElement
-                            , Two.class classes.inputMultilineParent
-                            ]
+                            ([ Element2.width Element2.fill
+                             , Element2.height Element2.fill
+                             , Element2.inFront inputElement
+                             , Two.class classes.inputMultilineParent
+                             ]
+                                ++ redistributed.textAreaWrapper
+                            )
                             (if textOptions.text == "" then
                                 case textOptions.placeholder of
                                     Nothing ->
@@ -1626,19 +1628,22 @@ redistribute them to the parent, the input, or the cover.
 
 -}
 redistribute2 :
-    List (Two.Attribute msg)
+    TextKind
+    -> List (Two.Attribute msg)
     ->
         { parent : List (Two.Attribute msg)
         , inputParent : List (Two.Attribute msg)
         , input : List (Two.Attribute msg)
         , placeholder : List (Two.Attribute msg)
+        , textAreaWrapper : List (Two.Attribute msg)
         }
-redistribute2 attrs =
-    List.foldl redistributeOver2
+redistribute2 input attrs =
+    List.foldl (redistributeOver2 input)
         { parent = []
         , inputParent = []
         , input = []
         , placeholder = []
+        , textAreaWrapper = []
         }
         attrs
         |> (\redist ->
@@ -1646,6 +1651,7 @@ redistribute2 attrs =
                 , inputParent = List.reverse redist.inputParent
                 , input = List.reverse redist.input
                 , placeholder = List.reverse redist.placeholder
+                , textAreaWrapper = List.reverse redist.textAreaWrapper
                 }
            )
 
@@ -1687,32 +1693,61 @@ redistribute2 attrs =
     </label>
 
 -}
-redistributeOver2 attr els =
+redistributeOver2 input attr els =
     case attr of
-        Two.Spacing _ _ ->
-            { els | parent = attr :: els.parent }
+        Two.Spacing flag vSpace ->
+            case input of
+                TextArea ->
+                    { els
+                        | parent = attr :: els.parent
+                        , input =
+                            Element2.moveUp
+                                (toFloat (floor (toFloat vSpace / 2)))
+                                :: Two.Style Flag2.lineHeight
+                                    (Style.prop "height"
+                                        ("calc(100% + " ++ String.fromInt vSpace ++ "px)")
+                                        ++ Style.prop "line-height"
+                                            ("calc(1em + " ++ String.fromInt vSpace ++ "px)")
+                                    )
+                                :: els.input
+                        , textAreaWrapper = attr :: els.textAreaWrapper
+                    }
+
+                TextInputNode _ ->
+                    { els
+                        | parent = attr :: els.parent
+
+                        -- , input = attr :: els.input
+                        -- , inputParent = attr :: els.inputParent
+                    }
 
         Two.Padding flag x y ->
-            { els
-                | inputParent = Two.Padding flag x 0 :: els.inputParent
-                , placeholder = attr :: els.placeholder
-                , input =
-                    Two.Style Flag2.height
-                        (Style.prop "height"
-                            ("calc(1em + "
-                                ++ String.fromInt (2 * y)
-                                ++ "px)"
-                            )
-                        )
-                        :: Two.Style Flag2.lineHeight
-                            (Style.prop "line-height"
-                                ("calc(1em + "
-                                    ++ String.fromInt (2 * y)
-                                    ++ "px)"
+            case input of
+                TextArea ->
+                    { els
+                        | inputParent = attr :: els.inputParent
+                        , placeholder = attr :: els.placeholder
+                    }
+
+                TextInputNode _ ->
+                    { els
+                        | inputParent = Two.Padding flag x 0 :: els.inputParent
+                        , placeholder = attr :: els.placeholder
+                        , input =
+                            Two.Style Flag2.height
+                                (Style.prop "height"
+                                    ("calc(1em + "
+                                        ++ String.fromInt (2 * y)
+                                        ++ "px)"
+                                    )
+                                    ++ Style.prop "line-height"
+                                        ("calc(1em + "
+                                            ++ String.fromInt (2 * y)
+                                            ++ "px)"
+                                        )
                                 )
-                            )
-                        :: els.input
-            }
+                                :: els.input
+                    }
 
         Two.BorderWidth _ _ _ ->
             { els
