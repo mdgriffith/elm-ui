@@ -105,6 +105,7 @@ classes =
     , grid = "g"
     , imageContainer = "ic"
     , wrapped = "wrp"
+    , nowrap = "nowrp"
     , transform = "move"
 
     -- widhts/heights
@@ -207,9 +208,32 @@ classes =
     , inputMultilineFiller = "imlf"
     , inputMultilineWrapper = "implw"
     , inputLabel = "lbl"
+    , slider = "sldr"
 
     -- link
     , link = "lnk"
+    }
+
+
+vars =
+    { spaceX = Gen.Var "space-x"
+    , spaceY = Gen.Var "space-y"
+    , scale = Gen.Var "scale"
+    , moveX = Gen.Var "move-x"
+    , moveY = Gen.Var "move-y"
+    , rotate = Gen.Var "rotate"
+    , heightFill = Gen.Var "height-fill"
+    , widthFill = Gen.Var "width-fill"
+    , padLeft = Gen.Var "pad-left"
+    , padRight = Gen.Var "pad-right"
+    , padTop = Gen.Var "pad-top"
+    , padBottom = Gen.Var "pad-bottom"
+    , borderLeft = Gen.Var "border-left"
+    , borderRight = Gen.Var "border-right"
+    , borderTop = Gen.Var "border-top"
+    , borderBottom = Gen.Var "border-bottom"
+    , sliderWidth = Gen.Var "slider-width"
+    , sliderHeight = Gen.Var "slider-height"
     }
 
 
@@ -217,9 +241,14 @@ type Color
     = Rgb Int Int Int
 
 
-spacing : Int -> String
+spacing : Float -> String
 spacing s =
-    px s
+    floatPx s
+
+
+set : Gen.Var -> String -> String
+set (Gen.Var v) val =
+    "--" ++ v ++ ":" ++ val ++ ";"
 
 
 {-| TODO: a compact quad here is actually two numbers where we extract 4 numbers.

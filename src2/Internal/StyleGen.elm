@@ -14,6 +14,7 @@ classes =
     , text = "t"
     , grid = "g"
     , imageContainer = "ic"
+    , nowrap = "nowrp"
     , wrapped = "wrp"
     , transform = "move"
 
@@ -117,6 +118,7 @@ classes =
     , inputMultilineFiller = "imlf"
     , inputMultilineWrapper = "implw"
     , inputLabel = "lbl"
+    , slider = "sldr"
 
     -- link
     , link = "lnk"
@@ -203,70 +205,76 @@ input[type="search"]::-webkit-search-results-decoration {
 
 sliderReset =
     """
-input[type=range] {
-  -webkit-appearance: none; 
-  background: transparent;
-  position:absolute;
-  left:0;
-  top:0;
-  z-index:10;
-  width: 100%;
-  outline: dashed 1px;
-  height: 100%;
-  opacity: 0;
-}
-"""
+    input[type=range] {
+      // -webkit-appearance: none;
+      // background: transparent;
+      position:absolute;
+      left:0;
+      top:0;
+      z-index:10;
+      width: 100%;
+      outline: dashed 1px;
+      height: 100%;
+      // opacity: 0;
+    }
+    """
+
+
+
+-- ""
 
 
 trackReset =
-    """
-input[type=range]::-moz-range-track {
-    background: transparent;
-    cursor: pointer;
-}
-input[type=range]::-ms-track {
-    background: transparent;
-    cursor: pointer;
-}
-input[type=range]::-webkit-slider-runnable-track {
-    background: transparent;
-    cursor: pointer;
-}
-"""
+    --     """
+    -- input[type=range]::-moz-range-track {
+    --     background: transparent;
+    --     cursor: pointer;
+    -- }
+    -- input[type=range]::-ms-track {
+    --     background: transparent;
+    --     cursor: pointer;
+    -- }
+    -- input[type=range]::-webkit-slider-runnable-track {
+    --     background: transparent;
+    --     cursor: pointer;
+    -- }
+    -- """
+    ""
 
 
 thumbReset =
-    """
-input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    opacity: 0.5;
-    width: 80px;
-    height: 80px;
-    background-color: black;
-    border:none;
-    border-radius: 5px;
-}
-input[type=range]::-moz-range-thumb {
-    opacity: 0.5;
-    width: 80px;
-    height: 80px;
-    background-color: black;
-    border:none;
-    border-radius: 5px;
-}
-input[type=range]::-ms-thumb {
-    opacity: 0.5;
-    width: 80px;
-    height: 80px;
-    background-color: black;
-    border:none;
-    border-radius: 5px;
-}
-input[type=range][orient=vertical]{
-    writing-mode: bt-lr; /* IE */
-    -webkit-appearance: slider-vertical;  /* WebKit */
-}
-"""
+    --     """
+    -- input[type=range]::-webkit-slider-thumb {
+    --     -webkit-appearance: none;
+    --     opacity: 0.5;
+    --     width: 80px;
+    --     height: 80px;
+    --     background-color: black;
+    --     border:none;
+    --     border-radius: 5px;
+    -- }
+    -- input[type=range]::-moz-range-thumb {
+    --     opacity: 0.5;
+    --     width: 80px;
+    --     height: 80px;
+    --     background-color: black;
+    --     border:none;
+    --     border-radius: 5px;
+    -- }
+    -- input[type=range]::-ms-thumb {
+    --     opacity: 0.5;
+    --     width: 80px;
+    --     height: 80px;
+    --     background-color: black;
+    --     border:none;
+    --     border-radius: 5px;
+    -- }
+    -- input[type=range][orient=vertical]{
+    --     writing-mode: bt-lr; /* IE */
+    --     -webkit-appearance: slider-vertical;  /* WebKit */
+    -- }
+    -- """
+    ""
 
 
 explainer =
@@ -738,9 +746,18 @@ baseSheet =
             --         [ Prop "height" "100%"
             --         ]
             --     ]
-            , Child (dot classes.widthFill)
-                [ Prop "flex-grow" "100000"
-                ]
+            -- , Child (dot classes.widthFill)
+            --     [ Prop "flex-grow" "100000"
+            --     ]
+            , Batch
+                (List.map
+                    (\f ->
+                        Child (dot classes.widthFillPortion ++ "-" ++ String.fromInt f)
+                            [ Prop "flex-grow" (String.fromInt (f * 100000))
+                            ]
+                    )
+                    (List.range 1 10)
+                )
             , Child (dot classes.container)
                 [ Prop "flex-grow" "0"
                 , Prop "flex-basis" "auto"
@@ -836,6 +853,14 @@ baseSheet =
             , Descriptor (dot classes.inputLabel)
                 [ Prop "align-items" "baseline"
                 ]
+
+            -- the wrapped row element is controlled entirely by elm-ui
+            , Descriptor (dot classes.wrapped)
+                [ Prop "pointer-events" "none"
+                , Child (dot classes.any)
+                    [ Prop "pointer-events" "auto"
+                    ]
+                ]
             ]
         , Descriptor (dot classes.column)
             [ Prop "display" "flex"
@@ -848,9 +873,19 @@ baseSheet =
                 -- instead of the expected content size.
                 [ Prop "flex-basis" "auto"
                 ]
-            , Child (dot classes.heightFill)
-                [ Prop "flex-grow" "100000"
-                ]
+
+            -- , Child (dot classes.heightFill)
+            --     [ Prop "flex-grow" "100000"
+            --     ]
+            , Batch
+                (List.map
+                    (\f ->
+                        Child (dot classes.heightFillPortion ++ "-" ++ String.fromInt f)
+                            [ Prop "flex-grow" (String.fromInt (f * 100000))
+                            ]
+                    )
+                    (List.range 1 10)
+                )
             , Child (dot classes.widthFill)
                 [ -- alignLeft, alignRight, centerX need to be disabled
                   --   Prop "align-self" "stretch !important"
@@ -1299,6 +1334,7 @@ variable =
         , padding
         , transform
         , textInput
+        , slider
         ]
 
 
@@ -1418,6 +1454,8 @@ vars =
     , borderRight = Var "border-right"
     , borderTop = Var "border-top"
     , borderBottom = Var "border-bottom"
+    , sliderWidth = Var "slider-width"
+    , sliderHeight = Var "slider-height"
     }
 
 
@@ -1442,22 +1480,48 @@ padding =
     ]
 
 
+slider =
+    let
+        props =
+            [ Prop "width" "10px"
+            , Prop "height" "10px"
+            , Variable "width" vars.sliderWidth
+            , Variable "height" vars.sliderHeight
+            ]
+    in
+    [ Class ("input[type=\"range\"]." ++ classes.slider ++ "::-moz-range-thumb")
+        props
+    , Class ("input[type=\"range\"]." ++ classes.slider ++ "::-webkit-slider-thumb")
+        props
+    , Class ("input[type=\"range\"]." ++ classes.slider ++ "::-ms-thumb")
+        props
+    ]
+
+
 spacing =
     [ Class (dot classes.spacing)
         [ Descriptor (dot classes.row)
-            [ Child (dot classes.any)
-                [ Descriptor ":first-child"
-                    [ Prop "margin" "0 !important"
+            [ Descriptor (dot classes.nowrap)
+                [ Child (dot classes.any)
+                    [ Descriptor ":first-child"
+                        [ Prop "margin" "0 !important"
+                        ]
+                    , Adjacent (dot classes.any)
+                        [ Prop "margin-top" "0 !important"
+                        , Prop "margin-right" "0 !important"
+                        , Prop "margin-bottom" "0 !important"
+                        ]
                     ]
-                , Adjacent (dot classes.any)
-                    [ Prop "margin-top" "0 !important"
-                    , Prop "margin-right" "0 !important"
-                    , Prop "margin-bottom" "0 !important"
+                , Child (dot classes.nearby)
+                    [ Adjacent (dot classes.any)
+                        [ Prop "margin" "0 !important"
+                        ]
                     ]
                 ]
-            , Child (dot classes.nearby)
-                [ Adjacent (dot classes.any)
-                    [ Prop "margin" "0 !important"
+            , Descriptor (dot classes.wrapped)
+                [ Child (dot classes.any)
+                    [ Prop "margin-top" "0 !important"
+                    , Prop "margin-left" "0 !important"
                     ]
                 ]
             ]

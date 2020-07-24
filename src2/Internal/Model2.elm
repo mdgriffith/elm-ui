@@ -28,7 +28,7 @@ import VirtualDom
 
 -}
 type Element msg
-    = Element (Int -> Html.Html msg)
+    = Element (Float -> Html.Html msg)
 
 
 map : (a -> b) -> Element a -> Element b
@@ -90,6 +90,7 @@ mapAttr fn attr =
 
 type Layout
     = AsRow
+    | AsWrappedRow
     | AsColumn
     | AsEl
     | AsGrid
@@ -213,7 +214,7 @@ elementKeyed layout attrs children =
         (List.reverse attrs)
 
 
-unwrap : Int -> Element msg -> Html.Html msg
+unwrap : Float -> Element msg -> Html.Html msg
 unwrap s el =
     case el of
         -- Text str ->
@@ -257,6 +258,18 @@ type Wrapped
     = InLink String
 
 
+wrappedRowAttributes attr =
+    case attr of
+        Spacing flag val ->
+            [ attr
+            , Attr (Attr.style "margin-right" (Style.px (-1 * val)))
+            , Attr (Attr.style "margin-bottom" (Style.px (-1 * val)))
+            ]
+
+        _ ->
+            []
+
+
 render :
     Layout
     -> Int
@@ -277,32 +290,49 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             Element
                 (\parentSpacing ->
                     let
+                        finalSpacing =
+                            case layout of
+                                AsWrappedRow ->
+                                    toFloat spacing
+
+                                --/ 2
+                                _ ->
+                                    toFloat spacing
+
                         renderedChildren =
                             case nearby of
                                 NoNearbyChildren ->
-                                    List.map (unwrap spacing) children
+                                    List.map (unwrap finalSpacing) children
 
                                 ChildrenBehind behind ->
-                                    behind ++ List.map (unwrap spacing) children
+                                    behind ++ List.map (unwrap finalSpacing) children
 
                                 ChildrenInFront inFront ->
-                                    List.map (unwrap spacing) children ++ inFront
+                                    List.map (unwrap finalSpacing) children ++ inFront
 
                                 ChildrenBehindAndInFront behind inFront ->
-                                    behind ++ List.map (unwrap spacing) children ++ inFront
+                                    behind ++ List.map (unwrap finalSpacing) children ++ inFront
 
                         finalStyles =
-                            styles
-                                ++ Style.prop "margin" (Style.spacing parentSpacing)
-                                ++ Style.prop "padding" (Style.compactQuad padding)
-                                ++ Style.prop "border-width" (Style.compactQuad border)
-                                ++ (case layout of
-                                        AsParagraph ->
-                                            Style.prop "line-height" ("calc(1em + " ++ String.fromInt spacing ++ "px)")
+                            case layout of
+                                AsWrappedRow ->
+                                    styles
+                                        ++ Style.prop "margin" (Style.spacing parentSpacing)
+                                        ++ Style.prop "padding" (Style.compactQuad padding)
+                                        ++ Style.prop "border-width" (Style.compactQuad border)
 
-                                        _ ->
-                                            ""
-                                   )
+                                AsParagraph ->
+                                    styles
+                                        ++ Style.prop "margin" (Style.spacing parentSpacing)
+                                        ++ Style.prop "padding" (Style.compactQuad padding)
+                                        ++ Style.prop "border-width" (Style.compactQuad border)
+                                        ++ Style.prop "line-height" ("calc(1em + " ++ String.fromInt spacing ++ "px)")
+
+                                _ ->
+                                    styles
+                                        ++ Style.prop "margin" (Style.spacing parentSpacing)
+                                        ++ Style.prop "padding" (Style.compactQuad padding)
+                                        ++ Style.prop "border-width" (Style.compactQuad border)
                     in
                     Html.node
                         name
@@ -484,7 +514,7 @@ render layout spacing padding border children name has styles htmlAttrs classes 
                 remain
 
         (Spacing flag s) :: remain ->
-            if Flag.present flag has then
+            if Flag.present flag has || layout == AsEl then
                 render
                     layout
                     spacing
@@ -593,20 +623,23 @@ renderKeyed layout spacing children name has styles htmlAttrs classes nearby att
     case attrs of
         [] ->
             let
+                finalSpacing =
+                    toFloat spacing
+
                 renderedChildren =
                     case nearby of
                         NoNearbyChildren ->
-                            List.map (Tuple.mapSecond (unwrap spacing)) children
+                            List.map (Tuple.mapSecond (unwrap finalSpacing)) children
 
                         ChildrenBehind behind ->
-                            List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond (unwrap spacing)) children
+                            List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond (unwrap finalSpacing)) children
 
                         ChildrenInFront inFront ->
-                            List.map (Tuple.mapSecond (unwrap spacing)) children ++ List.map (Tuple.pair "keyed") inFront
+                            List.map (Tuple.mapSecond (unwrap finalSpacing)) children ++ List.map (Tuple.pair "keyed") inFront
 
                         ChildrenBehindAndInFront behind inFront ->
                             List.map (Tuple.pair "keyed") behind
-                                ++ List.map (Tuple.mapSecond (unwrap 10)) children
+                                ++ List.map (Tuple.mapSecond (unwrap finalSpacing)) children
                                 ++ List.map (Tuple.pair "keyed") inFront
             in
             Element
@@ -909,7 +942,11 @@ rootClass =
 
 
 rowClass =
-    Style.classes.any ++ " " ++ Style.classes.row
+    Style.classes.any ++ " " ++ Style.classes.row ++ " " ++ Style.classes.nowrap
+
+
+wrappedRowClass =
+    Style.classes.any ++ " " ++ Style.classes.row ++ " " ++ Style.classes.wrapped
 
 
 columnClass =
@@ -936,6 +973,9 @@ contextClasses context =
     case context of
         AsRow ->
             rowClass
+
+        AsWrappedRow ->
+            wrappedRowClass
 
         AsColumn ->
             columnClass
