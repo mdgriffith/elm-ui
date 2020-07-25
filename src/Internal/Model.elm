@@ -1478,7 +1478,9 @@ renderHeight h =
                     Single
                         cls
                         "min-height"
-                        (String.fromInt minSize ++ "px")
+                        -- This needs to be !important because we're using `min-height: min-content`
+                        -- to correct for safari's incorrect implementation of flexbox.
+                        (String.fromInt minSize ++ "px !important")
 
                 ( newFlag, newAttrs, newStyle ) =
                     renderHeight len

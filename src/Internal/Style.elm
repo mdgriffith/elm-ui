@@ -1384,7 +1384,15 @@ baseSheet =
                 -- This apparently is a different story for columns.
                 -- Safari has an issue if this is flex-basis: 0%, as it goes entirely to 0,
                 -- instead of the expected content size.
-                [ Prop "flex-basis" "auto"
+                -- So we add `min-height: min-content`, which isn't supported by IE, but works for all other browsers!
+                -- Separately, 0% is different than 0px, but only for columns
+                -- In columns, 0% will actually be calculated as `auto` for columns
+                -- So, 0px is the one we want.
+                [ Prop "flex-basis" "0px"
+                , Prop "min-height" "min-content"
+                , Descriptor (dot classes.heightExact)
+                    [ Prop "flex-basis" "auto"
+                    ]
                 ]
             , Child (dot classes.heightFill)
                 [ Prop "flex-grow" "100000"
