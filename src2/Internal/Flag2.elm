@@ -17,6 +17,7 @@ module Internal.Flag2 exposing
     , centerX
     , centerY
     , cursor
+    , equal
     , flag
     , focus
     , fontAlignment
@@ -135,6 +136,10 @@ Merging will combine two fields
 merge : Field -> Field -> Field
 merge (Field one) (Field three) =
     Field (Bitwise.or one three)
+
+
+equal (Flag one) (Flag two) =
+    one - two == 0
 
 
 flag : Int -> Flag

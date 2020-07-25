@@ -123,6 +123,54 @@ type Attribute msg
     | Nearby Location (Element msg)
 
 
+hasFlag flag attr =
+    case attr of
+        Spacing f _ ->
+            Flag.equal flag f
+
+        Padding f _ _ ->
+            Flag.equal flag f
+
+        BorderWidth f _ _ ->
+            Flag.equal flag f
+
+        Class f _ ->
+            Flag.equal flag f
+
+        Style f _ ->
+            Flag.equal flag f
+
+        ClassAndStyle f _ _ ->
+            Flag.equal flag f
+
+        _ ->
+            False
+
+
+hasFlags flags attr =
+    case attr of
+        Spacing f _ ->
+            List.any (Flag.equal f) flags
+
+        Padding f _ _ ->
+            List.any (Flag.equal f) flags
+
+        BorderWidth f _ _ ->
+            List.any (Flag.equal f) flags
+
+        Class f _ ->
+            List.any (Flag.equal f) flags
+
+        Style f _ ->
+            List.any (Flag.equal f) flags
+
+        ClassAndStyle f _ _ ->
+            List.any (Flag.equal f) flags
+
+        _ ->
+            False
+
+
 type Location
     = Above
     | Below

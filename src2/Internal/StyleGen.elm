@@ -206,44 +206,39 @@ input[type="search"]::-webkit-search-results-decoration {
 sliderReset =
     """
     input[type=range] {
-      // -webkit-appearance: none;
-      // background: transparent;
+      -webkit-appearance: none;
+      background: transparent;
       position:absolute;
       left:0;
       top:0;
       z-index:10;
       width: 100%;
-      outline: dashed 1px;
       height: 100%;
-      // opacity: 0;
+      opacity: 0;
+      // outline: dashed 1px;
     }
     """
 
 
-
--- ""
-
-
 trackReset =
-    --     """
-    -- input[type=range]::-moz-range-track {
-    --     background: transparent;
-    --     cursor: pointer;
-    -- }
-    -- input[type=range]::-ms-track {
-    --     background: transparent;
-    --     cursor: pointer;
-    -- }
-    -- input[type=range]::-webkit-slider-runnable-track {
-    --     background: transparent;
-    --     cursor: pointer;
-    -- }
-    -- """
-    ""
+    """
+    input[type=range]::-moz-range-track {
+        background: transparent;
+        cursor: pointer;
+    }
+    input[type=range]::-ms-track {
+        background: transparent;
+        cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+        background: transparent;
+        cursor: pointer;
+    }
+    """
 
 
 thumbReset =
-    --     """
+    -- """
     -- input[type=range]::-webkit-slider-thumb {
     --     -webkit-appearance: none;
     --     opacity: 0.5;
@@ -1483,10 +1478,8 @@ padding =
 slider =
     let
         props =
-            [ Prop "width" "10px"
-            , Prop "height" "10px"
-            , Variable "width" vars.sliderWidth
-            , Variable "height" vars.sliderHeight
+            [ Prop "width" "16px"
+            , Prop "height" "16px"
             ]
     in
     [ Class ("input[type=\"range\"]." ++ classes.slider ++ "::-moz-range-thumb")

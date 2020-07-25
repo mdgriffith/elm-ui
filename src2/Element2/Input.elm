@@ -8,6 +8,7 @@ module Element2.Input exposing
     , slider, Thumb, thumb, defaultThumb
     , radio, radioRow, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
+    , sliderX, sliderY
     )
 
 {-| Input elements have a lot of constraints!
@@ -513,22 +514,268 @@ type Thumb
 
 
 {-| -}
+type Thumb2
+    = Thumb2 (List (Two.Attribute Never))
+
+
+{-| -}
 thumb : List (Attribute Never) -> Thumb
 thumb =
     Thumb
 
 
 {-| -}
-defaultThumb : Thumb
+defaultThumb : Thumb2
 defaultThumb =
-    Thumb
-        [ Element.width (Element.px 16)
-        , Element.height (Element.px 16)
-        , Border.rounded 8
-        , Border.width 1
-        , Border.color (Element.rgb 0.5 0.5 0.5)
-        , Background.color (Element.rgb 1 1 1)
+    Thumb2
+        [ Element2.width (Element2.px 16)
+        , Element2.height (Element2.px 16)
+        , Border2.rounded 8
+        , Border2.width 1
+        , Border2.color (Element2.rgb 100 100 100)
+        , Background2.color (Element2.rgb 255 255 255)
         ]
+
+
+{-| A slider input, good for capturing float values.
+Input.slider
+[ Element.height (Element.px 30)
+-- Here is where we're creating/styling the "track"
+, Element.behindContent
+(Element.el
+[ Element.width Element.fill
+, Element.height (Element.px 2)
+, Element.centerY
+, Background.color grey
+, Border.rounded 2
+]
+Element.none
+)
+]
+{ onChange = AdjustValue
+, label =
+Input.labelAbove []
+(text "My Slider Value")
+, min = 0
+, max = 75
+, step = Nothing
+, value = model.sliderValue
+, thumb =
+Input.defaultThumb
+}
+`Element.behindContent` is used to render the track of the slider. Without it, no track would be rendered. The `thumb` is the icon that you can move around.
+The slider can be vertical or horizontal depending on the width/height of the slider.
+
+  - `height fill` and `width (px someWidth)` will cause the slider to be vertical.
+  - `height (px someHeight)` and `width (px someWidth)` where `someHeight` > `someWidth` will also do it.
+  - otherwise, the slider will be horizontal.
+    **Note** If you want a slider for an `Int` value:
+  - set `step` to be `Just 1`, or some other whole value
+  - `value = toFloat model.myInt`
+  - And finally, round the value before making a message `onChange = round >> AdjustValue`
+
+-}
+sliderX :
+    List (Two.Attribute msg)
+    ->
+        { onChange : Float -> msg
+        , label : Label2 msg
+        , min : Float
+        , max : Float
+        , value : Float
+        , thumb : Thumb2
+        , step : Maybe Float
+        }
+    -> Two.Element msg
+sliderX attributes input =
+    let
+        (Thumb2 thumbAttributes) =
+            input.thumb
+
+        factor =
+            (input.value - input.min)
+                / (input.max - input.min)
+    in
+    applyLabel2
+        ([ Region2.announce
+         , Element2.width Element2.fill
+         , Element2.height Element2.fill
+         ]
+            ++ List.filter
+                (Two.hasFlags
+                    [ Flag2.width
+                    , Flag2.height
+                    , Flag2.spacing
+                    ]
+                )
+                attributes
+        )
+        input.label
+        (Element2.row
+            [ Element2.width Element2.fill
+            ]
+            [ Two.element
+                Two.AsEl
+                [ Two.NodeName "input"
+                , hiddenLabelAttribute2 input.label
+                , Two.class (Style.classes.slider ++ " focusable-parent")
+                , Two.Attr
+                    (Html.Events.onInput
+                        (\str ->
+                            case String.toFloat str of
+                                Nothing ->
+                                    -- This should never happen because the browser
+                                    -- should always provide a Float.
+                                    input.onChange 0
+
+                                Just val ->
+                                    input.onChange val
+                        )
+                    )
+                , Two.Attr
+                    (Html.Attributes.type_ "range")
+                , Two.Attr <|
+                    Html.Attributes.step
+                        (case input.step of
+                            Nothing ->
+                                -- Note: If we set `any` here,
+                                -- Firefox makes a single press of the arrows keys equal to 1
+                                -- We could set the step manually to the effective range / 100
+                                -- String.fromFloat ((input.max - input.min) / 100)
+                                -- Which matches Chrome's default behavior
+                                -- HOWEVER, that means manually moving a slider with the mouse will snap to that interval.
+                                "any"
+
+                            Just step ->
+                                String.fromFloat step
+                        )
+                , Two.Attr
+                    (Html.Attributes.min (String.fromFloat input.min))
+                , Two.Attr
+                    (Html.Attributes.max (String.fromFloat input.max))
+                , Two.Attr <|
+                    Html.Attributes.value (String.fromFloat input.value)
+                , Element2.width Element2.fill
+                , Element2.height Element2.fill
+                ]
+                []
+            , Element2.el
+                (Element2.width Element2.fill
+                    :: Element2.height (Element2.px 20)
+                    :: attributes
+                    -- This is after `attributes` because the thumb should be in front of everything.
+                    ++ [ Element2.behindContent
+                            (viewThumb2 factor thumbAttributes)
+                       ]
+                )
+                Element2.none
+            ]
+        )
+
+
+sliderY :
+    List (Two.Attribute msg)
+    ->
+        { onChange : Float -> msg
+        , label : Label2 msg
+        , min : Float
+        , max : Float
+        , value : Float
+        , thumb : Thumb2
+        , step : Maybe Float
+        }
+    -> Two.Element msg
+sliderY attrs input =
+    let
+        attributes =
+            Element2.height (Element2.px 200)
+                :: Element2.width (Element2.px 20)
+                :: attrs
+
+        (Thumb2 thumbAttributes) =
+            input.thumb
+
+        factor =
+            (input.value - input.min)
+                / (input.max - input.min)
+    in
+    applyLabel2
+        ([ Region2.announce
+         , Element2.width Element2.fill
+         , Element2.height Element2.fill
+         ]
+            ++ List.filter
+                (Two.hasFlags
+                    [ Flag2.width
+                    , Flag2.height
+                    , Flag2.spacing
+                    ]
+                )
+                attributes
+        )
+        input.label
+        (Element2.row
+            [ Element2.width Element2.fill
+            ]
+            [ Two.element
+                Two.AsEl
+                [ Two.NodeName "input"
+                , hiddenLabelAttribute2 input.label
+                , Two.class (Style.classes.slider ++ " focusable-parent")
+                , Two.Attr <|
+                    Html.Attributes.attribute "orient" "vertical"
+                , Two.Attr
+                    (Html.Events.onInput
+                        (\str ->
+                            case String.toFloat str of
+                                Nothing ->
+                                    -- This should never happen because the browser
+                                    -- should always provide a Float.
+                                    input.onChange 0
+
+                                Just val ->
+                                    input.onChange val
+                        )
+                    )
+                , Two.Attr
+                    (Html.Attributes.type_ "range")
+                , Two.Attr <|
+                    Html.Attributes.step
+                        (case input.step of
+                            Nothing ->
+                                -- Note: If we set `any` here,
+                                -- Firefox makes a single press of the arrows keys equal to 1
+                                -- We could set the step manually to the effective range / 100
+                                -- String.fromFloat ((input.max - input.min) / 100)
+                                -- Which matches Chrome's default behavior
+                                -- HOWEVER, that means manually moving a slider with the mouse will snap to that interval.
+                                "any"
+
+                            Just step ->
+                                String.fromFloat step
+                        )
+                , Two.Attr
+                    (Html.Attributes.min (String.fromFloat input.min))
+                , Two.Attr
+                    (Html.Attributes.max (String.fromFloat input.max))
+                , Two.Attr <|
+                    Html.Attributes.value (String.fromFloat input.value)
+                , Element2.width Element2.fill
+                , Element2.height Element2.fill
+                ]
+                []
+            , Element2.el
+                (Element2.height Element2.fill
+                    :: Element2.width (Element2.px 20)
+                    :: attributes
+                    -- This is after `attributes` because the thumb should be in front of everything.
+                    ++ [ Element2.behindContent
+                            (viewVerticalThumb2 factor thumbAttributes)
+                       ]
+                )
+                Element2.none
+            ]
+        )
 
 
 {-| A slider input, good for capturing float values.
@@ -810,6 +1057,66 @@ slider attributes input =
                 Element.none
             ]
         )
+
+
+viewThumb2 factor thumbAttributes =
+    Element2.row
+        [ Element2.width Element2.fill
+        , Element2.height Element2.fill
+        , Element2.centerY
+        ]
+        [ Element2.el
+            [ Element2.htmlAttribute
+                (Html.Attributes.style
+                    "flex-grow"
+                    (String.fromInt (round (factor * 5000)))
+                )
+            ]
+            Element2.none
+        , Element2.el
+            (Element2.centerY
+                :: List.map (Two.mapAttr Basics.never) thumbAttributes
+            )
+            Element2.none
+        , Element2.el
+            [ Element2.htmlAttribute
+                (Html.Attributes.style
+                    "flex-grow"
+                    (String.fromInt (round ((1 - factor) * 5000)))
+                )
+            ]
+            Element2.none
+        ]
+
+
+viewVerticalThumb2 factor thumbAttributes =
+    Element2.column
+        [ Element2.width Element2.fill
+        , Element2.height Element2.fill
+        , Element2.centerX
+        ]
+        [ Element2.el
+            [ Element2.htmlAttribute
+                (Html.Attributes.style
+                    "flex-grow"
+                    (String.fromInt (round ((1 - factor) * 5000)))
+                )
+            ]
+            Element2.none
+        , Element2.el
+            (Element2.centerX
+                :: List.map (Two.mapAttr Basics.never) thumbAttributes
+            )
+            Element2.none
+        , Element2.el
+            [ Element2.htmlAttribute
+                (Html.Attributes.style
+                    "flex-grow"
+                    (String.fromInt (round (factor * 5000)))
+                )
+            ]
+            Element2.none
+        ]
 
 
 viewHorizontalThumb factor thumbAttributes trackHeight =
@@ -1716,9 +2023,6 @@ redistributeOver2 input attr els =
                 TextInputNode _ ->
                     { els
                         | parent = attr :: els.parent
-
-                        -- , input = attr :: els.input
-                        -- , inputParent = attr :: els.inputParent
                     }
 
         Two.Padding flag x y ->
