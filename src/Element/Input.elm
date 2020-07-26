@@ -447,22 +447,24 @@ checkbox attrs { label, icon, checked, onChange } =
             ]
                 ++ attrs
     in
-    applyLabel attributes
-        label
-        (Internal.element
-            Internal.asEl
-            Internal.div
-            [ Internal.Attr <|
-                Html.Attributes.attribute "role" "checkbox"
-            , Internal.Attr <|
-                Html.Attributes.attribute "aria-checked" <|
+    applyLabel
+        (Internal.Attr (Html.Attributes.attribute "role" "checkbox")
+            :: Internal.Attr
+                (Html.Attributes.attribute "aria-checked" <|
                     if checked then
                         "true"
 
                     else
                         "false"
-            , hiddenLabelAttribute label
-            , Element.centerY
+                )
+            :: hiddenLabelAttribute label
+            :: attributes
+        )
+        label
+        (Internal.element
+            Internal.asEl
+            Internal.div
+            [ Element.centerY
             , Element.height Element.fill
             , Element.width Element.shrink
             ]
