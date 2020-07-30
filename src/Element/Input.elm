@@ -713,7 +713,7 @@ slider attributes input =
                         ("input[type=\"range\"]." ++ className ++ "::-ms-thumb")
                         thumbShadowStyle
                     )
-                , Internal.Attr (Html.Attributes.class (className ++ " focusable-parent"))
+                , Internal.Attr (Html.Attributes.class (className ++ " ui-slide-bar focusable-parent"))
                 , Internal.Attr
                     (Html.Events.onInput
                         (\str ->
@@ -779,10 +779,10 @@ slider attributes input =
                     -- This is after `attributes` because the thumb should be in front of everything.
                     ++ [ Element.behindContent <|
                             if vertical then
-                                viewVerticalThumb factor thumbAttributes trackWidth
+                                viewVerticalThumb factor (Internal.htmlClass "focusable-thumb" :: thumbAttributes) trackWidth
 
                             else
-                                viewHorizontalThumb factor thumbAttributes trackHeight
+                                viewHorizontalThumb factor (Internal.htmlClass "focusable-thumb" :: thumbAttributes) trackHeight
                        ]
                 )
                 Element.none
