@@ -369,7 +369,17 @@ button attrs { onPress, label } =
 
                     Just msg ->
                         Events.onClick msg
-                            :: onEnter msg
+                            :: onKeyLookup
+                                (\code ->
+                                    if code == enter then
+                                        Just msg
+
+                                    else if code == space then
+                                        Just msg
+
+                                    else
+                                        Nothing
+                                )
                             :: attrs
                )
         )
@@ -2093,7 +2103,11 @@ onKeyLookup lookup =
             Json.field "key" Json.string
                 |> Json.andThen decode
     in
-    Internal.Attr <| Html.Events.on "keyup" isKey
+    -- We generally want these attached to the keydown event becaues it allows us to prevent default on things like spacebar scrolling the page.
+    -- https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/button_role
+    Internal.Attr <|
+        Html.Events.preventDefaultOn "keydown"
+            (Json.map (\fired -> ( fired, True )) isKey)
 
 
 {-| -}
