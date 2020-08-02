@@ -2203,7 +2203,8 @@ defaultCheckbox : Bool -> Element msg
 defaultCheckbox checked =
     Element.el
         [ Internal.htmlClass "focusable"
-        , Element.width (Element.px 14)
+        , Element.width
+            (Element.px 14)
         , Element.height (Element.px 14)
         , Font.color white
         , Element.centerY
@@ -2239,9 +2240,8 @@ defaultCheckbox checked =
 
             else
                 1
-        ]
-        (if checked then
-            Element.el
+        , Element.inFront
+            (Element.el
                 [ Border.color white
                 , Element.height (Element.px 6)
                 , Element.width (Element.px 9)
@@ -2249,6 +2249,7 @@ defaultCheckbox checked =
                 , Element.centerX
                 , Element.centerY
                 , Element.moveUp 1
+                , Element.transparent (not checked)
                 , Border.widthEach
                     { top = 0
                     , left = 2
@@ -2257,7 +2258,6 @@ defaultCheckbox checked =
                     }
                 ]
                 Element.none
-
-         else
-            Element.none
-        )
+            )
+        ]
+        Element.none
