@@ -19,7 +19,7 @@ module Element2 exposing
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , map, mapAttribute
     , html, htmlAttribute
-    , clip, clipX, clipY, scrollbarX, scrollbarY
+    , clip, clipX, clipY, embed, scrollbarX, scrollbarY
     )
 
 {-|
@@ -359,6 +359,24 @@ layout attrs content =
             )
             [ Two.Element styleNode
             , content
+            ]
+
+
+{-| Converts an `Element msg` to an `Html msg` but does not include the stylesheet.
+
+You'll need to include it manually yourself
+
+-}
+embed : List (Two.Attribute msg) -> Two.Element msg -> Html msg
+embed attrs content =
+    Two.unwrap 0 <|
+        Two.element Two.AsRoot
+            (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
+                :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
+                :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+                :: attrs
+            )
+            [ content
             ]
 
 
