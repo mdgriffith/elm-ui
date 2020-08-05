@@ -33,7 +33,7 @@ module Element2.Border exposing
 -}
 
 import Element2 exposing (Attribute, Color)
-import Internal.Flag as Flag
+import Internal.Flag2 as Flag
 import Internal.Model2 as Two
 import Internal.StyleGenerator as Style
 
@@ -41,27 +41,20 @@ import Internal.StyleGenerator as Style
 {-| -}
 color : Color -> Attribute msg
 color clr =
-    -- Internal.StyleClass
-    --     Flag.borderColor
-    --     (Internal.Colored
-    --         ("bc-" ++ Internal.formatColorClass clr)
-    --         "border-color"
-    --         clr
-    --     )
     Two.Style Flag.borderColor (Style.prop "border-color" (Style.color clr))
 
 
 {-| -}
 width : Int -> Attribute msg
 width v =
-    Two.Style Flag.borderWidth (Style.prop "border-color" (Style.px v))
+    Two.BorderWidth Flag.borderWidth v v
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Two.Style Flag.borderWidth (Style.prop "border-color" (Style.pair (Style.px y) (Style.px x)))
+    Two.BorderWidth Flag.borderWidth x y
 
 
 {-| -}
@@ -73,14 +66,7 @@ widthEach :
     }
     -> Attribute msg
 widthEach { bottom, top, left, right } =
-    Two.Style Flag.borderWidth
-        (Style.prop "border-color"
-            (Style.quad (Style.px top)
-                (Style.px right)
-                (Style.px bottom)
-                (Style.px left)
-            )
-        )
+    Two.BorderWidth Flag.borderWidth top right
 
 
 {-| -}
@@ -140,7 +126,7 @@ glow clr size =
     --     , blur = size * 2
     --     , color = clr
     --     }
-    Debug.todo "DO we really need glow?"
+    Two.class "DO we really need glow?"
 
 
 {-| -}
@@ -152,7 +138,7 @@ innerGlow clr size =
     --     , blur = size * 2
     --     , color = clr
     --     }
-    Debug.todo "DO we really need glow?"
+    Two.class "DO we really need glow?"
 
 
 {-| -}

@@ -6,6 +6,7 @@ module Internal.Flag2 exposing
     , alignBottom
     , alignRight
     , behind
+    , bg
     , bgColor
     , bgGradient
     , bgImage
@@ -16,6 +17,7 @@ module Internal.Flag2 exposing
     , centerX
     , centerY
     , cursor
+    , equal
     , flag
     , focus
     , fontAlignment
@@ -33,6 +35,7 @@ module Internal.Flag2 exposing
     , heightTextAreaContent
     , hover
     , letterSpacing
+    , lineHeight
     , merge
     , moveX
     , moveY
@@ -62,17 +65,28 @@ import Bitwise
 
 
 type Field
-    = Field Int Int
+    = Field Int
+
+
+
+--  Int
 
 
 type Flag
     = Flag Int
-    | Second Int
+
+
+
+-- | Second Int
 
 
 none : Field
 none =
-    Field 0 0
+    Field 0
+
+
+
+-- 0
 
 
 value myFlag =
@@ -80,32 +94,38 @@ value myFlag =
         Flag first ->
             round (logBase 2 (toFloat first))
 
-        Second second ->
-            round (logBase 2 (toFloat second)) + 32
+
+
+-- Second second ->
+--     round (logBase 2 (toFloat second)) + 32
 
 
 {-| If the query is in the truth, return True
 -}
 present : Flag -> Field -> Bool
-present myFlag (Field fieldOne fieldTwo) =
+present myFlag (Field fieldOne) =
     case myFlag of
         Flag first ->
-            Bitwise.and first fieldOne == first
+            Bitwise.and first fieldOne - first == 0
 
-        Second second ->
-            Bitwise.and second fieldTwo == second
+
+
+-- Second second ->
+--     Bitwise.and second fieldTwo - second == 0
 
 
 {-| Add a flag to a field.
 -}
 add : Flag -> Field -> Field
-add myFlag (Field one two) =
+add myFlag (Field one) =
     case myFlag of
         Flag first ->
-            Field (Bitwise.or first one) two
+            Field (Bitwise.or first one)
 
-        Second second ->
-            Field one (Bitwise.or second two)
+
+
+-- Second second ->
+--     Field one (Bitwise.or second two)
 
 
 {-| Generally you want to use `add`, which keeps a distinction between Fields and Flags.
@@ -114,19 +134,22 @@ Merging will combine two fields
 
 -}
 merge : Field -> Field -> Field
-merge (Field one two) (Field three four) =
-    Field (Bitwise.or one three) (Bitwise.or two four)
+merge (Field one) (Field three) =
+    Field (Bitwise.or one three)
+
+
+equal (Flag one) (Flag two) =
+    one - two == 0
 
 
 flag : Int -> Flag
 flag i =
-    if i > 31 then
-        Second
-            (Bitwise.shiftLeftBy (i - 32) 1)
-
-    else
-        Flag
-            (Bitwise.shiftLeftBy i 1)
+    -- if i > 31 then
+    --     Second
+    --         (Bitwise.shiftLeftBy (i - 32) 1)
+    -- else
+    Flag
+        (Bitwise.shiftLeftBy i 1)
 
 
 
@@ -323,3 +346,11 @@ heightTextAreaContent =
 
 fontVariant =
     flag 48
+
+
+bg =
+    flag 49
+
+
+lineHeight =
+    flag 50

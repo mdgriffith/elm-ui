@@ -19,7 +19,7 @@ module Element2 exposing
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , map, mapAttribute
     , html, htmlAttribute
-    , clip, clipX, clipY, scrollbarX, scrollbarY
+    , clip, clipX, clipY, embed, scrollbarX, scrollbarY
     )
 
 {-|
@@ -201,7 +201,7 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 
 import Html exposing (Html)
 import Html.Attributes
-import Internal.Flag as Flag exposing (Flag)
+import Internal.Flag2 as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.StyleGenerator as Style
 
@@ -241,7 +241,7 @@ type alias Attribute msg =
 {-| -}
 html : Html msg -> Two.Element msg
 html x =
-    Two.Element x
+    Two.Element (\_ -> x)
 
 
 {-| -}
@@ -350,16 +350,33 @@ fillPortion =
 -}
 layout : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 layout attrs content =
-    Two.unwrap <|
+    Two.unwrap 0 <|
         Two.element Two.AsRoot
-            attrs
-            [ Html.div []
-                [ Html.node "style"
-                    []
-                    [ Html.text Style.rules ]
-                ]
-                |> Two.Element
+            (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
+                :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
+                :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+                :: attrs
+            )
+            [ Two.Element styleNode
             , content
+            ]
+
+
+{-| Converts an `Element msg` to an `Html msg` but does not include the stylesheet.
+
+You'll need to include it manually yourself
+
+-}
+embed : List (Two.Attribute msg) -> Two.Element msg -> Html msg
+embed attrs content =
+    Two.unwrap 0 <|
+        Two.element Two.AsRoot
+            (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
+                :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
+                :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+                :: attrs
+            )
+            [ content
             ]
 
 
@@ -377,35 +394,28 @@ layoutWith { options } attrs content =
     --         :: (Internal.rootStyle ++ attrs)
     --     )
     --     child
-    Two.unwrap <|
-        Two.element Two.AsRoot
-            attrs
-            [ Html.div []
-                [ Html.node "style"
-                    []
-                    [ Html.text Style.locked ]
-                ]
-                |> Two.Element
-            , content
-            ]
+    Two.unwrap 0 <|
+        rootNode options attrs content
 
 
+rootNode options attrs content =
+    Two.element Two.AsRoot
+        (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
+            :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
+            :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+            :: attrs
+        )
+        [ Two.Element styleNode
+        , content
+        ]
 
---  let
---         families =
---             [ Typeface "Open Sans"
---             , Typeface "Helvetica"
---             , Typeface "Verdana"
---             , SansSerif
---             ]
---     in
---     [ StyleClass Flag.bgColor (Colored ("bg-" ++ formatColorClass (Rgba 1 1 1 0)) "background-color" (Rgba 1 1 1 0))
---     , StyleClass Flag.fontColor (Colored ("fc-" ++ formatColorClass (Rgba 0 0 0 1)) "color" (Rgba 0 0 0 1))
---     , StyleClass Flag.fontSize (FontSize 20)
---     , StyleClass Flag.fontFamily <|
---         FontFamily (List.foldl renderFontClassName "font-" families)
---             families
---     ]
+
+styleNode _ =
+    Html.div []
+        [ Html.node "style"
+            []
+            [ Html.text Style.rules ]
+        ]
 
 
 {-| -}
@@ -550,134 +560,13 @@ column =
 -}
 wrappedRow : List (Two.Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 wrappedRow attrs children =
-    -- let
-    --     ( padded, spaced ) =
-    --         Internal.extractSpacingAndPadding attrs
-    -- in
-    -- case spaced of
-    --     Nothing ->
-    --         Internal.element
-    --             Internal.asRow
-    --             Internal.div
-    --             (Internal.htmlClass
-    --                 (classes.contentLeft
-    --                     ++ " "
-    --                     ++ classes.contentCenterY
-    --                     ++ " "
-    --                     ++ classes.wrapped
-    --                 )
-    --                 :: width shrink
-    --                 :: height shrink
-    --                 :: attrs
-    --             )
-    --             (Internal.Unkeyed children)
-    --     Just (Internal.Spaced spaceName x y) ->
-    --         let
-    --             newPadding =
-    --                 case padded of
-    --                     Just (Internal.Padding name t r b l) ->
-    --                         if r >= (toFloat x / 2) && b >= (toFloat y / 2) then
-    --                             let
-    --                                 newTop =
-    --                                     t - (toFloat y / 2)
-    --                                 newRight =
-    --                                     r - (toFloat x / 2)
-    --                                 newBottom =
-    --                                     b - (toFloat y / 2)
-    --                                 newLeft =
-    --                                     l - (toFloat x / 2)
-    --                             in
-    --                             Just <|
-    --                                 Internal.StyleClass Flag.padding
-    --                                     (Internal.PaddingStyle
-    --                                         (Internal.paddingNameFloat
-    --                                             newTop
-    --                                             newRight
-    --                                             newBottom
-    --                                             newLeft
-    --                                         )
-    --                                         newTop
-    --                                         newRight
-    --                                         newBottom
-    --                                         newLeft
-    --                                     )
-    --                         else
-    --                             Nothing
-    --                     Nothing ->
-    --                         Nothing
-    --         in
-    --         case newPadding of
-    --             Just pad ->
-    --                 Internal.element
-    --                     Internal.asRow
-    --                     Internal.div
-    --                     (Internal.htmlClass
-    --                         (classes.contentLeft
-    --                             ++ " "
-    --                             ++ classes.contentCenterY
-    --                             ++ " "
-    --                             ++ classes.wrapped
-    --                         )
-    --                         :: width shrink
-    --                         :: height shrink
-    --                         :: attrs
-    --                         ++ [ pad ]
-    --                     )
-    --                     (Internal.Unkeyed children)
-    --             Nothing ->
-    --                 -- Not enough space in padding to compensate for spacing
-    --                 let
-    --                     halfX =
-    --                         negate (toFloat x / 2)
-    --                     halfY =
-    --                         negate (toFloat y / 2)
-    --                 in
-    --                 Internal.element
-    --                     Internal.asEl
-    --                     Internal.div
-    --                     attrs
-    --                     (Internal.Unkeyed
-    --                         [ Internal.element
-    --                             Internal.asRow
-    --                             Internal.div
-    --                             (Internal.htmlClass
-    --                                 (classes.contentLeft
-    --                                     ++ " "
-    --                                     ++ classes.contentCenterY
-    --                                     ++ " "
-    --                                     ++ classes.wrapped
-    --                                 )
-    --                                 :: Internal.Attr
-    --                                     (Html.Attributes.style "margin"
-    --                                         (String.fromFloat halfY
-    --                                             ++ "px"
-    --                                             ++ " "
-    --                                             ++ String.fromFloat halfX
-    --                                             ++ "px"
-    --                                         )
-    --                                     )
-    --                                 :: Internal.Attr
-    --                                     (Html.Attributes.style "width"
-    --                                         ("calc(100% + "
-    --                                             ++ String.fromInt x
-    --                                             ++ "px)"
-    --                                         )
-    --                                     )
-    --                                 :: Internal.Attr
-    --                                     (Html.Attributes.style "height"
-    --                                         ("calc(100% + "
-    --                                             ++ String.fromInt y
-    --                                             ++ "px)"
-    --                                         )
-    --                                     )
-    --                                 :: Internal.StyleClass Flag.spacing (Internal.SpacingStyle spaceName x y)
-    --                                 :: []
-    --                             )
-    --                             (Internal.Unkeyed children)
-    --                         ]
-    --                     )
-    -- Debug.todo "wrapped row not converted"
-    Two.text "do this"
+    -- in order to make spacing work:
+    --      the margin is only applied to the right and bottom of child elements
+    --      We have an intermediate element which has a negative bottom and right margin to keep the sizing correct.
+    --      There is some overflow with the intermediate element, so we set pointer events none on it and reenable pointer events on children.
+    Two.element Two.AsEl
+        attrs
+        [ Two.element Two.AsWrappedRow (List.concatMap Two.wrappedRowAttributes attrs) children ]
 
 
 {-| This is just an alias for `Debug.todo`
@@ -1053,11 +942,13 @@ image attrs { src, description } =
     --     )
     Two.element Two.AsEl
         (Two.class Style.classes.imageContainer :: attrs)
-        [ Html.img
-            [ Html.Attributes.src src
-            , Html.Attributes.alt description
-            ]
-            []
+        [ (\s ->
+            Html.img
+                [ Html.Attributes.src src
+                , Html.Attributes.alt description
+                ]
+                []
+          )
             |> Two.Element
         ]
 
@@ -1144,31 +1035,51 @@ width : Length -> Two.Attribute msg
 width len =
     case len of
         Px x ->
-            Two.Style Flag.width (Style.prop "width" (Style.px x))
+            Two.ClassAndStyle Flag.width
+                Style.classes.widthExact
+                (Style.prop "width" (Style.px x))
 
         Content ->
             Two.Class Flag.width Style.classes.widthContent
 
         Fill f ->
-            Two.ClassAndStyle Flag.width
-                Style.classes.widthFill
-                (Style.set Style.vars.widthFill (String.fromInt f))
+            -- width fill should be flex-grow: portion for rows
+            -- and the default behavior for anything else
+            -- however for columns, flex-grow needs to be set by the height
+            -- which means
+            if f < 10 then
+                Two.Class Flag.width
+                    (Style.classes.widthFill
+                        ++ " "
+                        ++ Style.classes.widthFillPortion
+                        ++ "-"
+                        ++ String.fromInt f
+                    )
+
+            else
+                Two.ClassAndStyle Flag.width
+                    Style.classes.widthFill
+                    (Style.set Style.vars.widthFill (String.fromInt f))
 
         Bounded minBound maxBound (Px x) ->
-            Two.Style Flag.width (Style.prop "width" (Style.px x) ++ renderBounds "width" minBound maxBound)
+            Two.ClassAndStyle Flag.width
+                Style.classes.widthExact
+                (Style.prop "width" (Style.px x) ++ renderBounds "width" minBound maxBound)
 
         Bounded minBound maxBound Content ->
             Two.ClassAndStyle Flag.width
                 Style.classes.widthContent
-                (renderBounds "width" minBound maxBound)
+                -- (renderBounds "width" minBound maxBound)
+                ""
 
         Bounded minBound maxBound (Fill f) ->
             --style
             Two.ClassAndStyle Flag.width
                 Style.classes.widthFill
-                (Style.set Style.vars.widthFill (String.fromInt f)
-                    ++ renderBounds "width" minBound maxBound
-                )
+                -- (Style.set Style.vars.widthFill (String.fromInt f)
+                --     ++ renderBounds "width" minBound maxBound
+                -- )
+                ""
 
         Bounded _ _ embedded ->
             -- This shouldn't happen because our constructors only allow for one level deep
@@ -1180,18 +1091,32 @@ height : Length -> Two.Attribute msg
 height len =
     case len of
         Px x ->
-            Two.Style Flag.height (Style.prop "height" (Style.px x))
+            Two.ClassAndStyle Flag.height
+                Style.classes.heightExact
+                (Style.prop "height" (Style.px x))
 
         Content ->
             Two.Class Flag.height Style.classes.heightContent
 
         Fill f ->
-            Two.ClassAndStyle Flag.height
-                Style.classes.heightFill
-                (Style.set Style.vars.heightFill (String.fromInt f))
+            if f < 10 then
+                Two.Class Flag.height
+                    (Style.classes.heightFill
+                        ++ " "
+                        ++ Style.classes.heightFillPortion
+                        ++ "-"
+                        ++ String.fromInt f
+                    )
+
+            else
+                Two.ClassAndStyle Flag.height
+                    Style.classes.heightFill
+                    (Style.set Style.vars.heightFill (String.fromInt f))
 
         Bounded minBound maxBound (Px x) ->
-            Two.Style Flag.height (Style.prop "height" (Style.px x) ++ renderBounds "height" minBound maxBound)
+            Two.ClassAndStyle Flag.height
+                Style.classes.heightExact
+                (Style.prop "height" (Style.px x) ++ renderBounds "height" minBound maxBound)
 
         Bounded minBound maxBound Content ->
             Two.ClassAndStyle Flag.height
@@ -1202,9 +1127,8 @@ height len =
             --style
             Two.ClassAndStyle Flag.height
                 Style.classes.heightFill
-                (Style.set Style.vars.heightFill (String.fromInt f)
-                    ++ renderBounds "height" minBound maxBound
-                )
+                --Style.set Style.vars.heightFill (String.fromInt f)
+                (renderBounds "height" minBound maxBound)
 
         Bounded _ _ embedded ->
             -- This shouldn't happen because our constructors only allow for one level deep
@@ -1238,7 +1162,8 @@ scale n =
     -- Internal.TransformComponent Flag.scale (Internal.Scale ( n, n, 1 ))
     Two.ClassAndStyle Flag.scale
         Style.classes.transform
-        (Style.set Style.vars.scale (String.fromFloat n))
+        -- (Style.set Style.vars.scale (String.fromFloat n))
+        ""
 
 
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
@@ -1248,7 +1173,8 @@ rotate angle =
     -- Internal.TransformComponent Flag.rotate (Internal.Rotate ( 0, 0, 1 ) angle)
     Two.ClassAndStyle Flag.rotate
         Style.classes.transform
-        (Style.set Style.vars.rotate (Style.rad angle))
+        -- (Style.set Style.vars.rotate (Style.rad angle))
+        ""
 
 
 {-| -}
@@ -1257,7 +1183,8 @@ moveUp y =
     -- Internal.TransformComponent Flag.moveY (Internal.MoveY (negate y))
     Two.ClassAndStyle Flag.moveY
         Style.classes.transform
-        (Style.set Style.vars.moveY (Style.floatPx y))
+        -- (Style.set Style.vars.moveY (Style.floatPx y))
+        ""
 
 
 {-| -}
@@ -1266,7 +1193,8 @@ moveDown y =
     -- Internal.TransformComponent Flag.moveY (Internal.MoveY y)
     Two.ClassAndStyle Flag.moveY
         Style.classes.transform
-        (Style.set Style.vars.moveY (Style.floatPx (-1 * y)))
+        -- (Style.set Style.vars.moveY (Style.floatPx (-1 * y)))
+        ""
 
 
 {-| -}
@@ -1274,7 +1202,8 @@ moveRight : Float -> Two.Attribute msg
 moveRight x =
     Two.ClassAndStyle Flag.moveX
         Style.classes.transform
-        (Style.set Style.vars.moveX (Style.floatPx x))
+        -- (Style.set Style.vars.moveX (Style.floatPx x))
+        ""
 
 
 {-| -}
@@ -1283,20 +1212,37 @@ moveLeft x =
     -- Internal.TransformComponent Flag.moveX (Internal.MoveX (negate x))
     Two.ClassAndStyle Flag.moveX
         Style.classes.transform
-        (Style.set Style.vars.moveX (Style.floatPx (negate x)))
+        -- (Style.set Style.vars.moveX (Style.floatPx (negate x)))
+        ""
 
 
 {-| -}
 padding : Int -> Two.Attribute msg
 padding x =
-    Two.Style Flag.padding (Style.prop "padding" (Style.px x))
+    -- Two.ClassAndStyle Flag.padding
+    --     Style.classes.padding
+    --     -- (Style.set Style.vars.padTop (Style.px x)
+    --     --     ++ Style.set Style.vars.padRight (Style.px x)
+    --     --     ++ Style.set Style.vars.padBottom (Style.px x)
+    --     --     ++ Style.set Style.vars.padLeft (Style.px x)
+    --     -- )
+    --     ""
+    Two.Padding Flag.padding x x
 
 
 {-| Set horizontal and vertical padding.
 -}
 paddingXY : Int -> Int -> Two.Attribute msg
 paddingXY x y =
-    Two.Style Flag.padding (Style.prop "padding" (Style.pair (Style.px y) (Style.px x)))
+    -- Two.ClassAndStyle Flag.padding
+    --     Style.classes.padding
+    --     -- (Style.set Style.vars.padTop (Style.px y)
+    --     --     ++ Style.set Style.vars.padRight (Style.px x)
+    --     --     ++ Style.set Style.vars.padBottom (Style.px y)
+    --     --     ++ Style.set Style.vars.padLeft (Style.px x)
+    --     -- )
+    --     ""
+    Two.Padding Flag.padding x y
 
 
 {-| If you find yourself defining unique paddings all the time, you might consider defining
@@ -1315,15 +1261,16 @@ And then just do
 -}
 paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Two.Attribute msg
 paddingEach { top, right, bottom, left } =
-    Two.Style Flag.padding
-        (Style.prop "padding"
-            (Style.quad
-                (Style.px top)
-                (Style.px right)
-                (Style.px bottom)
-                (Style.px left)
-            )
-        )
+    -- Two.ClassAndStyle Flag.padding
+    --     Style.classes.padding
+    --     -- (Style.set Style.vars.padTop (Style.px top)
+    --     --     ++ Style.set Style.vars.padRight (Style.px right)
+    --     --     ++ Style.set Style.vars.padBottom (Style.px bottom)
+    --     --     ++ Style.set Style.vars.padLeft (Style.px left)
+    --     -- )
+    --     ""
+    -- TODO, fix this
+    Two.Padding Flag.padding top right
 
 
 {-| -}
@@ -1371,11 +1318,13 @@ spaceEvenly =
 {-| -}
 spacing : Int -> Two.Attribute msg
 spacing x =
-    Two.ClassAndStyle Flag.spacing
-        Style.classes.spacing
-        (Style.set Style.vars.spaceX (Style.px x)
-            ++ Style.set Style.vars.spaceY (Style.px x)
-        )
+    -- Two.ClassAndStyle Flag.spacing
+    --     Style.classes.spacing
+    --     -- (Style.set Style.vars.spaceX (Style.px x)
+    --     --     ++ Style.set Style.vars.spaceY (Style.px x)
+    --     -- )
+    -- ""
+    Two.Spacing Flag.spacing x
 
 
 {-| In the majority of cases you'll just need to use `spacing`, which will work as intended.
@@ -1385,11 +1334,13 @@ However for some layouts, like `textColumn`, you may want to set a different spa
 -}
 spacingXY : Int -> Int -> Two.Attribute msg
 spacingXY x y =
-    Two.ClassAndStyle Flag.spacing
-        Style.classes.spacing
-        (Style.set Style.vars.spaceX (Style.px x)
-            ++ Style.set Style.vars.spaceY (Style.px y)
-        )
+    -- Two.ClassAndStyle Flag.spacing
+    --     Style.classes.spacing
+    --     -- (Style.set Style.vars.spaceX (Style.px x)
+    --     --     ++ Style.set Style.vars.spaceY (Style.px y)
+    --     -- )
+    --     ""
+    Two.Spacing Flag.spacing x
 
 
 {-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.
