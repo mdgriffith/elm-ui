@@ -235,17 +235,25 @@ emptyPair =
 element : Layout -> List (Attribute msg) -> List (Element msg) -> Element msg
 element layout attrs children =
     render layout
-        0
-        emptyPair
-        emptyPair
+        emptyDetails
         children
-        "div"
         Flag.none
         ""
         []
         (contextClasses layout)
         NoNearbyChildren
         (List.reverse attrs)
+
+
+emptyDetails : Details
+emptyDetails =
+    { name = "div"
+    , spacing = 0
+    , paddingX = 0
+    , paddingY = 0
+    , borderX = 0
+    , borderY = 0
+    }
 
 
 elementKeyed : Layout -> List (Attribute msg) -> List ( String, Element msg ) -> Element msg
@@ -318,13 +326,20 @@ wrappedRowAttributes attr =
             []
 
 
+type alias Details =
+    { name : String
+    , spacing : Int
+    , paddingX : Int
+    , paddingY : Int
+    , borderX : Int
+    , borderY : Int
+    }
+
+
 render :
     Layout
-    -> Int
-    -> ( Int, Int )
-    -> ( Int, Int )
+    -> Details
     -> List (Element msg)
-    -> String
     -> Flag.Field
     -> String
     -> List (VirtualDom.Attribute msg)
@@ -332,7 +347,7 @@ render :
     -> NearbyChildren msg
     -> List (Attribute msg)
     -> Element msg
-render layout spacing padding border children name has styles htmlAttrs classes nearby attrs =
+render layout details children has styles htmlAttrs classes nearby attrs =
     case attrs of
         [] ->
             Element
@@ -341,11 +356,10 @@ render layout spacing padding border children name has styles htmlAttrs classes 
                         finalSpacing =
                             case layout of
                                 AsWrappedRow ->
-                                    toFloat spacing
+                                    toFloat details.spacing
 
-                                --/ 2
                                 _ ->
-                                    toFloat spacing
+                                    toFloat details.spacing
 
                         renderedChildren =
                             case nearby of
@@ -366,24 +380,24 @@ render layout spacing padding border children name has styles htmlAttrs classes 
                                 AsWrappedRow ->
                                     styles
                                         ++ Style.prop "margin" (Style.spacing parentSpacing)
-                                        ++ Style.prop "padding" (Style.compactQuad padding)
-                                        ++ Style.prop "border-width" (Style.compactQuad border)
+                                        ++ Style.prop "padding" (Style.compactQuad details.paddingX details.paddingY)
+                                        ++ Style.prop "border-width" (Style.compactQuad details.borderX details.borderY)
 
                                 AsParagraph ->
                                     styles
                                         ++ Style.prop "margin" (Style.spacing parentSpacing)
-                                        ++ Style.prop "padding" (Style.compactQuad padding)
-                                        ++ Style.prop "border-width" (Style.compactQuad border)
-                                        ++ Style.prop "line-height" ("calc(1em + " ++ String.fromInt spacing ++ "px)")
+                                        ++ Style.prop "padding" (Style.compactQuad details.paddingX details.paddingY)
+                                        ++ Style.prop "border-width" (Style.compactQuad details.borderX details.borderY)
+                                        ++ Style.prop "line-height" ("calc(1em + " ++ String.fromInt details.spacing ++ "px)")
 
                                 _ ->
                                     styles
                                         ++ Style.prop "margin" (Style.spacing parentSpacing)
-                                        ++ Style.prop "padding" (Style.compactQuad padding)
-                                        ++ Style.prop "border-width" (Style.compactQuad border)
+                                        ++ Style.prop "padding" (Style.compactQuad details.paddingX details.paddingY)
+                                        ++ Style.prop "border-width" (Style.compactQuad details.borderX details.borderY)
                     in
                     Html.node
-                        name
+                        details.name
                         (Attr.class classes
                             :: Attr.property "style" (Json.Encode.string finalStyles)
                             :: htmlAttrs
@@ -392,19 +406,16 @@ render layout spacing padding border children name has styles htmlAttrs classes 
                 )
 
         NoAttribute :: remain ->
-            render layout spacing padding border children name has styles htmlAttrs classes nearby remain
+            render layout details children has styles htmlAttrs classes nearby remain
 
         (Attr attr) :: remain ->
-            render layout spacing padding border children name has styles (attr :: htmlAttrs) classes nearby remain
+            render layout details children has styles (attr :: htmlAttrs) classes nearby remain
 
         (Link targetBlank url) :: remain ->
             render
                 layout
-                spacing
-                padding
-                border
+                { details | name = "a" }
                 children
-                "a"
                 has
                 styles
                 (Attr.href url
@@ -424,11 +435,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
         (Download url downloadName) :: remain ->
             render
                 layout
-                spacing
-                padding
-                border
+                { details | name = "a" }
                 children
-                "a"
                 has
                 styles
                 (Attr.href url
@@ -442,11 +450,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
         (NodeName nodeName) :: remain ->
             render
                 layout
-                spacing
-                padding
-                border
+                details
                 children
-                nodeName
                 has
                 styles
                 htmlAttrs
@@ -458,11 +463,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             if Flag.present flag has then
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     has
                     styles
                     htmlAttrs
@@ -473,11 +475,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             else
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     (Flag.add flag has)
                     styles
                     htmlAttrs
@@ -489,11 +488,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             if Flag.present flag has then
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     has
                     styles
                     htmlAttrs
@@ -504,11 +500,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             else
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     (Flag.add flag has)
                     (str ++ styles)
                     htmlAttrs
@@ -520,11 +513,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             if Flag.present flag has then
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     has
                     styles
                     htmlAttrs
@@ -534,11 +524,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
 
             else
                 render layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     (Flag.add flag has)
                     (sty ++ styles)
                     htmlAttrs
@@ -549,11 +536,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
         (Nearby location elem) :: remain ->
             render
                 layout
-                spacing
-                padding
-                border
+                details
                 children
-                name
                 has
                 styles
                 htmlAttrs
@@ -565,11 +549,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             if Flag.present flag has || layout == AsEl then
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     has
                     styles
                     htmlAttrs
@@ -580,11 +561,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             else
                 render
                     layout
-                    s
-                    padding
-                    border
+                    { details | spacing = s }
                     children
-                    name
                     (Flag.add flag has)
                     styles
                     htmlAttrs
@@ -596,11 +574,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             if Flag.present flag has then
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     has
                     styles
                     htmlAttrs
@@ -611,11 +586,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             else
                 render
                     layout
-                    spacing
-                    ( x, y )
-                    border
+                    { details | paddingX = x, paddingY = y }
                     children
-                    name
                     (Flag.add flag has)
                     styles
                     htmlAttrs
@@ -627,11 +599,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             if Flag.present flag has then
                 render
                     layout
-                    spacing
-                    padding
-                    border
+                    details
                     children
-                    name
                     has
                     styles
                     htmlAttrs
@@ -642,11 +611,8 @@ render layout spacing padding border children name has styles htmlAttrs classes 
             else
                 render
                     layout
-                    spacing
-                    padding
-                    ( x, y )
+                    { details | borderX = x, borderY = y }
                     children
-                    name
                     (Flag.add flag has)
                     styles
                     htmlAttrs

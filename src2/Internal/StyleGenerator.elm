@@ -256,8 +256,8 @@ set (Gen.Var v) val =
 We're treatnig each as two numbers, each with an accuracy of 16bits.
 
 -}
-compactQuad : ( Int, Int ) -> String
-compactQuad ( x, y ) =
+compactQuad : Int -> Int -> String
+compactQuad x y =
     px y ++ " " ++ px x
 
 
