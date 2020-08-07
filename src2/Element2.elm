@@ -203,7 +203,7 @@ import Html exposing (Html)
 import Html.Attributes
 import Internal.Flag2 as Flag exposing (Flag)
 import Internal.Model2 as Two
-import Internal.StyleGenerator as Style
+import Internal.Style2 as Style
 
 
 {-| -}
@@ -1069,17 +1069,23 @@ width len =
         Bounded minBound maxBound Content ->
             Two.ClassAndStyle Flag.width
                 Style.classes.widthContent
-                -- (renderBounds "width" minBound maxBound)
-                ""
+                (renderBounds "width" minBound maxBound)
 
         Bounded minBound maxBound (Fill f) ->
-            --style
-            Two.ClassAndStyle Flag.width
-                Style.classes.widthFill
-                -- (Style.set Style.vars.widthFill (String.fromInt f)
-                --     ++ renderBounds "width" minBound maxBound
-                -- )
-                ""
+            if f < 10 then
+                Two.ClassAndStyle Flag.width
+                    (Style.classes.widthFill
+                        ++ " "
+                        ++ Style.classes.widthFillPortion
+                        ++ "-"
+                        ++ String.fromInt f
+                    )
+                    (renderBounds "width" minBound maxBound)
+
+            else
+                Two.ClassAndStyle Flag.width
+                    Style.classes.widthFill
+                    (Style.set Style.vars.widthFill (String.fromInt f) ++ renderBounds "width" minBound maxBound)
 
         Bounded _ _ embedded ->
             -- This shouldn't happen because our constructors only allow for one level deep
@@ -1124,11 +1130,22 @@ height len =
                 (renderBounds "height" minBound maxBound)
 
         Bounded minBound maxBound (Fill f) ->
-            --style
-            Two.ClassAndStyle Flag.height
-                Style.classes.heightFill
-                --Style.set Style.vars.heightFill (String.fromInt f)
-                (renderBounds "height" minBound maxBound)
+            if f < 10 then
+                Two.ClassAndStyle Flag.height
+                    (Style.classes.heightFill
+                        ++ " "
+                        ++ Style.classes.heightFillPortion
+                        ++ "-"
+                        ++ String.fromInt f
+                    )
+                    (renderBounds "height" minBound maxBound)
+
+            else
+                Two.ClassAndStyle Flag.height
+                    Style.classes.heightFill
+                    (Style.set Style.vars.heightFill (String.fromInt f)
+                        ++ renderBounds "height" minBound maxBound
+                    )
 
         Bounded _ _ embedded ->
             -- This shouldn't happen because our constructors only allow for one level deep

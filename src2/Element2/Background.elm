@@ -19,7 +19,7 @@ module Element2.Background exposing
 import Element2 exposing (Attribute, Color)
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two
-import Internal.StyleGenerator as Style
+import Internal.Style2 as Style
 
 
 {-| -}

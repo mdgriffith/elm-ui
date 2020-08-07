@@ -11,7 +11,7 @@ import Html
 import Html.Attributes as Attr
 import Html.Keyed
 import Internal.Flag2 as Flag exposing (Flag)
-import Internal.StyleGenerator as Style
+import Internal.Style2 as Style
 import Json.Encode
 import VirtualDom
 
@@ -948,11 +948,11 @@ textElementClasses =
 
 
 rootClass =
-    String.join " "
-        [ Style.classes.root
-        , Style.classes.any
-        , Style.classes.single
-        ]
+    Style.classes.root
+        ++ " "
+        ++ Style.classes.any
+        ++ " "
+        ++ Style.classes.single
 
 
 rowClass =

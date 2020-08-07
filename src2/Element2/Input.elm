@@ -205,7 +205,7 @@ import Internal.Flag2 as Flag2
 import Internal.Model as Internal
 import Internal.Model2 as Two
 import Internal.Style exposing (classes)
-import Internal.StyleGenerator as Style
+import Internal.Style2 as Style
 import Json.Decode as Json
 
 
