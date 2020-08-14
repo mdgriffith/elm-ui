@@ -22,10 +22,17 @@ import Internal.Model2 as Two
 import Internal.Style2 as Style
 
 
-{-| -}
+
+    {-| -}
 color : Color -> Two.Attribute msg
-color clr =
-    Two.Style Flag.bgColor (Style.prop "background-color" (Style.color clr))
+color (Style.Rgb red green blue) =
+    Two.Style Flag.bgColor
+        ("background-color:rgb("
+            ++ String.fromInt red
+            ++ ("," ++ String.fromInt green)
+            ++ ("," ++ String.fromInt blue)
+            ++ ")"
+        )
 
 
 {-| Resize the image to fit the containing element while maintaining proportions and cropping the overflow.

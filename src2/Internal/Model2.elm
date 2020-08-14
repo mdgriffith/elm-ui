@@ -376,28 +376,43 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                     behind ++ List.map (unwrap finalSpacing) children ++ inFront
 
                         finalStyles =
-                            case layout of
-                                AsWrappedRow ->
-                                    styles
-                                        ++ Style.prop "margin" (Style.spacing parentSpacing)
-                                        ++ Style.prop "padding" (Style.compactQuad details.paddingX details.paddingY)
-                                        ++ Style.prop "border-width" (Style.compactQuad details.borderX details.borderY)
+                            if parentSpacing == 0 && details.paddingY == 0 && details.paddingX == 0 && details.borderY == 0 && details.borderX == 0 then
+                                styles
 
-                                AsParagraph ->
-                                    styles
-                                        ++ Style.prop "margin" (Style.spacing parentSpacing)
-                                        ++ Style.prop "padding" (Style.compactQuad details.paddingX details.paddingY)
-                                        ++ Style.prop "border-width" (Style.compactQuad details.borderX details.borderY)
-                                        ++ Style.prop "line-height" ("calc(1em + " ++ String.fromInt details.spacing ++ "px)")
+                            else
+                                ""
+                                    ++ styles
+                                    ++ (if parentSpacing /= 0 then
+                                            "margin:" ++ String.fromFloat parentSpacing ++ "px;"
 
-                                _ ->
-                                    styles
-                                        ++ Style.prop "margin" (Style.spacing parentSpacing)
-                                        ++ Style.prop "padding" (Style.compactQuad details.paddingX details.paddingY)
-                                        ++ Style.prop "border-width" (Style.compactQuad details.borderX details.borderY)
+                                        else
+                                            ""
+                                       )
+                                    ++ (if details.paddingY /= 0 || details.paddingX /= 0 then
+                                            "padding:" ++ String.fromInt details.paddingX ++ "px " ++ String.fromInt details.paddingY ++ "px;"
+
+                                        else
+                                            ""
+                                       )
+                                    ++ (if details.borderY /= 0 || details.borderX /= 0 then
+                                            "border:" ++ String.fromInt details.borderX ++ "px " ++ String.fromInt details.borderY ++ "px;"
+
+                                        else
+                                            ""
+                                       )
+                                    ++ (if details.space /= 0 && layout == AsParagraph then
+                                            "line-height:calc(1em + " ++ String.fromInt details.spacing ++ "px);"
+
+                                        else
+                                            ""
+                                       )
                     in
-                    Html.node
-                        details.name
+                    (if details.name == "div" then
+                        Html.div
+
+                     else
+                        Html.node details.name
+                    )
                         (Attr.class classes
                             :: Attr.property "style" (Json.Encode.string finalStyles)
                             :: htmlAttrs

@@ -199,7 +199,7 @@ full =
 -}
 size : Int -> Two.Attribute msg
 size i =
-    Two.Style Flag.fontSize (Style.prop "font-size" (Style.px i))
+    Two.Style Flag.fontSize ("font-size:" ++ String.fromInt i ++ "px;")
 
 
 {-| In `px`.
