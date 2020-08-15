@@ -22,8 +22,7 @@ import Internal.Model2 as Two
 import Internal.Style2 as Style
 
 
-
-    {-| -}
+{-| -}
 color : Color -> Two.Attribute msg
 color (Style.Rgb red green blue) =
     Two.Style Flag.bgColor

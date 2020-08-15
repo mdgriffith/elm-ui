@@ -400,7 +400,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                         else
                                             ""
                                        )
-                                    ++ (if details.space /= 0 && layout == AsParagraph then
+                                    ++ (if details.spacing /= 0 && layout == AsParagraph then
                                             "line-height:calc(1em + " ++ String.fromInt details.spacing ++ "px);"
 
                                         else
