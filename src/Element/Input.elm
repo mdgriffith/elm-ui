@@ -65,7 +65,7 @@ This is also the first input element that has a [`required label`](#Label).
 
 # Text
 
-@docs text, multiline
+@docs text, multiline, date, time
 
 @docs Placeholder, placeholder
 
