@@ -31,48 +31,48 @@ import Internal.Model2 as Two
 {-| -}
 lazy : (a -> Element msg) -> a -> Element msg
 lazy fn a =
-    Two.Element (Html.Lazy.lazy2 apply1 fn a)
+    Two.Element (\s -> Html.Lazy.lazy3 apply1 fn a s)
 
 
 {-| -}
 lazy2 : (a -> b -> Element msg) -> a -> b -> Element msg
 lazy2 fn a b =
-    Two.Element (Html.Lazy.lazy3 apply2 fn a b)
+    Two.Element (\s -> Html.Lazy.lazy4 apply2 fn a b s)
 
 
 {-| -}
 lazy3 : (a -> b -> c -> Element msg) -> a -> b -> c -> Element msg
 lazy3 fn a b c =
-    Two.Element (Html.Lazy.lazy4 apply3 fn a b c)
+    Two.Element (\s -> Html.Lazy.lazy5 apply3 fn a b c s)
 
 
 {-| -}
 lazy4 : (a -> b -> c -> d -> Element msg) -> a -> b -> c -> d -> Element msg
 lazy4 fn a b c d =
-    Two.Element (Html.Lazy.lazy5 apply4 fn a b c d)
+    Two.Element (\s -> Html.Lazy.lazy6 apply4 fn a b c d s)
 
 
 {-| -}
 lazy5 : (a -> b -> c -> d -> e -> Element msg) -> a -> b -> c -> d -> e -> Element msg
 lazy5 fn a b c d e =
-    Two.Element (Html.Lazy.lazy6 apply5 fn a b c d e)
+    Two.Element (\s -> Html.Lazy.lazy7 apply5 fn a b c d e s)
 
 
-apply1 fn a =
-    Two.unwrap (fn a)
+apply1 fn a s =
+    Two.unwrap s (fn a)
 
 
-apply2 fn a b =
-    Two.unwrap (fn a b)
+apply2 fn a b s =
+    Two.unwrap s (fn a b)
 
 
-apply3 fn a b c =
-    Two.unwrap (fn a b c)
+apply3 fn a b c s =
+    Two.unwrap s (fn a b c)
 
 
-apply4 fn a b c d =
-    Two.unwrap (fn a b c d)
+apply4 fn a b c d s =
+    Two.unwrap s (fn a b c d)
 
 
-apply5 fn a b c d e =
-    Two.unwrap (fn a b c d e)
+apply5 fn a b c d e s =
+    Two.unwrap s (fn a b c d e)
