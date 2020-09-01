@@ -72,19 +72,19 @@ widthEach { bottom, top, left, right } =
 {-| -}
 solid : Attribute msg
 solid =
-    Two.Style Flag.borderStyle (Style.prop "border-style" "solid")
+    Two.Style Flag.borderStyle "border-style:solid;"
 
 
 {-| -}
 dashed : Attribute msg
 dashed =
-    Two.Style Flag.borderStyle (Style.prop "border-style" "dashed")
+    Two.Style Flag.borderStyle "border-style:dashed;"
 
 
 {-| -}
 dotted : Attribute msg
 dotted =
-    Two.Style Flag.borderStyle (Style.prop "border-style" "dotted")
+    Two.Style Flag.borderStyle "border-style:dotted;"
 
 
 {-| Round all corners.
@@ -92,8 +92,9 @@ dotted =
 rounded : Int -> Attribute msg
 rounded radius =
     Two.Style Flag.borderRound
-        (Style.prop "border-radius"
-            (Style.px radius)
+        ("border-radius:"
+            ++ Style.px radius
+            ++ ";"
         )
 
 
@@ -107,12 +108,12 @@ roundEach :
     -> Attribute msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
     Two.Style Flag.borderRound
-        (Style.prop "border-radius"
-            (Style.quad (Style.px topLeft)
+        ("border-radius:"
+            ++ Style.quad (Style.px topLeft)
                 (Style.px topRight)
                 (Style.px bottomRight)
                 (Style.px bottomLeft)
-            )
+            ++ ";"
         )
 
 
@@ -152,8 +153,9 @@ shadow :
     -> Attribute msg
 shadow shade =
     Two.Style Flag.shadows
-        (Style.prop "box-shadow"
-            (Style.singleShadow shade)
+        ("box-shadow:"
+            ++ Style.singleShadow shade
+            ++ ";"
         )
 
 
@@ -168,6 +170,7 @@ innerShadow :
     -> Attribute msg
 innerShadow shade =
     Two.Style Flag.shadows
-        (Style.prop "box-shadow"
-            ("inset " ++ Style.singleShadow shade)
+        ("box-shadow:"
+            ++ ("inset " ++ Style.singleShadow shade)
+            ++ ";"
         )

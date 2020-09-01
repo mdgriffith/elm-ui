@@ -206,14 +206,14 @@ size i =
 -}
 letterSpacing : Float -> Attribute msg
 letterSpacing offset =
-    Two.Style Flag.letterSpacing (Style.prop "letter-spacing" (Style.floatPx offset))
+    Two.Style Flag.letterSpacing ("letter-spacing:" ++ Style.floatPx offset ++ ";")
 
 
 {-| In `px`.
 -}
 wordSpacing : Float -> Two.Attribute msg
 wordSpacing offset =
-    Two.Style Flag.wordSpacing (Style.prop "word-spacing" (Style.floatPx offset))
+    Two.Style Flag.wordSpacing ("word-spacing:" ++ Style.floatPx offset ++ ";")
 
 
 {-| Align the font to the left.
@@ -271,55 +271,55 @@ italic =
 {-| -}
 bold : Attribute msg
 bold =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "700")
+    Two.Style Flag.fontWeight "font-weight:700;"
 
 
 {-| -}
 light : Attribute msg
 light =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "300")
+    Two.Style Flag.fontWeight "font-weight:300;"
 
 
 {-| -}
 hairline : Attribute msg
 hairline =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "100")
+    Two.Style Flag.fontWeight "font-weight:100;"
 
 
 {-| -}
 extraLight : Attribute msg
 extraLight =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "200")
+    Two.Style Flag.fontWeight "font-weight:200;"
 
 
 {-| -}
 regular : Attribute msg
 regular =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "400")
+    Two.Style Flag.fontWeight "font-weight:400;"
 
 
 {-| -}
 semiBold : Attribute msg
 semiBold =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "600")
+    Two.Style Flag.fontWeight "font-weight:600;"
 
 
 {-| -}
 medium : Attribute msg
 medium =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "500")
+    Two.Style Flag.fontWeight "font-weight:500;"
 
 
 {-| -}
 extraBold : Attribute msg
 extraBold =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "800")
+    Two.Style Flag.fontWeight "font-weight:800;"
 
 
 {-| -}
 heavy : Attribute msg
 heavy =
-    Two.Style Flag.fontWeight (Style.prop "font-weight" "900")
+    Two.Style Flag.fontWeight "font-weight:900;"
 
 
 {-| This will reset bold and italic.
