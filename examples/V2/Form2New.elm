@@ -91,6 +91,21 @@ box =
         Element2.none
 
 
+blueBox =
+    Element2.el
+        [ Background2.color blue2
+        , Element2.width
+            (Element2.fill
+                |> Element2.minimum 200
+            )
+        , Element2.height
+            (Element2.fill
+                |> Element2.minimum 20
+            )
+        ]
+        Element2.none
+
+
 view model =
     Html.div []
         [ Element2.layout
@@ -110,6 +125,13 @@ view model =
                     , Font2.size 36
                     ]
                     (Element2.text "New Stylish")
+                , Element2.el
+                    [ Border2.width 5
+                    , Element2.onRight box
+                    , Element2.inFront blueBox
+                    , Element2.below blueBox
+                    ]
+                    box
                 , Element2.wrappedRow
                     [ Element2.spacing 36
                     , Element2.padding 10
