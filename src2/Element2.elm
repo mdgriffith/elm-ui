@@ -519,12 +519,20 @@ el attrs child =
     --         :: attrs
     --     )
     --     (Internal.Unkeyed [ child ])
-    Two.element Two.AsEl attrs [ child ]
+    Two.render Two.AsEl
+        Two.emptyDetails
+        [ child ]
+        Flag.none
+        ""
+        []
+        Two.singleClass
+        Two.NoNearbyChildren
+        (List.reverse attrs)
 
 
 {-| -}
 row : List (Two.Attribute msg) -> List (Two.Element msg) -> Two.Element msg
-row =
+row attrs children =
     -- Internal.element
     --     Internal.asRow
     --     Internal.div
@@ -534,12 +542,20 @@ row =
     --         :: attrs
     --     )
     --     (Internal.Unkeyed children)
-    Two.element Two.AsRow
+    Two.render Two.AsRow
+        Two.emptyDetails
+        children
+        Flag.none
+        ""
+        []
+        Two.rowClass
+        Two.NoNearbyChildren
+        (List.reverse attrs)
 
 
 {-| -}
 column : List (Two.Attribute msg) -> List (Two.Element msg) -> Two.Element msg
-column =
+column attrs children =
     -- Internal.element
     --     Internal.asColumn
     --     Internal.div
@@ -553,7 +569,15 @@ column =
     --         :: attrs
     --     )
     --     (Internal.Unkeyed children)
-    Two.element Two.AsColumn
+    Two.render Two.AsColumn
+        Two.emptyDetails
+        children
+        Flag.none
+        ""
+        []
+        Two.columnClass
+        Two.NoNearbyChildren
+        (List.reverse attrs)
 
 
 {-| Same as `row`, but will wrap if it takes up too much horizontal space.
@@ -566,7 +590,16 @@ wrappedRow attrs children =
     --      There is some overflow with the intermediate element, so we set pointer events none on it and reenable pointer events on children.
     Two.element Two.AsEl
         attrs
-        [ Two.element Two.AsWrappedRow (List.concatMap Two.wrappedRowAttributes attrs) children ]
+        [ Two.render Two.AsWrappedRow
+            Two.emptyDetails
+            children
+            Flag.none
+            ""
+            []
+            Two.wrappedRowClass
+            Two.NoNearbyChildren
+            (List.reverse (List.concatMap Two.wrappedRowAttributes attrs))
+        ]
 
 
 {-| This is just an alias for `Debug.todo`
@@ -849,7 +882,7 @@ Which will look something like
 
 -}
 paragraph : List (Two.Attribute msg) -> List (Two.Element msg) -> Two.Element msg
-paragraph =
+paragraph attrs children =
     -- Internal.element
     --     Internal.asParagraph
     --     Internal.div
@@ -859,7 +892,16 @@ paragraph =
     --         :: attrs
     --     )
     --     (Internal.Unkeyed children)
-    Two.element Two.AsParagraph
+    -- Two.element Two.AsParagraph
+    Two.render Two.AsParagraph
+        Two.emptyDetails
+        children
+        Flag.none
+        ""
+        []
+        Two.paragraphClass
+        Two.NoNearbyChildren
+        (List.reverse attrs)
 
 
 {-| Now that we have a paragraph, we need some way to attach a bunch of paragraph's together.
@@ -882,7 +924,7 @@ Which will result in something like:
 
 -}
 textColumn : List (Two.Attribute msg) -> List (Two.Element msg) -> Two.Element msg
-textColumn =
+textColumn attrs children =
     -- Internal.element
     --     Internal.asTextColumn
     --     Internal.div
@@ -894,7 +936,15 @@ textColumn =
     --         :: attrs
     --     )
     --     (Internal.Unkeyed children)
-    Two.element Two.AsTextColumn
+    Two.render Two.AsTextColumn
+        Two.emptyDetails
+        children
+        Flag.none
+        ""
+        []
+        Two.textColumnClass
+        Two.NoNearbyChildren
+        (List.reverse attrs)
 
 
 {-| Both a source and a description are required for images.
@@ -942,14 +992,14 @@ image attrs { src, description } =
     --     )
     Two.element Two.AsEl
         (Two.class Style.classes.imageContainer :: attrs)
-        [ (\s ->
-            Html.img
-                [ Html.Attributes.src src
-                , Html.Attributes.alt description
-                ]
-                []
-          )
-            |> Two.Element
+        [ Two.Element
+            (\s ->
+                Html.img
+                    [ Html.Attributes.src src
+                    , Html.Attributes.alt description
+                    ]
+                    []
+            )
         ]
 
 
@@ -1099,7 +1149,7 @@ height len =
         Px x ->
             Two.ClassAndStyle Flag.height
                 Style.classes.heightExact
-                (Style.prop "height" (Style.px x))
+                ("height:" ++ String.fromInt x ++ "px;")
 
         Content ->
             Two.Class Flag.height Style.classes.heightContent
@@ -1122,7 +1172,7 @@ height len =
         Bounded minBound maxBound (Px x) ->
             Two.ClassAndStyle Flag.height
                 Style.classes.heightExact
-                (Style.prop "height" (Style.px x) ++ renderBounds "height" minBound maxBound)
+                ("height:" ++ (String.fromInt x ++ "px;") ++ renderBounds "height" minBound maxBound ++ ";")
 
         Bounded minBound maxBound Content ->
             Two.ClassAndStyle Flag.height
@@ -1365,10 +1415,10 @@ spacingXY x y =
 transparent : Bool -> Two.Attribute msg
 transparent on =
     if on then
-        Two.Style Flag.transparency (Style.prop "opacity" (String.fromFloat 1))
+        Two.Style Flag.transparency "opacity:1;"
 
     else
-        Two.Style Flag.transparency (Style.prop "opacity" (String.fromFloat 0))
+        Two.Style Flag.transparency "opacity:0;"
 
 
 {-| A capped value between 0.0 and 1.0, where 0.0 is transparent and 1.0 is fully opaque.
@@ -1378,7 +1428,7 @@ Semantically equivalent to html opacity.
 -}
 alpha : Float -> Two.Attribute msg
 alpha o =
-    Two.Style Flag.transparency (Style.prop "opacity" (String.fromFloat o))
+    Two.Style Flag.transparency ("opacity:" ++ String.fromFloat o ++ ";")
 
 
 {-| -}
