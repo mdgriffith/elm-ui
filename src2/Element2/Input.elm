@@ -207,6 +207,7 @@ import Internal.Model2 as Two
 import Internal.Style exposing (classes)
 import Internal.Style2 as Style
 import Json.Decode as Json
+import Json.Encode as Encode
 
 
 {-| -}
@@ -1296,7 +1297,7 @@ textHelper2 textInput attrs textOptions =
 
                              else
                                 [ Element2.html
-                                    (Html.span [ Html.Attributes.class classes.inputMultilineFiller ]
+                                    (Html.span (Html.Attributes.class classes.inputMultilineFiller :: redistributed.textAreaFiller)
                                         -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
                                         [ Html.text (textOptions.text ++ "\u{00A0}")
                                         ]
@@ -1943,6 +1944,7 @@ redistribute2 :
         , input : List (Two.Attribute msg)
         , placeholder : List (Two.Attribute msg)
         , textAreaWrapper : List (Two.Attribute msg)
+        , textAreaFiller : List (Html.Attribute msg)
         }
 redistribute2 input attrs =
     List.foldl (redistributeOver2 input)
@@ -1951,6 +1953,7 @@ redistribute2 input attrs =
         , input = []
         , placeholder = []
         , textAreaWrapper = []
+        , textAreaFiller = []
         }
         attrs
         |> (\redist ->
@@ -1959,6 +1962,7 @@ redistribute2 input attrs =
                 , input = List.reverse redist.input
                 , placeholder = List.reverse redist.placeholder
                 , textAreaWrapper = List.reverse redist.textAreaWrapper
+                , textAreaFiller = List.reverse redist.textAreaFiller
                 }
            )
 
@@ -2005,17 +2009,24 @@ redistributeOver2 input attr els =
         Two.Spacing flag vSpace ->
             case input of
                 TextArea ->
+                    let
+                        lineHeightStyle =
+                            Style.prop "height"
+                                ("calc(100% + " ++ String.fromInt vSpace ++ "px)")
+                                ++ Style.prop "line-height"
+                                    ("calc(1em + " ++ String.fromInt vSpace ++ "px)")
+
+                        lineHeight =
+                            Two.Style Flag2.lineHeight
+                                lineHeightStyle
+                    in
                     { els
                         | parent = attr :: els.parent
+                        , textAreaFiller = Html.Attributes.property "style" (Encode.string lineHeightStyle) :: els.textAreaFiller
                         , input =
                             Element2.moveUp
                                 (toFloat (floor (toFloat vSpace / 2)))
-                                :: Two.Style Flag2.lineHeight
-                                    (Style.prop "height"
-                                        ("calc(100% + " ++ String.fromInt vSpace ++ "px)")
-                                        ++ Style.prop "line-height"
-                                            ("calc(1em + " ++ String.fromInt vSpace ++ "px)")
-                                    )
+                                :: lineHeight
                                 :: els.input
                         , textAreaWrapper = attr :: els.textAreaWrapper
                     }
@@ -2035,7 +2046,7 @@ redistributeOver2 input attr els =
 
                 TextInputNode _ ->
                     { els
-                        | inputParent = Two.Padding flag x 0 :: els.inputParent
+                        | inputParent = Two.Padding flag 0 0 :: els.inputParent
                         , placeholder = attr :: els.placeholder
                         , input =
                             Two.Style Flag2.height
@@ -2050,6 +2061,7 @@ redistributeOver2 input attr els =
                                             ++ "px)"
                                         )
                                 )
+                                :: attr
                                 :: els.input
                     }
 
@@ -2401,6 +2413,11 @@ type Option value msg
 
 
 {-| -}
+type Option2 value msg
+    = Option2 value (OptionState -> Two.Element msg)
+
+
+{-| -}
 type OptionState
     = Idle
     | Focused
@@ -2409,65 +2426,65 @@ type OptionState
 
 {-| Add a choice to your radio element. This will be rendered with the default radio icon.
 -}
-option : value -> Element msg -> Option value msg
+option : value -> Two.Element msg -> Option2 value msg
 option val txt =
-    Option val (defaultRadioOption txt)
+    Option2 val (defaultRadioOption txt)
 
 
 {-| Customize exactly what your radio option should look like in different states.
 -}
-optionWith : value -> (OptionState -> Element msg) -> Option value msg
+optionWith : value -> (OptionState -> Two.Element msg) -> Option2 value msg
 optionWith val view =
-    Option val view
+    Option2 val view
 
 
 {-| -}
 radio :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : option -> msg
-        , options : List (Option option msg)
+        , options : List (Option2 option msg)
         , selected : Maybe option
-        , label : Label msg
+        , label : Label2 msg
         }
-    -> Element msg
+    -> Two.Element msg
 radio =
-    radioHelper Column
+    radioHelper2 Column
 
 
 {-| Same as radio, but displayed as a row
 -}
 radioRow :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : option -> msg
-        , options : List (Option option msg)
+        , options : List (Option2 option msg)
         , selected : Maybe option
-        , label : Label msg
+        , label : Label2 msg
         }
-    -> Element msg
+    -> Two.Element msg
 radioRow =
-    radioHelper Row
+    radioHelper2 Row
 
 
-defaultRadioOption : Element msg -> OptionState -> Element msg
+defaultRadioOption : Two.Element msg -> OptionState -> Two.Element msg
 defaultRadioOption optionLabel status =
-    Element.row
-        [ Element.spacing 10
-        , Element.alignLeft
-        , Element.width Element.shrink
+    Element2.row
+        [ Element2.spacing 10
+        , Element2.alignLeft
+        , Element2.width Element2.shrink
         ]
-        [ Element.el
-            [ Element.width (Element.px 14)
-            , Element.height (Element.px 14)
-            , Background.color white
-            , Border.rounded 7
+        [ Element2.el
+            [ Element2.width (Element2.px 14)
+            , Element2.height (Element2.px 14)
+            , Background2.color white2
+            , Border2.rounded 7
             , case status of
                 Selected ->
-                    Internal.htmlClass "focusable"
+                    Two.class "focusable"
 
                 _ ->
-                    Internal.NoAttribute
+                    Two.NoAttribute
 
             -- , Border.shadow <|
             --     -- case status of
@@ -2489,7 +2506,7 @@ defaultRadioOption optionLabel status =
             --         1
             --     , color = Color.rgba 235 235 235 0
             --     }
-            , Border.width <|
+            , Border2.width <|
                 case status of
                     Idle ->
                         1
@@ -2499,20 +2516,174 @@ defaultRadioOption optionLabel status =
 
                     Selected ->
                         5
-            , Border.color <|
+            , Border2.color <|
                 case status of
                     Idle ->
-                        Element.rgb (208 / 255) (208 / 255) (208 / 255)
+                        Element2.rgb 208 208 208
 
                     Focused ->
-                        Element.rgb (208 / 255) (208 / 255) (208 / 255)
+                        Element2.rgb 208 208 208
 
                     Selected ->
-                        Element.rgb (59 / 255) (153 / 255) (252 / 255)
+                        Element2.rgb 59 153 252
             ]
-            Element.none
-        , Element.el [ Element.width Element.fill, Internal.htmlClass "unfocusable" ] optionLabel
+            Element2.none
+        , Element2.el [ Element2.width Element2.fill, Two.class "unfocusable" ] optionLabel
         ]
+
+
+radioHelper2 :
+    Orientation
+    -> List (Two.Attribute msg)
+    ->
+        { onChange : option -> msg
+        , options : List (Option2 option msg)
+        , selected : Maybe option
+        , label : Label2 msg
+        }
+    -> Two.Element msg
+radioHelper2 orientation attrs input =
+    let
+        optionArea =
+            case orientation of
+                Row ->
+                    Element2.row (Element2.width Element2.fill :: hiddenLabelAttribute2 input.label :: attrs)
+                        (List.map (renderOption2 orientation input) input.options)
+
+                Column ->
+                    Element2.column (Element2.width Element2.fill :: hiddenLabelAttribute2 input.label :: attrs)
+                        (List.map (renderOption2 orientation input) input.options)
+
+        prevNext =
+            case input.options of
+                [] ->
+                    Nothing
+
+                (Option2 val _) :: _ ->
+                    List.foldl track ( NotFound, val, val ) input.options
+                        |> (\( found, b, a ) ->
+                                case found of
+                                    NotFound ->
+                                        Just ( b, val )
+
+                                    BeforeFound ->
+                                        Just ( b, val )
+
+                                    _ ->
+                                        Just ( b, a )
+                           )
+
+        track opt ( found, prev, nxt ) =
+            case opt of
+                Option2 val _ ->
+                    case found of
+                        NotFound ->
+                            if Just val == input.selected then
+                                ( BeforeFound, prev, nxt )
+
+                            else
+                                ( found, val, nxt )
+
+                        BeforeFound ->
+                            ( AfterFound, prev, val )
+
+                        AfterFound ->
+                            ( found, prev, nxt )
+
+        events =
+            -- List.
+            []
+
+        --         Internal.get
+        --             attrs
+        --         <|
+        --             \attr ->
+        --                 case attr of
+        --                     Internal.Width (Internal.Fill _) ->
+        --                         True
+        --                     Internal.Height (Internal.Fill _) ->
+        --                         True
+        --                     Internal.Attr _ ->
+        --                         True
+        --                     _ ->
+        --                         False
+    in
+    applyLabel2
+        ([ Element2.alignLeft
+         , Two.Attr (Html.Attributes.tabindex 0)
+         , Two.class "focus"
+         , Region2.announce
+         , Two.Attr <|
+            Html.Attributes.attribute "role" "radiogroup"
+         , case prevNext of
+            Nothing ->
+                Two.class ""
+
+            Just ( prev, next ) ->
+                onKeyLookup2 <|
+                    \code ->
+                        if code == leftArrow then
+                            Just (input.onChange prev)
+
+                        else if code == upArrow then
+                            Just (input.onChange prev)
+
+                        else if code == rightArrow then
+                            Just (input.onChange next)
+
+                        else if code == downArrow then
+                            Just (input.onChange next)
+
+                        else if code == space then
+                            case input.selected of
+                                Nothing ->
+                                    Just (input.onChange prev)
+
+                                _ ->
+                                    Nothing
+
+                        else
+                            Nothing
+         ]
+            ++ events
+         -- ++ hideIfEverythingisInvisible
+        )
+        input.label
+        optionArea
+
+
+renderOption2 orientation input (Option2 val view) =
+    let
+        status =
+            if Just val == input.selected then
+                Selected
+
+            else
+                Idle
+    in
+    Element2.el
+        [ Element2.pointer
+        , case orientation of
+            Row ->
+                Element2.width Element2.shrink
+
+            Column ->
+                Element2.width Element2.fill
+        , Events2.onClick (input.onChange val)
+        , case status of
+            Selected ->
+                Two.Attr <|
+                    Html.Attributes.attribute "aria-checked"
+                        "true"
+
+            _ ->
+                Two.Attr <|
+                    Html.Attributes.attribute "aria-checked"
+                        "false"
+        , Two.Attr <|
+            Html.Attributes.attribute "role" "radio"
+        ]
+        (view status)
 
 
 radioHelper :
