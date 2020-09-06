@@ -1,14 +1,12 @@
 module Element2.Input exposing
     ( focusedOnLoad
-    , button
     , checkbox, defaultCheckbox
     , text, multiline
     , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
-    , slider, Thumb, thumb, defaultThumb
+    , sliderX, sliderY, Thumb, thumb, defaultThumb
     , radio, radioRow, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
-    , sliderX, sliderY
     )
 
 {-| Input elements have a lot of constraints!
@@ -31,11 +29,6 @@ This module is intended to be accessible by default. You shouldn't have to wade 
 All Elements can be styled on focus by using [`Element.focusStyle`](Element#focusStyle) to set a global focus style or [`Element.focused`](Element#focused) to set a focus style individually for an element.
 
 @docs focusedOnLoad
-
-
-# Buttons
-
-@docs button
 
 
 # Checkboxes
@@ -86,7 +79,7 @@ A slider is great for choosing between a range of numerical values.
   - **thumb** - The icon that you click and drag to change the value.
   - **track** - The line behind the thumb denoting where you can slide to.
 
-@docs slider, Thumb, thumb, defaultThumb
+@docs sliderX, sliderY, Thumb, thumb, defaultThumb
 
 
 # Radio Selection
@@ -185,12 +178,6 @@ Alternatively, see if it's reasonable to _not_ display an input if you'd normall
 
 -}
 
-import Element exposing (Attribute, Color, Element)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events as Events
-import Element.Font as Font
-import Element.Region as Region
 import Element2
 import Element2.Background as Background2
 import Element2.Border as Border2
@@ -212,27 +199,7 @@ import Json.Encode as Encode
 
 {-| -}
 type Placeholder msg
-    = Placeholder (List (Attribute msg)) (Element msg)
-
-
-{-| -}
-type Placeholder2 msg
-    = Placeholder2 (List (Two.Attribute msg)) (Two.Element msg)
-
-
-white =
-    Element.rgb 1 1 1
-
-
-darkGrey =
-    Element.rgb (186 / 255) (189 / 255) (182 / 255)
-
-
-charcoal =
-    Element.rgb
-        (136 / 255)
-        (138 / 255)
-        (133 / 255)
+    = Placeholder (List (Two.Attribute msg)) (Two.Element msg)
 
 
 white2 =
@@ -251,9 +218,9 @@ charcoal2 =
 
 
 {-| -}
-placeholder : List (Two.Attribute msg) -> Two.Element msg -> Placeholder2 msg
+placeholder : List (Two.Attribute msg) -> Two.Element msg -> Placeholder msg
 placeholder =
-    Placeholder2
+    Placeholder
 
 
 type LabelLocation
@@ -265,59 +232,32 @@ type LabelLocation
 
 {-| -}
 type Label msg
-    = Label LabelLocation (List (Attribute msg)) (Element msg)
+    = Label LabelLocation (List (Two.Attribute msg)) (Two.Element msg)
     | HiddenLabel String
 
 
 {-| -}
-type Label2 msg
-    = Label2 LabelLocation (List (Two.Attribute msg)) (Two.Element msg)
-    | HiddenLabel2 String
-
-
-isStacked : Label msg -> Bool
-isStacked label =
-    case label of
-        Label loc _ _ ->
-            case loc of
-                OnRight ->
-                    False
-
-                OnLeft ->
-                    False
-
-                Above ->
-                    True
-
-                Below ->
-                    True
-
-        HiddenLabel _ ->
-            True
-
-
-{-| -}
-labelRight : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
+labelRight : List (Two.Attribute msg) -> Two.Element msg -> Label msg
 labelRight =
-    Label2 OnRight
+    Label OnRight
 
 
 {-| -}
-labelLeft : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
+labelLeft : List (Two.Attribute msg) -> Two.Element msg -> Label msg
 labelLeft =
-    Label2 OnLeft
+    Label OnLeft
 
 
 {-| -}
-labelAbove : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
+labelAbove : List (Two.Attribute msg) -> Two.Element msg -> Label msg
 labelAbove =
-    Label2 Above
+    Label Above
 
 
 {-| -}
-labelBelow : List (Two.Attribute msg) -> Two.Element msg -> Label2 msg
+labelBelow : List (Two.Attribute msg) -> Two.Element msg -> Label msg
 labelBelow =
-    Label2 Below
+    Label Below
 
 
 {-| Sometimes you may need to have a label which is not visible, but is still accessible to screen readers.
@@ -337,83 +277,13 @@ labelHidden =
     HiddenLabel
 
 
-hiddenLabelAttribute label =
-    case label of
-        HiddenLabel textLabel ->
-            Internal.Describe (Internal.Label textLabel)
-
-        Label _ _ _ ->
-            Internal.NoAttribute
-
-
 hiddenLabelAttribute2 label =
     case label of
-        HiddenLabel2 textLabel ->
+        HiddenLabel textLabel ->
             Region2.description textLabel
 
-        Label2 _ _ _ ->
+        Label _ _ _ ->
             Two.NoAttribute
-
-
-{-| A standard button.
-
-The `onPress` handler will be fired either `onClick` or when the element is focused and the `Enter` key has been pressed.
-
-    import Element exposing (rgb255, text)
-    import Element.Background as Background
-    import Element.Input as Input
-
-    blue =
-        Element.rgb255 238 238 238
-
-    myButton =
-        Input.button
-            [ Background.color blue
-            , Element.focused
-                [ Background.color purple ]
-            ]
-            { onPress = ButtonPressed
-            , label = text "My Button"
-            }
-
-**Note** If you have an icon button but want it to be accessible, consider adding a [`Region.description`](Element-Region#description), which will describe the button to screen readers.
-
--}
-button :
-    List (Attribute msg)
-    ->
-        { onPress : msg
-        , label : Element msg
-        }
-    -> Element msg
-button attrs { onPress, label } =
-    Internal.element
-        Internal.asEl
-        -- We don't explicitly label this node as a button,
-        -- because buttons fire a bunch of times when you hold down the enter key.
-        -- We'd like to fire just once on the enter key, which means using keyup instead of keydown.
-        -- Because we have no way to disable keydown, though our messages get doubled.
-        Internal.div
-        (Element.width Element.shrink
-            :: Element.height Element.shrink
-            :: Internal.htmlClass
-                (classes.contentCenterX
-                    ++ " "
-                    ++ classes.contentCenterY
-                    ++ " "
-                    ++ classes.seButton
-                    ++ " "
-                    ++ classes.noTextSelection
-                )
-            :: Element.pointer
-            :: focusDefault attrs
-            :: Internal.Describe Internal.Button
-            :: Internal.Attr (Html.Attributes.tabindex 0)
-            :: Events.onClick onPress
-            :: onEnter onPress
-            :: attrs
-        )
-        (Internal.Unkeyed [ label ])
 
 
 focusDefault attrs =
@@ -433,15 +303,6 @@ hasFocusStyle attr =
             False
 
 
-{-| -}
-type alias Checkbox msg =
-    { onChange : Maybe (Bool -> msg)
-    , icon : Maybe (Element msg)
-    , checked : Bool
-    , label : Label msg
-    }
-
-
 {-|
 
   - **onChange** - The `Msg` to send.
@@ -456,13 +317,13 @@ checkbox :
         { onChange : Bool -> msg
         , icon : Bool -> Two.Element msg
         , checked : Bool
-        , label : Label2 msg
+        , label : Label msg
         }
     -> Two.Element msg
 checkbox attrs { label, icon, checked, onChange } =
     let
         attributes =
-            [ if isHiddenLabel2 label then
+            [ if isHiddenLabel label then
                 Two.NoAttribute
 
               else
@@ -486,7 +347,7 @@ checkbox attrs { label, icon, checked, onChange } =
             ]
                 ++ attrs
     in
-    applyLabel2 attributes
+    applyLabel attributes
         label
         (Two.element
             Two.AsEl
@@ -511,24 +372,19 @@ checkbox attrs { label, icon, checked, onChange } =
 
 {-| -}
 type Thumb
-    = Thumb (List (Attribute Never))
+    = Thumb (List (Two.Attribute Never))
 
 
 {-| -}
-type Thumb2
-    = Thumb2 (List (Two.Attribute Never))
-
-
-{-| -}
-thumb : List (Attribute Never) -> Thumb
+thumb : List (Two.Attribute Never) -> Thumb
 thumb =
     Thumb
 
 
 {-| -}
-defaultThumb : Thumb2
+defaultThumb : Thumb
 defaultThumb =
-    Thumb2
+    Thumb
         [ Element2.width (Element2.px 16)
         , Element2.height (Element2.px 16)
         , Border2.rounded 8
@@ -580,24 +436,24 @@ sliderX :
     List (Two.Attribute msg)
     ->
         { onChange : Float -> msg
-        , label : Label2 msg
+        , label : Label msg
         , min : Float
         , max : Float
         , value : Float
-        , thumb : Thumb2
+        , thumb : Thumb
         , step : Maybe Float
         }
     -> Two.Element msg
 sliderX attributes input =
     let
-        (Thumb2 thumbAttributes) =
+        (Thumb thumbAttributes) =
             input.thumb
 
         factor =
             (input.value - input.min)
                 / (input.max - input.min)
     in
-    applyLabel2
+    applyLabel
         ([ Region2.announce
          , Element2.width Element2.fill
          , Element2.height Element2.fill
@@ -666,7 +522,7 @@ sliderX attributes input =
                     :: attributes
                     -- This is after `attributes` because the thumb should be in front of everything.
                     ++ [ Element2.behindContent
-                            (viewThumb2 factor thumbAttributes)
+                            (viewThumb factor thumbAttributes)
                        ]
                 )
                 Element2.none
@@ -678,11 +534,11 @@ sliderY :
     List (Two.Attribute msg)
     ->
         { onChange : Float -> msg
-        , label : Label2 msg
+        , label : Label msg
         , min : Float
         , max : Float
         , value : Float
-        , thumb : Thumb2
+        , thumb : Thumb
         , step : Maybe Float
         }
     -> Two.Element msg
@@ -693,14 +549,14 @@ sliderY attrs input =
                 :: Element2.width (Element2.px 20)
                 :: attrs
 
-        (Thumb2 thumbAttributes) =
+        (Thumb thumbAttributes) =
             input.thumb
 
         factor =
             (input.value - input.min)
                 / (input.max - input.min)
     in
-    applyLabel2
+    applyLabel
         ([ Region2.announce
          , Element2.width Element2.fill
          , Element2.height Element2.fill
@@ -771,7 +627,7 @@ sliderY attrs input =
                     :: attributes
                     -- This is after `attributes` because the thumb should be in front of everything.
                     ++ [ Element2.behindContent
-                            (viewVerticalThumb2 factor thumbAttributes)
+                            (viewVerticalThumb factor thumbAttributes)
                        ]
                 )
                 Element2.none
@@ -779,288 +635,7 @@ sliderY attrs input =
         )
 
 
-{-| A slider input, good for capturing float values.
-
-    Input.slider
-        [ Element.height (Element.px 30)
-
-        -- Here is where we're creating/styling the "track"
-        , Element.behindContent
-            (Element.el
-                [ Element.width Element.fill
-                , Element.height (Element.px 2)
-                , Element.centerY
-                , Background.color grey
-                , Border.rounded 2
-                ]
-                Element.none
-            )
-        ]
-        { onChange = AdjustValue
-        , label =
-            Input.labelAbove []
-                (text "My Slider Value")
-        , min = 0
-        , max = 75
-        , step = Nothing
-        , value = model.sliderValue
-        , thumb =
-            Input.defaultThumb
-        }
-
-`Element.behindContent` is used to render the track of the slider. Without it, no track would be rendered. The `thumb` is the icon that you can move around.
-
-The slider can be vertical or horizontal depending on the width/height of the slider.
-
-  - `height fill` and `width (px someWidth)` will cause the slider to be vertical.
-  - `height (px someHeight)` and `width (px someWidth)` where `someHeight` > `someWidth` will also do it.
-  - otherwise, the slider will be horizontal.
-
-**Note** If you want a slider for an `Int` value:
-
-  - set `step` to be `Just 1`, or some other whole value
-  - `value = toFloat model.myInt`
-  - And finally, round the value before making a message `onChange = round >> AdjustValue`
-
--}
-slider :
-    List (Attribute msg)
-    ->
-        { onChange : Float -> msg
-        , label : Label msg
-        , min : Float
-        , max : Float
-        , value : Float
-        , thumb : Thumb
-        , step : Maybe Float
-        }
-    -> Element msg
-slider attributes input =
-    let
-        (Thumb thumbAttributes) =
-            input.thumb
-
-        width =
-            Internal.getWidth thumbAttributes
-
-        height =
-            Internal.getHeight thumbAttributes
-
-        vertical =
-            case ( trackWidth, trackHeight ) of
-                ( Nothing, Nothing ) ->
-                    False
-
-                ( Just (Internal.Px w), Just (Internal.Px h) ) ->
-                    h > w
-
-                ( Just (Internal.Px _), Just (Internal.Fill _) ) ->
-                    True
-
-                _ ->
-                    False
-
-        trackHeight =
-            Internal.getHeight attributes
-
-        trackWidth =
-            Internal.getWidth attributes
-
-        ( spacingX, spacingY ) =
-            Internal.getSpacing attributes ( 5, 5 )
-
-        factor =
-            (input.value - input.min)
-                / (input.max - input.min)
-
-        {- Needed attributes
-
-           Thumb Attributes
-              - Width/Height of thumb so that the input can shadow it.
-
-
-           Attributes
-
-               OnParent ->
-                   Spacing
-
-
-               On track ->
-                   Everything else
-
-
-
-
-            The `<input>`
-
-
-        -}
-        className =
-            "thmb-" ++ thumbWidthString ++ "-" ++ thumbHeightString
-
-        thumbWidthString =
-            case width of
-                Nothing ->
-                    "20px"
-
-                Just (Internal.Px px) ->
-                    String.fromInt px ++ "px"
-
-                _ ->
-                    "100%"
-
-        thumbHeightString =
-            case height of
-                Nothing ->
-                    "20px"
-
-                Just (Internal.Px px) ->
-                    String.fromInt px ++ "px"
-
-                _ ->
-                    "100%"
-
-        thumbShadowStyle =
-            [ Internal.Property "width"
-                thumbWidthString
-            , Internal.Property "height"
-                thumbHeightString
-            ]
-    in
-    applyLabel
-        [ if isHiddenLabel input.label then
-            Internal.NoAttribute
-
-          else
-            Element.spacingXY spacingX spacingY
-        , Region.announce
-        , Element.width
-            (case trackWidth of
-                Nothing ->
-                    Element.fill
-
-                Just (Internal.Px _) ->
-                    Element.shrink
-
-                Just x ->
-                    x
-            )
-        , Element.height
-            (case trackHeight of
-                Nothing ->
-                    Element.shrink
-
-                Just (Internal.Px _) ->
-                    Element.shrink
-
-                Just x ->
-                    x
-            )
-        ]
-        input.label
-        (Element.row
-            [ Element.width
-                (Maybe.withDefault Element.fill trackWidth)
-            , Element.height
-                (Maybe.withDefault (Element.px 20) trackHeight)
-            ]
-            [ Internal.element
-                Internal.asEl
-                (Internal.NodeName "input")
-                [ hiddenLabelAttribute input.label
-                , Internal.StyleClass Flag.active
-                    (Internal.Style
-                        ("input[type=\"range\"]." ++ className ++ "::-moz-range-thumb")
-                        thumbShadowStyle
-                    )
-                , Internal.StyleClass Flag.hover
-                    (Internal.Style
-                        ("input[type=\"range\"]." ++ className ++ "::-webkit-slider-thumb")
-                        thumbShadowStyle
-                    )
-                , Internal.StyleClass Flag.focus
-                    (Internal.Style
-                        ("input[type=\"range\"]." ++ className ++ "::-ms-thumb")
-                        thumbShadowStyle
-                    )
-                , Internal.Attr (Html.Attributes.class (className ++ " focusable-parent"))
-                , Internal.Attr
-                    (Html.Events.onInput
-                        (\str ->
-                            case String.toFloat str of
-                                Nothing ->
-                                    -- This should never happen because the browser
-                                    -- should always provide a Float.
-                                    input.onChange 0
-
-                                Just val ->
-                                    input.onChange val
-                        )
-                    )
-                , Internal.Attr <|
-                    Html.Attributes.type_ "range"
-                , Internal.Attr <|
-                    Html.Attributes.step
-                        (case input.step of
-                            Nothing ->
-                                -- Note: If we set `any` here,
-                                -- Firefox makes a single press of the arrows keys equal to 1
-                                -- We could set the step manually to the effective range / 100
-                                -- String.fromFloat ((input.max - input.min) / 100)
-                                -- Which matches Chrome's default behavior
-                                -- HOWEVER, that means manually moving a slider with the mouse will snap to that interval.
-                                "any"
-
-                            Just step ->
-                                String.fromFloat step
-                        )
-                , Internal.Attr <|
-                    Html.Attributes.min (String.fromFloat input.min)
-                , Internal.Attr <|
-                    Html.Attributes.max (String.fromFloat input.max)
-                , Internal.Attr <|
-                    Html.Attributes.value (String.fromFloat input.value)
-                , if vertical then
-                    Internal.Attr <|
-                        Html.Attributes.attribute "orient" "vertical"
-
-                  else
-                    Internal.NoAttribute
-                , Element.width <|
-                    if vertical then
-                        Maybe.withDefault (Element.px 20) trackHeight
-
-                    else
-                        Maybe.withDefault Element.fill trackWidth
-                , Element.height <|
-                    if vertical then
-                        Maybe.withDefault Element.fill trackWidth
-
-                    else
-                        Maybe.withDefault (Element.px 20) trackHeight
-                ]
-                (Internal.Unkeyed [])
-            , Element.el
-                (Element.width
-                    (Maybe.withDefault Element.fill trackWidth)
-                    :: Element.height
-                        (Maybe.withDefault (Element.px 20) trackHeight)
-                    :: attributes
-                    -- This is after `attributes` because the thumb should be in front of everything.
-                    ++ [ Element.behindContent <|
-                            if vertical then
-                                viewVerticalThumb factor thumbAttributes trackWidth
-
-                            else
-                                viewHorizontalThumb factor thumbAttributes trackHeight
-                       ]
-                )
-                Element.none
-            ]
-        )
-
-
-viewThumb2 factor thumbAttributes =
+viewThumb factor thumbAttributes =
     Element2.row
         [ Element2.width Element2.fill
         , Element2.height Element2.fill
@@ -1090,7 +665,7 @@ viewThumb2 factor thumbAttributes =
         ]
 
 
-viewVerticalThumb2 factor thumbAttributes =
+viewVerticalThumb factor thumbAttributes =
     Element2.column
         [ Element2.width Element2.fill
         , Element2.height Element2.fill
@@ -1120,50 +695,6 @@ viewVerticalThumb2 factor thumbAttributes =
         ]
 
 
-viewHorizontalThumb factor thumbAttributes trackHeight =
-    Element.row
-        [ Element.width Element.fill
-        , Element.height (Maybe.withDefault Element.fill trackHeight)
-        , Element.centerY
-        ]
-        [ Element.el
-            [ Element.width (Element.fillPortion (round <| factor * 10000))
-            ]
-            Element.none
-        , Element.el
-            (Element.centerY
-                :: List.map (Internal.mapAttr Basics.never) thumbAttributes
-            )
-            Element.none
-        , Element.el
-            [ Element.width (Element.fillPortion (round <| (abs <| 1 - factor) * 10000))
-            ]
-            Element.none
-        ]
-
-
-viewVerticalThumb factor thumbAttributes trackWidth =
-    Element.column
-        [ Element.height Element.fill
-        , Element.width (Maybe.withDefault Element.fill trackWidth)
-        , Element.centerX
-        ]
-        [ Element.el
-            [ Element.height (Element.fillPortion (round <| (abs <| 1 - factor) * 10000))
-            ]
-            Element.none
-        , Element.el
-            (Element.centerX
-                :: List.map (Internal.mapAttr Basics.never) thumbAttributes
-            )
-            Element.none
-        , Element.el
-            [ Element.height (Element.fillPortion (round <| factor * 10000))
-            ]
-            Element.none
-        ]
-
-
 type alias TextInput =
     { type_ : TextKind
     , spellchecked : Bool
@@ -1177,20 +708,11 @@ type TextKind
 
 
 {-| -}
-type alias Text msg =
+type alias Text2 msg =
     { onChange : String -> msg
     , text : String
     , placeholder : Maybe (Placeholder msg)
     , label : Label msg
-    }
-
-
-{-| -}
-type alias Text2 msg =
-    { onChange : String -> msg
-    , text : String
-    , placeholder : Maybe (Placeholder2 msg)
-    , label : Label2 msg
     }
 
 
@@ -1292,7 +814,7 @@ textHelper2 textInput attrs textOptions =
                                         ]
 
                                     Just place ->
-                                        [ renderPlaceholder2 redistributed.placeholder place (textOptions.text == "")
+                                        [ renderPlaceholder redistributed.placeholder place (textOptions.text == "")
                                         ]
 
                              else
@@ -1320,16 +842,16 @@ textHelper2 textInput attrs textOptions =
 
                                     Just place ->
                                         [ Element2.behindContent
-                                            (renderPlaceholder2 redistributed.placeholder place (textOptions.text == ""))
+                                            (renderPlaceholder redistributed.placeholder place (textOptions.text == ""))
                                         ]
                                 ]
                         )
                         [ inputElement ]
     in
-    applyLabel2
+    applyLabel
         (Two.Class Flag2.cursor classes.cursorText
             :: Two.class Style.classes.inputTextParent
-            :: (if isHiddenLabel2 textOptions.label then
+            :: (if isHiddenLabel textOptions.label then
                     Two.NoAttribute
 
                 else
@@ -1343,267 +865,7 @@ textHelper2 textInput attrs textOptions =
         wrappedInput
 
 
-{-| -}
-textHelper : TextInput -> List (Attribute msg) -> Text msg -> Element msg
-textHelper textInput attrs textOptions =
-    let
-        withDefaults =
-            defaultTextBoxStyle ++ attrs
-
-        redistributed =
-            redistribute (textInput.type_ == TextArea)
-                (isStacked textOptions.label)
-                withDefaults
-
-        onlySpacing attr =
-            case attr of
-                Internal.StyleClass _ (Internal.SpacingStyle _ _ _) ->
-                    True
-
-                _ ->
-                    False
-
-        getPadding attr =
-            case attr of
-                Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
-                    -- The - 3 is here to prevent accidental triggering of scrollbars
-                    -- when things are off by a pixel or two.
-                    -- (or at least when the browser *thinks* it's off by a pixel or two)
-                    Just
-                        { top = max 0 (floor (t - 3))
-                        , right = max 0 (floor (r - 3))
-                        , bottom = max 0 (floor (b - 3))
-                        , left = max 0 (floor (l - 3))
-                        }
-
-                _ ->
-                    Nothing
-
-        heightConstrained =
-            case textInput.type_ of
-                TextInputNode inputType ->
-                    False
-
-                TextArea ->
-                    withDefaults
-                        |> List.filterMap getHeight
-                        |> List.reverse
-                        |> List.head
-                        |> Maybe.map isConstrained
-                        |> Maybe.withDefault False
-
-        parentPadding =
-            withDefaults
-                |> List.filterMap getPadding
-                |> List.reverse
-                |> List.head
-                |> Maybe.withDefault
-                    { top = 0
-                    , right = 0
-                    , bottom = 0
-                    , left = 0
-                    }
-
-        inputElement =
-            Internal.element
-                Internal.asEl
-                (case textInput.type_ of
-                    TextInputNode inputType ->
-                        Internal.NodeName "input"
-
-                    TextArea ->
-                        Internal.NodeName "textarea"
-                )
-                ((case textInput.type_ of
-                    TextInputNode inputType ->
-                        -- Note: Due to a weird edgecase in...Edge...
-                        -- `type` needs to come _before_ `value`
-                        -- More reading: https://github.com/mdgriffith/elm-ui/pull/94/commits/4f493a27001ccc3cf1f2baa82e092c35d3811876
-                        [ Internal.Attr (Html.Attributes.type_ inputType)
-                        , Internal.htmlClass classes.inputText
-                        ]
-
-                    TextArea ->
-                        [ Element.clip
-                        , Element.height Element.fill
-                        , Internal.htmlClass classes.inputMultiline
-                        , calcMoveToCompensateForPadding withDefaults
-
-                        -- The only reason we do this padding trick is so that when the user clicks in the padding,
-                        -- that the cursor will reset correctly.
-                        -- This could probably be combined with the above `calcMoveToCompensateForPadding`
-                        , Element.paddingEach parentPadding
-                        , Internal.Attr (Html.Attributes.style "margin" (renderBox (negateBox parentPadding)))
-                        , Internal.Attr (Html.Attributes.style "box-sizing" "content-box")
-                        ]
-                 )
-                    ++ [ value textOptions.text
-                       , Internal.Attr (Html.Events.onInput textOptions.onChange)
-                       , hiddenLabelAttribute textOptions.label
-                       , spellcheck textInput.spellchecked
-                       , Maybe.map autofill textInput.autofill
-                            |> Maybe.withDefault Internal.NoAttribute
-                       ]
-                    ++ redistributed.input
-                )
-                (Internal.Unkeyed [])
-
-        wrappedInput =
-            case textInput.type_ of
-                TextArea ->
-                    -- textarea with height-content means that
-                    -- the input element is rendered `inFront` with a transparent background
-                    -- Then the input text is rendered as the space filling element.
-                    Internal.element
-                        Internal.asEl
-                        Internal.div
-                        ((if heightConstrained then
-                            (::) Element.scrollbarY
-
-                          else
-                            identity
-                         )
-                            [ Element.width Element.fill
-                            , if List.any hasFocusStyle withDefaults then
-                                Internal.NoAttribute
-
-                              else
-                                Internal.htmlClass classes.focusedWithin
-                            , Internal.htmlClass classes.inputMultilineWrapper
-                            ]
-                            ++ redistributed.parent
-                        )
-                        (Internal.Unkeyed
-                            [ Internal.element
-                                Internal.asParagraph
-                                Internal.div
-                                (Element.width Element.fill
-                                    :: Element.height Element.fill
-                                    :: Element.inFront inputElement
-                                    :: Internal.htmlClass classes.inputMultilineParent
-                                    :: redistributed.wrapper
-                                )
-                                (Internal.Unkeyed
-                                    (if textOptions.text == "" then
-                                        case textOptions.placeholder of
-                                            Nothing ->
-                                                -- Without this, firefox will make the text area lose focus
-                                                -- if the input is empty and you mash the keyboard
-                                                [ Element.text "\u{00A0}"
-                                                ]
-
-                                            Just place ->
-                                                [ renderPlaceholder place
-                                                    []
-                                                    (textOptions.text == "")
-                                                ]
-
-                                     else
-                                        [ Internal.unstyled
-                                            (Html.span [ Html.Attributes.class classes.inputMultilineFiller ]
-                                                -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
-                                                [ Html.text (textOptions.text ++ "\u{00A0}")
-                                                ]
-                                            )
-                                        ]
-                                    )
-                                )
-                            ]
-                        )
-
-                TextInputNode inputType ->
-                    Internal.element
-                        Internal.asEl
-                        Internal.div
-                        (Element.width Element.fill
-                            :: (if List.any hasFocusStyle withDefaults then
-                                    Internal.NoAttribute
-
-                                else
-                                    Internal.htmlClass classes.focusedWithin
-                               )
-                            :: List.concat
-                                [ redistributed.parent
-                                , case textOptions.placeholder of
-                                    Nothing ->
-                                        []
-
-                                    Just place ->
-                                        [ Element.behindContent
-                                            (renderPlaceholder place redistributed.cover (textOptions.text == ""))
-                                        ]
-                                ]
-                        )
-                        (Internal.Unkeyed [ inputElement ])
-    in
-    applyLabel
-        (Internal.Class Flag.cursor classes.cursorText
-            :: (if isHiddenLabel textOptions.label then
-                    Internal.NoAttribute
-
-                else
-                    Element.spacing
-                        5
-               )
-            :: Region.announce
-            :: redistributed.fullParent
-        )
-        textOptions.label
-        wrappedInput
-
-
-getHeight attr =
-    case attr of
-        Internal.Height h ->
-            Just h
-
-        _ ->
-            Nothing
-
-
-negateBox box =
-    { top = negate box.top
-    , right = negate box.right
-    , bottom = negate box.bottom
-    , left = negate box.left
-    }
-
-
-renderBox { top, right, bottom, left } =
-    String.fromInt top
-        ++ "px "
-        ++ String.fromInt right
-        ++ "px "
-        ++ String.fromInt bottom
-        ++ "px "
-        ++ String.fromInt left
-        ++ "px"
-
-
-renderPlaceholder (Placeholder placeholderAttrs placeholderEl) forPlaceholder on =
-    Element.el
-        (forPlaceholder
-            ++ [ Font.color charcoal
-               , Internal.htmlClass (classes.noTextSelection ++ " " ++ classes.passPointerEvents)
-               , Element.clip
-               , Border.color (Element.rgba 0 0 0 0)
-               , Background.color (Element.rgba 0 0 0 0)
-               , Element.height Element.fill
-               , Element.width Element.fill
-               , Element.alpha
-                    (if on then
-                        1
-
-                     else
-                        0
-                    )
-               ]
-            ++ placeholderAttrs
-        )
-        placeholderEl
-
-
-renderPlaceholder2 attrs (Placeholder2 placeholderAttrs placeholderEl) on =
+renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
     Element2.el
         (attrs
             ++ [ Font2.color charcoal2
@@ -1628,291 +890,29 @@ renderPlaceholder2 attrs (Placeholder2 placeholderAttrs placeholderEl) on =
         placeholderEl
 
 
-{-| Because textareas are now shadowed, where they're rendered twice,
-we to move the literal text area up because spacing is based on line height.
--}
-calcMoveToCompensateForPadding : List (Attribute msg) -> Attribute msg
-calcMoveToCompensateForPadding attrs =
-    let
-        gatherSpacing attr found =
-            case attr of
-                Internal.StyleClass _ (Internal.SpacingStyle _ x y) ->
-                    case found of
-                        Nothing ->
-                            Just y
 
-                        _ ->
-                            found
-
-                _ ->
-                    found
-    in
-    case List.foldr gatherSpacing Nothing attrs of
-        Nothing ->
-            Internal.NoAttribute
-
-        Just vSpace ->
-            Element.moveUp (toFloat (floor (toFloat vSpace / 2)))
-
-
-{-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
-
-redistribute them to the parent, the input, or the cover.
-
-  - fullParent -> Wrapper around label and input
-  - parent -> parent of wrapper
-  - wrapper -> the element that is here to take up space.
-  - cover -> things like placeholders or text areas which are layered on top of input.
-  - input -> actual input element
-
--}
-redistribute :
-    Bool
-    -> Bool
-    -> List (Attribute msg)
-    ->
-        { fullParent : List (Attribute msg)
-        , parent : List (Attribute msg)
-        , wrapper : List (Attribute msg)
-        , input : List (Attribute msg)
-        , cover : List (Attribute msg)
-        }
-redistribute isMultiline stacked attrs =
-    List.foldl (redistributeOver isMultiline stacked)
-        { fullParent = []
-        , parent = []
-        , input = []
-        , cover = []
-        , wrapper = []
-        }
-        attrs
-        |> (\redist ->
-                { parent = List.reverse redist.parent
-                , fullParent = List.reverse redist.fullParent
-                , wrapper = List.reverse redist.wrapper
-                , input = List.reverse redist.input
-                , cover = List.reverse redist.cover
-                }
-           )
-
-
-isFill len =
-    case len of
-        Internal.Fill _ ->
-            True
-
-        Internal.Content ->
-            False
-
-        Internal.Px _ ->
-            False
-
-        Internal.Min _ l ->
-            isFill l
-
-        Internal.Max _ l ->
-            isFill l
-
-
-isShrink len =
-    case len of
-        Internal.Content ->
-            True
-
-        Internal.Px _ ->
-            False
-
-        Internal.Fill _ ->
-            False
-
-        Internal.Min _ l ->
-            isShrink l
-
-        Internal.Max _ l ->
-            isShrink l
-
-
-isConstrained len =
-    case len of
-        Internal.Content ->
-            False
-
-        Internal.Px _ ->
-            True
-
-        Internal.Fill _ ->
-            True
-
-        Internal.Min _ l ->
-            isConstrained l
-
-        Internal.Max _ l ->
-            True
-
-
-isPixel len =
-    case len of
-        Internal.Content ->
-            False
-
-        Internal.Px _ ->
-            True
-
-        Internal.Fill _ ->
-            False
-
-        Internal.Min _ l ->
-            isPixel l
-
-        Internal.Max _ l ->
-            isPixel l
-
-
-{-| isStacked means that the label is above or below
--}
-redistributeOver isMultiline stacked attr els =
-    case attr of
-        Internal.Nearby _ _ ->
-            { els | parent = attr :: els.parent }
-
-        Internal.Width width ->
-            if isFill width then
-                { els
-                    | fullParent = attr :: els.fullParent
-                    , parent = attr :: els.parent
-                    , input = attr :: els.input
-                }
-
-            else if stacked then
-                { els
-                    | fullParent = attr :: els.fullParent
-                }
-
-            else
-                { els
-                    | parent = attr :: els.parent
-                }
-
-        Internal.Height height ->
-            if not stacked then
-                { els
-                    | fullParent = attr :: els.fullParent
-                    , parent = attr :: els.parent
-                }
-
-            else if isFill height then
-                { els
-                    | fullParent = attr :: els.fullParent
-                    , parent = attr :: els.parent
-                }
-
-            else if isPixel height then
-                { els | parent = attr :: els.parent }
-
-            else
-                { els
-                    | parent = attr :: els.parent
-                }
-
-        Internal.AlignX _ ->
-            { els | fullParent = attr :: els.fullParent }
-
-        Internal.AlignY _ ->
-            { els | fullParent = attr :: els.fullParent }
-
-        Internal.StyleClass _ (Internal.SpacingStyle _ _ _) ->
-            { els
-                | fullParent = attr :: els.fullParent
-                , parent = attr :: els.parent
-                , input = attr :: els.input
-                , wrapper = attr :: els.wrapper
-            }
-
-        Internal.StyleClass cls (Internal.PaddingStyle pad t r b l) ->
-            if isMultiline then
-                { els
-                    | parent = attr :: els.parent
-                    , cover = attr :: els.cover
-                }
-
-            else
-                let
-                    newHeight =
-                        Element.htmlAttribute
-                            (Html.Attributes.style
-                                "height"
-                                ("calc(1.0em + " ++ String.fromFloat (2 * min t b) ++ "px)")
-                            )
-
-                    newLineHeight =
-                        Element.htmlAttribute
-                            (Html.Attributes.style
-                                "line-height"
-                                ("calc(1.0em + " ++ String.fromFloat (2 * min t b) ++ "px)")
-                            )
-
-                    newTop =
-                        t - min t b
-
-                    newBottom =
-                        b - min t b
-
-                    reducedVerticalPadding =
-                        Internal.StyleClass Flag.padding
-                            (Internal.PaddingStyle
-                                (Internal.paddingNameFloat
-                                    newTop
-                                    r
-                                    newBottom
-                                    l
-                                )
-                                newTop
-                                r
-                                newBottom
-                                l
-                            )
-                in
-                { els
-                    | parent = reducedVerticalPadding :: els.parent
-                    , input = newHeight :: newLineHeight :: els.input
-                    , cover = attr :: els.cover
-                }
-
-        Internal.StyleClass _ (Internal.BorderWidth _ _ _ _ _) ->
-            { els
-                | parent = attr :: els.parent
-                , cover = attr :: els.cover
-            }
-
-        Internal.StyleClass _ (Internal.Transform _) ->
-            { els
-                | parent = attr :: els.parent
-                , cover = attr :: els.cover
-            }
-
-        Internal.StyleClass _ (Internal.FontSize _) ->
-            { els | fullParent = attr :: els.fullParent }
-
-        Internal.StyleClass _ (Internal.FontFamily _ _) ->
-            { els | fullParent = attr :: els.fullParent }
-
-        Internal.StyleClass flag cls ->
-            { els | parent = attr :: els.parent }
-
-        Internal.NoAttribute ->
-            els
-
-        Internal.Attr a ->
-            { els | input = attr :: els.input }
-
-        Internal.Describe _ ->
-            { els | input = attr :: els.input }
-
-        Internal.Class _ _ ->
-            { els | parent = attr :: els.parent }
-
-        Internal.TransformComponent _ _ ->
-            { els | input = attr :: els.input }
+-- {-| Because textareas are now shadowed, where they're rendered twice,
+-- we to move the literal text area up because spacing is based on line height.
+-- -}
+-- calcMoveToCompensateForPadding : List (Attribute msg) -> Attribute msg
+-- calcMoveToCompensateForPadding attrs =
+--     let
+--         gatherSpacing attr found =
+--             case attr of
+--                 Internal.StyleClass _ (Internal.SpacingStyle _ x y) ->
+--                     case found of
+--                         Nothing ->
+--                             Just y
+--                         _ ->
+--                             found
+--                 _ ->
+--                     found
+--     in
+--     case List.foldr gatherSpacing Nothing attrs of
+--         Nothing ->
+--             Internal.NoAttribute
+--         Just vSpace ->
+--             Element.moveUp (toFloat (floor (toFloat vSpace / 2)))
 
 
 {-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
@@ -2110,8 +1110,8 @@ text :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder2 msg)
-        , label : Label2 msg
+        , placeholder : Maybe (Placeholder msg)
+        , label : Label msg
         }
     -> Two.Element msg
 text =
@@ -2125,16 +1125,16 @@ text =
 {-| If spell checking is available, this input will be spellchecked.
 -}
 spellChecked :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
         }
-    -> Element msg
+    -> Two.Element msg
 spellChecked =
-    textHelper
+    textHelper2
         { type_ = TextInputNode "text"
         , spellchecked = True
         , autofill = Nothing
@@ -2143,16 +1143,16 @@ spellChecked =
 
 {-| -}
 search :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
         }
-    -> Element msg
+    -> Two.Element msg
 search =
-    textHelper
+    textHelper2
         { type_ = TextInputNode "search"
         , spellchecked = False
         , autofill = Nothing
@@ -2167,7 +1167,7 @@ A password takes all the arguments a normal `Input.text` would, and also **show*
 
 -}
 newPassword :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -2175,9 +1175,9 @@ newPassword :
         , label : Label msg
         , show : Bool
         }
-    -> Element msg
+    -> Two.Element msg
 newPassword attrs pass =
-    textHelper
+    textHelper2
         { type_ =
             TextInputNode <|
                 if pass.show then
@@ -2198,7 +1198,7 @@ newPassword attrs pass =
 
 {-| -}
 currentPassword :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
@@ -2206,9 +1206,9 @@ currentPassword :
         , label : Label msg
         , show : Bool
         }
-    -> Element msg
+    -> Two.Element msg
 currentPassword attrs pass =
-    textHelper
+    textHelper2
         { type_ =
             TextInputNode <|
                 if pass.show then
@@ -2229,16 +1229,16 @@ currentPassword attrs pass =
 
 {-| -}
 username :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
         }
-    -> Element msg
+    -> Two.Element msg
 username =
-    textHelper
+    textHelper2
         { type_ = TextInputNode "text"
         , spellchecked = False
         , autofill = Just "username"
@@ -2247,16 +1247,16 @@ username =
 
 {-| -}
 email :
-    List (Attribute msg)
+    List (Two.Attribute msg)
     ->
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
         }
-    -> Element msg
+    -> Two.Element msg
 email =
-    textHelper
+    textHelper2
         { type_ = TextInputNode "email"
         , spellchecked = False
         , autofill = Just "email"
@@ -2273,8 +1273,8 @@ multiline :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder2 msg)
-        , label : Label2 msg
+        , placeholder : Maybe (Placeholder msg)
+        , label : Label msg
         , spellcheck : Bool
         }
     -> Two.Element msg
@@ -2302,70 +1302,10 @@ isHiddenLabel label =
             False
 
 
-isHiddenLabel2 label =
-    case label of
-        HiddenLabel2 _ ->
-            True
-
-        _ ->
-            False
-
-
-applyLabel : List (Attribute msg) -> Label msg -> Element msg -> Element msg
+applyLabel : List (Two.Attribute msg) -> Label msg -> Two.Element msg -> Two.Element msg
 applyLabel attrs label input =
     case label of
         HiddenLabel labelText ->
-            -- NOTE: This means that the label is applied outside of this function!
-            -- It would be nice to unify this logic, but it's a little tricky
-            Internal.element
-                Internal.asColumn
-                (Internal.NodeName "label")
-                attrs
-                (Internal.Unkeyed [ input ])
-
-        Label position labelAttrs labelChild ->
-            let
-                labelElement =
-                    Internal.element
-                        Internal.asEl
-                        Internal.div
-                        labelAttrs
-                        (Internal.Unkeyed [ labelChild ])
-            in
-            case position of
-                Above ->
-                    Internal.element
-                        Internal.asColumn
-                        (Internal.NodeName "label")
-                        (Internal.htmlClass classes.inputLabel :: attrs)
-                        (Internal.Unkeyed [ labelElement, input ])
-
-                Below ->
-                    Internal.element
-                        Internal.asColumn
-                        (Internal.NodeName "label")
-                        (Internal.htmlClass classes.inputLabel :: attrs)
-                        (Internal.Unkeyed [ input, labelElement ])
-
-                OnRight ->
-                    Internal.element
-                        Internal.asRow
-                        (Internal.NodeName "label")
-                        (Internal.htmlClass classes.inputLabel :: attrs)
-                        (Internal.Unkeyed [ input, labelElement ])
-
-                OnLeft ->
-                    Internal.element
-                        Internal.asRow
-                        (Internal.NodeName "label")
-                        (Internal.htmlClass classes.inputLabel :: attrs)
-                        (Internal.Unkeyed [ labelElement, input ])
-
-
-applyLabel2 : List (Two.Attribute msg) -> Label2 msg -> Two.Element msg -> Two.Element msg
-applyLabel2 attrs label input =
-    case label of
-        HiddenLabel2 labelText ->
             -- NOTE: This means that the label is applied outside of this function!
             -- It would be nice to unify this logic, but it's a little tricky
             Two.element
@@ -2373,7 +1313,7 @@ applyLabel2 attrs label input =
                 (Two.NodeName "label" :: attrs)
                 [ input ]
 
-        Label2 position labelAttrs labelChild ->
+        Label position labelAttrs labelChild ->
             let
                 labelElement =
                     Two.element
@@ -2409,12 +1349,7 @@ applyLabel2 attrs label input =
 
 {-| -}
 type Option value msg
-    = Option value (OptionState -> Element msg)
-
-
-{-| -}
-type Option2 value msg
-    = Option2 value (OptionState -> Two.Element msg)
+    = Option value (OptionState -> Two.Element msg)
 
 
 {-| -}
@@ -2426,16 +1361,16 @@ type OptionState
 
 {-| Add a choice to your radio element. This will be rendered with the default radio icon.
 -}
-option : value -> Two.Element msg -> Option2 value msg
+option : value -> Two.Element msg -> Option value msg
 option val txt =
-    Option2 val (defaultRadioOption txt)
+    Option val (defaultRadioOption txt)
 
 
 {-| Customize exactly what your radio option should look like in different states.
 -}
-optionWith : value -> (OptionState -> Two.Element msg) -> Option2 value msg
+optionWith : value -> (OptionState -> Two.Element msg) -> Option value msg
 optionWith val view =
-    Option2 val view
+    Option val view
 
 
 {-| -}
@@ -2443,9 +1378,9 @@ radio :
     List (Two.Attribute msg)
     ->
         { onChange : option -> msg
-        , options : List (Option2 option msg)
+        , options : List (Option option msg)
         , selected : Maybe option
-        , label : Label2 msg
+        , label : Label msg
         }
     -> Two.Element msg
 radio =
@@ -2458,9 +1393,9 @@ radioRow :
     List (Two.Attribute msg)
     ->
         { onChange : option -> msg
-        , options : List (Option2 option msg)
+        , options : List (Option option msg)
         , selected : Maybe option
-        , label : Label2 msg
+        , label : Label msg
         }
     -> Two.Element msg
 radioRow =
@@ -2537,9 +1472,9 @@ radioHelper2 :
     -> List (Two.Attribute msg)
     ->
         { onChange : option -> msg
-        , options : List (Option2 option msg)
+        , options : List (Option option msg)
         , selected : Maybe option
-        , label : Label2 msg
+        , label : Label msg
         }
     -> Two.Element msg
 radioHelper2 orientation attrs input =
@@ -2548,18 +1483,18 @@ radioHelper2 orientation attrs input =
             case orientation of
                 Row ->
                     Element2.row (Element2.width Element2.fill :: hiddenLabelAttribute2 input.label :: attrs)
-                        (List.map (renderOption2 orientation input) input.options)
+                        (List.map (renderOption orientation input) input.options)
 
                 Column ->
                     Element2.column (Element2.width Element2.fill :: hiddenLabelAttribute2 input.label :: attrs)
-                        (List.map (renderOption2 orientation input) input.options)
+                        (List.map (renderOption orientation input) input.options)
 
         prevNext =
             case input.options of
                 [] ->
                     Nothing
 
-                (Option2 val _) :: _ ->
+                (Option val _) :: _ ->
                     List.foldl track ( NotFound, val, val ) input.options
                         |> (\( found, b, a ) ->
                                 case found of
@@ -2575,7 +1510,7 @@ radioHelper2 orientation attrs input =
 
         track opt ( found, prev, nxt ) =
             case opt of
-                Option2 val _ ->
+                Option val _ ->
                     case found of
                         NotFound ->
                             if Just val == input.selected then
@@ -2608,7 +1543,7 @@ radioHelper2 orientation attrs input =
         --                     _ ->
         --                         False
     in
-    applyLabel2
+    applyLabel
         ([ Element2.alignLeft
          , Two.Attr (Html.Attributes.tabindex 0)
          , Two.class "focus"
@@ -2652,7 +1587,7 @@ radioHelper2 orientation attrs input =
         optionArea
 
 
-renderOption2 orientation input (Option2 val view) =
+renderOption orientation input (Option val view) =
     let
         status =
             if Just val == input.selected then
@@ -2686,163 +1621,6 @@ renderOption2 orientation input (Option2 val view) =
         (view status)
 
 
-radioHelper :
-    Orientation
-    -> List (Attribute msg)
-    ->
-        { onChange : option -> msg
-        , options : List (Option option msg)
-        , selected : Maybe option
-        , label : Label msg
-        }
-    -> Element msg
-radioHelper orientation attrs input =
-    let
-        renderOption (Option val view) =
-            let
-                status =
-                    if Just val == input.selected then
-                        Selected
-
-                    else
-                        Idle
-            in
-            Element.el
-                [ Element.pointer
-                , case orientation of
-                    Row ->
-                        Element.width Element.shrink
-
-                    Column ->
-                        Element.width Element.fill
-                , Events.onClick (input.onChange val)
-                , case status of
-                    Selected ->
-                        Internal.Attr <|
-                            Html.Attributes.attribute "aria-checked"
-                                "true"
-
-                    _ ->
-                        Internal.Attr <|
-                            Html.Attributes.attribute "aria-checked"
-                                "false"
-                , Internal.Attr <|
-                    Html.Attributes.attribute "role" "radio"
-                ]
-                (view status)
-
-        optionArea =
-            case orientation of
-                Row ->
-                    row (hiddenLabelAttribute input.label :: attrs)
-                        (List.map renderOption input.options)
-
-                Column ->
-                    column (hiddenLabelAttribute input.label :: attrs)
-                        (List.map renderOption input.options)
-
-        prevNext =
-            case input.options of
-                [] ->
-                    Nothing
-
-                (Option val _) :: _ ->
-                    List.foldl track ( NotFound, val, val ) input.options
-                        |> (\( found, b, a ) ->
-                                case found of
-                                    NotFound ->
-                                        Just ( b, val )
-
-                                    BeforeFound ->
-                                        Just ( b, val )
-
-                                    _ ->
-                                        Just ( b, a )
-                           )
-
-        track opt ( found, prev, nxt ) =
-            case opt of
-                Option val _ ->
-                    case found of
-                        NotFound ->
-                            if Just val == input.selected then
-                                ( BeforeFound, prev, nxt )
-
-                            else
-                                ( found, val, nxt )
-
-                        BeforeFound ->
-                            ( AfterFound, prev, val )
-
-                        AfterFound ->
-                            ( found, prev, nxt )
-
-        events =
-            Internal.get
-                attrs
-            <|
-                \attr ->
-                    case attr of
-                        Internal.Width (Internal.Fill _) ->
-                            True
-
-                        Internal.Height (Internal.Fill _) ->
-                            True
-
-                        Internal.Attr _ ->
-                            True
-
-                        _ ->
-                            False
-    in
-    applyLabel
-        (List.filterMap identity
-            [ Just Element.alignLeft
-            , Just (tabindex 0)
-            , Just (Internal.htmlClass "focus")
-            , Just Region.announce
-            , Just <|
-                Internal.Attr <|
-                    Html.Attributes.attribute "role" "radiogroup"
-            , case prevNext of
-                Nothing ->
-                    Nothing
-
-                Just ( prev, next ) ->
-                    Just
-                        (onKeyLookup <|
-                            \code ->
-                                if code == leftArrow then
-                                    Just (input.onChange prev)
-
-                                else if code == upArrow then
-                                    Just (input.onChange prev)
-
-                                else if code == rightArrow then
-                                    Just (input.onChange next)
-
-                                else if code == downArrow then
-                                    Just (input.onChange next)
-
-                                else if code == space then
-                                    case input.selected of
-                                        Nothing ->
-                                            Just (input.onChange prev)
-
-                                        _ ->
-                                            Nothing
-
-                                else
-                                    Nothing
-                        )
-            ]
-            ++ events
-         -- ++ hideIfEverythingisInvisible
-        )
-        input.label
-        optionArea
-
-
 type Found
     = NotFound
     | BeforeFound
@@ -2854,67 +1632,8 @@ type Orientation
     | Column
 
 
-column : List (Attribute msg) -> List (Internal.Element msg) -> Internal.Element msg
-column attributes children =
-    Internal.element
-        Internal.asColumn
-        Internal.div
-        (Element.height Element.shrink
-            :: Element.width Element.fill
-            :: attributes
-        )
-        (Internal.Unkeyed children)
-
-
-row : List (Attribute msg) -> List (Internal.Element msg) -> Internal.Element msg
-row attributes children =
-    Internal.element
-        Internal.asRow
-        Internal.div
-        (Element.width Element.fill
-            :: attributes
-        )
-        (Internal.Unkeyed children)
-
-
 
 {- Event Handlers -}
-
-
-{-| -}
-onEnter : msg -> Attribute msg
-onEnter msg =
-    onKey enter msg
-
-
-{-| -}
-onSpace : msg -> Attribute msg
-onSpace msg =
-    onKey space msg
-
-
-{-| -}
-onUpArrow : msg -> Attribute msg
-onUpArrow msg =
-    onKey upArrow msg
-
-
-{-| -}
-onRightArrow : msg -> Attribute msg
-onRightArrow msg =
-    onKey rightArrow msg
-
-
-{-| -}
-onLeftArrow : msg -> Attribute msg
-onLeftArrow msg =
-    onKey leftArrow msg
-
-
-{-| -}
-onDownArrow : msg -> Attribute msg
-onDownArrow msg =
-    onKey downArrow msg
 
 
 enter : String
@@ -2963,46 +1682,6 @@ space =
 
 
 {-| -}
-onKey : String -> msg -> Attribute msg
-onKey desiredCode msg =
-    let
-        decode code =
-            if code == desiredCode then
-                Json.succeed msg
-
-            else
-                Json.fail "Not the enter key"
-
-        isKey =
-            Json.field "key" Json.string
-                |> Json.andThen decode
-    in
-    Internal.Attr <|
-        Html.Events.preventDefaultOn "keyup"
-            (Json.map (\fired -> ( fired, True )) isKey)
-
-
-
--- preventKeydown : String -> a -> Attribute a
--- preventKeydown desiredCode msg =
---     let
---         decode code =
---             if code == desiredCode then
---                 Json.succeed msg
---             else
---                 Json.fail "Not the enter key"
---         isKey =
---             Json.field "key" Json.string
---                 |> Json.andThen decode
---     in
---     Events.onWithOptions "keydown"
---         { stopPropagation = False
---         , preventDefault = True
---         }
---         isKey
-
-
-{-| -}
 onKeyLookup2 : (String -> Maybe msg) -> Two.Attribute msg
 onKeyLookup2 lookup =
     let
@@ -3021,85 +1700,14 @@ onKeyLookup2 lookup =
     Two.Attr <| Html.Events.on "keyup" isKey
 
 
-{-| -}
-onKeyLookup : (String -> Maybe msg) -> Attribute msg
-onKeyLookup lookup =
-    let
-        decode code =
-            case lookup code of
-                Nothing ->
-                    Json.fail "No key matched"
-
-                Just msg ->
-                    Json.succeed msg
-
-        isKey =
-            Json.field "key" Json.string
-                |> Json.andThen decode
-    in
-    Internal.Attr <| Html.Events.on "keyup" isKey
-
-
-{-| -}
-onFocusOut : msg -> Attribute msg
-onFocusOut msg =
-    Internal.Attr <| Html.Events.on "focusout" (Json.succeed msg)
-
-
-{-| -}
-onFocusIn : msg -> Attribute msg
-onFocusIn msg =
-    Internal.Attr <| Html.Events.on "focusin" (Json.succeed msg)
-
-
-selected : Bool -> Attribute msg
-selected =
-    Internal.Attr << Html.Attributes.selected
-
-
-name : String -> Attribute msg
-name =
-    Internal.Attr << Html.Attributes.name
-
-
-value : String -> Attribute msg
-value =
-    Internal.Attr << Html.Attributes.value
-
-
-tabindex : Int -> Attribute msg
-tabindex =
-    Internal.Attr << Html.Attributes.tabindex
-
-
-disabled : Bool -> Attribute msg
-disabled =
-    Internal.Attr << Html.Attributes.disabled
-
-
-spellcheck : Bool -> Attribute msg
-spellcheck =
-    Internal.Attr << Html.Attributes.spellcheck
-
-
-readonly : Bool -> Attribute msg
-readonly =
-    Internal.Attr << Html.Attributes.readonly
-
-
-autofill : String -> Attribute msg
-autofill =
-    Internal.Attr << Html.Attributes.attribute "autocomplete"
-
-
 {-| Attach this attribute to any `Input` that you would like to be automatically focused when the page loads.
 
 You should only have a maximum of one per page.
 
 -}
-focusedOnLoad : Attribute msg
+focusedOnLoad : Two.Attribute msg
 focusedOnLoad =
-    Internal.Attr <| Html.Attributes.autofocus True
+    Two.Attr <| Html.Attributes.autofocus True
 
 
 
@@ -3119,64 +1727,47 @@ defaultTextBoxStyle2 =
     ]
 
 
-defaultTextBoxStyle : List (Attribute msg)
-defaultTextBoxStyle =
-    [ defaultTextPadding
-    , Border.rounded 3
-    , Border.color darkGrey
-    , Background.color white
-    , Border.width 1
-    , Element.spacing 5
-    , Element.width Element.fill
-    , Element.height Element.shrink
-    ]
-
-
-defaultTextPadding : Attribute msg
-defaultTextPadding =
-    Element.paddingXY 12 12
-
-
 {-| The blue default checked box icon.
 
 You'll likely want to make your own checkbox at some point that fits your design.
 
 -}
-defaultCheckbox : Bool -> Element msg
+defaultCheckbox : Bool -> Two.Element msg
 defaultCheckbox checked =
-    Element.el
-        [ Internal.htmlClass "focusable"
-        , Element.width (Element.px 14)
-        , Element.height (Element.px 14)
-        , Font.color white
-        , Element.centerY
-        , Font.size 9
-        , Font.center
-        , Border.rounded 3
-        , Border.color <|
+    Element2.el
+        [ Two.class "focusable"
+        , Element2.width (Element2.px 14)
+        , Element2.height (Element2.px 14)
+        , Font2.color white2
+        , Element2.centerY
+        , Font2.size 9
+        , Font2.center
+        , Border2.rounded 3
+        , Border2.color <|
             if checked then
-                Element.rgb (59 / 255) (153 / 255) (252 / 255)
+                Element2.rgb 59 153 252
 
             else
-                Element.rgb (211 / 255) (211 / 255) (211 / 255)
-        , Border.shadow
-            { offset = ( 0, 0 )
-            , blur = 1
-            , size = 1
-            , color =
-                if checked then
-                    Element.rgba (238 / 255) (238 / 255) (238 / 255) 0
+                Element2.rgb 211 211 211
+        , if checked then
+            Element2.alpha 1
 
-                else
-                    Element.rgb (238 / 255) (238 / 255) (238 / 255)
-            }
-        , Background.color <|
+          else
+            Border2.shadow
+                { x = 0
+                , y = 0
+                , blur = 1
+                , size = 1
+                , color =
+                    Element2.rgb 238 238 238
+                }
+        , Background2.color <|
             if checked then
-                Element.rgb (59 / 255) (153 / 255) (252 / 255)
+                Element2.rgb 59 153 252
 
             else
-                white
-        , Border.width <|
+                white2
+        , Border2.width <|
             if checked then
                 0
 
@@ -3184,23 +1775,23 @@ defaultCheckbox checked =
                 1
         ]
         (if checked then
-            Element.el
-                [ Border.color white
-                , Element.height (Element.px 6)
-                , Element.width (Element.px 9)
-                , Element.rotate (degrees -45)
-                , Element.centerX
-                , Element.centerY
-                , Element.moveUp 1
-                , Border.widthEach
+            Element2.el
+                [ Border2.color white2
+                , Element2.height (Element2.px 6)
+                , Element2.width (Element2.px 9)
+                , Element2.rotate (degrees -45)
+                , Element2.centerX
+                , Element2.centerY
+                , Element2.moveUp 1
+                , Border2.widthEach
                     { top = 0
                     , left = 2
                     , bottom = 2
                     , right = 0
                     }
                 ]
-                Element.none
+                Element2.none
 
          else
-            Element.none
+            Element2.none
         )
