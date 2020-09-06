@@ -395,7 +395,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                             ""
                                        )
                                     ++ (if details.borderY /= 0 || details.borderX /= 0 then
-                                            "border:" ++ String.fromInt details.borderX ++ "px " ++ String.fromInt details.borderY ++ "px;"
+                                            "border-width:" ++ String.fromInt details.borderX ++ "px " ++ String.fromInt details.borderY ++ "px;"
 
                                         else
                                             ""
@@ -407,11 +407,20 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                             ""
                                        )
                     in
-                    (if details.name == "div" then
-                        Html.div
+                    (case details.name of
+                        -- Note: these functions are ever so slightly faster than `Html.node`
+                        -- because they can skip elm's built in security check for `script`
+                        "div" ->
+                            Html.div
 
-                     else
-                        Html.node details.name
+                        "input" ->
+                            Html.input
+
+                        "a" ->
+                            Html.a
+
+                        _ ->
+                            Html.node details.name
                     )
                         (Attr.class classes
                             :: Attr.property "style" (Json.Encode.string finalStyles)
@@ -435,12 +444,13 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 styles
                 (Attr.href url
                     :: Attr.rel "noopener noreferrer"
-                    :: (if targetBlank then
-                            Attr.target "_blank"
+                    :: Attr.target
+                        (if targetBlank then
+                            "_blank"
 
-                        else
-                            Attr.target "_self"
-                       )
+                         else
+                            "_self"
+                        )
                     :: htmlAttrs
                 )
                 classes
@@ -465,7 +475,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
         (NodeName nodeName) :: remain ->
             render
                 layout
-                details
+                { details | name = nodeName }
                 children
                 has
                 styles
@@ -994,7 +1004,7 @@ paragraphClass =
     Style.classes.any ++ " " ++ Style.classes.paragraph
 
 
-pageClass =
+textColumnClass =
     Style.classes.any ++ " " ++ Style.classes.page
 
 
@@ -1022,4 +1032,4 @@ contextClasses context =
             paragraphClass
 
         AsTextColumn ->
-            pageClass
+            textColumnClass
