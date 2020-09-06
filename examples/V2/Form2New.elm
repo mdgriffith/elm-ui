@@ -216,6 +216,24 @@ view model =
                     , thumb =
                         Input2.defaultThumb
                     }
+                , Input2.radio
+                    [ Element2.spacing 12
+                    , Background2.color grey2
+                    ]
+                    { selected = Just model.lunch
+                    , onChange = \new -> Update { model | lunch = new }
+                    , label =
+                        Input2.labelAbove
+                            [ Font2.size 14
+                            , Element2.paddingXY 0 12
+                            ]
+                            (Element2.text "What would you like for lunch?")
+                    , options =
+                        [ Input2.option Gyro (Element2.text "Gyro")
+                        , Input2.option Burrito (Element2.text "Burrito")
+                        , Input2.option Taco (Element2.text "Taco")
+                        ]
+                    }
                 , Element2.el [ Element2.height (Element2.px 200) ] Element2.none
                 ]
         ]
