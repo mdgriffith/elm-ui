@@ -3,7 +3,7 @@ module Element2 exposing
     , row, wrappedRow, column
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
-    , Attribute, width, height, Length, px, shrink, fill, fillPortion, maximum, minimum
+    , Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum
     , explain
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
@@ -53,7 +53,7 @@ Text layout needs some specific considerations.
 
 # Size
 
-@docs Attribute, width, height, Length, px, shrink, fill, fillPortion, maximum, minimum
+@docs Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum
 
 
 # Debugging
@@ -334,15 +334,15 @@ maximum i len =
             Bounded Nothing (Just i) otherwise
 
 
-{-| Sometimes you may not want to split available space evenly. In this case you can use `fillPortion` to define which elements should have what portion of the available space.
+{-| Sometimes you may not want to split available space evenly. In this case you can use `portion` to define which elements should have what portion of the available space.
 
-So, two elements, one with `width (fillPortion 2)` and one with `width (fillPortion 3)`. The first would get 2 portions of the available space, while the second would get 3.
+So, two elements, one with `width (portion 2)` and one with `width (portion 3)`. The first would get 2 portions of the available space, while the second would get 3.
 
-**Also:** `fill == fillPortion 1`
+**Also:** `fill == portion 1`
 
 -}
-fillPortion : Int -> Length
-fillPortion =
+portion : Int -> Length
+portion =
     Fill
 
 
@@ -511,14 +511,6 @@ If you want multiple children, you'll need to use something like `row` or `colum
 -}
 el : List (Two.Attribute msg) -> Two.Element msg -> Two.Element msg
 el attrs child =
-    -- Internal.element
-    --     Internal.asEl
-    --     Internal.div
-    --     (width shrink
-    --         :: height shrink
-    --         :: attrs
-    --     )
-    --     (Internal.Unkeyed [ child ])
     Two.render Two.AsEl
         Two.emptyDetails
         [ child ]
@@ -527,21 +519,17 @@ el attrs child =
         []
         Two.singleClass
         Two.NoNearbyChildren
-        (List.reverse attrs)
+        (List.reverse
+            (width shrink
+                :: height shrink
+                :: attrs
+            )
+        )
 
 
 {-| -}
 row : List (Two.Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 row attrs children =
-    -- Internal.element
-    --     Internal.asRow
-    --     Internal.div
-    --     (Internal.htmlClass (classes.contentLeft ++ " " ++ classes.contentCenterY)
-    --         :: width shrink
-    --         :: height shrink
-    --         :: attrs
-    --     )
-    --     (Internal.Unkeyed children)
     Two.render Two.AsRow
         Two.emptyDetails
         children
@@ -550,25 +538,17 @@ row attrs children =
         []
         Two.rowClass
         Two.NoNearbyChildren
-        (List.reverse attrs)
+        (List.reverse
+            (width shrink
+                :: height shrink
+                :: attrs
+            )
+        )
 
 
 {-| -}
 column : List (Two.Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 column attrs children =
-    -- Internal.element
-    --     Internal.asColumn
-    --     Internal.div
-    --     (Internal.htmlClass
-    --         (classes.contentTop
-    --             ++ " "
-    --             ++ classes.contentLeft
-    --         )
-    --         :: height shrink
-    --         :: width shrink
-    --         :: attrs
-    --     )
-    --     (Internal.Unkeyed children)
     Two.render Two.AsColumn
         Two.emptyDetails
         children
@@ -577,7 +557,12 @@ column attrs children =
         []
         Two.columnClass
         Two.NoNearbyChildren
-        (List.reverse attrs)
+        (List.reverse
+            (width shrink
+                :: height shrink
+                :: attrs
+            )
+        )
 
 
 {-| Same as `row`, but will wrap if it takes up too much horizontal space.
@@ -901,7 +886,12 @@ paragraph attrs children =
         []
         Two.paragraphClass
         Two.NoNearbyChildren
-        (List.reverse attrs)
+        (List.reverse
+            (width shrink
+                :: height shrink
+                :: attrs
+            )
+        )
 
 
 {-| Now that we have a paragraph, we need some way to attach a bunch of paragraph's together.
@@ -944,7 +934,12 @@ textColumn attrs children =
         []
         Two.textColumnClass
         Two.NoNearbyChildren
-        (List.reverse attrs)
+        (List.reverse
+            (width shrink
+                :: height shrink
+                :: attrs
+            )
+        )
 
 
 {-| Both a source and a description are required for images.

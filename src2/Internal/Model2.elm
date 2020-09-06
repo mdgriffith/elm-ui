@@ -981,7 +981,15 @@ rootClass =
 
 
 rowClass =
-    Style.classes.any ++ " " ++ Style.classes.row ++ " " ++ Style.classes.nowrap
+    Style.classes.any
+        ++ " "
+        ++ Style.classes.row
+        ++ " "
+        ++ Style.classes.nowrap
+        ++ " "
+        ++ Style.classes.contentLeft
+        ++ " "
+        ++ Style.classes.contentCenterY
 
 
 wrappedRowClass =
@@ -989,7 +997,13 @@ wrappedRowClass =
 
 
 columnClass =
-    Style.classes.any ++ " " ++ Style.classes.column
+    Style.classes.any
+        ++ " "
+        ++ Style.classes.column
+        ++ " "
+        ++ Style.classes.contentTop
+        ++ " "
+        ++ Style.classes.contentLeft
 
 
 singleClass =
