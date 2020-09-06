@@ -132,6 +132,80 @@ view model =
                     , Element2.below blueBox
                     ]
                     box
+                , Element2.paragraph [ Background2.color blue2, Font2.color white2 ]
+                    [ Element2.text """Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id pellentesque elit, id sollicitudin felis. Morbi eu risus molestie enim suscipit auctor. Morbi pharetra, nisl ut finibus ornare, dolor tortor aliquet est, quis feugiat odio sem ut sem. Nullam eu bibendum ligula. Nunc mollis tortor ac rutrum interdum. Nunc ultrices risus eu pretium interdum. Nullam maximus convallis quam vitae ullamcorper. Praesent sapien nulla, hendrerit quis tincidunt a, placerat et felis. Nullam consectetur magna nec lacinia egestas. Aenean rutrum nunc diam."""
+                    ]
+                , Element2.text """Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id pellentesque elit, id sollicitudin felis. Morbi eu risus molestie enim suscipit auctor. Morbi pharetra, nisl ut finibus ornare, dolor tortor aliquet est, quis feugiat odio sem ut sem. Nullam eu bibendum ligula. Nunc mollis tortor ac rutrum interdum. Nunc ultrices risus eu pretium interdum. Nullam maximus convallis quam vitae ullamcorper. Praesent sapien nulla, hendrerit quis tincidunt a, placerat et felis. Nullam consectetur magna nec lacinia egestas. Aenean rutrum nunc diam."""
+                , Element2.paragraph [ Background2.color blue2, Font2.color white2 ]
+                    [ Element2.text """Lorem ipsum dolor s"""
+                    ]
+                , Element2.text """Lorem ipsum dolor s"""
+                , Element2.row [ Element2.width Element2.fill, Element2.spacing 20 ]
+                    [ Element2.paragraph
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        ]
+                        [ Element2.text """Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id pellentesque elit, id sollicitudin felis. Morbi eu risus molestie enim suscipit auctor. Morbi pharetra, nisl ut finibus ornare, dolor tortor aliquet est, quis feugiat odio sem ut sem. Nullam eu bibendum ligula. Nunc mollis tortor ac rutrum interdum. Nunc ultrices risus eu pretium interdum. Nullam maximus convallis quam vitae ullamcorper. Praesent sapien nulla, hendrerit quis tincidunt a, placerat et felis. Nullam consectetur magna nec lacinia egestas. Aenean rutrum nunc diam."""
+                        ]
+                    , Element2.paragraph
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        ]
+                        [ Element2.text """Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id pellentesque elit, id sollicitudin felis. Morbi eu risus molestie enim suscipit auctor. Morbi pharetra, nisl ut finibus ornare, dolor tortor aliquet est, quis feugiat odio sem ut sem. Nullam eu bibendum ligula. Nunc mollis tortor ac rutrum interdum. Nunc ultrices risus eu pretium interdum. Nullam maximus convallis quam vitae ullamcorper. Praesent sapien nulla, hendrerit quis tincidunt a, placerat et felis. Nullam consectetur magna nec lacinia egestas. Aenean rutrum nunc diam."""
+                        ]
+                    , Element2.paragraph
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        ]
+                        [ Element2.text """Lorem ipsum dolor s"""
+                        ]
+                    ]
+                , Element2.row [ Element2.width Element2.fill, Element2.spacing 20 ]
+                    [ Element2.paragraph
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        , Element2.width (Element2.portion 3)
+                        ]
+                        [ Element2.text """Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id pellentesque elit, id sollicitudin felis. Morbi eu risus molestie enim suscipit auctor. Morbi pharetra, nisl ut finibus ornare, dolor tortor aliquet est, quis feugiat odio sem ut sem. Nullam eu bibendum ligula. Nunc mollis tortor ac rutrum interdum. Nunc ultrices risus eu pretium interdum. Nullam maximus convallis quam vitae ullamcorper. Praesent sapien nulla, hendrerit quis tincidunt a, placerat et felis. Nullam consectetur magna nec lacinia egestas. Aenean rutrum nunc diam."""
+                        ]
+                    , Element2.paragraph
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        , Element2.width (Element2.portion 2)
+                        ]
+                        [ Element2.text """Lorem ipsum dolor sit amet, consectetur adipiscing elit. In id pellentesque elit, id sollicitudin felis. Morbi eu risus molestie enim suscipit auctor. Morbi pharetra, nisl ut finibus ornare, dolor tortor aliquet est, quis feugiat odio sem ut sem. Nullam eu bibendum ligula. Nunc mollis tortor ac rutrum interdum. Nunc ultrices risus eu pretium interdum. Nullam maximus convallis quam vitae ullamcorper. Praesent sapien nulla, hendrerit quis tincidunt a, placerat et felis. Nullam consectetur magna nec lacinia egestas. Aenean rutrum nunc diam."""
+                        ]
+                    , Element2.paragraph
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        , Element2.width (Element2.portion 1)
+                        ]
+                        [ Element2.text """Lorem ipsum dolor s"""
+                        ]
+                    ]
+                , Element2.row [ Element2.width Element2.fill, Element2.spacing 20 ]
+                    [ Element2.el
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        , Element2.width (Element2.portion 3)
+                        , Element2.height (Element2.px 40)
+                        ]
+                        Element2.none
+                    , Element2.el
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        , Element2.width (Element2.portion 2)
+                        , Element2.height (Element2.px 40)
+                        ]
+                        Element2.none
+                    , Element2.el
+                        [ Background2.color blue2
+                        , Font2.color white2
+                        , Element2.width (Element2.portion 1)
+                        , Element2.height (Element2.px 40)
+                        ]
+                        Element2.none
+                    ]
                 , Element2.wrappedRow
                     [ Element2.spacing 36
                     , Element2.padding 10

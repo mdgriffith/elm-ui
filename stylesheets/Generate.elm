@@ -761,6 +761,14 @@ baseSheet =
                 , Descriptor (dot classes.link)
                     [ Prop "flex-basis" "auto"
                     ]
+                , Descriptor (dot classes.paragraph)
+                    [ Prop "flex-basis" "auto"
+                    , Prop "flex-shrink" "1"
+                    , Descriptor (dot classes.widthFill)
+                        [ Prop "flex-basis" "0"
+                        , Prop "flex-shrink" "0"
+                        ]
+                    ]
                 ]
             , Child (dot classes.heightFill)
                 [ -- alignTop, centerY, and alignBottom need to be disabled
