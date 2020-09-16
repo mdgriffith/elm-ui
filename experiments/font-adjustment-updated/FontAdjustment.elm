@@ -1,4 +1,4 @@
-module Main exposing (main)
+module FontAdjustment exposing (main)
 
 {-| Line Height as its specified through CSS doesn't make a whole lot of sense typographically.
 
@@ -225,7 +225,12 @@ view model =
               --     , name = "Catamaran"
               --     }
               Font.with
-                model.font
+                { name = model.font.name
+                , adjustment = Just model.font.adjustment
+                , variants = model.font.variants
+                }
+
+            -- model.font
             , Font.sansSerif
             ]
         ]
@@ -358,7 +363,7 @@ adjusted size adjustment =
                 , text "orem Ipsum is simply dummy text of the printing and typesetting industry."
                 ]
             , paragraph
-                [ Font.size 45
+                [ Font.size 25
                 , spacing 10
                 , width (px 600)
                 , inFront
