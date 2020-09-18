@@ -336,6 +336,22 @@ type alias Details =
     }
 
 
+spacerTop : Float -> Html.Html msg
+spacerTop space =
+    Html.div
+        [ Attr.style "margin-top" ("calc(var(--vaccuum-top) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
+        ]
+        []
+
+
+spacerBottom : Float -> Html.Html msg
+spacerBottom space =
+    Html.div
+        [ Attr.style "margin-top" ("calc(var(--vaccuum-bottom) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
+        ]
+        []
+
+
 render :
     Layout
     -> Details
@@ -426,7 +442,13 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                             :: Attr.property "style" (Json.Encode.string finalStyles)
                             :: htmlAttrs
                         )
-                        renderedChildren
+                        (case layout of
+                            AsParagraph ->
+                                spacerTop (finalSpacing / -2) :: renderedChildren ++ [ spacerBottom (finalSpacing / -2) ]
+
+                            _ ->
+                                renderedChildren
+                        )
                 )
 
         NoAttribute :: remain ->

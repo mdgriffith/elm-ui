@@ -62,7 +62,7 @@ main =
             , paragraph
                 [ width (px 500)
                 , Font.size 24
-                , spacing 0
+                , spacing 10
                 , behindContent
                     (el
                         [ height (px 24)
