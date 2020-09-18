@@ -503,6 +503,7 @@ baseSheet =
         , Prop "height" "auto"
         , Prop "min-height" "100%"
         , Prop "z-index" "0"
+        , Prop "line-height" "1"
         , Descriptor
             (dot classes.any
                 -- ++ dot classes.single
@@ -747,6 +748,12 @@ baseSheet =
         , Descriptor (dot classes.text)
             [ Prop "white-space" "pre"
             , Prop "display" "inline-block"
+            , Prop "overflow" "hidden"
+            , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vaccuum-top) - var(--visible-top)) ))"
+            , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vaccuum-bottom) - var(--visible-bottom)) ))"
+            , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
+            , Prop "padding-top" "calc(var(--visible-top) * (1em/var(--font-size-factor)))"
+            , Prop "padding-bottom" "calc(var(--visible-bottom) * (1em/var(--font-size-factor)))"
             ]
         , Descriptor (dot classes.single)
             elDescription

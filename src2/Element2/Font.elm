@@ -1,6 +1,7 @@
 module Element2.Font exposing
     ( color, size
-    , family, Font, typeface, serif, sansSerif, monospace
+    , family, familyWith, Font, typeface, serif, sansSerif, monospace
+    , Sizing, full, byCapital, Adjustment
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
@@ -33,7 +34,9 @@ module Element2.Font exposing
 
 ## Typefaces
 
-@docs family, Font, typeface, serif, sansSerif, monospace
+@docs family, familyWith, Font, typeface, serif, sansSerif, monospace
+
+@docs Sizing, full, byCapital, Adjustment
 
 
 ## Alignment and Spacing
@@ -74,12 +77,6 @@ type Font
     | SansSerif
     | Monospace
     | Typeface String
-    | ImportFont String String
-    | FontWith
-        { name : String
-        , adjustment : Maybe Adjustment
-        , variants : List Variant
-        }
 
 
 fontName : Font -> String
@@ -97,17 +94,11 @@ fontName font =
         Typeface name ->
             "\"" ++ name ++ "\""
 
-        ImportFont name url ->
-            "\"" ++ name ++ "\""
-
-        FontWith { name } ->
-            "\"" ++ name ++ "\""
-
 
 {-| -}
 color : Color -> Two.Attribute msg
 color fontColor =
-    Two.Style Flag.fontColor (Style.prop "color" (Style.color fontColor))
+    Two.Style Flag.fontColor ("color:" ++ Style.color fontColor ++ ";")
 
 
 {-|
@@ -127,7 +118,7 @@ color fontColor =
 -}
 family : List Font -> Attribute msg
 family typefaces =
-    Two.Style Flag.fontFamily (Style.prop "font-family" (List.foldl renderFont "" typefaces))
+    Two.Style Flag.fontFamily ("font-family:" ++ List.foldl renderFont "" typefaces ++ ";")
 
 
 renderFont : Font -> String -> String
@@ -172,34 +163,197 @@ type alias Adjustment =
     }
 
 
+type Sizing
+    = Full
+    | ByCapital Adjustment
+
+
 {-| -}
-with :
+full : Sizing
+full =
+    Full
+
+
+{-| -}
+byCapital : Adjustment -> Sizing
+byCapital =
+    ByCapital
+
+
+
+{- FONT ADJUSTMENTS -}
+
+
+{-|
+
+    familyWith
+        { name = "ED Garamond"
+        , fallback = [ Font.serif ]
+        , sizing =
+            Font.byCapital
+                {}
+        , variants =
+            []
+        }
+
+-}
+familyWith :
     { name : String
-    , adjustment : Maybe Adjustment
+    , fallback : List Font
+    , sizing : Sizing
     , variants : List Variant
     }
-    -> Font
-with =
-    FontWith
+    -> Attribute msg
+familyWith details =
+    case details.sizing of
+        Full ->
+            Two.Style Flag.fontFamily
+                ("font-family:" ++ List.foldl renderFont ("\"" ++ details.name ++ "\"") details.fallback ++ ";")
+
+        ByCapital adjustment ->
+            Two.Style Flag.fontFamily
+                ("font-family:"
+                    ++ List.foldl renderFont ("\"" ++ details.name ++ "\"") details.fallback
+                    ++ ";"
+                    ++ convertAdjustment adjustment
+                )
 
 
-{-| -}
-sizeByCapital : Attribute msg
-sizeByCapital =
-    Two.class Style.classes.sizeByCapital
+
+-- , ( "line-height", String.fromFloat converted.height )
+--       , ( "vertical-align", String.fromFloat converted.vertical ++ "em" )
+--       , ( "font-size", String.fromFloat converted.size ++ "em" )
+{-
+     We need to set an adjustment of `line-height`, `vertical-align` and `font-size`
 
 
-{-| -}
-full : Attribute msg
-full =
-    Two.class Style.classes.fullSize
+
+         <text> ->
+             line-height: 1
+             vertical-align: default;
+             font-size: inherited;
+
+     --
+         <p> ->
+             line-height: 1 + 5px;
+             vertical-align: default;
+             font-size: inherited;
+
+     Vertical align and line-height are likely fine.
+         -> Ensure that line-height is set once at the root.
+         -> not overwritten on every element.
+
+     Font size, we need to communicate a factor down the heirarchy and then do `calc(factor * desiredFontSize)`
+
+         -- if we required `Font.familyWith` at the root, then we could use `rem` behind the scenes as the factor and do `calc(1rem * 10px)`
+
+         -- or we can just use a css variable.
+
+
+
+
+   IN order to adjust things correctly, we need to set these values on the `text` element.
+
+          margin-top: -7px;
+          margin-bottom: -14px;
+          overflow: hidden;
+          padding-top: 5px;
+          padding-bottom: 8px;
+
+
+
+      line-height: 0.497025
+      size-factor: 1.4184397163120566
+
+      32px
+          -> 45.376 (actual font size)
+          -> 15.9 (new line height)
+
+
+
+      For each text element,
+
+
+-}
+
+
+convertAdjustment : Adjustment -> String
+convertAdjustment adjustment =
+    let
+        lineHeight =
+            1.5
+
+        base =
+            lineHeight
+
+        normalDescender =
+            (lineHeight - 1)
+                / 2
+
+        oldMiddle =
+            lineHeight / 2
+
+        newCapitalMiddle =
+            ((ascender - newBaseline) / 2) + newBaseline
+
+        newFullMiddle =
+            ((ascender - descender) / 2) + descender
+
+        lines =
+            [ adjustment.capital
+            , adjustment.baseline
+            , adjustment.descender
+            , adjustment.lowercase
+            ]
+
+        ascender =
+            Maybe.withDefault adjustment.capital (List.maximum lines)
+
+        descender =
+            Maybe.withDefault adjustment.descender (List.minimum lines)
+
+        newBaseline =
+            lines
+                |> List.filter (\x -> x /= descender)
+                |> List.minimum
+                |> Maybe.withDefault adjustment.baseline
+
+        capitalVertical =
+            1 - ascender
+
+        capitalSize =
+            1 / (ascender - newBaseline)
+
+        vaccuumTop =
+            ((ascender - newBaseline) / capitalSize) / -2
+
+        vaccuumBottom =
+            vaccuumTop
+
+        visibleTop =
+            ascender - adjustment.capital
+
+        visibleBottom =
+            newBaseline - descender
+    in
+    ("--font-size-factor: " ++ String.fromFloat capitalSize ++ ";")
+        ++ ("--vaccuum-top: " ++ String.fromFloat vaccuumTop ++ ";")
+        ++ ("--vaccuum-bottom: " ++ String.fromFloat vaccuumBottom ++ ";")
+        ++ ("--visible-top: " ++ String.fromFloat visibleTop ++ ";")
+        ++ ("--visible-bottom: " ++ String.fromFloat visibleBottom ++ ";")
 
 
 {-| Font sizes are always given as `px`.
 -}
 size : Int -> Two.Attribute msg
 size i =
-    Two.Style Flag.fontSize ("font-size:" ++ String.fromInt i ++ "px;")
+    Two.Style Flag.fontSize
+        ("font-size:"
+            ++ String.fromInt i
+            ++ "px;font-size:calc("
+            ++ String.fromInt i
+            ++ "px * var(--font-size-factor));"
+        )
 
 
 {-| In `px`.

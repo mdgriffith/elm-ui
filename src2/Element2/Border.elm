@@ -41,7 +41,7 @@ import Internal.Style2 as Style
 {-| -}
 color : Color -> Attribute msg
 color clr =
-    Two.Style Flag.borderColor (Style.prop "border-color" (Style.color clr))
+    Two.Style Flag.borderColor ("border-color:" ++ Style.color clr ++ ";")
 
 
 {-| -}

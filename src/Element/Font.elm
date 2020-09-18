@@ -6,6 +6,7 @@ module Element.Font exposing
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
     , Variant, variant, variantList, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
+    , full, sizeByCapital, with
     )
 
 {-|
