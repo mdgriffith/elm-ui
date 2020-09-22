@@ -50,6 +50,8 @@ module Internal.Flag2 exposing
     , transparency
     , txtShadows
     , value
+    , viewBits
+    , viewBitsHelper
     , width
     , widthBetween
     , widthContent
@@ -62,6 +64,23 @@ module Internal.Flag2 exposing
 {-| -}
 
 import Bitwise
+
+
+viewBits : Int -> String
+viewBits i =
+    String.fromInt i ++ ":" ++ viewBitsHelper i 32
+
+
+viewBitsHelper : Int -> Int -> String
+viewBitsHelper field slot =
+    if slot <= 0 then
+        ""
+
+    else if Bitwise.and slot field - slot == 0 then
+        viewBitsHelper field (slot - 1) ++ "1"
+
+    else
+        viewBitsHelper field (slot - 1) ++ "0"
 
 
 type Field
