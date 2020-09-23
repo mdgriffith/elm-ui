@@ -350,7 +350,7 @@ portion =
 -}
 layout : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 layout attrs content =
-    Two.unwrap 0 <|
+    Two.unwrap "" <|
         Two.element Two.AsRoot
             (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
                 :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
@@ -369,7 +369,7 @@ You'll need to include it manually yourself
 -}
 embed : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 embed attrs content =
-    Two.unwrap 0 <|
+    Two.unwrap "" <|
         Two.element Two.AsRoot
             (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
                 :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
@@ -394,7 +394,7 @@ layoutWith { options } attrs content =
     --         :: (Internal.rootStyle ++ attrs)
     --     )
     --     child
-    Two.unwrap 0 <|
+    Two.unwrap "" <|
         rootNode options attrs content
 
 
@@ -1289,7 +1289,7 @@ padding x =
     --     --     ++ Style.set Style.vars.padLeft (Style.px x)
     --     -- )
     --     ""
-    Two.Padding Flag.padding x x
+    Two.Padding Flag.padding x x x x
 
 
 {-| Set horizontal and vertical padding.
@@ -1304,7 +1304,7 @@ paddingXY x y =
     --     --     ++ Style.set Style.vars.padLeft (Style.px x)
     --     -- )
     --     ""
-    Two.Padding Flag.padding x y
+    Two.Padding Flag.padding y x y x
 
 
 {-| If you find yourself defining unique paddings all the time, you might consider defining
@@ -1331,8 +1331,7 @@ paddingEach { top, right, bottom, left } =
     --     --     ++ Style.set Style.vars.padLeft (Style.px left)
     --     -- )
     --     ""
-    -- TODO, fix this
-    Two.Padding Flag.padding top right
+    Two.Padding Flag.padding top right bottom left
 
 
 {-| -}
@@ -1380,13 +1379,7 @@ spaceEvenly =
 {-| -}
 spacing : Int -> Two.Attribute msg
 spacing x =
-    -- Two.ClassAndStyle Flag.spacing
-    --     Style.classes.spacing
-    --     -- (Style.set Style.vars.spaceX (Style.px x)
-    --     --     ++ Style.set Style.vars.spaceY (Style.px x)
-    --     -- )
-    -- ""
-    Two.Spacing Flag.spacing x
+    Two.Spacing Flag.spacing x x
 
 
 {-| In the majority of cases you'll just need to use `spacing`, which will work as intended.
@@ -1396,13 +1389,7 @@ However for some layouts, like `textColumn`, you may want to set a different spa
 -}
 spacingXY : Int -> Int -> Two.Attribute msg
 spacingXY x y =
-    -- Two.ClassAndStyle Flag.spacing
-    --     Style.classes.spacing
-    --     -- (Style.set Style.vars.spaceX (Style.px x)
-    --     --     ++ Style.set Style.vars.spaceY (Style.px y)
-    --     -- )
-    --     ""
-    Two.Spacing Flag.spacing x
+    Two.Spacing Flag.spacing x y
 
 
 {-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.

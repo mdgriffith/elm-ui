@@ -47,14 +47,14 @@ color clr =
 {-| -}
 width : Int -> Attribute msg
 width v =
-    Two.BorderWidth Flag.borderWidth v v
+    Two.BorderWidth Flag.borderWidth v v v v
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Two.BorderWidth Flag.borderWidth x y
+    Two.BorderWidth Flag.borderWidth y x y x
 
 
 {-| -}
@@ -66,7 +66,7 @@ widthEach :
     }
     -> Attribute msg
 widthEach { bottom, top, left, right } =
-    Two.BorderWidth Flag.borderWidth top right
+    Two.BorderWidth Flag.borderWidth top right bottom left
 
 
 {-| -}

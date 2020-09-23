@@ -22,11 +22,7 @@ type Color
     = Rgb Int Int Int
 
 
-spacing : Float -> String
-spacing s =
-    floatPx s
-
-
+{--}
 set : Gen.Var -> String -> String
 set (Gen.Var v) val =
     "--" ++ v ++ ":" ++ val ++ ";"
