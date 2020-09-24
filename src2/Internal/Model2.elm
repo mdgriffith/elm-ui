@@ -9,9 +9,11 @@ module Internal.Model2 exposing (..)
 
 import Html
 import Html.Attributes as Attr
+import Html.Events as Events
 import Html.Keyed
 import Internal.Flag2 as Flag exposing (Flag)
 import Internal.Style2 as Style
+import Json.Decode as Json
 import Json.Encode
 import VirtualDom
 
@@ -34,8 +36,6 @@ type Element msg
 map : (a -> b) -> Element a -> Element b
 map fn el =
     case el of
-        -- Text str ->
-        --     Text str
         Element elem ->
             Element
                 (\s ->
@@ -48,6 +48,9 @@ mapAttr fn attr =
     case attr of
         NoAttribute ->
             NoAttribute
+
+        OnPress msg ->
+            OnPress (fn msg)
 
         Spacing flag x y ->
             Spacing flag x y
@@ -105,6 +108,7 @@ class cls =
 
 type Attribute msg
     = NoAttribute
+    | OnPress msg
     | Attr (Html.Attribute msg)
     | Link Bool String
     | Download String String
@@ -279,23 +283,14 @@ emptyDetails =
 unwrap : String -> Element msg -> Html.Html msg
 unwrap s el =
     case el of
-        -- Text str ->
-        --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
         Element html ->
             html s
 
 
 wrapText s el =
     case el of
-        -- Text str ->
-        --     Html.text str
         Element html ->
             html s
-
-
-
--- text =
---     Text
 
 
 text : String -> Element msg
@@ -493,7 +488,33 @@ render layout details children has styles htmlAttrs classes nearby attrs =
             render layout details children has styles htmlAttrs classes nearby remain
 
         (Attr attr) :: remain ->
-            render layout details children has styles (attr :: htmlAttrs) classes nearby remain
+            render
+                layout
+                details
+                children
+                has
+                styles
+                (attr :: htmlAttrs)
+                classes
+                nearby
+                remain
+
+        (OnPress press) :: remain ->
+            -- Make focusable
+            -- Attach keyboard handler
+            -- Attach click handler
+            render layout
+                details
+                children
+                has
+                ("tabindex:0;" ++ styles)
+                (Events.onClick press
+                    :: onKey "Enter" press
+                    :: htmlAttrs
+                )
+                classes
+                nearby
+                remain
 
         (Link targetBlank url) :: remain ->
             render
@@ -714,6 +735,25 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     classes
                     nearby
                     remain
+
+
+{-| -}
+onKey : String -> msg -> Html.Attribute msg
+onKey desiredCode msg =
+    let
+        decode code =
+            if code == desiredCode then
+                Json.succeed msg
+
+            else
+                Json.fail "Not the enter key"
+
+        isKey =
+            Json.field "key" Json.string
+                |> Json.andThen decode
+    in
+    Events.preventDefaultOn "keyup"
+        (Json.map (\fired -> ( fired, True )) isKey)
 
 
 

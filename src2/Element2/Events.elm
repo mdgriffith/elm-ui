@@ -1,5 +1,6 @@
 module Element2.Events exposing
-    ( onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
+    ( onPress
+    , onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
     , onFocus, onLoseFocus
     )
 
@@ -7,6 +8,8 @@ module Element2.Events exposing
 
 
 ## Mouse Events
+
+@docs onPress
 
 @docs onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
 
@@ -50,6 +53,12 @@ onClick =
 onDoubleClick : msg -> Attribute msg
 onDoubleClick =
     Two.Attr << Html.Events.onDoubleClick
+
+
+{-| -}
+onPress : msg -> Attribute msg
+onPress msg =
+    Two.OnPress msg
 
 
 {-| -}
