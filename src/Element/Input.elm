@@ -4,7 +4,7 @@ module Element.Input exposing
     , checkbox, defaultCheckbox
     , text, multiline
     , Placeholder, placeholder
-    , username, newPassword, currentPassword, email, search, spellChecked
+    , username, newPassword, currentPassword, email, search, tel, spellChecked
     , slider, Thumb, thumb, defaultThumb
     , radio, radioRow, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
@@ -75,7 +75,7 @@ If we want to play nicely with a browser's ability to autofill a form, we need t
 
 The following inputs are very similar to `Input.text`, but they give the browser a hint to allow autofill to work correctly.
 
-@docs username, newPassword, currentPassword, email, search, spellChecked
+@docs username, newPassword, currentPassword, email, search, tel, spellChecked
 
 
 # Sliders
@@ -1558,6 +1558,24 @@ email =
         { type_ = TextInputNode "email"
         , spellchecked = False
         , autofill = Just "email"
+        }
+
+
+{-| -}
+tel :
+    List (Attribute msg)
+    ->
+        { onChange : String -> msg
+        , text : String
+        , placeholder : Maybe (Placeholder msg)
+        , label : Label msg
+        }
+    -> Element msg
+tel =
+    textHelper
+        { type_ = TextInputNode "tel"
+        , spellchecked = False
+        , autofill = Just "tel"
         }
 
 
