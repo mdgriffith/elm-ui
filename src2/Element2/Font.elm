@@ -211,7 +211,8 @@ familyWith details =
                 ("font-family:" ++ List.foldl renderFont ("\"" ++ details.name ++ "\"") details.fallback ++ ";")
 
         ByCapital adjustment ->
-            Two.Style Flag.fontFamily
+            Two.ClassAndStyle Flag.fontFamily
+                Style.classes.fontAdjusted
                 ("font-family:"
                     ++ List.foldl renderFont ("\"" ++ details.name ++ "\"") details.fallback
                     ++ ";"
@@ -220,9 +221,7 @@ familyWith details =
 
 
 
--- , ( "line-height", String.fromFloat converted.height )
---       , ( "vertical-align", String.fromFloat converted.vertical ++ "em" )
---       , ( "font-size", String.fromFloat converted.size ++ "em" )
+-- fontAdjusted
 {-
      We need to set an adjustment of `line-height`, `vertical-align` and `font-size`
 
@@ -324,11 +323,11 @@ convertAdjustment adjustment =
         capitalSize =
             1 / (ascender - newBaseline)
 
-        vaccuumTop =
+        vacuumTop =
             ((ascender - newBaseline) / capitalSize) / -2
 
-        vaccuumBottom =
-            vaccuumTop
+        vacuumBottom =
+            vacuumTop
 
         visibleTop =
             ascender - adjustment.capital
@@ -337,8 +336,8 @@ convertAdjustment adjustment =
             newBaseline - descender
     in
     ("--font-size-factor: " ++ String.fromFloat capitalSize ++ ";")
-        ++ ("--vaccuum-top: " ++ String.fromFloat vaccuumTop ++ ";")
-        ++ ("--vaccuum-bottom: " ++ String.fromFloat vaccuumBottom ++ ";")
+        ++ ("--vacuum-top: " ++ String.fromFloat vacuumTop ++ ";")
+        ++ ("--vacuum-bottom: " ++ String.fromFloat vacuumBottom ++ ";")
         ++ ("--visible-top: " ++ String.fromFloat visibleTop ++ ";")
         ++ ("--visible-bottom: " ++ String.fromFloat visibleBottom ++ ";")
 

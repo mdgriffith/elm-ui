@@ -33,17 +33,19 @@ classes =
     , nowrap = "nowrp"
     , wrapped = "wrp"
     , transform = "move"
+    , ellipses = "ellip"
 
     -- widhts/heights
     , widthFill = "wf"
     , widthContent = "wc"
     , widthExact = "we"
     , widthFillPortion = "wfp"
+    , widthBounded = "wb"
     , heightFill = "hf"
     , heightContent = "hc"
     , heightExact = "he"
     , heightFillPortion = "hfp"
-    , seButton = "sbt"
+    , heightBounded = "hb"
 
     -- nearby elements
     , nearby = "nb"
@@ -138,6 +140,7 @@ classes =
 
     -- link
     , link = "lnk"
+    , fontAdjusted = "f-adj"
     }
 
 
@@ -164,6 +167,13 @@ vars =
     , borderBottom = Var "border-bottom"
     , sliderWidth = Var "slider-width"
     , sliderHeight = Var "slider-height"
+
+    --
+    , fontSizeFactor = Var "font-size-factor"
+    , vacuumTop = Var "vacuum-top"
+    , vacuumBottom = Var "vacuum-bottom"
+    , visibleTop = Var "visible-top"
+    , visibleBottom = Var "visible-bottom"
     }
 
 
@@ -182,6 +192,7 @@ type Class
 type Rule
     = Prop String String
     | Variable String Var
+    | SetVariable Var String
     | Calc String Calc
     | CalcPair String Calc Calc
     | Child String (List Rule)
@@ -504,6 +515,18 @@ baseSheet =
         , Prop "min-height" "100%"
         , Prop "z-index" "0"
         , Prop "line-height" "1"
+        , SetVariable vars.fontSizeFactor "1"
+
+        -- basics for EB Garamond
+        --font-size-factor: 1.4184397163120566;
+        --vacuum-top: -0.24851250000000005;
+        --vacuum-bottom: -0.24851250000000005;
+        --visible-top: 0;
+        --visible-bottom: 0.29000000000000004;
+        , SetVariable vars.vacuumTop "0.0"
+        , SetVariable vars.vacuumBottom "0.0"
+        , SetVariable vars.visibleTop "0.2"
+        , SetVariable vars.visibleBottom "0.2"
         , Descriptor
             (dot classes.any
                 -- ++ dot classes.single
@@ -656,8 +679,16 @@ baseSheet =
         -- There's no way to change this.  How crazy is that?
         , Prop "text-decoration" "none"
         , Prop "font-style" "inherit"
+        , Descriptor (dot classes.fontAdjusted)
+            [ Prop "font-size" "calc(1em * var(--font-size-factor))"
+            ]
         , Descriptor (dot classes.wrapped)
             [ Prop "flex-wrap" "wrap"
+            ]
+        , Descriptor (dot classes.ellipses)
+            [ AllChildren (dot classes.text)
+                [ Prop "text-overflow" "ellipsis"
+                ]
             ]
         , Descriptor (dot classes.noTextSelection)
             [ Prop "-moz-user-select" "none"
@@ -735,12 +766,32 @@ baseSheet =
             ]
         , Descriptor (dot classes.clip)
             [ Prop "overflow" "hidden"
+            , Prop "min-width" "min-content"
+            , Prop "min-height" "min-content"
+            , Descriptor (dot classes.widthBounded)
+                -- if the bound is a min-width, it will override this
+                [ Prop "min-width" "auto"
+                ]
+            , Descriptor (dot classes.heightBounded)
+                -- if the bound is a min-height, it will override this
+                [ Prop "min-height" "auto"
+                ]
             ]
         , Descriptor (dot classes.clipX)
             [ Prop "overflow-x" "hidden"
+            , Prop "min-width" "min-content"
+            , Descriptor (dot classes.widthBounded)
+                -- if the bound is a min-width, it will override this
+                [ Prop "min-width" "auto"
+                ]
             ]
         , Descriptor (dot classes.clipY)
             [ Prop "overflow-y" "hidden"
+            , Prop "min-height" "min-content"
+            , Descriptor (dot classes.heightBounded)
+                -- if the bound is a min-height, it will override this
+                [ Prop "min-height" "auto"
+                ]
             ]
         , Descriptor (dot classes.widthContent)
             [ Prop "width" "auto"
@@ -748,9 +799,10 @@ baseSheet =
         , Descriptor (dot classes.text)
             [ Prop "white-space" "pre"
             , Prop "display" "inline-block"
+            , Prop "width" "100%"
             , Prop "overflow" "hidden"
-            , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vaccuum-top) - var(--visible-top)) ))"
-            , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vaccuum-bottom) - var(--visible-bottom)) ))"
+            , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
+            , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-bottom) - var(--visible-bottom)) ))"
             , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
             , Prop "padding-top" "calc(var(--visible-top) * (1em/var(--font-size-factor)))"
             , Prop "padding-bottom" "calc(var(--visible-bottom) * (1em/var(--font-size-factor)))"
@@ -762,6 +814,14 @@ baseSheet =
             , Prop "flex-direction" "row"
             , Child (dot classes.any)
                 [ Prop "flex-basis" "0%"
+                , Descriptor (dot classes.clip)
+                    [ Descriptor (dot classes.widthFill)
+                        [ Prop "min-width" "auto" ]
+                    ]
+                , Descriptor (dot classes.clipX)
+                    [ Descriptor (dot classes.widthFill)
+                        [ Prop "min-width" "auto" ]
+                    ]
                 , Descriptor (dot classes.widthExact)
                     [ Prop "flex-basis" "auto"
                     ]
@@ -913,12 +973,18 @@ baseSheet =
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
             , Child (dot classes.any)
-                -- *Note* - While rows have flex-basis 0%,
-                -- which allows for the children of a row to default to their content size
-                -- This apparently is a different story for columns.
-                -- Safari has an issue if this is flex-basis: 0%, as it goes entirely to 0,
-                -- instead of the expected content size.
-                [ Prop "flex-basis" "auto"
+                -- So we add `min-height: min-content`, which isn't supported by IE, but works for all other browsers!
+                -- Separately, 0% is different than 0px, but only for columns
+                -- In columns, 0% will actually be calculated as `auto` for columns
+                -- So, 0px is the one we want.
+                [ Prop "flex-basis" "0px"
+                , Prop "min-height" "min-content"
+                , Descriptor (dot classes.heightExact)
+                    [ Prop "flex-basis" "auto"
+                    ]
+                , Descriptor (dot classes.clip)
+                    [ Prop "flex-basis" "auto"
+                    ]
                 ]
 
             -- , Child (dot classes.heightFill)
@@ -1290,18 +1356,6 @@ elDescription =
         [ Prop "z-index" "0"
         , Child (dot classes.behind)
             [ Prop "z-index" "-1"
-            ]
-        ]
-    , Descriptor (dot classes.seButton)
-        -- Special default for text in a button.
-        -- This is overridden is they put the text inside an `el`
-        [ Child (dot classes.text)
-            [ Descriptor (dot classes.heightFill)
-                [ Prop "flex-grow" "0"
-                ]
-            , Descriptor (dot classes.widthFill)
-                [ Prop "align-self" "auto !important"
-                ]
             ]
         ]
     , Child (dot classes.heightContent)
@@ -1878,6 +1932,9 @@ generateIntermediates parent rule rendered =
 
         Variable name var ->
             { rendered | props = ( name, renderVar var ) :: rendered.props }
+
+        SetVariable (Var var) val ->
+            { rendered | props = ( "--" ++ var, val ) :: rendered.props }
 
         Calc name calc ->
             { rendered | props = ( name, renderCalc calc ) :: rendered.props }

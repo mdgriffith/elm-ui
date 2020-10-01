@@ -3,7 +3,7 @@ module Element2 exposing
     , row, wrappedRow, column
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
-    , Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum
+    , Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum, ellip
     , explain
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
@@ -53,7 +53,7 @@ Text layout needs some specific considerations.
 
 # Size
 
-@docs Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum
+@docs Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum, ellip
 
 
 # Debugging
@@ -332,6 +332,11 @@ maximum i len =
 
         otherwise ->
             Bounded Nothing (Just i) otherwise
+
+
+ellip : Attribute msg
+ellip =
+    Two.Attr (Html.Attributes.class Style.classes.ellipses)
 
 
 {-| Sometimes you may not want to split available space evenly. In this case you can use `portion` to define which elements should have what portion of the available space.
@@ -1108,18 +1113,20 @@ width len =
 
         Bounded minBound maxBound (Px x) ->
             Two.ClassAndStyle Flag.width
-                Style.classes.widthExact
+                (Style.classes.widthBounded ++ " " ++ Style.classes.widthExact)
                 (Style.prop "width" (Style.px x) ++ renderBounds "width" minBound maxBound)
 
         Bounded minBound maxBound Content ->
             Two.ClassAndStyle Flag.width
-                Style.classes.widthContent
+                (Style.classes.widthBounded ++ " " ++ Style.classes.widthContent)
                 (renderBounds "width" minBound maxBound)
 
         Bounded minBound maxBound (Fill f) ->
             if f < 10 then
                 Two.ClassAndStyle Flag.width
                     (Style.classes.widthFill
+                        ++ " "
+                        ++ Style.classes.widthBounded
                         ++ " "
                         ++ Style.classes.widthFillPortion
                         ++ "-"
@@ -1129,7 +1136,7 @@ width len =
 
             else
                 Two.ClassAndStyle Flag.width
-                    Style.classes.widthFill
+                    (Style.classes.widthFill ++ " " ++ Style.classes.widthBounded)
                     (Style.set Style.vars.widthFill (String.fromInt f) ++ renderBounds "width" minBound maxBound)
 
         Bounded _ _ embedded ->
@@ -1166,18 +1173,20 @@ height len =
 
         Bounded minBound maxBound (Px x) ->
             Two.ClassAndStyle Flag.height
-                Style.classes.heightExact
+                (Style.classes.heightExact ++ " " ++ Style.classes.heightBounded)
                 ("height:" ++ (String.fromInt x ++ "px;") ++ renderBounds "height" minBound maxBound ++ ";")
 
         Bounded minBound maxBound Content ->
             Two.ClassAndStyle Flag.height
-                Style.classes.heightContent
+                (Style.classes.heightContent ++ " " ++ Style.classes.heightBounded)
                 (renderBounds "height" minBound maxBound)
 
         Bounded minBound maxBound (Fill f) ->
             if f < 10 then
                 Two.ClassAndStyle Flag.height
                     (Style.classes.heightFill
+                        ++ " "
+                        ++ Style.classes.heightBounded
                         ++ " "
                         ++ Style.classes.heightFillPortion
                         ++ "-"
@@ -1187,7 +1196,7 @@ height len =
 
             else
                 Two.ClassAndStyle Flag.height
-                    Style.classes.heightFill
+                    (Style.classes.heightFill ++ " " ++ Style.classes.heightBounded)
                     (Style.set Style.vars.heightFill (String.fromInt f)
                         ++ renderBounds "height" minBound maxBound
                     )

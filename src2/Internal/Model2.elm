@@ -352,7 +352,7 @@ type alias Details =
 spacerTop : Float -> Html.Html msg
 spacerTop space =
     Html.div
-        [ Attr.style "margin-top" ("calc(var(--vaccuum-top) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
+        [ Attr.style "margin-top" ("calc(var(--vacuum-top) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
         ]
         []
 
@@ -360,7 +360,7 @@ spacerTop space =
 spacerBottom : Float -> Html.Html msg
 spacerBottom space =
     Html.div
-        [ Attr.style "margin-top" ("calc(var(--vaccuum-bottom) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
+        [ Attr.style "margin-top" ("calc(var(--vacuum-bottom) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
         ]
         []
 
@@ -430,8 +430,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                 ++ (if Flag.present Flag.padding has then
                                         "padding:"
                                             ++ (String.fromInt details.paddingTop ++ "px ")
-                                            ++ (String.fromInt details.paddingRight ++ "px")
-                                            ++ (String.fromInt details.paddingBottom ++ "px")
+                                            ++ (String.fromInt details.paddingRight ++ "px  ")
                                             ++ (String.fromInt details.paddingLeft ++ "px;")
 
                                     else
@@ -440,8 +439,8 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                 ++ (if Flag.present Flag.borderWidth has then
                                         "border-width:"
                                             ++ (String.fromInt details.borderTop ++ "px ")
-                                            ++ (String.fromInt details.borderRight ++ "px")
-                                            ++ (String.fromInt details.borderBottom ++ "px")
+                                            ++ (String.fromInt details.borderRight ++ "px ")
+                                            ++ (String.fromInt details.borderBottom ++ "px ")
                                             ++ (String.fromInt details.borderLeft ++ "px;")
 
                                     else
