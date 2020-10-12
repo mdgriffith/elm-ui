@@ -8,7 +8,8 @@ module Element2 exposing
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
-    , transparent, alpha, pointer
+    , transparent, alpha
+    , pointer, grab, grabbing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
     , viewport, clipped
     , layout, layoutWith, Option, noStaticStyleSheet, focusStyle, FocusStyle
@@ -114,7 +115,12 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Transparency
 
-@docs transparent, alpha, pointer
+@docs transparent, alpha
+
+
+# Cursors
+
+@docs pointer, grab, grabbing
 
 
 # Adjustment
@@ -1493,6 +1499,18 @@ clipX =
 pointer : Two.Attribute msg
 pointer =
     Two.Class Flag.cursor Style.classes.cursorPointer
+
+
+{-| -}
+grab : Two.Attribute msg
+grab =
+    Two.Style Flag.cursor "cursor:grab;"
+
+
+{-| -}
+grabbing : Two.Attribute msg
+grabbing =
+    Two.Style Flag.cursor "cursor:grabbing;"
 
 
 {-| -}
