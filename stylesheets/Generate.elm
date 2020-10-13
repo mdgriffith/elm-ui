@@ -141,6 +141,7 @@ classes =
     -- link
     , link = "lnk"
     , fontAdjusted = "f-adj"
+    , textGradient = "tgrd"
     }
 
 
@@ -679,6 +680,13 @@ baseSheet =
         -- There's no way to change this.  How crazy is that?
         , Prop "text-decoration" "none"
         , Prop "font-style" "inherit"
+        , Descriptor (dot classes.textGradient)
+            [ AllChildren (dot classes.text)
+                [ Prop "background" "var(--text-gradient)"
+                , Prop "-webkit-background-clip" "text"
+                , Prop "-webkit-text-fill-color" "transparent"
+                ]
+            ]
         , Descriptor (dot classes.fontAdjusted)
             [ Prop "font-size" "calc(1em * var(--font-size-factor))"
             ]
@@ -797,8 +805,9 @@ baseSheet =
             [ Prop "width" "auto"
             ]
         , Descriptor (dot classes.text)
-            [ Prop "white-space" "pre"
-            , Prop "display" "inline-block"
+            [ --Prop "white-space" "pre"
+            -- , 
+            Prop "display" "inline-block"
             , Prop "width" "100%"
             , Prop "overflow" "hidden"
             , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
@@ -813,7 +822,12 @@ baseSheet =
             [ Prop "display" "flex"
             , Prop "flex-direction" "row"
             , Child (dot classes.any)
-                [ Prop "flex-basis" "0%"
+                [ Prop "flex-basis" "auto"
+                , Prop "flex-shrink" "1"
+                , Descriptor (dot classes.widthFill)
+                    [ Prop "flex-basis" "0px"
+                    , Prop "flex-shrink" "0"
+                    ]
                 , Descriptor (dot classes.clip)
                     [ Descriptor (dot classes.widthFill)
                         [ Prop "min-width" "auto" ]
@@ -823,18 +837,7 @@ baseSheet =
                         [ Prop "min-width" "auto" ]
                     ]
                 , Descriptor (dot classes.widthExact)
-                    [ Prop "flex-basis" "auto"
-                    ]
-                , Descriptor (dot classes.link)
-                    [ Prop "flex-basis" "auto"
-                    ]
-                , Descriptor (dot classes.paragraph)
-                    [ Prop "flex-basis" "auto"
-                    , Prop "flex-shrink" "1"
-                    , Descriptor (dot classes.widthFill)
-                        [ Prop "flex-basis" "0"
-                        , Prop "flex-shrink" "0"
-                        ]
+                    [ Prop "flex-shrink" "0"
                     ]
                 ]
             , Child (dot classes.heightFill)
@@ -1351,7 +1354,7 @@ baseSheet =
 elDescription =
     [ Prop "display" "flex"
     , Prop "flex-direction" "column"
-    , Prop "white-space" "pre"
+    -- , Prop "white-space" "pre"
     , Descriptor (dot classes.hasBehind)
         [ Prop "z-index" "0"
         , Child (dot classes.behind)

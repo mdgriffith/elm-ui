@@ -1,11 +1,11 @@
 module Element2.Font exposing
-    ( color, size
-    , family, familyWith, Font, typeface, serif, sansSerif, monospace
+    ( size, color, gradient
+    , family, with, Font, typeface, serif, sansSerif, monospace
     , Sizing, full, byCapital, Adjustment
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic, unitalicized
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
-    , Variant, variant, variantList, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+    , Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
     )
 
@@ -29,12 +29,12 @@ module Element2.Font exposing
 
 **Other Note:** If you're looking for something like `line-height`, it's handled by `Element.spacing` on a `paragraph`.
 
-@docs color, size
+@docs size, color, gradient
 
 
 ## Typefaces
 
-@docs family, familyWith, Font, typeface, serif, sansSerif, monospace
+@docs family, with, Font, typeface, serif, sansSerif, monospace
 
 @docs Sizing, full, byCapital, Adjustment
 
@@ -56,7 +56,7 @@ module Element2.Font exposing
 
 ## Variants
 
-@docs Variant, variant, variantList, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+@docs Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
 
 
 ## Shadows
@@ -77,22 +77,6 @@ type Font
     | SansSerif
     | Monospace
     | Typeface String
-
-
-fontName : Font -> String
-fontName font =
-    case font of
-        Serif ->
-            "serif"
-
-        SansSerif ->
-            "sans-serif"
-
-        Monospace ->
-            "monospace"
-
-        Typeface name ->
-            "\"" ++ name ++ "\""
 
 
 {-| -}
@@ -118,16 +102,46 @@ color fontColor =
 -}
 family : List Font -> Attribute msg
 family typefaces =
-    Two.Style Flag.fontFamily ("font-family:" ++ List.foldl renderFont "" typefaces ++ ";")
+    Two.Style Flag.fontFamily ("font-family:" ++ renderFont typefaces "" ++ ";")
 
 
-renderFont : Font -> String -> String
-renderFont face str =
-    if String.isEmpty str then
-        fontName face
+renderFont : List Font -> String -> String
+renderFont faces str =
+    case faces of
+        [] ->
+            str
 
-    else
-        str ++ ", " ++ fontName face
+        Serif :: remain ->
+            case str of
+                "" ->
+                    renderFont remain "serif"
+
+                _ ->
+                    renderFont remain (str ++ ", serif")
+
+        SansSerif :: remain ->
+            case str of
+                "" ->
+                    renderFont remain "sans-serif"
+
+                _ ->
+                    renderFont remain (str ++ ", sans-serif")
+
+        Monospace :: remain ->
+            case str of
+                "" ->
+                    renderFont remain "monospace"
+
+                _ ->
+                    renderFont remain (str ++ ", monospace")
+
+        (Typeface name) :: remain ->
+            case str of
+                "" ->
+                    renderFont remain ("\"" ++ name ++ "\"")
+
+                _ ->
+                    renderFont remain (str ++ ", \"" ++ name ++ "\"")
 
 
 {-| -}
@@ -186,7 +200,7 @@ byCapital =
 
 {-|
 
-    familyWith
+    Font.with
         { name = "ED Garamond"
         , fallback = [ Font.serif ]
         , sizing =
@@ -197,27 +211,95 @@ byCapital =
         }
 
 -}
-familyWith :
+with :
     { name : String
     , fallback : List Font
     , sizing : Sizing
     , variants : List Variant
     }
     -> Attribute msg
-familyWith details =
+with details =
     case details.sizing of
         Full ->
             Two.Style Flag.fontFamily
-                ("font-family:" ++ List.foldl renderFont ("\"" ++ details.name ++ "\"") details.fallback ++ ";")
+                ("font-family:"
+                    ++ renderFont details.fallback ("\"" ++ details.name ++ "\"")
+                    ++ ";"
+                    ++ renderVariants details.variants ""
+                    ++ renderSmallcaps details.variants ""
+                )
 
         ByCapital adjustment ->
             Two.ClassAndStyle Flag.fontFamily
                 Style.classes.fontAdjusted
                 ("font-family:"
-                    ++ List.foldl renderFont ("\"" ++ details.name ++ "\"") details.fallback
+                    ++ renderFont details.fallback ("\"" ++ details.name ++ "\"")
                     ++ ";"
                     ++ convertAdjustment adjustment
+                    ++ renderVariants details.variants ""
+                    ++ renderSmallcaps details.variants ""
                 )
+
+
+renderSmallcaps : List Variant -> String -> String
+renderSmallcaps variants str =
+    let
+        withComma =
+            case str of
+                "" ->
+                    ""
+
+                _ ->
+                    str ++ ", "
+    in
+    case variants of
+        [] ->
+            case str of
+                "" ->
+                    ""
+
+                _ ->
+                    "font-variant:" ++ str ++ ";"
+
+        (VariantActive "smcp") :: remain ->
+            renderVariants remain (withComma ++ "small-caps")
+
+        _ :: remain ->
+            renderVariants remain ""
+
+
+renderVariants : List Variant -> String -> String
+renderVariants variants str =
+    let
+        withComma =
+            case str of
+                "" ->
+                    ""
+
+                _ ->
+                    str ++ ", "
+    in
+    case variants of
+        [] ->
+            case str of
+                "" ->
+                    ""
+
+                _ ->
+                    "font-feature-settings:" ++ str ++ ";"
+
+        (VariantActive "smcp") :: remain ->
+            -- skip smallcaps, which is rendered by renderSmallCaps
+            renderVariants remain str
+
+        (VariantActive name) :: remain ->
+            renderVariants remain (withComma ++ "\"" ++ name ++ "\"")
+
+        (VariantOff name) :: remain ->
+            renderVariants remain (withComma ++ "\"" ++ name ++ "\" 0")
+
+        (VariantIndexed name index) :: remain ->
+            renderVariants remain (withComma ++ "\"" ++ name ++ "\" " ++ String.fromInt index)
 
 
 
@@ -490,9 +572,14 @@ shadow :
     }
     -> Attribute msg
 shadow shade =
-    -- Internal.StyleClass Flag.txtShadows <|
-    --     Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
-    Two.NoAttribute
+    Two.Style Flag.txtShadows
+        ("text-shadow:"
+            ++ (String.fromFloat (Tuple.first shade.offset) ++ "px ")
+            ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
+            ++ (String.fromFloat shade.blur ++ "px ")
+            ++ Style.color shade.color
+            ++ ";"
+        )
 
 
 {-| A glow is just a simplified shadow.
@@ -506,9 +593,14 @@ glow clr i =
             , color = clr
             }
     in
-    -- Internal.StyleClass Flag.txtShadows <|
-    --     Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
-    Two.NoAttribute
+    Two.Style Flag.txtShadows
+        ("text-shadow:"
+            ++ (String.fromFloat (Tuple.first shade.offset) ++ "px ")
+            ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
+            ++ (String.fromFloat shade.blur ++ "px ")
+            ++ Style.color shade.color
+            ++ ";"
+        )
 
 
 
@@ -520,77 +612,6 @@ type Variant
     = VariantActive String
     | VariantOff String
     | VariantIndexed String Int
-
-
-{-| You can use this to set a single variant on an element itself such as:
-
-    el
-        [ Font.variant Font.smallCaps
-        ]
-        (text "rendered with smallCaps")
-
-**Note** These will **not** stack. If you want multiple variants, you should use `Font.variantList`.
-
--}
-variant : Variant -> Attribute msg
-variant var =
-    case var of
-        VariantActive name ->
-            Two.Class Flag.fontVariant ("v-" ++ name)
-
-        VariantOff name ->
-            Two.Class Flag.fontVariant ("v-" ++ name ++ "-off")
-
-        VariantIndexed name index ->
-            -- Internal.StyleClass Flag.fontVariant <|
-            --     Internal.Single ("v-" ++ name ++ "-" ++ String.fromInt index)
-            --         "font-feature-settings"
-            --         ("\"" ++ name ++ "\" " ++ String.fromI
-            Two.NoAttribute
-
-
-isSmallCaps x =
-    case x of
-        VariantActive feat ->
-            feat == "smcp"
-
-        _ ->
-            False
-
-
-{-| -}
-variantList : List Variant -> Attribute msg
-variantList vars =
-    -- let
-    --     features =
-    --         vars
-    --             |> List.map Internal.renderVariant
-    --     hasSmallCaps =
-    --         List.any isSmallCaps vars
-    --     name =
-    --         if hasSmallCaps then
-    --             vars
-    --                 |> List.map Internal.variantName
-    --                 |> String.join "-"
-    --                 |> (\x -> x ++ "-sc")
-    --         else
-    --             vars
-    --                 |> List.map Internal.variantName
-    --                 |> String.join "-"
-    --     featureString =
-    --         String.join ", " features
-    -- in
-    -- Internal.StyleClass Flag.fontVariant <|
-    --     Internal.Style ("v-" ++ name)
-    --         [ Internal.Property "font-feature-settings" featureString
-    --         , Internal.Property "font-variant"
-    --             (if hasSmallCaps then
-    --                 "small-caps"
-    --              else
-    --                 "normal"
-    --             )
-    --         ]
-    Two.NoAttribute
 
 
 {-| [Small caps](https://en.wikipedia.org/wiki/Small_caps) are rendered using uppercase glyphs, but at the size of lowercase glyphs.
@@ -669,3 +690,21 @@ In these cases we need to specify the index of the version we want.
 indexed : String -> Int -> Variant
 indexed name on =
     VariantIndexed name on
+
+
+{-| Color your text as a gradient.
+-}
+gradient :
+    { angle : Float
+    , steps : List Color
+    }
+    -> Attribute msg
+gradient details =
+    Two.ClassAndStyle Flag.fontColor
+        Style.classes.textGradient
+        ("--text-gradient:linear-gradient(" ++ renderGradient (details.angle + (0.5 * pi)) details.steps ++ ");")
+
+
+renderGradient : Float -> List Color -> String
+renderGradient angle steps =
+    String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps
