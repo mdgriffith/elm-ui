@@ -1565,6 +1565,8 @@ email =
 
 By default it will have a minimum height of one line and resize based on it's contents.
 
+Use `Element.spacing` to change its line-height.
+
 -}
 multiline :
     List (Attribute msg)
