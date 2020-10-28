@@ -476,11 +476,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                     else
                                         ""
                                    )
-                                ++ (if Debug.log "TRANSFORM" <| Flag.present Flag.transform has then
-                                        let
-                                            _ =
-                                                Debug.log "details" details
-                                        in
+                                ++ (if Flag.present Flag.transform has then
                                         "transform: rotate("
                                             ++ String.fromFloat details.rotate
                                             ++ "rad) translate("
@@ -529,10 +525,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
             render layout details children has styles htmlAttrs classes nearby remain
 
         (TranslateX x) :: remain ->
-            let
-                _ =
-                    Debug.log "TRANSLATEING" x
-            in
             render
                 layout
                 { details | x = x }
