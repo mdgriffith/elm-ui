@@ -1006,15 +1006,15 @@ redistribute2 input attrs =
 -}
 redistributeOver2 input attr els =
     case attr of
-        Two.Spacing flag vSpace ->
+        Two.Spacing flag xSpace ySpace ->
             case input of
                 TextArea ->
                     let
                         lineHeightStyle =
                             Style.prop "height"
-                                ("calc(100% + " ++ String.fromInt vSpace ++ "px)")
+                                ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
                                 ++ Style.prop "line-height"
-                                    ("calc(1em + " ++ String.fromInt vSpace ++ "px)")
+                                    ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
 
                         lineHeight =
                             Two.Style Flag2.lineHeight
@@ -1025,7 +1025,7 @@ redistributeOver2 input attr els =
                         , textAreaFiller = Html.Attributes.property "style" (Encode.string lineHeightStyle) :: els.textAreaFiller
                         , input =
                             Element2.moveUp
-                                (toFloat (floor (toFloat vSpace / 2)))
+                                (toFloat (floor (toFloat ySpace / 2)))
                                 :: lineHeight
                                 :: els.input
                         , textAreaWrapper = attr :: els.textAreaWrapper
@@ -1036,7 +1036,7 @@ redistributeOver2 input attr els =
                         | parent = attr :: els.parent
                     }
 
-        Two.Padding flag x y ->
+        Two.Padding flag t r b l ->
             case input of
                 TextArea ->
                     { els
@@ -1046,18 +1046,18 @@ redistributeOver2 input attr els =
 
                 TextInputNode _ ->
                     { els
-                        | inputParent = Two.Padding flag 0 0 :: els.inputParent
+                        | inputParent = Two.Padding flag 0 0 0 0 :: els.inputParent
                         , placeholder = attr :: els.placeholder
                         , input =
                             Two.Style Flag2.height
                                 (Style.prop "height"
                                     ("calc(1em + "
-                                        ++ String.fromInt (2 * y)
+                                        ++ String.fromInt (t + b)
                                         ++ "px)"
                                     )
                                     ++ Style.prop "line-height"
                                         ("calc(1em + "
-                                            ++ String.fromInt (2 * y)
+                                            ++ String.fromInt (t + b)
                                             ++ "px)"
                                         )
                                 )
@@ -1065,7 +1065,7 @@ redistributeOver2 input attr els =
                                 :: els.input
                     }
 
-        Two.BorderWidth _ _ _ ->
+        Two.BorderWidth _ _ _ _ _ ->
             { els
                 | inputParent = attr :: els.inputParent
             }
@@ -1075,6 +1075,9 @@ redistributeOver2 input attr els =
 
         Two.NoAttribute ->
             els
+
+        Two.OnPress _ ->
+            { els | input = attr :: els.input }
 
         Two.Attr a ->
             { els | input = attr :: els.input }
@@ -1090,6 +1093,18 @@ redistributeOver2 input attr els =
 
         Two.NodeName _ ->
             els
+
+        Two.TranslateX _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.TranslateY _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.Rotate _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.Scale _ ->
+            { els | parent = attr :: els.parent }
 
         Two.Style _ _ ->
             { els
@@ -1753,14 +1768,15 @@ defaultCheckbox checked =
             Element2.alpha 1
 
           else
-            Border2.shadow
-                { x = 0
-                , y = 0
-                , blur = 1
-                , size = 1
-                , color =
-                    Element2.rgb 238 238 238
-                }
+            Border2.shadows
+                [ { x = 0
+                  , y = 0
+                  , blur = 1
+                  , size = 1
+                  , color =
+                        Element2.rgb 238 238 238
+                  }
+                ]
         , Background2.color <|
             if checked then
                 Element2.rgb 59 153 252

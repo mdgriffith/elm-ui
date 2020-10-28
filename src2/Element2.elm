@@ -1235,75 +1235,44 @@ renderBounds name minBound maxBound =
 
 {-| -}
 scale : Float -> Two.Attribute msg
-scale n =
-    -- Internal.TransformComponent Flag.scale (Internal.Scale ( n, n, 1 ))
-    Two.ClassAndStyle Flag.scale
-        Style.classes.transform
-        -- (Style.set Style.vars.scale (String.fromFloat n))
-        ""
+scale =
+    Two.Scale
 
 
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
 rotate : Float -> Two.Attribute msg
-rotate angle =
-    -- Internal.TransformComponent Flag.rotate (Internal.Rotate ( 0, 0, 1 ) angle)
-    Two.ClassAndStyle Flag.rotate
-        Style.classes.transform
-        -- (Style.set Style.vars.rotate (Style.rad angle))
-        ""
+rotate =
+    Two.Rotate
 
 
 {-| -}
 moveUp : Float -> Two.Attribute msg
-moveUp y =
-    -- Internal.TransformComponent Flag.moveY (Internal.MoveY (negate y))
-    Two.ClassAndStyle Flag.moveY
-        Style.classes.transform
-        -- (Style.set Style.vars.moveY (Style.floatPx y))
-        ""
+moveUp =
+    Two.TranslateY << negate
 
 
 {-| -}
 moveDown : Float -> Two.Attribute msg
-moveDown y =
-    -- Internal.TransformComponent Flag.moveY (Internal.MoveY y)
-    Two.ClassAndStyle Flag.moveY
-        Style.classes.transform
-        -- (Style.set Style.vars.moveY (Style.floatPx (-1 * y)))
-        ""
+moveDown =
+    Two.TranslateY
 
 
 {-| -}
 moveRight : Float -> Two.Attribute msg
-moveRight x =
-    Two.ClassAndStyle Flag.moveX
-        Style.classes.transform
-        -- (Style.set Style.vars.moveX (Style.floatPx x))
-        ""
+moveRight =
+    Two.TranslateX
 
 
 {-| -}
 moveLeft : Float -> Two.Attribute msg
-moveLeft x =
-    -- Internal.TransformComponent Flag.moveX (Internal.MoveX (negate x))
-    Two.ClassAndStyle Flag.moveX
-        Style.classes.transform
-        -- (Style.set Style.vars.moveX (Style.floatPx (negate x)))
-        ""
+moveLeft =
+    Two.TranslateX << negate
 
 
 {-| -}
 padding : Int -> Two.Attribute msg
 padding x =
-    -- Two.ClassAndStyle Flag.padding
-    --     Style.classes.padding
-    --     -- (Style.set Style.vars.padTop (Style.px x)
-    --     --     ++ Style.set Style.vars.padRight (Style.px x)
-    --     --     ++ Style.set Style.vars.padBottom (Style.px x)
-    --     --     ++ Style.set Style.vars.padLeft (Style.px x)
-    --     -- )
-    --     ""
     Two.Padding Flag.padding x x x x
 
 
@@ -1311,14 +1280,6 @@ padding x =
 -}
 paddingXY : Int -> Int -> Two.Attribute msg
 paddingXY x y =
-    -- Two.ClassAndStyle Flag.padding
-    --     Style.classes.padding
-    --     -- (Style.set Style.vars.padTop (Style.px y)
-    --     --     ++ Style.set Style.vars.padRight (Style.px x)
-    --     --     ++ Style.set Style.vars.padBottom (Style.px y)
-    --     --     ++ Style.set Style.vars.padLeft (Style.px x)
-    --     -- )
-    --     ""
     Two.Padding Flag.padding y x y x
 
 
@@ -1338,14 +1299,6 @@ And then just do
 -}
 paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Two.Attribute msg
 paddingEach { top, right, bottom, left } =
-    -- Two.ClassAndStyle Flag.padding
-    --     Style.classes.padding
-    --     -- (Style.set Style.vars.padTop (Style.px top)
-    --     --     ++ Style.set Style.vars.padRight (Style.px right)
-    --     --     ++ Style.set Style.vars.padBottom (Style.px bottom)
-    --     --     ++ Style.set Style.vars.padLeft (Style.px left)
-    --     -- )
-    --     ""
     Two.Padding Flag.padding top right bottom left
 
 

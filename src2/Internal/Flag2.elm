@@ -37,16 +37,13 @@ module Internal.Flag2 exposing
     , letterSpacing
     , lineHeight
     , merge
-    , moveX
-    , moveY
     , none
     , overflow
     , padding
     , present
-    , rotate
-    , scale
     , shadows
     , spacing
+    , transform
     , transparency
     , txtShadows
     , value
@@ -259,20 +256,8 @@ cursor =
     flag 21
 
 
-scale =
+transform =
     flag 23
-
-
-rotate =
-    flag 24
-
-
-moveX =
-    flag 25
-
-
-moveY =
-    flag 26
 
 
 borderWidth =

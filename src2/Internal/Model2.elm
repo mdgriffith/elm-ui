@@ -49,6 +49,18 @@ mapAttr fn attr =
         NoAttribute ->
             NoAttribute
 
+        TranslateX x ->
+            TranslateX x
+
+        TranslateY y ->
+            TranslateY y
+
+        Rotate r ->
+            Rotate r
+
+        Scale s ->
+            Scale s
+
         OnPress msg ->
             OnPress (fn msg)
 
@@ -116,6 +128,10 @@ type Attribute msg
     | Spacing Flag Int Int
     | Padding Flag Int Int Int Int
     | BorderWidth Flag Int Int Int Int
+    | TranslateX Float
+    | TranslateY Float
+    | Rotate Float
+    | Scale Float
       -- invalidation key and literal class
     | Class Flag String
       -- add to the style property
@@ -262,6 +278,10 @@ emptyDetails =
     , borderRight = 0
     , borderBottom = 0
     , borderLeft = 0
+    , x = 0
+    , y = 0
+    , rotate = 0
+    , scale = 1
     }
 
 
@@ -346,6 +366,10 @@ type alias Details =
     , borderRight : Int
     , borderBottom : Int
     , borderLeft : Int
+    , x : Float
+    , y : Float
+    , rotate : Float
+    , scale : Float
     }
 
 
@@ -452,6 +476,24 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                     else
                                         ""
                                    )
+                                ++ (if Debug.log "TRANSFORM" <| Flag.present Flag.transform has then
+                                        let
+                                            _ =
+                                                Debug.log "details" details
+                                        in
+                                        "transform: rotate("
+                                            ++ String.fromFloat details.rotate
+                                            ++ "rad) translate("
+                                            ++ String.fromFloat details.x
+                                            ++ "px, "
+                                            ++ String.fromFloat details.y
+                                            ++ "px) scale("
+                                            ++ String.fromFloat details.scale
+                                            ++ ");"
+
+                                    else
+                                        ""
+                                   )
                     in
                     (case details.name of
                         -- Note: these functions are ever so slightly faster than `Html.node`
@@ -485,6 +527,58 @@ render layout details children has styles htmlAttrs classes nearby attrs =
 
         NoAttribute :: remain ->
             render layout details children has styles htmlAttrs classes nearby remain
+
+        (TranslateX x) :: remain ->
+            let
+                _ =
+                    Debug.log "TRANSLATEING" x
+            in
+            render
+                layout
+                { details | x = x }
+                children
+                (Flag.add Flag.transform has)
+                styles
+                htmlAttrs
+                classes
+                nearby
+                remain
+
+        (TranslateY y) :: remain ->
+            render
+                layout
+                { details | y = y }
+                children
+                (Flag.add Flag.transform has)
+                styles
+                htmlAttrs
+                classes
+                nearby
+                remain
+
+        (Rotate rad) :: remain ->
+            render
+                layout
+                { details | rotate = rad }
+                children
+                (Flag.add Flag.transform has)
+                styles
+                htmlAttrs
+                classes
+                nearby
+                remain
+
+        (Scale scale) :: remain ->
+            render
+                layout
+                { details | scale = scale }
+                children
+                (Flag.add Flag.transform has)
+                styles
+                htmlAttrs
+                classes
+                nearby
+                remain
 
         (Attr attr) :: remain ->
             render
