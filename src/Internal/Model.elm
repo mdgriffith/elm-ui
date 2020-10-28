@@ -326,6 +326,7 @@ type TransformComponent
 
 type Description
     = Main
+    | Header
     | Navigation
       -- | Search
     | ContentInfo
@@ -1121,6 +1122,9 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                     case description of
                         Main ->
                             gatherAttrRecursive classes (addNodeName "main" node) has transform styles attrs children remaining
+
+                        Header ->
+                            gatherAttrRecursive classes (addNodeName "header" node) has transform styles attrs children remaining
 
                         Navigation ->
                             gatherAttrRecursive classes (addNodeName "nav" node) has transform styles attrs children remaining
