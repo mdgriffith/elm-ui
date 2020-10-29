@@ -17,6 +17,7 @@ module Element2.Background exposing
 -}
 
 import Element2 exposing (Attribute, Color)
+import Html.Attributes as Attr
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -25,12 +26,14 @@ import Internal.Style2 as Style
 {-| -}
 color : Color -> Two.Attribute msg
 color (Style.Rgb red green blue) =
-    Two.Style Flag.bgColor
-        ("background-color:rgb("
-            ++ String.fromInt red
-            ++ ("," ++ String.fromInt green)
-            ++ ("," ++ String.fromInt blue)
-            ++ ");"
+    Two.Attr
+        (Attr.style "background-color"
+            ("rgb("
+                ++ String.fromInt red
+                ++ ("," ++ String.fromInt green)
+                ++ ("," ++ String.fromInt blue)
+                ++ ")"
+            )
         )
 
 
