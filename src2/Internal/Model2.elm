@@ -269,6 +269,7 @@ element layout attrs children =
 emptyDetails : Details
 emptyDetails =
     { name = "div"
+    , node = 0
     , spacingX = 0
     , spacingY = 0
     , paddingTop = 0
@@ -352,7 +353,10 @@ wrappedRowAttributes attr =
 
 
 type alias Details =
+    -- Node reprsents html node like `div` or `a`.
+    -- right now `0: div` and `1:
     { name : String
+    , node : Int
     , spacingX : Int
     , spacingY : Int
     , paddingTop : Int
@@ -403,20 +407,14 @@ render layout details children has styles htmlAttrs classes nearby attrs =
             Element
                 (\parentEncoded ->
                     let
-                        parentSpacing =
-                            (Bitwise.complement 0
-                                |> Bitwise.shiftRightZfBy 16
-                                |> Bitwise.and parentEncoded
-                                |> String.fromInt
-                            )
-                                ++ "px "
-                                ++ String.fromInt (Bitwise.shiftRightZfBy 16 parentEncoded)
-                                ++ "px"
-
                         encoded =
-                            Bitwise.or
-                                details.spacingX
-                                (Bitwise.shiftLeftBy 16 details.spacingY)
+                            if details.spacingX == 0 && details.spacingY == 0 then
+                                0
+
+                            else
+                                Bitwise.or
+                                    details.spacingX
+                                    (Bitwise.shiftLeftBy 16 details.spacingY)
 
                         renderedChildren =
                             case nearby of
@@ -432,85 +430,108 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                 ChildrenBehindAndInFront behind inFront ->
                                     behind ++ List.map (unwrap encoded) children ++ inFront
 
-                        finalStyles =
-                            ""
-                                ++ styles
-                                ++ (if not (String.isEmpty parentSpacing) then
-                                        "margin:" ++ parentSpacing ++ ";"
-
-                                    else
-                                        ""
-                                   )
-                                ++ (if Flag.present Flag.padding has then
-                                        "padding:"
-                                            ++ (String.fromInt details.paddingTop ++ "px ")
-                                            ++ (String.fromInt details.paddingRight ++ "px  ")
-                                            ++ (String.fromInt details.paddingLeft ++ "px;")
-
-                                    else
-                                        ""
-                                   )
-                                ++ (if Flag.present Flag.borderWidth has then
-                                        "border-width:"
-                                            ++ (String.fromInt details.borderTop ++ "px ")
-                                            ++ (String.fromInt details.borderRight ++ "px ")
-                                            ++ (String.fromInt details.borderBottom ++ "px ")
-                                            ++ (String.fromInt details.borderLeft ++ "px;")
-
-                                    else
-                                        ""
-                                   )
-                                ++ (if Flag.present Flag.spacing has && layout == AsParagraph then
-                                        "line-height:calc(1em + " ++ String.fromInt details.spacingY ++ "px);"
-
-                                    else
-                                        ""
-                                   )
-                                ++ (if Flag.present Flag.transform has then
-                                        "transform: rotate("
-                                            ++ String.fromFloat details.rotate
-                                            ++ "rad) translate("
-                                            ++ String.fromFloat details.x
-                                            ++ "px, "
-                                            ++ String.fromFloat details.y
-                                            ++ "px) scale("
-                                            ++ String.fromFloat details.scale
-                                            ++ ");"
-
-                                    else
-                                        ""
-                                   )
-                    in
-                    (case details.name of
-                        -- Note: these functions are ever so slightly faster than `Html.node`
-                        -- because they can skip elm's built in security check for `script`
-                        "div" ->
-                            Html.div
-
-                        "input" ->
-                            Html.input
-
-                        "a" ->
-                            Html.a
-
-                        _ ->
-                            Html.node details.name
-                    )
-                        (Attr.class classes
+                        attributesWithStyles =
                             -- it's important that htmlAttrs comes after this, because if the user has set an
                             -- `Html.Attributes.style` properties, they will be reset if they come before
-                            :: Attr.property "style" (Json.Encode.string finalStyles)
-                            :: htmlAttrs
-                        )
-                        (case layout of
-                            AsParagraph ->
-                                spacerTop (toFloat details.spacingY / -2)
-                                    :: renderedChildren
-                                    ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+                            if String.isEmpty styles then
+                                htmlAttrs
+
+                            else
+                                Attr.property "style" (Json.Encode.string styles) :: htmlAttrs
+
+                        attrsWithParentSpacing =
+                            if parentEncoded == 0 then
+                                attributesWithStyles
+
+                            else
+                                Attr.style "margin"
+                                    ((Bitwise.complement 0
+                                        |> Bitwise.shiftRightZfBy 16
+                                        |> Bitwise.and parentEncoded
+                                        |> String.fromInt
+                                     )
+                                        ++ "px "
+                                        ++ String.fromInt (Bitwise.shiftRightZfBy 16 parentEncoded)
+                                        ++ "px"
+                                    )
+                                    :: attributesWithStyles
+
+                        attrsWithSpacing =
+                            if Flag.present Flag.spacing has && layout == AsParagraph then
+                                Attr.style "line-height"
+                                    ("calc(1em + " ++ String.fromInt details.spacingY ++ "px")
+                                    :: attrsWithParentSpacing
+
+                            else
+                                attrsWithParentSpacing
+
+                        attrsWithTransform =
+                            if Flag.present Flag.transform has then
+                                Attr.style "transform"
+                                    ("rotate("
+                                        ++ String.fromFloat details.rotate
+                                        ++ "rad) translate("
+                                        ++ String.fromFloat details.x
+                                        ++ "px, "
+                                        ++ String.fromFloat details.y
+                                        ++ "px) scale("
+                                        ++ String.fromFloat details.scale
+                                        ++ ")"
+                                    )
+                                    :: attrsWithSpacing
+
+                            else
+                                attrsWithSpacing
+
+                        attributes =
+                            Attr.class classes
+                                :: attrsWithTransform
+
+                        finalChildren =
+                            case layout of
+                                AsParagraph ->
+                                    spacerTop (toFloat details.spacingY / -2)
+                                        :: renderedChildren
+                                        ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+
+                                _ ->
+                                    renderedChildren
+                    in
+                    if details.node == 0 then
+                        -- calling this function directly is somehow faster
+                        -- probably easier for the JIT to guess what's happening
+                        Html.div
+                            attributes
+                            finalChildren
+
+                    else if details.node == 1 then
+                        Html.a
+                            attributes
+                            finalChildren
+
+                    else if details.node == 2 then
+                        Html.input
+                            attributes
+                            finalChildren
+
+                    else
+                        (case details.name of
+                            -- Note: these functions are ever so slightly faster than `Html.node`
+                            -- because they can skip elm's built in security check for `script`
+                            "div" ->
+                                Html.div
+
+                            "input" ->
+                                Html.input
+
+                            "a" ->
+                                Html.a
 
                             _ ->
-                                renderedChildren
+                                Html.node details.name
                         )
+                            attributes
+                            finalChildren
                 )
 
         NoAttribute :: remain ->
@@ -584,8 +605,9 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 details
                 children
                 has
-                ("tabindex:0;" ++ styles)
-                (Events.onClick press
+                styles
+                (Attr.style "tabindex" "0"
+                    :: Events.onClick press
                     :: onKey "Enter" press
                     :: htmlAttrs
                 )
@@ -596,7 +618,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
         (Link targetBlank url) :: remain ->
             render
                 layout
-                { details | name = "a" }
+                { details | node = 1 }
                 children
                 has
                 styles
@@ -618,7 +640,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
         (Download url downloadName) :: remain ->
             render
                 layout
-                { details | name = "a" }
+                { details | node = 1 }
                 children
                 has
                 styles
@@ -778,7 +800,14 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     children
                     (Flag.add flag has)
                     styles
-                    htmlAttrs
+                    (Attr.style "padding"
+                        ((String.fromInt t ++ "px ")
+                            ++ (String.fromInt r ++ "px  ")
+                            ++ (String.fromInt b ++ "px ")
+                            ++ (String.fromInt l ++ "px")
+                        )
+                        :: htmlAttrs
+                    )
                     classes
                     nearby
                     remain
@@ -808,7 +837,14 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     children
                     (Flag.add flag has)
                     styles
-                    htmlAttrs
+                    (Attr.style "border-width"
+                        ((String.fromInt details.borderTop ++ "px ")
+                            ++ (String.fromInt details.borderRight ++ "px  ")
+                            ++ (String.fromInt details.borderBottom ++ "px ")
+                            ++ (String.fromInt details.borderLeft ++ "px")
+                        )
+                        :: htmlAttrs
+                    )
                     classes
                     nearby
                     remain
