@@ -361,7 +361,7 @@ portion =
 -}
 layout : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 layout attrs content =
-    Two.unwrap "" <|
+    Two.unwrap Two.zero <|
         Two.element Two.AsRoot
             (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
                 :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
@@ -380,7 +380,7 @@ You'll need to include it manually yourself
 -}
 embed : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 embed attrs content =
-    Two.unwrap "" <|
+    Two.unwrap Two.zero <|
         Two.element Two.AsRoot
             (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
                 :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
@@ -405,7 +405,7 @@ layoutWith { options } attrs content =
     --         :: (Internal.rootStyle ++ attrs)
     --     )
     --     child
-    Two.unwrap "" <|
+    Two.unwrap Two.zero <|
         rootNode options attrs content
 
 

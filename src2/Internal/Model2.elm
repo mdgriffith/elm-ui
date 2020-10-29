@@ -7,6 +7,7 @@ module Internal.Model2 exposing (..)
 
 -}
 
+import Bitwise
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -30,7 +31,7 @@ import VirtualDom
 
 -}
 type Element msg
-    = Element (String -> Html.Html msg)
+    = Element (Int -> Html.Html msg)
 
 
 map : (a -> b) -> Element a -> Element b
@@ -300,7 +301,7 @@ emptyDetails =
 --         (List.reverse attrs)
 
 
-unwrap : String -> Element msg -> Html.Html msg
+unwrap : Int -> Element msg -> Html.Html msg
 unwrap s el =
     case el of
         Element html ->
@@ -316,12 +317,8 @@ wrapText s el =
 text : String -> Element msg
 text str =
     Element
-        (\context ->
-            if String.startsWith "y:" context then
-                Html.text str
-
-            else
-                Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+        (\space ->
+            Html.span [ Attr.class textElementClasses ] [ Html.text str ]
         )
 
 
@@ -407,26 +404,19 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 (\parentEncoded ->
                     let
                         parentSpacing =
-                            String.dropLeft 2 parentEncoded
+                            (Bitwise.complement 0
+                                |> Bitwise.shiftRightZfBy 16
+                                |> Bitwise.and parentEncoded
+                                |> String.fromInt
+                            )
+                                ++ "px "
+                                ++ String.fromInt (Bitwise.shiftRightZfBy 16 parentEncoded)
+                                ++ "px"
 
                         encoded =
-                            case layout of
-                                AsWrappedRow ->
-                                    "n:" ++ String.fromInt details.spacingX ++ "px " ++ String.fromInt details.spacingY ++ "px"
-
-                                AsParagraph ->
-                                    case nearby of
-                                        ChildrenBehind _ ->
-                                            "n:" ++ String.fromInt details.spacingX ++ "px " ++ String.fromInt details.spacingY ++ "px"
-
-                                        ChildrenBehindAndInFront _ _ ->
-                                            "n:" ++ String.fromInt details.spacingX ++ "px " ++ String.fromInt details.spacingY ++ "px"
-
-                                        _ ->
-                                            "y:" ++ String.fromInt details.spacingX ++ "px " ++ String.fromInt details.spacingY ++ "px"
-
-                                _ ->
-                                    "n:" ++ String.fromInt details.spacingX ++ "px " ++ String.fromInt details.spacingY ++ "px"
+                            Bitwise.or
+                                details.spacingX
+                                (Bitwise.shiftLeftBy 16 details.spacingY)
 
                         renderedChildren =
                             case nearby of
@@ -507,6 +497,8 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                             Html.node details.name
                     )
                         (Attr.class classes
+                            -- it's important that htmlAttrs comes after this, because if the user has set an
+                            -- `Html.Attributes.style` properties, they will be reset if they come before
                             :: Attr.property "style" (Json.Encode.string finalStyles)
                             :: htmlAttrs
                         )
@@ -1129,8 +1121,12 @@ nearbyElement location elem =
                         , Style.classes.behind
                         ]
         ]
-        [ unwrap "" elem
+        [ unwrap zero elem
         ]
+
+
+zero =
+    0
 
 
 textElementClasses : String
