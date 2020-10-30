@@ -434,18 +434,9 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                 ChildrenBehindAndInFront behind inFront ->
                                     behind ++ List.map (unwrap encoded) children ++ inFront
 
-                        attributesWithStyles =
-                            -- it's important that htmlAttrs comes after this, because if the user has set an
-                            -- `Html.Attributes.style` properties, they will be reset if they come before
-                            if String.isEmpty styles then
-                                htmlAttrs
-
-                            else
-                                Attr.property "style" (Json.Encode.string styles) :: htmlAttrs
-
                         attrsWithParentSpacing =
                             if parentEncoded == 0 then
-                                attributesWithStyles
+                                htmlAttrs
 
                             else
                                 Attr.style "margin"
@@ -458,7 +449,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                                         ++ String.fromInt (Bitwise.shiftRightZfBy 16 parentEncoded)
                                         ++ "px"
                                     )
-                                    :: attributesWithStyles
+                                    :: htmlAttrs
 
                         attrsWithSpacing =
                             if Flag.present Flag.spacing has && layout == AsParagraph then
@@ -487,9 +478,19 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                             else
                                 attrsWithSpacing
 
+                        attributesWithStyles =
+                            -- it's important that htmlAttrs comes after this, because if the user has set an
+                            -- `Html.Attributes.style` properties, they will be reset if they come before
+                            if String.isEmpty styles then
+                                attrsWithTransform
+
+                            else
+                                Attr.property "style" (Json.Encode.string styles)
+                                    :: attrsWithTransform
+
                         attributes =
                             Attr.class classes
-                                :: attrsWithTransform
+                                :: attributesWithStyles
 
                         finalChildren =
                             case layout of
@@ -817,7 +818,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                      else
                         Attr.style "padding"
                             ((String.fromInt padding.top ++ "px ")
-                                ++ (String.fromInt padding.right ++ "px  ")
+                                ++ (String.fromInt padding.right ++ "px ")
                                 ++ (String.fromInt padding.bottom ++ "px ")
                                 ++ (String.fromInt padding.left ++ "px")
                             )
