@@ -68,11 +68,11 @@ mapAttr fn attr =
         Spacing flag x y ->
             Spacing flag x y
 
-        Padding flag t r b l ->
-            Padding flag t r b l
+        Padding flag edges ->
+            Padding flag edges
 
-        BorderWidth flag t r b l ->
-            BorderWidth flag t r b l
+        BorderWidth flag edges ->
+            BorderWidth flag edges
 
         Attr a ->
             Attr (Attr.map fn a)
@@ -127,8 +127,8 @@ type Attribute msg
     | Download String String
     | NodeName String
     | Spacing Flag Int Int
-    | Padding Flag Int Int Int Int
-    | BorderWidth Flag Int Int Int Int
+    | Padding Flag Edges
+    | BorderWidth Flag Edges
     | TranslateX Float
     | TranslateY Float
     | Rotate Float
@@ -149,10 +149,10 @@ hasFlag flag attr =
         Spacing f _ _ ->
             Flag.equal flag f
 
-        Padding f _ _ _ _ ->
+        Padding f _ ->
             Flag.equal flag f
 
-        BorderWidth f _ _ _ _ ->
+        BorderWidth f _ ->
             Flag.equal flag f
 
         Class f _ ->
@@ -173,10 +173,10 @@ hasFlags flags attr =
         Spacing f _ _ ->
             List.any (Flag.equal f) flags
 
-        Padding f _ _ _ _ ->
+        Padding f _ ->
             List.any (Flag.equal f) flags
 
-        BorderWidth f _ _ _ _ ->
+        BorderWidth f _ ->
             List.any (Flag.equal f) flags
 
         Class f _ ->
@@ -266,20 +266,22 @@ element layout attrs children =
         (List.reverse attrs)
 
 
+emptyEdges =
+    { top = 0
+    , left = 0
+    , bottom = 0
+    , right = 0
+    }
+
+
 emptyDetails : Details
 emptyDetails =
     { name = "div"
     , node = 0
     , spacingX = 0
     , spacingY = 0
-    , paddingTop = 0
-    , paddingRight = 0
-    , paddingBottom = 0
-    , paddingLeft = 0
-    , borderTop = 0
-    , borderRight = 0
-    , borderBottom = 0
-    , borderLeft = 0
+    , padding = emptyEdges
+    , borders = emptyEdges
     , x = 0
     , y = 0
     , rotate = 0
@@ -352,6 +354,14 @@ wrappedRowAttributes attr =
             []
 
 
+type alias Edges =
+    { top : Int
+    , right : Int
+    , bottom : Int
+    , left : Int
+    }
+
+
 type alias Details =
     -- Node reprsents html node like `div` or `a`.
     -- right now `0: div` and `1:
@@ -359,14 +369,8 @@ type alias Details =
     , node : Int
     , spacingX : Int
     , spacingY : Int
-    , paddingTop : Int
-    , paddingRight : Int
-    , paddingBottom : Int
-    , paddingLeft : Int
-    , borderTop : Int
-    , borderRight : Int
-    , borderBottom : Int
-    , borderLeft : Int
+    , padding : Edges
+    , borders : Edges
     , x : Float
     , y : Float
     , rotate : Float
@@ -775,7 +779,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     nearby
                     remain
 
-        (Padding flag t r b l) :: remain ->
+        (Padding flag padding) :: remain ->
             if Flag.present flag has then
                 render
                     layout
@@ -791,28 +795,39 @@ render layout details children has styles htmlAttrs classes nearby attrs =
             else
                 render
                     layout
-                    { details
-                        | paddingTop = t
-                        , paddingRight = r
-                        , paddingBottom = b
-                        , paddingLeft = l
+                    { name = details.name
+                    , node = details.node
+                    , spacingX = details.spacingX
+                    , spacingY = details.spacingY
+                    , padding = padding
+                    , borders = details.borders
+                    , x = details.x
+                    , y = details.y
+                    , rotate = details.rotate
+                    , scale = details.scale
                     }
                     children
                     (Flag.add flag has)
                     styles
-                    (Attr.style "padding"
-                        ((String.fromInt t ++ "px ")
-                            ++ (String.fromInt r ++ "px  ")
-                            ++ (String.fromInt b ++ "px ")
-                            ++ (String.fromInt l ++ "px")
-                        )
-                        :: htmlAttrs
+                    (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
+                        Attr.style "padding"
+                            (String.fromInt padding.top ++ "px")
+                            :: htmlAttrs
+
+                     else
+                        Attr.style "padding"
+                            ((String.fromInt padding.top ++ "px ")
+                                ++ (String.fromInt padding.right ++ "px  ")
+                                ++ (String.fromInt padding.bottom ++ "px ")
+                                ++ (String.fromInt padding.left ++ "px")
+                            )
+                            :: htmlAttrs
                     )
                     classes
                     nearby
                     remain
 
-        (BorderWidth flag t r b l) :: remain ->
+        (BorderWidth flag borders) :: remain ->
             if Flag.present flag has then
                 render
                     layout
@@ -828,22 +843,33 @@ render layout details children has styles htmlAttrs classes nearby attrs =
             else
                 render
                     layout
-                    { details
-                        | borderTop = t
-                        , borderRight = r
-                        , borderBottom = b
-                        , borderLeft = l
+                    { name = details.name
+                    , node = details.node
+                    , spacingX = details.spacingX
+                    , spacingY = details.spacingY
+                    , padding = details.padding
+                    , borders = borders
+                    , x = details.x
+                    , y = details.y
+                    , rotate = details.rotate
+                    , scale = details.scale
                     }
                     children
                     (Flag.add flag has)
                     styles
-                    (Attr.style "border-width"
-                        ((String.fromInt details.borderTop ++ "px ")
-                            ++ (String.fromInt details.borderRight ++ "px  ")
-                            ++ (String.fromInt details.borderBottom ++ "px ")
-                            ++ (String.fromInt details.borderLeft ++ "px")
-                        )
-                        :: htmlAttrs
+                    (if borders.top == borders.right && borders.top == borders.left && borders.top == borders.bottom then
+                        Attr.style "border-width"
+                            (String.fromInt borders.top ++ "px")
+                            :: htmlAttrs
+
+                     else
+                        Attr.style "border-width"
+                            ((String.fromInt borders.top ++ "px ")
+                                ++ (String.fromInt borders.right ++ "px  ")
+                                ++ (String.fromInt borders.bottom ++ "px ")
+                                ++ (String.fromInt borders.left ++ "px")
+                            )
+                            :: htmlAttrs
                     )
                     classes
                     nearby

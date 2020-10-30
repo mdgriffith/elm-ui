@@ -1273,14 +1273,24 @@ moveLeft =
 {-| -}
 padding : Int -> Two.Attribute msg
 padding x =
-    Two.Padding Flag.padding x x x x
+    Two.Padding Flag.padding
+        { top = x
+        , left = x
+        , bottom = x
+        , right = x
+        }
 
 
 {-| Set horizontal and vertical padding.
 -}
 paddingXY : Int -> Int -> Two.Attribute msg
 paddingXY x y =
-    Two.Padding Flag.padding y x y x
+    Two.Padding Flag.padding
+        { top = y
+        , left = x
+        , bottom = y
+        , right = x
+        }
 
 
 {-| If you find yourself defining unique paddings all the time, you might consider defining
@@ -1298,8 +1308,8 @@ And then just do
 
 -}
 paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Two.Attribute msg
-paddingEach { top, right, bottom, left } =
-    Two.Padding Flag.padding top right bottom left
+paddingEach pad =
+    Two.Padding Flag.padding pad
 
 
 {-| -}
