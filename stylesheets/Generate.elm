@@ -88,6 +88,8 @@ classes =
     -- selection
     , noTextSelection = "notxt"
     , cursorPointer = "cptr"
+    , cursorGrab = "grab"
+    , cursorGrabbing = "grabbing"
     , cursorText = "ctxt"
 
     -- pointer events
@@ -706,6 +708,12 @@ baseSheet =
             ]
         , Descriptor (dot classes.cursorPointer)
             [ Prop "cursor" "pointer"
+            ]
+        , Descriptor (dot classes.cursorGrab)
+            [ Prop "cursor" "grab"
+            ]
+        , Descriptor (dot classes.cursorGrabbing)
+            [ Prop "cursor" "grabbing"
             ]
         , Descriptor (dot classes.cursorText)
             [ Prop "cursor" "text"
