@@ -3,7 +3,8 @@ module Element2 exposing
     , row, wrappedRow, column
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
-    , Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum, ellip
+    , Attribute, Length, px, fill, portion, width, height
+    , ellip
     , explain
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
@@ -54,7 +55,9 @@ Text layout needs some specific considerations.
 
 # Size
 
-@docs Attribute, width, height, Length, px, shrink, fill, portion, maximum, minimum, ellip
+@docs Attribute, Length, px, fill, portion, width, widthMin, widthMax, height, heightMin, heightMax
+
+@docs ellip
 
 
 # Debugging
@@ -206,7 +209,7 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 -}
 
 import Html exposing (Html)
-import Html.Attributes
+import Html.Attributes as Attr
 import Internal.Flag2 as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -273,7 +276,10 @@ type Length
     = Px Int
     | Content
     | Fill Int
-    | Bounded (Maybe Int) (Maybe Int) Length
+
+
+
+-- | Bounded (Maybe Int) (Maybe Int) Length
 
 
 {-| -}
@@ -282,11 +288,12 @@ px =
     Px
 
 
-{-| Shrink an element to fit its contents.
--}
-shrink : Length
-shrink =
-    Content
+
+-- {-| Shrink an element to fit its contents.
+-- -}
+-- shrink : Length
+-- shrink =
+--     Content
 
 
 {-| Fill the available space. The available space will be split evenly between elements that have `width fill`.
@@ -296,53 +303,45 @@ fill =
     Fill 1
 
 
-{-| Similarly you can set a minimum boundary.
 
-     el
-        [ height
-            (fill
-                |> maximum 300
-                |> minimum 30
-            )
-
-        ]
-        (text "I will stop at 300px")
-
--}
-minimum : Int -> Length -> Length
-minimum i len =
-    case len of
-        Bounded minBound maxBound val ->
-            Bounded (Just i) maxBound val
-
-        otherwise ->
-            Bounded (Just i) Nothing otherwise
-
-
-{-| Add a maximum to a length.
-
-    el
-        [ height
-            (fill
-                |> maximum 300
-            )
-        ]
-        (text "I will stop at 300px")
-
--}
-maximum : Int -> Length -> Length
-maximum i len =
-    case len of
-        Bounded minBound maxBound val ->
-            Bounded minBound (Just i) val
-
-        otherwise ->
-            Bounded Nothing (Just i) otherwise
+-- {-| Similarly you can set a minimum boundary.
+--      el
+--         [ height
+--             (fill
+--                 |> maximum 300
+--                 |> minimum 30
+--             )
+--         ]
+--         (text "I will stop at 300px")
+-- -}
+-- minimum : Int -> Length -> Length
+-- minimum i len =
+--     case len of
+--         Bounded minBound maxBound val ->
+--             Bounded (Just i) maxBound val
+--         otherwise ->
+--             Bounded (Just i) Nothing otherwise
+-- {-| Add a maximum to a length.
+--     el
+--         [ height
+--             (fill
+--                 |> maximum 300
+--             )
+--         ]
+--         (text "I will stop at 300px")
+-- -}
+-- maximum : Int -> Length -> Length
+-- maximum i len =
+--     case len of
+--         Bounded minBound maxBound val ->
+--             Bounded minBound (Just i) val
+--         otherwise ->
+--             Bounded Nothing (Just i) otherwise
 
 
 ellip : Attribute msg
 ellip =
-    Two.Attr (Html.Attributes.class Style.classes.ellipses)
+    Two.Attr (Attr.class Style.classes.ellipses)
 
 
 {-| Sometimes you may not want to split available space evenly. In this case you can use `portion` to define which elements should have what portion of the available space.
@@ -363,9 +362,9 @@ layout : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 layout attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
-            (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
-                :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
-                :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+            (Two.Attr (Attr.style "font-size" (String.fromInt 16 ++ "px"))
+                :: Two.Attr (Attr.style "font-family" "\"Open Sans\", sans-serif")
+                :: Two.Attr (Attr.style "color" "#000")
                 :: attrs
             )
             [ Two.Element styleNode
@@ -382,9 +381,9 @@ embed : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 embed attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
-            (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
-                :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
-                :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+            (Two.Attr (Attr.style "font-size" (String.fromInt 16 ++ "px"))
+                :: Two.Attr (Attr.style "font-family" "\"Open Sans\", sans-serif")
+                :: Two.Attr (Attr.style "color" "#000")
                 :: attrs
             )
             [ content
@@ -411,9 +410,9 @@ layoutWith { options } attrs content =
 
 rootNode options attrs content =
     Two.element Two.AsRoot
-        (Two.Style Flag.fontSize (Style.prop "font-size" (Style.px 16))
-            :: Two.Style Flag.fontFamily (Style.prop "font-family" "\"Open Sans\", sans-serif")
-            :: Two.Style Flag.fontColor (Style.prop "color" (Style.color (rgb 0 0 0)))
+        (Two.Attr (Attr.style "font-size" (String.fromInt 16 ++ "px"))
+            :: Two.Attr (Attr.style "font-family" "\"Open Sans\", sans-serif")
+            :: Two.Attr (Attr.style "color" "#000")
             :: attrs
         )
         [ Two.Element styleNode
@@ -526,13 +525,12 @@ el attrs child =
         Two.emptyDetails
         [ child ]
         Flag.none
-        ""
         []
         Two.singleClass
         Two.NoNearbyChildren
         (List.reverse
-            (width shrink
-                :: height shrink
+            (width Content
+                :: height Content
                 :: attrs
             )
         )
@@ -545,13 +543,12 @@ row attrs children =
         Two.emptyDetails
         children
         Flag.none
-        ""
         []
         Two.rowClass
         Two.NoNearbyChildren
         (List.reverse
-            (width shrink
-                :: height shrink
+            (width Content
+                :: height Content
                 :: attrs
             )
         )
@@ -564,13 +561,12 @@ column attrs children =
         Two.emptyDetails
         children
         Flag.none
-        ""
         []
         Two.columnClass
         Two.NoNearbyChildren
         (List.reverse
-            (width shrink
-                :: height shrink
+            (width Content
+                :: height Content
                 :: attrs
             )
         )
@@ -590,7 +586,6 @@ wrappedRow attrs children =
             Two.emptyDetails
             children
             Flag.none
-            ""
             []
             Two.wrappedRowClass
             Two.NoNearbyChildren
@@ -893,13 +888,12 @@ paragraph attrs children =
         Two.emptyDetails
         children
         Flag.none
-        ""
         []
         Two.paragraphClass
         Two.NoNearbyChildren
         (List.reverse
-            (width shrink
-                :: height shrink
+            (width Content
+                :: height Content
                 :: attrs
             )
         )
@@ -941,13 +935,12 @@ textColumn attrs children =
         Two.emptyDetails
         children
         Flag.none
-        ""
         []
         Two.textColumnClass
         Two.NoNearbyChildren
         (List.reverse
-            (width shrink
-                :: height shrink
+            (width Content
+                :: height Content
                 :: attrs
             )
         )
@@ -988,8 +981,8 @@ image attrs { src, description } =
     --         [ Internal.element
     --             Internal.asEl
     --             (Internal.NodeName "img")
-    -- ([ Internal.Attr <| Html.Attributes.src src
-    --  , Internal.Attr <| Html.Attributes.alt description
+    -- ([ Internal.Attr <| Attr.src src
+    --  , Internal.Attr <| Attr.alt description
     --  ]
     --     ++ imageAttributes
     --             )
@@ -1001,8 +994,8 @@ image attrs { src, description } =
         [ Two.Element
             (\s ->
                 Html.img
-                    [ Html.Attributes.src src
-                    , Html.Attributes.alt description
+                    [ Attr.src src
+                    , Attr.alt description
                     ]
                     []
             )
@@ -1099,55 +1092,31 @@ width len =
             Two.Class Flag.width Style.classes.widthContent
 
         Fill f ->
-            -- width fill should be flex-grow: portion for rows
-            -- and the default behavior for anything else
-            -- however for columns, flex-grow needs to be set by the height
-            -- which means
-            if f < 10 then
-                Two.Class Flag.width
-                    (Style.classes.widthFill
-                        ++ " "
-                        ++ Style.classes.widthFillPortion
-                        ++ "-"
-                        ++ String.fromInt f
-                    )
+            Two.WidthFill f
 
-            else
-                Two.ClassAndStyle Flag.width
-                    Style.classes.widthFill
-                    (Style.set Style.vars.widthFill (String.fromInt f))
 
-        Bounded minBound maxBound (Px x) ->
-            Two.ClassAndStyle Flag.width
-                (Style.classes.widthBounded ++ " " ++ Style.classes.widthExact)
-                (Style.prop "width" (Style.px x) ++ renderBounds "width" minBound maxBound)
+{-| -}
+widthMin : Int -> Two.Attribute msg
+widthMin x =
+    Two.Attr (Attr.style "min-width" (String.fromInt x ++ "px"))
 
-        Bounded minBound maxBound Content ->
-            Two.ClassAndStyle Flag.width
-                (Style.classes.widthBounded ++ " " ++ Style.classes.widthContent)
-                (renderBounds "width" minBound maxBound)
 
-        Bounded minBound maxBound (Fill f) ->
-            if f < 10 then
-                Two.ClassAndStyle Flag.width
-                    (Style.classes.widthFill
-                        ++ " "
-                        ++ Style.classes.widthBounded
-                        ++ " "
-                        ++ Style.classes.widthFillPortion
-                        ++ "-"
-                        ++ String.fromInt f
-                    )
-                    (renderBounds "width" minBound maxBound)
+{-| -}
+widthMax : Int -> Two.Attribute msg
+widthMax x =
+    Two.Attr (Attr.style "max-width" (String.fromInt x ++ "px"))
 
-            else
-                Two.ClassAndStyle Flag.width
-                    (Style.classes.widthFill ++ " " ++ Style.classes.widthBounded)
-                    (Style.set Style.vars.widthFill (String.fromInt f) ++ renderBounds "width" minBound maxBound)
 
-        Bounded _ _ embedded ->
-            -- This shouldn't happen because our constructors only allow for one level deep
-            Two.NoAttribute
+{-| -}
+heightMin : Int -> Two.Attribute msg
+heightMin x =
+    Two.Attr (Attr.style "min-height" (String.fromInt x ++ "px"))
+
+
+{-| -}
+heightMax : Int -> Two.Attribute msg
+heightMax x =
+    Two.Attr (Attr.style "max-height" (String.fromInt x ++ "px"))
 
 
 {-| -}
@@ -1163,74 +1132,7 @@ height len =
             Two.Class Flag.height Style.classes.heightContent
 
         Fill f ->
-            if f < 10 then
-                Two.Class Flag.height
-                    (Style.classes.heightFill
-                        ++ " "
-                        ++ Style.classes.heightFillPortion
-                        ++ "-"
-                        ++ String.fromInt f
-                    )
-
-            else
-                Two.ClassAndStyle Flag.height
-                    Style.classes.heightFill
-                    (Style.set Style.vars.heightFill (String.fromInt f))
-
-        Bounded minBound maxBound (Px x) ->
-            Two.ClassAndStyle Flag.height
-                (Style.classes.heightExact ++ " " ++ Style.classes.heightBounded)
-                ("height:" ++ (String.fromInt x ++ "px;") ++ renderBounds "height" minBound maxBound ++ ";")
-
-        Bounded minBound maxBound Content ->
-            Two.ClassAndStyle Flag.height
-                (Style.classes.heightContent ++ " " ++ Style.classes.heightBounded)
-                (renderBounds "height" minBound maxBound)
-
-        Bounded minBound maxBound (Fill f) ->
-            if f < 10 then
-                Two.ClassAndStyle Flag.height
-                    (Style.classes.heightFill
-                        ++ " "
-                        ++ Style.classes.heightBounded
-                        ++ " "
-                        ++ Style.classes.heightFillPortion
-                        ++ "-"
-                        ++ String.fromInt f
-                    )
-                    (renderBounds "height" minBound maxBound)
-
-            else
-                Two.ClassAndStyle Flag.height
-                    (Style.classes.heightFill ++ " " ++ Style.classes.heightBounded)
-                    (Style.set Style.vars.heightFill (String.fromInt f)
-                        ++ renderBounds "height" minBound maxBound
-                    )
-
-        Bounded _ _ embedded ->
-            -- This shouldn't happen because our constructors only allow for one level deep
-            Two.NoAttribute
-
-
-renderBounds : String -> Maybe Int -> Maybe Int -> String
-renderBounds name minBound maxBound =
-    case minBound of
-        Just actualMin ->
-            case maxBound of
-                Just actualMax ->
-                    Style.prop ("min-" ++ name) (Style.px actualMin)
-                        ++ Style.prop ("max-" ++ name) (Style.px actualMin)
-
-                Nothing ->
-                    Style.prop ("min-" ++ name) (Style.px actualMin)
-
-        Nothing ->
-            case maxBound of
-                Just actualMax ->
-                    Style.prop ("max-" ++ name) (Style.px actualMax)
-
-                Nothing ->
-                    ""
+            Two.HeightFill f
 
 
 {-| -}
@@ -1375,10 +1277,10 @@ spacingXY x y =
 transparent : Bool -> Two.Attribute msg
 transparent on =
     if on then
-        Two.Style Flag.transparency "opacity:1;"
+        Two.Attr (Attr.style "opacity" "1")
 
     else
-        Two.Style Flag.transparency "opacity:0;"
+        Two.Attr (Attr.style "opacity" "0")
 
 
 {-| A capped value between 0.0 and 1.0, where 0.0 is transparent and 1.0 is fully opaque.
@@ -1388,7 +1290,7 @@ Semantically equivalent to html opacity.
 -}
 alpha : Float -> Two.Attribute msg
 alpha o =
-    Two.Style Flag.transparency ("opacity:" ++ String.fromFloat o ++ ";")
+    Two.Attr (Attr.style "opacity" (String.fromFloat 0))
 
 
 {-| -}
@@ -1467,13 +1369,13 @@ pointer =
 {-| -}
 grab : Two.Attribute msg
 grab =
-    Two.Style Flag.cursor "cursor:grab;"
+    Two.Class Flag.cursor Style.classes.cursorGrab
 
 
 {-| -}
 grabbing : Two.Attribute msg
 grabbing =
-    Two.Style Flag.cursor "cursor:grabbing;"
+    Two.Class Flag.cursor Style.classes.cursorGrabbing
 
 
 {-| -}

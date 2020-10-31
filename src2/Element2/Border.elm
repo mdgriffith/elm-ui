@@ -3,7 +3,8 @@ module Element2.Border exposing
     , width, widthXY, widthEach
     , solid, dashed, dotted
     , rounded, roundEach
-    , glow, innerGlow, shadow, innerShadow
+    , glow, innerGlow, shadows, innerShadow
+    , lights
     )
 
 {-|
@@ -28,11 +29,12 @@ module Element2.Border exposing
 
 ## Shadows
 
-@docs glow, innerGlow, shadow, innerShadow
+@docs glow, innerGlow, shadows, innerShadow
 
 -}
 
 import Element2 exposing (Attribute, Color)
+import Html.Attributes as Attr
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -41,20 +43,31 @@ import Internal.Style2 as Style
 {-| -}
 color : Color -> Attribute msg
 color clr =
-    Two.Style Flag.borderColor ("border-color:" ++ Style.color clr ++ ";")
+    Two.Attr
+        (Attr.style "border-color" (Style.color clr))
 
 
 {-| -}
 width : Int -> Attribute msg
-width v =
-    Two.BorderWidth Flag.borderWidth v v v v
+width x =
+    Two.BorderWidth Flag.borderWidth
+        { top = x
+        , left = x
+        , bottom = x
+        , right = x
+        }
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Two.BorderWidth Flag.borderWidth y x y x
+    Two.BorderWidth Flag.borderWidth
+        { top = y
+        , left = x
+        , bottom = y
+        , right = x
+        }
 
 
 {-| -}
@@ -65,37 +78,37 @@ widthEach :
     , top : Int
     }
     -> Attribute msg
-widthEach { bottom, top, left, right } =
-    Two.BorderWidth Flag.borderWidth top right bottom left
+widthEach border =
+    Two.BorderWidth Flag.borderWidth border
 
 
 {-| -}
 solid : Attribute msg
 solid =
-    Two.Style Flag.borderStyle "border-style:solid;"
+    Two.Attr
+        (Attr.style "border-style" "solid")
 
 
 {-| -}
 dashed : Attribute msg
 dashed =
-    Two.Style Flag.borderStyle "border-style:dashed;"
+    Two.Attr
+        (Attr.style "border-style" "dashed")
 
 
 {-| -}
 dotted : Attribute msg
 dotted =
-    Two.Style Flag.borderStyle "border-style:dotted;"
+    Two.Attr
+        (Attr.style "border-style" "dotted")
 
 
 {-| Round all corners.
 -}
 rounded : Int -> Attribute msg
 rounded radius =
-    Two.Style Flag.borderRound
-        ("border-radius:"
-            ++ Style.px radius
-            ++ ";"
-        )
+    Two.Attr
+        (Attr.style "border-radius" (String.fromInt radius ++ "px"))
 
 
 {-| -}
@@ -107,13 +120,13 @@ roundEach :
     }
     -> Attribute msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
-    Two.Style Flag.borderRound
-        ("border-radius:"
-            ++ Style.quad (Style.px topLeft)
-                (Style.px topRight)
-                (Style.px bottomRight)
-                (Style.px bottomLeft)
-            ++ ";"
+    Two.Attr
+        (Attr.style "border-radius"
+            ((String.fromInt topLeft ++ "px ")
+                ++ (String.fromInt topRight ++ "px ")
+                ++ (String.fromInt bottomRight ++ "px ")
+                ++ (String.fromInt bottomLeft ++ "px")
+            )
         )
 
 
@@ -143,19 +156,22 @@ innerGlow clr size =
 
 
 {-| -}
-shadow :
-    { x : Float
-    , y : Float
-    , size : Float
-    , blur : Float
-    , color : Color
-    }
+shadows :
+    List
+        { x : Float
+        , y : Float
+        , size : Float
+        , blur : Float
+        , color : Color
+        }
     -> Attribute msg
-shadow shade =
-    Two.Style Flag.shadows
-        ("box-shadow:"
-            ++ Style.singleShadow shade
-            ++ ";"
+shadows shades =
+    Two.Attr
+        (Attr.style
+            "box-shadow"
+            (List.map Style.singleShadow shades
+                |> String.join ", "
+            )
         )
 
 
@@ -169,8 +185,44 @@ innerShadow :
     }
     -> Attribute msg
 innerShadow shade =
-    Two.Style Flag.shadows
-        ("box-shadow:"
-            ++ ("inset " ++ Style.singleShadow shade)
-            ++ ";"
+    Two.Attr
+        (Attr.style
+            "box-shadow"
+            ("inset " ++ Style.singleShadow shade)
         )
+
+
+{-| direction: 0 is up, 0.5 is down
+-}
+lights :
+    { elevation : Float
+    , lights :
+        List
+            { direction : Float
+            , elevation : Float
+            , hardness : Float
+            }
+    }
+    -> Attribute msg
+lights details =
+    Two.Attr
+        (Attr.style "box-shadow"
+            (List.map (renderLight details.elevation) details.lights
+                |> String.join ", "
+            )
+        )
+
+
+renderLight elevation light =
+    let
+        ( x, y ) =
+            fromPolar ( elevation, turns (0.25 + light.direction) )
+    in
+    Style.quad
+        (Style.floatPx x)
+        (Style.floatPx y)
+        -- blur
+        (Style.floatPx light.hardness)
+        -- size
+        -- (Style.floatPx (10 * light.elevation))
+        ("rgba(0,0,0," ++ String.fromFloat ((100 - elevation) / 500) ++ ")")

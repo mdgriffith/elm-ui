@@ -41,35 +41,50 @@ color (Style.Rgb red green blue) =
 -}
 image : String -> Attribute msg
 image src =
-    Two.Style Flag.bg ("background:url(\"" ++ src ++ "\") center / cover no-repeat;")
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / cover no-repeat")
+        )
 
 
 {-| A centered background image that keeps its natural proportions, but scales to fit the space.
 -}
 uncropped : String -> Attribute msg
 uncropped src =
-    Two.Style Flag.bg ("background:url(\"" ++ src ++ "\") center / contain no-repeat;")
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / contain no-repeat")
+        )
 
 
 {-| Tile an image in the x and y axes.
 -}
 tiled : String -> Attribute msg
 tiled src =
-    Two.Style Flag.bg ("background:url(\"" ++ src ++ "\") repeat;")
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / repeat")
+        )
 
 
 {-| Tile an image in the x axis.
 -}
 tiledX : String -> Attribute msg
 tiledX src =
-    Two.Style Flag.bg ("background:url(\"" ++ src ++ "\") repeat-x;")
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / repeat-x")
+        )
 
 
 {-| Tile an image in the y axis.
 -}
 tiledY : String -> Attribute msg
 tiledY src =
-    Two.Style Flag.bg ("background:url(\"" ++ src ++ "\") repeat-y;")
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / repeat-y")
+        )
 
 
 type Direction
@@ -125,13 +140,25 @@ gradient { angle, steps } =
         [] ->
             Two.NoAttribute
 
-        clr :: [] ->
-            Two.Style Flag.bgColor
-                ("background-color:" ++ Style.color clr ++ ";")
+        (Style.Rgb red green blue) :: [] ->
+            Two.Attr
+                (Attr.style "background-color"
+                    ("rgb("
+                        ++ String.fromInt red
+                        ++ ("," ++ String.fromInt green)
+                        ++ ("," ++ String.fromInt blue)
+                        ++ ")"
+                    )
+                )
 
         _ ->
-            Two.Style Flag.bgGradient <|
-                ("background-image:linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps) ++ ");")
+            Two.Attr
+                (Attr.style "background-image"
+                    ("linear-gradient("
+                        ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps)
+                        ++ ")"
+                    )
+                )
 
 
 

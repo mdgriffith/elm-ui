@@ -363,7 +363,8 @@ checkbox attrs { label, icon, checked, onChange } =
             , hiddenLabelAttribute2 label
             , Element2.centerY
             , Element2.height Element2.fill
-            , Element2.width Element2.shrink
+
+            -- TODO: SHOULD BE WIDTH SHRINK
             ]
             [ icon checked
             ]
@@ -1010,23 +1011,23 @@ redistributeOver2 input attr els =
             case input of
                 TextArea ->
                     let
-                        lineHeightStyle =
-                            Style.prop "height"
-                                ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
-                                ++ Style.prop "line-height"
-                                    ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
+                        height =
+                            Html.Attributes.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
 
                         lineHeight =
-                            Two.Style Flag2.lineHeight
-                                lineHeightStyle
+                            Html.Attributes.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
                     in
                     { els
                         | parent = attr :: els.parent
-                        , textAreaFiller = Html.Attributes.property "style" (Encode.string lineHeightStyle) :: els.textAreaFiller
+                        , textAreaFiller =
+                            lineHeight
+                                :: height
+                                :: els.textAreaFiller
                         , input =
                             Element2.moveUp
                                 (toFloat (floor (toFloat ySpace / 2)))
-                                :: lineHeight
+                                :: Two.Attr lineHeight
+                                :: Two.Attr height
                                 :: els.input
                         , textAreaWrapper = attr :: els.textAreaWrapper
                     }
@@ -1036,7 +1037,7 @@ redistributeOver2 input attr els =
                         | parent = attr :: els.parent
                     }
 
-        Two.Padding flag t r b l ->
+        Two.Padding flag pad ->
             case input of
                 TextArea ->
                     { els
@@ -1046,26 +1047,30 @@ redistributeOver2 input attr els =
 
                 TextInputNode _ ->
                     { els
-                        | inputParent = Two.Padding flag 0 0 0 0 :: els.inputParent
+                        | inputParent =
+                            Two.Padding flag Two.emptyEdges
+                                :: els.inputParent
                         , placeholder = attr :: els.placeholder
                         , input =
-                            Two.Style Flag2.height
-                                (Style.prop "height"
+                            Two.Attr
+                                (Html.Attributes.style "height"
                                     ("calc(1em + "
-                                        ++ String.fromInt (t + b)
+                                        ++ String.fromInt (pad.top + pad.bottom)
                                         ++ "px)"
                                     )
-                                    ++ Style.prop "line-height"
+                                )
+                                :: Two.Attr
+                                    (Html.Attributes.style "line-height"
                                         ("calc(1em + "
-                                            ++ String.fromInt (t + b)
+                                            ++ String.fromInt (pad.top + pad.bottom)
                                             ++ "px)"
                                         )
-                                )
+                                    )
                                 :: attr
                                 :: els.input
                     }
 
-        Two.BorderWidth _ _ _ _ _ ->
+        Two.BorderWidth _ _ ->
             { els
                 | inputParent = attr :: els.inputParent
             }
@@ -1083,6 +1088,18 @@ redistributeOver2 input attr els =
             { els | input = attr :: els.input }
 
         Two.Class _ _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.FontSize _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.Font _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.WidthFill _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.HeightFill _ ->
             { els | parent = attr :: els.parent }
 
         Two.Link _ _ ->
@@ -1105,12 +1122,6 @@ redistributeOver2 input attr els =
 
         Two.Scale _ ->
             { els | parent = attr :: els.parent }
-
-        Two.Style _ _ ->
-            { els
-                | parent = attr :: els.parent
-                , inputParent = attr :: els.inputParent
-            }
 
         Two.ClassAndStyle _ _ _ ->
             { els
@@ -1422,7 +1433,6 @@ defaultRadioOption optionLabel status =
     Element2.row
         [ Element2.spacing 10
         , Element2.alignLeft
-        , Element2.width Element2.shrink
         ]
         [ Element2.el
             [ Element2.width (Element2.px 14)
@@ -1615,7 +1625,7 @@ renderOption orientation input (Option val view) =
         [ Element2.pointer
         , case orientation of
             Row ->
-                Element2.width Element2.shrink
+                Two.NoAttribute
 
             Column ->
                 Element2.width Element2.fill
@@ -1738,7 +1748,8 @@ defaultTextBoxStyle2 =
     , Border2.width 1
     , Element2.spacing 5
     , Element2.width Element2.fill
-    , Element2.height Element2.shrink
+
+    -- TODO: SHOULD BE HEIGHT SHRINK
     ]
 
 

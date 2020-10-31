@@ -11,8 +11,6 @@ module Internal.Flag2 exposing
     , bgGradient
     , bgImage
     , borderColor
-    , borderRound
-    , borderStyle
     , borderWidth
     , centerX
     , centerY
@@ -34,7 +32,6 @@ module Internal.Flag2 exposing
     , heightFill
     , heightTextAreaContent
     , hover
-    , letterSpacing
     , lineHeight
     , merge
     , none
@@ -53,7 +50,6 @@ module Internal.Flag2 exposing
     , widthBetween
     , widthContent
     , widthFill
-    , wordSpacing
     , xAlign
     , yAlign
     )
@@ -212,10 +208,6 @@ bgGradient =
     flag 10
 
 
-borderStyle =
-    flag 11
-
-
 fontAlignment =
     flag 12
 
@@ -226,18 +218,6 @@ fontWeight =
 
 fontColor =
     flag 14
-
-
-wordSpacing =
-    flag 15
-
-
-letterSpacing =
-    flag 16
-
-
-borderRound =
-    flag 17
 
 
 txtShadows =

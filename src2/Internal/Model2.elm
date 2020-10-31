@@ -50,6 +50,18 @@ mapAttr fn attr =
         NoAttribute ->
             NoAttribute
 
+        WidthFill i ->
+            WidthFill i
+
+        HeightFill i ->
+            HeightFill i
+
+        Font a ->
+            Font a
+
+        FontSize i ->
+            FontSize i
+
         TranslateX x ->
             TranslateX x
 
@@ -90,10 +102,6 @@ mapAttr fn attr =
         Class flag cls ->
             Class flag cls
 
-        -- add to the style property
-        Style flag style ->
-            Style flag style
-
         -- When using a css variable we want to attach the variable itself
         -- and a class that implements the rule.
         --               class  var       value
@@ -115,6 +123,7 @@ type Layout
     | AsRoot
 
 
+class : String -> Attribute msg
 class cls =
     Attr (Attr.class cls)
 
@@ -125,6 +134,19 @@ type Attribute msg
     | Attr (Html.Attribute msg)
     | Link Bool String
     | Download String String
+    | WidthFill Int
+    | HeightFill Int
+    | Font
+        { family : String
+        , adjustments :
+            Maybe
+                { top : Float
+                , bottom : Float
+                }
+        , variants : String
+        , smallCaps : Bool
+        }
+    | FontSize Int
     | NodeName String
     | Spacing Flag Int Int
     | Padding Flag Edges
@@ -135,8 +157,6 @@ type Attribute msg
     | Scale Float
       -- invalidation key and literal class
     | Class Flag String
-      -- add to the style property
-    | Style Flag String
       -- When using a css variable we want to attach the variable itself
       -- and a class that implements the rule.
       --               class  var       value
@@ -158,9 +178,6 @@ hasFlag flag attr =
         Class f _ ->
             Flag.equal flag f
 
-        Style f _ ->
-            Flag.equal flag f
-
         ClassAndStyle f _ _ ->
             Flag.equal flag f
 
@@ -180,9 +197,6 @@ hasFlags flags attr =
             List.any (Flag.equal f) flags
 
         Class f _ ->
-            List.any (Flag.equal f) flags
-
-        Style f _ ->
             List.any (Flag.equal f) flags
 
         ClassAndStyle f _ _ ->
@@ -259,7 +273,6 @@ element layout attrs children =
         emptyDetails
         children
         Flag.none
-        ""
         []
         (contextClasses layout)
         NoNearbyChildren
@@ -282,6 +295,7 @@ emptyDetails =
     , spacingY = 0
     , padding = emptyEdges
     , borders = emptyEdges
+    , fontAdjustment = Nothing
     , x = 0
     , y = 0
     , rotate = 0
@@ -371,6 +385,7 @@ type alias Details =
     , spacingY : Int
     , padding : Edges
     , borders : Edges
+    , fontAdjustment : Maybe { top : Float, bottom : Float }
     , x : Float
     , y : Float
     , rotate : Float
@@ -399,13 +414,12 @@ render :
     -> Details
     -> List (Element msg)
     -> Flag.Field
-    -> String
     -> List (VirtualDom.Attribute msg)
     -> String
     -> NearbyChildren msg
     -> List (Attribute msg)
     -> Element msg
-render layout details children has styles htmlAttrs classes nearby attrs =
+render layout details children has htmlAttrs classes nearby attrs =
     case attrs of
         [] ->
             Element
@@ -478,19 +492,9 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                             else
                                 attrsWithSpacing
 
-                        attributesWithStyles =
-                            -- it's important that htmlAttrs comes after this, because if the user has set an
-                            -- `Html.Attributes.style` properties, they will be reset if they come before
-                            if String.isEmpty styles then
-                                attrsWithTransform
-
-                            else
-                                Attr.property "style" (Json.Encode.string styles)
-                                    :: attrsWithTransform
-
                         attributes =
                             Attr.class classes
-                                :: attributesWithStyles
+                                :: attrsWithTransform
 
                         finalChildren =
                             case layout of
@@ -540,7 +544,61 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 )
 
         NoAttribute :: remain ->
-            render layout details children has styles htmlAttrs classes nearby remain
+            render layout details children has htmlAttrs classes nearby remain
+
+        (FontSize size) :: remain ->
+            -- TODO:: apply font adjustment!!
+            render
+                layout
+                details
+                children
+                has
+                (Attr.style "font-size" (String.fromInt size ++ "px") :: htmlAttrs)
+                classes
+                nearby
+                remain
+
+        (Font font) :: remain ->
+            let
+                withSmallcaps =
+                    if font.smallCaps then
+                        Attr.style "font-variant-caps" "small-caps"
+                            :: htmlAttrs
+
+                    else
+                        htmlAttrs
+
+                withFeatures =
+                    if font.variants == "" then
+                        withSmallcaps
+
+                    else
+                        Attr.style "font-feature-settings" font.variants
+                            :: withSmallcaps
+            in
+            render
+                layout
+                { name = details.name
+                , node = details.node
+                , spacingX = details.spacingX
+                , spacingY = details.spacingY
+                , fontAdjustment =
+                    font.adjustments
+                , padding = details.padding
+                , borders = details.borders
+                , x = details.x
+                , y = details.y
+                , rotate = details.rotate
+                , scale = details.scale
+                }
+                children
+                has
+                (Attr.style "font-family" font.family
+                    :: withFeatures
+                )
+                classes
+                nearby
+                remain
 
         (TranslateX x) :: remain ->
             render
@@ -548,7 +606,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 { details | x = x }
                 children
                 (Flag.add Flag.transform has)
-                styles
                 htmlAttrs
                 classes
                 nearby
@@ -560,7 +617,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 { details | y = y }
                 children
                 (Flag.add Flag.transform has)
-                styles
                 htmlAttrs
                 classes
                 nearby
@@ -572,7 +628,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 { details | rotate = rad }
                 children
                 (Flag.add Flag.transform has)
-                styles
                 htmlAttrs
                 classes
                 nearby
@@ -584,7 +639,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 { details | scale = scale }
                 children
                 (Flag.add Flag.transform has)
-                styles
                 htmlAttrs
                 classes
                 nearby
@@ -596,7 +650,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 details
                 children
                 has
-                styles
                 (attr :: htmlAttrs)
                 classes
                 nearby
@@ -610,7 +663,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 details
                 children
                 has
-                styles
                 (Attr.style "tabindex" "0"
                     :: Events.onClick press
                     :: onKey "Enter" press
@@ -626,7 +678,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 { details | node = 1 }
                 children
                 has
-                styles
                 (Attr.href url
                     :: Attr.rel "noopener noreferrer"
                     :: Attr.target
@@ -648,7 +699,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 { details | node = 1 }
                 children
                 has
-                styles
                 (Attr.href url
                     :: Attr.download downloadName
                     :: htmlAttrs
@@ -660,10 +710,9 @@ render layout details children has styles htmlAttrs classes nearby attrs =
         (NodeName nodeName) :: remain ->
             render
                 layout
-                { details | name = nodeName }
+                { details | name = nodeName, node = 4 }
                 children
                 has
-                styles
                 htmlAttrs
                 classes
                 nearby
@@ -676,7 +725,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     details
                     children
                     has
-                    styles
                     htmlAttrs
                     classes
                     nearby
@@ -688,34 +736,8 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     details
                     children
                     (Flag.add flag has)
-                    styles
                     htmlAttrs
                     (str ++ " " ++ classes)
-                    nearby
-                    remain
-
-        (Style flag str) :: remain ->
-            if Flag.present flag has then
-                render
-                    layout
-                    details
-                    children
-                    has
-                    styles
-                    htmlAttrs
-                    classes
-                    nearby
-                    remain
-
-            else
-                render
-                    layout
-                    details
-                    children
-                    (Flag.add flag has)
-                    (str ++ styles)
-                    htmlAttrs
-                    classes
                     nearby
                     remain
 
@@ -726,7 +748,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     details
                     children
                     has
-                    styles
                     htmlAttrs
                     classes
                     nearby
@@ -737,7 +758,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     details
                     children
                     (Flag.add flag has)
-                    (sty ++ styles)
                     htmlAttrs
                     (cls ++ " " ++ classes)
                     nearby
@@ -749,7 +769,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                 details
                 children
                 has
-                styles
                 htmlAttrs
                 classes
                 (addNearbyElement location elem nearby)
@@ -762,7 +781,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     details
                     children
                     has
-                    styles
                     htmlAttrs
                     classes
                     nearby
@@ -774,7 +792,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     { details | spacingX = x, spacingY = y }
                     children
                     (Flag.add flag has)
-                    styles
                     htmlAttrs
                     (Style.classes.spacing ++ " " ++ classes)
                     nearby
@@ -787,7 +804,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     details
                     children
                     has
-                    styles
                     htmlAttrs
                     classes
                     nearby
@@ -800,6 +816,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     , node = details.node
                     , spacingX = details.spacingX
                     , spacingY = details.spacingY
+                    , fontAdjustment = details.fontAdjustment
                     , padding = padding
                     , borders = details.borders
                     , x = details.x
@@ -809,7 +826,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     }
                     children
                     (Flag.add flag has)
-                    styles
                     (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
                         Attr.style "padding"
                             (String.fromInt padding.top ++ "px")
@@ -835,7 +851,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     details
                     children
                     has
-                    styles
                     htmlAttrs
                     classes
                     nearby
@@ -848,6 +863,7 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     , node = details.node
                     , spacingX = details.spacingX
                     , spacingY = details.spacingY
+                    , fontAdjustment = details.fontAdjustment
                     , padding = details.padding
                     , borders = borders
                     , x = details.x
@@ -857,7 +873,6 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     }
                     children
                     (Flag.add flag has)
-                    styles
                     (if borders.top == borders.right && borders.top == borders.left && borders.top == borders.bottom then
                         Attr.style "border-width"
                             (String.fromInt borders.top ++ "px")
@@ -875,6 +890,28 @@ render layout details children has styles htmlAttrs classes nearby attrs =
                     classes
                     nearby
                     remain
+
+        (HeightFill i) :: remain ->
+            render
+                layout
+                details
+                children
+                has
+                htmlAttrs
+                classes
+                nearby
+                remain
+
+        (WidthFill i) :: remain ->
+            render
+                layout
+                details
+                children
+                has
+                htmlAttrs
+                classes
+                nearby
+                remain
 
 
 {-| -}
