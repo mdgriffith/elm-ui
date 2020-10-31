@@ -140,8 +140,8 @@ type Attribute msg
         { family : String
         , adjustments :
             Maybe
-                { top : Float
-                , bottom : Float
+                { top : Int
+                , bottom : Int
                 }
         , variants : String
         , smallCaps : Bool
@@ -295,7 +295,8 @@ emptyDetails =
     , spacingY = 0
     , padding = emptyEdges
     , borders = emptyEdges
-    , fontAdjustment = Nothing
+    , fontAdjustment = { top = 0, bottom = 0 }
+    , fontSize = -1
     , x = 0
     , y = 0
     , rotate = 0
@@ -385,7 +386,8 @@ type alias Details =
     , spacingY : Int
     , padding : Edges
     , borders : Edges
-    , fontAdjustment : Maybe { top : Float, bottom : Float }
+    , fontAdjustment : { top : Int, bottom : Int }
+    , fontSize : Int
     , x : Float
     , y : Float
     , rotate : Float
@@ -409,6 +411,30 @@ spacerBottom space =
         []
 
 
+
+{- Useful bitmasks -}
+
+
+ones : Int
+ones =
+    Bitwise.complement 0
+
+
+bitsSpacingY : Int
+bitsSpacingY =
+    Bitwise.shiftRightZfBy (32 - 10) ones
+
+
+bitsFontsTop : Int
+bitsFontsTop =
+    Bitwise.shiftRightZfBy (32 - 6) ones
+
+
+bitsFontsBottom : Int
+bitsFontsBottom =
+    Bitwise.shiftRightZfBy (32 - 5) ones
+
+
 render :
     Layout
     -> Details
@@ -430,9 +456,20 @@ render layout details children has htmlAttrs classes nearby attrs =
                                 0
 
                             else
-                                Bitwise.or
-                                    details.spacingX
-                                    (Bitwise.shiftLeftBy 16 details.spacingY)
+                                min 1023 details.spacingX
+                                    |> Bitwise.or
+                                        (Bitwise.shiftLeftBy 10 (min 1023 details.spacingY))
+                                    |> Bitwise.or
+                                        (Bitwise.shiftLeftBy 20 (min 63 details.fontAdjustment.top))
+                                    |> Bitwise.or
+                                        (Bitwise.shiftLeftBy 26 (min 31 details.fontAdjustment.bottom))
+                                    |> Bitwise.or
+                                        (if layout == AsRow then
+                                            Bitwise.shiftLeftBy 31 1
+
+                                         else
+                                            Bitwise.shiftLeftBy 31 0
+                                        )
 
                         renderedChildren =
                             case nearby of
@@ -454,13 +491,17 @@ render layout details children has htmlAttrs classes nearby attrs =
 
                             else
                                 Attr.style "margin"
-                                    ((Bitwise.complement 0
-                                        |> Bitwise.shiftRightZfBy 16
-                                        |> Bitwise.and parentEncoded
+                                    ((parentEncoded
+                                        |> Bitwise.shiftRightZfBy 10
+                                        |> Bitwise.and bitsSpacingY
                                         |> String.fromInt
                                      )
                                         ++ "px "
-                                        ++ String.fromInt (Bitwise.shiftRightZfBy 16 parentEncoded)
+                                        ++ String.fromInt
+                                            (ones
+                                                |> Bitwise.shiftRightZfBy 22
+                                                |> Bitwise.and parentEncoded
+                                            )
                                         ++ "px"
                                     )
                                     :: htmlAttrs
@@ -550,7 +591,21 @@ render layout details children has htmlAttrs classes nearby attrs =
             -- TODO:: apply font adjustment!!
             render
                 layout
-                details
+                { name = details.name
+                , node = details.node
+                , spacingX = details.spacingX
+                , spacingY = details.spacingY
+                , fontAdjustment =
+                    details.fontAdjustment
+                , fontSize =
+                    size
+                , padding = details.padding
+                , borders = details.borders
+                , x = details.x
+                , y = details.y
+                , rotate = details.rotate
+                , scale = details.scale
+                }
                 children
                 has
                 (Attr.style "font-size" (String.fromInt size ++ "px") :: htmlAttrs)
@@ -583,7 +638,9 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , spacingX = details.spacingX
                 , spacingY = details.spacingY
                 , fontAdjustment =
-                    font.adjustments
+                    Maybe.withDefault { top = 0, bottom = 0 } font.adjustments
+                , fontSize =
+                    details.fontSize
                 , padding = details.padding
                 , borders = details.borders
                 , x = details.x
@@ -817,6 +874,8 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , spacingX = details.spacingX
                     , spacingY = details.spacingY
                     , fontAdjustment = details.fontAdjustment
+                    , fontSize =
+                        details.fontSize
                     , padding = padding
                     , borders = details.borders
                     , x = details.x
@@ -864,6 +923,8 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , spacingX = details.spacingX
                     , spacingY = details.spacingY
                     , fontAdjustment = details.fontAdjustment
+                    , fontSize =
+                        details.fontSize
                     , padding = details.padding
                     , borders = borders
                     , x = details.x

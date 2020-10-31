@@ -236,8 +236,8 @@ with details =
                 { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
                 , adjustments =
                     Just
-                        { top = adjustment.capital
-                        , bottom = adjustment.baseline
+                        { top = round (adjustment.capital * 100)
+                        , bottom = round (adjustment.baseline * 100)
                         }
                 , variants =
                     renderVariants details.variants ""
