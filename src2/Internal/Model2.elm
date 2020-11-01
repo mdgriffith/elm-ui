@@ -420,6 +420,21 @@ ones =
     Bitwise.complement 0
 
 
+top10 : Int
+top10 =
+    Bitwise.shiftRightZfBy (32 - 10) ones
+
+
+top6 : Int
+top6 =
+    Bitwise.shiftRightZfBy (32 - 6) ones
+
+
+top5 : Int
+top5 =
+    Bitwise.shiftRightZfBy (32 - 5) ones
+
+
 bitsSpacingY : Int
 bitsSpacingY =
     Bitwise.shiftRightZfBy (32 - 10) ones
@@ -433,6 +448,16 @@ bitsFontsTop =
 bitsFontsBottom : Int
 bitsFontsBottom =
     Bitwise.shiftRightZfBy (32 - 5) ones
+
+
+rowBits : Int
+rowBits =
+    Bitwise.shiftLeftBy 31 1
+
+
+nonRowBits : Int
+nonRowBits =
+    Bitwise.shiftLeftBy 31 0
 
 
 render :
@@ -452,23 +477,34 @@ render layout details children has htmlAttrs classes nearby attrs =
                 (\parentEncoded ->
                     let
                         encoded =
-                            if details.spacingX == 0 && details.spacingY == 0 then
-                                0
+                            if
+                                (details.spacingX == 0)
+                                    && (details.spacingY == 0)
+                                    && (details.fontAdjustment.top == 0)
+                                    && (details.fontAdjustment.bottom == 0)
+                            then
+                                case layout of
+                                    AsRow ->
+                                        rowBits
+
+                                    _ ->
+                                        nonRowBits
 
                             else
-                                min 1023 details.spacingX
+                                Bitwise.and top10 details.spacingX
                                     |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 10 (min 1023 details.spacingY))
+                                        (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
                                     |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 20 (min 63 details.fontAdjustment.top))
+                                        (Bitwise.shiftLeftBy 20 (Bitwise.and top6 details.fontAdjustment.top))
                                     |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 26 (min 31 details.fontAdjustment.bottom))
+                                        (Bitwise.shiftLeftBy 26 (Bitwise.and top5 details.fontAdjustment.bottom))
                                     |> Bitwise.or
-                                        (if layout == AsRow then
-                                            Bitwise.shiftLeftBy 31 1
+                                        (case layout of
+                                            AsRow ->
+                                                rowBits
 
-                                         else
-                                            Bitwise.shiftLeftBy 31 0
+                                            _ ->
+                                                nonRowBits
                                         )
 
                         renderedChildren =
