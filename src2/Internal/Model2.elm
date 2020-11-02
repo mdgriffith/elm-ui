@@ -140,8 +140,8 @@ type Attribute msg
         { family : String
         , adjustments :
             Maybe
-                { top : Int
-                , bottom : Int
+                { offset : Int
+                , height : Int
                 }
         , variants : String
         , smallCaps : Bool
@@ -295,7 +295,10 @@ emptyDetails =
     , spacingY = 0
     , padding = emptyEdges
     , borders = emptyEdges
-    , fontAdjustment = { top = 0, bottom = 0 }
+    , heightFill = 0
+    , widthFill = 0
+    , fontOffset = 0
+    , fontHeight = 63
     , fontSize = -1
     , x = 0
     , y = 0
@@ -335,8 +338,79 @@ wrapText s el =
 text : String -> Element msg
 text str =
     Element
-        (\space ->
-            Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+        (\encoded ->
+            -- if encoded == 0 then
+            --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+            -- else
+            let
+                height =
+                    encoded
+                        |> Bitwise.shiftRightZfBy 20
+                        |> Bitwise.and bitsFontHeight
+                        |> toFloat
+
+                offset =
+                    encoded
+                        |> Bitwise.shiftRightZfBy 26
+                        |> Bitwise.and bitsFontOffset
+                        |> toFloat
+
+                spacingY =
+                    encoded
+                        |> Bitwise.shiftRightZfBy 10
+                        |> Bitwise.and bitsSpacingY
+
+                spacingX =
+                    ones
+                        |> Bitwise.shiftRightZfBy 22
+                        |> Bitwise.and encoded
+
+                attrs =
+                    [ Attr.class textElementClasses
+                    ]
+
+                attrsWithParentSpacing =
+                    if height == 63 && offset == 0 then
+                        Attr.style "margin"
+                            (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
+                            :: attrs
+
+                    else
+                        let
+                            _ =
+                                Debug.log "sacing" ( spacingX, spacingY, offset / 31 )
+
+                            _ =
+                                Debug.log "bottom"
+                                    ((1 - (height / 63)) - (offset / 31))
+
+                            top =
+                                "calc(-"
+                                    ++ String.fromFloat ((offset / 31) + 0.25)
+                                    ++ "em) "
+
+                            bottom =
+                                "calc(-0.25em - "
+                                    ++ String.fromFloat ((1 - (height / 63)) - (offset / 31))
+                                    ++ "em) "
+
+                            margin =
+                                top
+                                    ++ (String.fromInt spacingX ++ "px ")
+                                    ++ bottom
+                                    ++ (String.fromInt spacingX ++ "px")
+
+                            _ =
+                                Debug.log "margin" margin
+                        in
+                        Attr.style "margin"
+                            margin
+                            :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
+                            :: attrs
+            in
+            Html.span
+                attrsWithParentSpacing
+                [ Html.text str ]
         )
 
 
@@ -386,7 +460,10 @@ type alias Details =
     , spacingY : Int
     , padding : Edges
     , borders : Edges
-    , fontAdjustment : { top : Int, bottom : Int }
+    , heightFill : Int
+    , widthFill : Int
+    , fontOffset : Int
+    , fontHeight : Int
     , fontSize : Int
     , x : Float
     , y : Float
@@ -440,14 +517,20 @@ bitsSpacingY =
     Bitwise.shiftRightZfBy (32 - 10) ones
 
 
-bitsFontsTop : Int
-bitsFontsTop =
+bitsFontHeight : Int
+bitsFontHeight =
     Bitwise.shiftRightZfBy (32 - 6) ones
 
 
-bitsFontsBottom : Int
-bitsFontsBottom =
+bitsFontOffset : Int
+bitsFontOffset =
     Bitwise.shiftRightZfBy (32 - 5) ones
+
+
+bitsFontAdjustments : Int
+bitsFontAdjustments =
+    Bitwise.shiftRightZfBy (32 - 11) ones
+        |> Bitwise.shiftLeftBy 20
 
 
 rowBits : Int
@@ -480,24 +563,44 @@ render layout details children has htmlAttrs classes nearby attrs =
                             if
                                 (details.spacingX == 0)
                                     && (details.spacingY == 0)
-                                    && (details.fontAdjustment.top == 0)
-                                    && (details.fontAdjustment.bottom == 0)
+                                    && (details.fontOffset == 0)
+                                    && (details.fontHeight == 63)
                             then
                                 case layout of
                                     AsRow ->
-                                        rowBits
+                                        Bitwise.and bitsFontAdjustments parentEncoded
+                                            |> Bitwise.or rowBits
 
                                     _ ->
-                                        nonRowBits
+                                        Bitwise.and bitsFontAdjustments parentEncoded
+                                            |> Bitwise.or nonRowBits
 
-                            else
+                            else if Flag.present Flag.fontAdjustment has then
+                                -- font adjustment is present on this element, encode it
                                 Bitwise.and top10 details.spacingX
                                     |> Bitwise.or
                                         (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
                                     |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 20 (Bitwise.and top6 details.fontAdjustment.top))
+                                        (Bitwise.shiftLeftBy 20 (Bitwise.and top6 details.fontHeight))
                                     |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 26 (Bitwise.and top5 details.fontAdjustment.bottom))
+                                        (Bitwise.shiftLeftBy 26 (Bitwise.and top5 details.fontOffset))
+                                    |> Bitwise.or
+                                        (case layout of
+                                            AsRow ->
+                                                rowBits
+
+                                            _ ->
+                                                nonRowBits
+                                        )
+
+                            else
+                                -- font adjustment is NOT present on this element
+                                -- propagate existing font adjustments
+                                Bitwise.and bitsFontAdjustments parentEncoded
+                                    |> Bitwise.or
+                                        (Bitwise.and top10 details.spacingX)
+                                    |> Bitwise.or
+                                        (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
                                     |> Bitwise.or
                                         (case layout of
                                             AsRow ->
@@ -569,9 +672,97 @@ render layout details children has htmlAttrs classes nearby attrs =
                             else
                                 attrsWithSpacing
 
+                        adjustmentNotSet =
+                            details.fontOffset == 0 && details.fontHeight == 63
+
+                        {-
+                           no fontsize or adjustment -> skip
+                           if fontsize is set, not adjustment:
+                               -> set fontsize px
+
+                           adjsutment, not fontsize
+                               -> set font size (em
+                           if both are set
+                               -> fontsize px
+
+
+                        -}
+                        attrsWithFontSize =
+                            if details.fontSize == -1 && adjustmentNotSet then
+                                -- no fontsize or adjustment set
+                                attrsWithTransform
+
+                            else if adjustmentNotSet then
+                                -- font size is set, not adjustment
+                                -- set font size, adjust via inherited value
+                                let
+                                    height =
+                                        parentEncoded
+                                            |> Bitwise.shiftRightZfBy 20
+                                            |> Bitwise.and bitsFontHeight
+                                in
+                                Attr.style "font-size"
+                                    (String.fromFloat
+                                        (toFloat details.fontSize * (1 / (toFloat height / 63)))
+                                        ++ "px"
+                                    )
+                                    :: attrsWithTransform
+
+                            else if details.fontSize /= -1 then
+                                -- a font size is set as well as an adjustment
+                                -- set font size from details
+                                Attr.style "font-size"
+                                    (String.fromFloat
+                                        (toFloat details.fontSize * (1 / (toFloat details.fontHeight / 63)))
+                                        ++ "px"
+                                    )
+                                    :: attrsWithTransform
+
+                            else
+                                -- a font size is NOT set, but we have an adjustment
+                                -- operate on `em`
+                                Attr.style "font-size"
+                                    (String.fromFloat
+                                        (1 / (toFloat details.fontHeight / 63))
+                                        ++ "em"
+                                    )
+                                    :: attrsWithTransform
+
+                        attrsWithWidth =
+                            if details.widthFill == 0 then
+                                attrsWithFontSize
+
+                            else if Bitwise.and rowBits parentEncoded == 0 then
+                                -- we're within a row, our flex-grow can be set
+                                Attr.class Style.classes.widthFill
+                                    :: Attr.style "flex-grow" (String.fromInt (details.widthFill * 100000))
+                                    :: attrsWithFontSize
+
+                            else
+                                Attr.class Style.classes.widthFill
+                                    :: attrsWithFontSize
+
+                        attrsWithHeight =
+                            if details.heightFill == 0 then
+                                attrsWithWidth
+
+                            else if details.heightFill == 1 then
+                                Attr.class Style.classes.heightFill
+                                    :: attrsWithWidth
+
+                            else if Bitwise.and rowBits parentEncoded /= 0 then
+                                -- we're within a column, our flex-grow can be set safely
+                                Attr.class Style.classes.heightFill
+                                    :: Attr.style "flex-grow" (String.fromInt (details.widthFill * 100000))
+                                    :: attrsWithFontSize
+
+                            else
+                                Attr.class Style.classes.heightFill
+                                    :: attrsWithWidth
+
                         attributes =
                             Attr.class classes
-                                :: attrsWithTransform
+                                :: attrsWithHeight
 
                         finalChildren =
                             case layout of
@@ -584,8 +775,8 @@ render layout details children has htmlAttrs classes nearby attrs =
                                     renderedChildren
                     in
                     if details.node == 0 then
-                        -- calling this function directly is somehow faster
-                        -- probably easier for the JIT to guess what's happening
+                        -- Note: these functions are ever so slightly faster than `Html.node`
+                        -- because they can skip elm's built in security check for `script`
                         Html.div
                             attributes
                             finalChildren
@@ -601,21 +792,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                             finalChildren
 
                     else
-                        (case details.name of
-                            -- Note: these functions are ever so slightly faster than `Html.node`
-                            -- because they can skip elm's built in security check for `script`
-                            "div" ->
-                                Html.div
-
-                            "input" ->
-                                Html.input
-
-                            "a" ->
-                                Html.a
-
-                            _ ->
-                                Html.node details.name
-                        )
+                        Html.node details.name
                             attributes
                             finalChildren
                 )
@@ -624,17 +801,19 @@ render layout details children has htmlAttrs classes nearby attrs =
             render layout details children has htmlAttrs classes nearby remain
 
         (FontSize size) :: remain ->
-            -- TODO:: apply font adjustment!!
             render
                 layout
                 { name = details.name
                 , node = details.node
                 , spacingX = details.spacingX
                 , spacingY = details.spacingY
-                , fontAdjustment =
-                    details.fontAdjustment
+                , fontOffset = details.fontOffset
+                , fontHeight =
+                    details.fontHeight
                 , fontSize =
                     size
+                , heightFill = details.heightFill
+                , widthFill = details.widthFill
                 , padding = details.padding
                 , borders = details.borders
                 , x = details.x
@@ -644,7 +823,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 }
                 children
                 has
-                (Attr.style "font-size" (String.fromInt size ++ "px") :: htmlAttrs)
+                htmlAttrs
                 classes
                 nearby
                 remain
@@ -673,10 +852,24 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , node = details.node
                 , spacingX = details.spacingX
                 , spacingY = details.spacingY
-                , fontAdjustment =
-                    Maybe.withDefault { top = 0, bottom = 0 } font.adjustments
+                , fontOffset =
+                    case font.adjustments of
+                        Nothing ->
+                            details.fontOffset
+
+                        Just adj ->
+                            adj.offset
+                , fontHeight =
+                    case font.adjustments of
+                        Nothing ->
+                            details.fontHeight
+
+                        Just adj ->
+                            adj.height
                 , fontSize =
                     details.fontSize
+                , heightFill = details.heightFill
+                , widthFill = details.widthFill
                 , padding = details.padding
                 , borders = details.borders
                 , x = details.x
@@ -685,7 +878,13 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , scale = details.scale
                 }
                 children
-                has
+                (case font.adjustments of
+                    Nothing ->
+                        has
+
+                    Just _ ->
+                        Flag.add Flag.fontAdjustment has
+                )
                 (Attr.style "font-family" font.family
                     :: withFeatures
                 )
@@ -909,9 +1108,12 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , node = details.node
                     , spacingX = details.spacingX
                     , spacingY = details.spacingY
-                    , fontAdjustment = details.fontAdjustment
-                    , fontSize =
-                        details.fontSize
+                    , fontSize = details.fontSize
+                    , fontOffset = details.fontOffset
+                    , fontHeight =
+                        details.fontHeight
+                    , heightFill = details.heightFill
+                    , widthFill = details.widthFill
                     , padding = padding
                     , borders = details.borders
                     , x = details.x
@@ -958,9 +1160,13 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , node = details.node
                     , spacingX = details.spacingX
                     , spacingY = details.spacingY
-                    , fontAdjustment = details.fontAdjustment
+                    , fontOffset = details.fontOffset
+                    , fontHeight =
+                        details.fontHeight
                     , fontSize =
                         details.fontSize
+                    , heightFill = details.heightFill
+                    , widthFill = details.widthFill
                     , padding = details.padding
                     , borders = borders
                     , x = details.x

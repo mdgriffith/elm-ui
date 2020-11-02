@@ -518,7 +518,12 @@ baseSheet =
         , Prop "min-height" "100%"
         , Prop "z-index" "0"
         , Prop "line-height" "1"
-        , SetVariable vars.fontSizeFactor "1"
+        
+        -- defaults
+        , Prop "font-size" "16px"
+        , Prop "font-family" "\"Open Sans\", sans-serif"
+        , Prop "color" "#000"
+      
 
         -- basics for EB Garamond
         --font-size-factor: 1.4184397163120566;
@@ -526,10 +531,7 @@ baseSheet =
         --vacuum-bottom: -0.24851250000000005;
         --visible-top: 0;
         --visible-bottom: 0.29000000000000004;
-        , SetVariable vars.vacuumTop "0.0"
-        , SetVariable vars.vacuumBottom "0.0"
-        , SetVariable vars.visibleTop "0.2"
-        , SetVariable vars.visibleBottom "0.2"
+        
         , Descriptor
             (dot classes.any
                 -- ++ dot classes.single
@@ -818,11 +820,11 @@ baseSheet =
             Prop "display" "inline-block"
             , Prop "width" "100%"
             , Prop "overflow" "hidden"
-            , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
-            , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-bottom) - var(--visible-bottom)) ))"
-            , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
-            , Prop "padding-top" "calc(var(--visible-top) * (1em/var(--font-size-factor)))"
-            , Prop "padding-bottom" "calc(var(--visible-bottom) * (1em/var(--font-size-factor)))"
+            -- , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
+            -- , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-bottom) - var(--visible-bottom)) ))"
+            -- , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
+            -- , Prop "padding-top" "calc(var(--visible-top) * (1em/var(--font-size-factor)))"
+            -- , Prop "padding-bottom" "calc(var(--visible-bottom) * (1em/var(--font-size-factor)))"
             ]
         , Descriptor (dot classes.single)
             elDescription

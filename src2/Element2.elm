@@ -362,11 +362,7 @@ layout : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 layout attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
-            (Two.Attr (Attr.style "font-size" (String.fromInt 16 ++ "px"))
-                :: Two.Attr (Attr.style "font-family" "\"Open Sans\", sans-serif")
-                :: Two.Attr (Attr.style "color" "#000")
-                :: attrs
-            )
+            attrs
             [ Two.Element styleNode
             , content
             ]
@@ -381,11 +377,7 @@ embed : List (Two.Attribute msg) -> Two.Element msg -> Html msg
 embed attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
-            (Two.Attr (Attr.style "font-size" (String.fromInt 16 ++ "px"))
-                :: Two.Attr (Attr.style "font-family" "\"Open Sans\", sans-serif")
-                :: Two.Attr (Attr.style "color" "#000")
-                :: attrs
-            )
+            attrs
             [ content
             ]
 
@@ -393,28 +385,13 @@ embed attrs content =
 {-| -}
 layoutWith : { options : List Option } -> List (Two.Attribute msg) -> Two.Element msg -> Html msg
 layoutWith { options } attrs content =
-    -- Internal.renderRoot options
-    --     (Internal.htmlClass
-    --         (String.join " "
-    --             [ classes.root
-    --             , classes.any
-    --             , classes.single
-    --             ]
-    --         )
-    --         :: (Internal.rootStyle ++ attrs)
-    --     )
-    --     child
     Two.unwrap Two.zero <|
         rootNode options attrs content
 
 
 rootNode options attrs content =
     Two.element Two.AsRoot
-        (Two.Attr (Attr.style "font-size" (String.fromInt 16 ++ "px"))
-            :: Two.Attr (Attr.style "font-family" "\"Open Sans\", sans-serif")
-            :: Two.Attr (Attr.style "color" "#000")
-            :: attrs
-        )
+        attrs
         [ Two.Element styleNode
         , content
         ]

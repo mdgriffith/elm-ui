@@ -18,6 +18,7 @@ module Internal.Flag2 exposing
     , equal
     , flag
     , focus
+    , fontAdjustment
     , fontAlignment
     , fontColor
     , fontFamily
@@ -218,6 +219,10 @@ fontWeight =
 
 fontColor =
     flag 14
+
+
+fontAdjustment =
+    flag 15
 
 
 txtShadows =

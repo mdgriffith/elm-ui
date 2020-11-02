@@ -65,6 +65,7 @@ module Element2.Font exposing
 
 -}
 
+import Bitwise
 import Element2 exposing (Attribute, Color)
 import Html.Attributes as Attr
 import Internal.Flag2 as Flag
@@ -171,10 +172,8 @@ typeface =
 
 {-| -}
 type alias Adjustment =
-    { capital : Float
-    , lowercase : Float
-    , baseline : Float
-    , descender : Float
+    { offset : Float
+    , height : Float
     }
 
 
@@ -236,8 +235,8 @@ with details =
                 { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
                 , adjustments =
                     Just
-                        { top = round (adjustment.capital * 100)
-                        , bottom = round (adjustment.baseline * 100)
+                        { offset = Bitwise.and Two.top5 (round (adjustment.offset * 31))
+                        , height = Bitwise.and Two.top6 (round (adjustment.height * 63))
                         }
                 , variants =
                     renderVariants details.variants ""
@@ -286,128 +285,6 @@ renderVariants variants str =
 
         (VariantIndexed name index) :: remain ->
             renderVariants remain (withComma ++ "\"" ++ name ++ "\" " ++ String.fromInt index)
-
-
-
--- fontAdjusted
-{-
-     We need to set an adjustment of `line-height`, `vertical-align` and `font-size`
-
-
-
-         <text> ->
-             line-height: 1
-             vertical-align: default;
-             font-size: inherited;
-
-     --
-         <p> ->
-             line-height: 1 + 5px;
-             vertical-align: default;
-             font-size: inherited;
-
-     Vertical align and line-height are likely fine.
-         -> Ensure that line-height is set once at the root.
-         -> not overwritten on every element.
-
-     Font size, we need to communicate a factor down the heirarchy and then do `calc(factor * desiredFontSize)`
-
-         -- if we required `Font.familyWith` at the root, then we could use `rem` behind the scenes as the factor and do `calc(1rem * 10px)`
-
-         -- or we can just use a css variable.
-
-
-
-
-   IN order to adjust things correctly, we need to set these values on the `text` element.
-
-          margin-top: -7px;
-          margin-bottom: -14px;
-          overflow: hidden;
-          padding-top: 5px;
-          padding-bottom: 8px;
-
-
-
-      line-height: 0.497025
-      size-factor: 1.4184397163120566
-
-      32px
-          -> 45.376 (actual font size)
-          -> 15.9 (new line height)
-
-
-
-      For each text element,
-
-
--}
-
-
-convertAdjustment : Adjustment -> String
-convertAdjustment adjustment =
-    let
-        lineHeight =
-            1.5
-
-        base =
-            lineHeight
-
-        normalDescender =
-            (lineHeight - 1)
-                / 2
-
-        oldMiddle =
-            lineHeight / 2
-
-        newCapitalMiddle =
-            ((ascender - newBaseline) / 2) + newBaseline
-
-        newFullMiddle =
-            ((ascender - descender) / 2) + descender
-
-        lines =
-            [ adjustment.capital
-            , adjustment.baseline
-            , adjustment.descender
-            , adjustment.lowercase
-            ]
-
-        ascender =
-            Maybe.withDefault adjustment.capital (List.maximum lines)
-
-        descender =
-            Maybe.withDefault adjustment.descender (List.minimum lines)
-
-        newBaseline =
-            lines
-                |> List.filter (\x -> x /= descender)
-                |> List.minimum
-                |> Maybe.withDefault adjustment.baseline
-
-        capitalVertical =
-            1 - ascender
-
-        capitalSize =
-            1 / (ascender - newBaseline)
-
-        vacuumTop =
-            ((ascender - newBaseline) / capitalSize) / -2
-
-        vacuumBottom =
-            vacuumTop
-
-        visibleTop =
-            ascender - adjustment.capital
-
-        visibleBottom =
-            newBaseline - descender
-    in
-    ("--font-size-factor: " ++ String.fromFloat capitalSize ++ ";")
-        ++ ("--vacuum-top: " ++ String.fromFloat vacuumTop ++ ";")
-        ++ ("--vacuum-bottom: " ++ String.fromFloat vacuumBottom ++ ";")
-        ++ ("--visible-top: " ++ String.fromFloat visibleTop ++ ";")
-        ++ ("--visible-bottom: " ++ String.fromFloat visibleBottom ++ ";")
 
 
 {-| Font sizes are always given as `px`.
