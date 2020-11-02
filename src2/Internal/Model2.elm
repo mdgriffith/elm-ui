@@ -339,78 +339,68 @@ text : String -> Element msg
 text str =
     Element
         (\encoded ->
-            -- if encoded == 0 then
-            --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
-            -- else
-            let
-                height =
-                    encoded
-                        |> Bitwise.shiftRightZfBy 20
-                        |> Bitwise.and bitsFontHeight
-                        |> toFloat
+            if encoded - defaultRowBits == 0 || encoded - defaultColBits == 0 then
+                Html.span [ Attr.class textElementClasses ] [ Html.text str ]
 
-                offset =
-                    encoded
-                        |> Bitwise.shiftRightZfBy 26
-                        |> Bitwise.and bitsFontOffset
-                        |> toFloat
+            else
+                let
+                    height =
+                        encoded
+                            |> Bitwise.shiftRightZfBy 20
+                            |> Bitwise.and bitsFontHeight
+                            |> toFloat
 
-                spacingY =
-                    encoded
-                        |> Bitwise.shiftRightZfBy 10
-                        |> Bitwise.and bitsSpacingY
+                    offset =
+                        encoded
+                            |> Bitwise.shiftRightZfBy 26
+                            |> Bitwise.and bitsFontOffset
+                            |> toFloat
 
-                spacingX =
-                    ones
-                        |> Bitwise.shiftRightZfBy 22
-                        |> Bitwise.and encoded
+                    spacingY =
+                        encoded
+                            |> Bitwise.shiftRightZfBy 10
+                            |> Bitwise.and bitsSpacingY
 
-                attrs =
-                    [ Attr.class textElementClasses
-                    ]
+                    spacingX =
+                        ones
+                            |> Bitwise.shiftRightZfBy 22
+                            |> Bitwise.and encoded
 
-                attrsWithParentSpacing =
-                    if height == 63 && offset == 0 then
-                        Attr.style "margin"
-                            (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
-                            :: attrs
+                    attrs =
+                        [ Attr.class textElementClasses
+                        ]
 
-                    else
-                        let
-                            _ =
-                                Debug.log "sacing" ( spacingX, spacingY, offset / 31 )
+                    attrsWithParentSpacing =
+                        if height == 63 && offset == 0 then
+                            Attr.style "margin"
+                                (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
+                                :: attrs
 
-                            _ =
-                                Debug.log "bottom"
-                                    ((1 - (height / 63)) - (offset / 31))
+                        else
+                            let
+                                -- This doesn't totally make sense to me, but it works :/
+                                -- I thought that the top margin should have a smaller negative margin than the bottom
+                                -- however it seems evenly distributing the empty space works out.
+                                topVal =
+                                    offset / 31
 
-                            top =
-                                "calc(-"
-                                    ++ String.fromFloat ((offset / 31) + 0.25)
-                                    ++ "em) "
+                                bottomVal =
+                                    (1 - (height / 63)) - (offset / 31)
 
-                            bottom =
-                                "calc(-0.25em - "
-                                    ++ String.fromFloat ((1 - (height / 63)) - (offset / 31))
-                                    ++ "em) "
+                                even =
+                                    (topVal + bottomVal) / 2
 
-                            margin =
-                                top
-                                    ++ (String.fromInt spacingX ++ "px ")
-                                    ++ bottom
-                                    ++ (String.fromInt spacingX ++ "px")
-
-                            _ =
-                                Debug.log "margin" margin
-                        in
-                        Attr.style "margin"
-                            margin
-                            :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
-                            :: attrs
-            in
-            Html.span
-                attrsWithParentSpacing
-                [ Html.text str ]
+                                margin =
+                                    "-" ++ String.fromFloat (even + 0.25) ++ "em " ++ (String.fromInt spacingX ++ "px ")
+                            in
+                            Attr.style "margin"
+                                margin
+                                :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
+                                :: attrs
+                in
+                Html.span
+                    attrsWithParentSpacing
+                    [ Html.text str ]
         )
 
 
@@ -531,6 +521,32 @@ bitsFontAdjustments : Int
 bitsFontAdjustments =
     Bitwise.shiftRightZfBy (32 - 11) ones
         |> Bitwise.shiftLeftBy 20
+
+
+defaultRowBits : Int
+defaultRowBits =
+    Bitwise.and top10 emptyDetails.spacingX
+        |> Bitwise.or
+            (Bitwise.shiftLeftBy 10 (Bitwise.and top10 emptyDetails.spacingY))
+        |> Bitwise.or
+            (Bitwise.shiftLeftBy 20 (Bitwise.and top6 emptyDetails.fontHeight))
+        |> Bitwise.or
+            (Bitwise.shiftLeftBy 26 (Bitwise.and top5 emptyDetails.fontOffset))
+        |> Bitwise.or
+            rowBits
+
+
+defaultColBits : Int
+defaultColBits =
+    Bitwise.and top10 emptyDetails.spacingX
+        |> Bitwise.or
+            (Bitwise.shiftLeftBy 10 (Bitwise.and top10 emptyDetails.spacingY))
+        |> Bitwise.or
+            (Bitwise.shiftLeftBy 20 (Bitwise.and top6 emptyDetails.fontHeight))
+        |> Bitwise.or
+            (Bitwise.shiftLeftBy 26 (Bitwise.and top5 emptyDetails.fontOffset))
+        |> Bitwise.or
+            nonRowBits
 
 
 rowBits : Int
