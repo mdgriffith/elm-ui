@@ -567,9 +567,10 @@ gradient :
     }
     -> Attribute msg
 gradient details =
-    Two.ClassAndStyle Flag.fontColor
-        Style.classes.textGradient
-        ("--text-gradient:linear-gradient(" ++ renderGradient (details.angle + (0.5 * pi)) details.steps ++ ");")
+    -- Two.ClassAndStyle Flag.fontColor
+    --     Style.classes.textGradient
+    --     ("--text-gradient:linear-gradient(" ++ renderGradient (details.angle + (0.5 * pi)) details.steps ++ ");")
+    Two.NoAttribute
 
 
 renderGradient : Float -> List Color -> String

@@ -1063,7 +1063,8 @@ width len =
         Px x ->
             Two.ClassAndStyle Flag.width
                 Style.classes.widthExact
-                (Style.prop "width" (Style.px x))
+                "width"
+                (Style.px x)
 
         Content ->
             Two.Class Flag.width Style.classes.widthContent
@@ -1075,25 +1076,38 @@ width len =
 {-| -}
 widthMin : Int -> Two.Attribute msg
 widthMin x =
-    Two.Attr (Attr.style "min-width" (String.fromInt x ++ "px"))
+    Two.ClassAndStyle Flag.widthBetween
+        Style.classes.widthBounded
+        "min-width"
+        (String.fromInt x ++ "px")
 
 
 {-| -}
 widthMax : Int -> Two.Attribute msg
 widthMax x =
-    Two.Attr (Attr.style "max-width" (String.fromInt x ++ "px"))
+    -- Two.Attr (Attr.style "max-width" (String.fromInt x ++ "px"))
+    Two.ClassAndStyle Flag.widthBetween
+        Style.classes.widthBounded
+        "max-width"
+        (String.fromInt x ++ "px")
 
 
 {-| -}
 heightMin : Int -> Two.Attribute msg
 heightMin x =
-    Two.Attr (Attr.style "min-height" (String.fromInt x ++ "px"))
+    Two.ClassAndStyle Flag.heightBetween
+        Style.classes.heightBounded
+        "min-height"
+        (String.fromInt x ++ "px;")
 
 
 {-| -}
 heightMax : Int -> Two.Attribute msg
 heightMax x =
-    Two.Attr (Attr.style "max-height" (String.fromInt x ++ "px"))
+    Two.ClassAndStyle Flag.heightBetween
+        Style.classes.heightBounded
+        "max-height"
+        (String.fromInt x ++ "px")
 
 
 {-| -}
@@ -1103,7 +1117,8 @@ height len =
         Px x ->
             Two.ClassAndStyle Flag.height
                 Style.classes.heightExact
-                ("height:" ++ String.fromInt x ++ "px;")
+                "height"
+                (String.fromInt x ++ "px")
 
         Content ->
             Two.Class Flag.height Style.classes.heightContent

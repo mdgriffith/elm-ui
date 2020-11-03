@@ -1085,7 +1085,9 @@ redistributeOver2 input attr els =
             { els | input = attr :: els.input }
 
         Two.Attr a ->
-            { els | input = attr :: els.input }
+            { els
+                | input = attr :: els.input
+            }
 
         Two.Class _ _ ->
             { els | parent = attr :: els.parent }
@@ -1097,10 +1099,14 @@ redistributeOver2 input attr els =
             { els | parent = attr :: els.parent }
 
         Two.WidthFill _ ->
-            { els | parent = attr :: els.parent }
+            { els
+                | parent = attr :: els.parent
+            }
 
         Two.HeightFill _ ->
-            { els | parent = attr :: els.parent }
+            { els
+                | parent = attr :: els.parent
+            }
 
         Two.Link _ _ ->
             els
@@ -1123,7 +1129,7 @@ redistributeOver2 input attr els =
         Two.Scale _ ->
             { els | parent = attr :: els.parent }
 
-        Two.ClassAndStyle _ _ _ ->
+        Two.ClassAndStyle _ _ _ _ ->
             { els
                 | parent = attr :: els.parent
                 , inputParent = attr :: els.inputParent

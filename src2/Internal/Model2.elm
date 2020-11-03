@@ -105,8 +105,8 @@ mapAttr fn attr =
         -- When using a css variable we want to attach the variable itself
         -- and a class that implements the rule.
         --               class  var       value
-        ClassAndStyle flag cls var ->
-            ClassAndStyle flag cls var
+        ClassAndStyle flag cls name val ->
+            ClassAndStyle flag cls name val
 
         Nearby loc el ->
             Nearby loc (map fn el)
@@ -159,8 +159,8 @@ type Attribute msg
     | Class Flag String
       -- When using a css variable we want to attach the variable itself
       -- and a class that implements the rule.
-      --               class  var       value
-    | ClassAndStyle Flag String String
+      --                 class  var    value
+    | ClassAndStyle Flag String String String
     | Nearby Location (Element msg)
 
 
@@ -178,7 +178,7 @@ hasFlag flag attr =
         Class f _ ->
             Flag.equal flag f
 
-        ClassAndStyle f _ _ ->
+        ClassAndStyle f _ _ _ ->
             Flag.equal flag f
 
         _ ->
@@ -199,7 +199,7 @@ hasFlags flags attr =
         Class f _ ->
             List.any (Flag.equal f) flags
 
-        ClassAndStyle f _ _ ->
+        ClassAndStyle f _ _ _ ->
             List.any (Flag.equal f) flags
 
         _ ->
@@ -748,7 +748,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                             if details.widthFill == 0 then
                                 attrsWithFontSize
 
-                            else if Bitwise.and rowBits parentEncoded == 0 then
+                            else if Bitwise.and rowBits parentEncoded /= 0 then
                                 -- we're within a row, our flex-grow can be set
                                 Attr.class Style.classes.widthFill
                                     :: Attr.style "flex-grow" (String.fromInt (details.widthFill * 100000))
@@ -766,10 +766,10 @@ render layout details children has htmlAttrs classes nearby attrs =
                                 Attr.class Style.classes.heightFill
                                     :: attrsWithWidth
 
-                            else if Bitwise.and rowBits parentEncoded /= 0 then
+                            else if Bitwise.and rowBits parentEncoded == 0 then
                                 -- we're within a column, our flex-grow can be set safely
                                 Attr.class Style.classes.heightFill
-                                    :: Attr.style "flex-grow" (String.fromInt (details.widthFill * 100000))
+                                    :: Attr.style "flex-grow" (String.fromInt (details.heightFill * 100000))
                                     :: attrsWithFontSize
 
                             else
@@ -1049,7 +1049,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     nearby
                     remain
 
-        (ClassAndStyle flag cls sty) :: remain ->
+        (ClassAndStyle flag cls styleName styleVal) :: remain ->
             if Flag.present flag has then
                 render
                     layout
@@ -1066,7 +1066,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     details
                     children
                     (Flag.add flag has)
-                    htmlAttrs
+                    (Attr.style styleName styleVal :: htmlAttrs)
                     (cls ++ " " ++ classes)
                     nearby
                     remain
@@ -1211,26 +1211,84 @@ render layout details children has htmlAttrs classes nearby attrs =
                     remain
 
         (HeightFill i) :: remain ->
-            render
-                layout
-                details
-                children
-                has
-                htmlAttrs
-                classes
-                nearby
-                remain
+            if Flag.present Flag.height has then
+                render
+                    layout
+                    details
+                    children
+                    has
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                render
+                    layout
+                    { name = details.name
+                    , node = details.node
+                    , spacingX = details.spacingX
+                    , spacingY = details.spacingY
+                    , fontOffset = details.fontOffset
+                    , fontHeight =
+                        details.fontHeight
+                    , fontSize =
+                        details.fontSize
+                    , heightFill = i
+                    , widthFill = details.widthFill
+                    , padding = details.padding
+                    , borders = details.borders
+                    , x = details.x
+                    , y = details.y
+                    , rotate = details.rotate
+                    , scale = details.scale
+                    }
+                    children
+                    (Flag.add Flag.height has)
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
 
         (WidthFill i) :: remain ->
-            render
-                layout
-                details
-                children
-                has
-                htmlAttrs
-                classes
-                nearby
-                remain
+            if Flag.present Flag.width has then
+                render
+                    layout
+                    details
+                    children
+                    has
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                render
+                    layout
+                    { name = details.name
+                    , node = details.node
+                    , spacingX = details.spacingX
+                    , spacingY = details.spacingY
+                    , fontOffset = details.fontOffset
+                    , fontHeight =
+                        details.fontHeight
+                    , fontSize =
+                        details.fontSize
+                    , heightFill = details.heightFill
+                    , widthFill = i
+                    , padding = details.padding
+                    , borders = details.borders
+                    , x = details.x
+                    , y = details.y
+                    , rotate = details.rotate
+                    , scale = details.scale
+                    }
+                    children
+                    (Flag.add Flag.width has)
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
 
 
 {-| -}
