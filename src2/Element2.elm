@@ -13,15 +13,15 @@ module Element2 exposing
     , pointer, grab, grabbing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
     , viewport, clipped
-    , layout, layoutWith, Option, noStaticStyleSheet, focusStyle, FocusStyle
-    , link, newTabLink, download, downloadAs
+    , layout, layoutWith, Option, focusStyle, FocusStyle
+    , link, linkNewTab, download, downloadAs
     , image
     , Color, rgb
     , above, below, onRight, onLeft, inFront, behindContent
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , map, mapAttribute
     , html, htmlAttribute
-    , clip, clipX, clipY, embed, scrollbarX, scrollbarY
+    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, hovered, init, scrollbarX, scrollbarY, update
     )
 
 {-|
@@ -147,7 +147,7 @@ Essentially a `viewport` is the window that you're looking through. If the conte
 
 # Links
 
-@docs link, newTabLink, download, downloadAs
+@docs link, linkNewTab, download, downloadAs
 
 
 # Images
@@ -210,9 +210,12 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 
 import Html exposing (Html)
 import Html.Attributes as Attr
+import Html.Keyed
+import Html.Lazy
 import Internal.Flag2 as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
+import Set
 
 
 {-| -}
@@ -288,55 +291,11 @@ px =
     Px
 
 
-
--- {-| Shrink an element to fit its contents.
--- -}
--- shrink : Length
--- shrink =
---     Content
-
-
 {-| Fill the available space. The available space will be split evenly between elements that have `width fill`.
 -}
 fill : Length
 fill =
     Fill 1
-
-
-
--- {-| Similarly you can set a minimum boundary.
---      el
---         [ height
---             (fill
---                 |> maximum 300
---                 |> minimum 30
---             )
---         ]
---         (text "I will stop at 300px")
--- -}
--- minimum : Int -> Length -> Length
--- minimum i len =
---     case len of
---         Bounded minBound maxBound val ->
---             Bounded (Just i) maxBound val
---         otherwise ->
---             Bounded (Just i) Nothing otherwise
--- {-| Add a maximum to a length.
---     el
---         [ height
---             (fill
---                 |> maximum 300
---             )
---         ]
---         (text "I will stop at 300px")
--- -}
--- maximum : Int -> Length -> Length
--- maximum i len =
---     case len of
---         Bounded minBound maxBound val ->
---             Bounded minBound (Just i) val
---         otherwise ->
---             Bounded Nothing (Just i) otherwise
 
 
 ellip : Attribute msg
@@ -363,7 +322,77 @@ layout attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
             attrs
-            [ Two.Element styleNode
+            [ Two.Element
+                (\_ ->
+                    Html.Keyed.node "div"
+                        []
+                        [ ( "static", Html.Lazy.lazy style Style.rules )
+                        ]
+                )
+            , content
+            ]
+
+
+init : State
+init =
+    Two.State { added = Set.empty, rules = [] }
+
+
+{-| -}
+type alias State =
+    Two.State
+
+
+{-| -}
+type alias Msg =
+    Two.Msg
+
+
+{-| -}
+type alias Phase =
+    Two.Phase
+
+
+type alias Transition =
+    Two.Transition
+
+
+duration : Int -> Two.Transition
+duration dur =
+    Two.Transition
+        { arriving =
+            { durDelay = dur
+            , curve = 1
+            }
+        , departing =
+            { durDelay = dur
+            , curve = 1
+            }
+        }
+
+
+hovered =
+    Two.Hovered
+
+
+update =
+    Two.update
+
+
+{-| -}
+layoutWith : { options : List Option } -> State -> List (Two.Attribute msg) -> Two.Element msg -> Html msg
+layoutWith { options } (Two.State state) attrs content =
+    Two.unwrap Two.zero <|
+        Two.element Two.AsRoot
+            attrs
+            [ Two.Element
+                (\_ ->
+                    Html.Keyed.node "div"
+                        []
+                        [ ( "static", Html.Lazy.lazy style Style.rules )
+                        , ( "animations", Html.Lazy.lazy styleRules state.rules )
+                        ]
+                )
             , content
             ]
 
@@ -382,44 +411,27 @@ embed attrs content =
             ]
 
 
-{-| -}
-layoutWith : { options : List Option } -> List (Two.Attribute msg) -> Two.Element msg -> Html msg
-layoutWith { options } attrs content =
-    Two.unwrap Two.zero <|
-        rootNode options attrs content
-
-
-rootNode options attrs content =
-    Two.element Two.AsRoot
-        attrs
-        [ Two.Element styleNode
-        , content
-        ]
-
-
-styleNode _ =
+style : String -> Html msg
+style styleStr =
     Html.div []
         [ Html.node "style"
             []
-            [ Html.text Style.rules ]
+            [ Html.text styleStr ]
+        ]
+
+
+styleRules : List String -> Html msg
+styleRules styleStr =
+    Html.div []
+        [ Html.node "style"
+            []
+            [ Html.text (String.join "\n" styleStr) ]
         ]
 
 
 {-| -}
 type alias Option =
     Two.Option
-
-
-{-| Elm UI embeds two StyleSheets, one that is constant, and one that changes dynamically based on styles collected from the elements being rendered.
-
-This option will stop the static/constant stylesheet from rendering.
-
-If you're embedding multiple elm-ui `layout` elements, you need to guarantee that only one is rendering the static style sheet and that it's above all the others in the DOM tree.
-
--}
-noStaticStyleSheet : Option
-noStaticStyleSheet =
-    Two.RenderModeOption Two.NoStaticStyleSheet
 
 
 {-| -}
@@ -992,8 +1004,8 @@ link =
 
 
 {-| -}
-newTabLink : String -> Two.Attribute msg
-newTabLink =
+linkNewTab : String -> Two.Attribute msg
+linkNewTab =
     Two.Link True
 
 

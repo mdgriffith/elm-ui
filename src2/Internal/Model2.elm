@@ -1,21 +1,16 @@
 module Internal.Model2 exposing (..)
 
-{-| The goal here is:
-
-1.  to be as thin of a wrapper as possible over `Html`
-2.  Use css variables instead of propagating up an entire stylesheet.
-
--}
-
 import Bitwise
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed
+import Internal.Bits as Bits
 import Internal.Flag2 as Flag exposing (Flag)
 import Internal.Style2 as Style
 import Json.Decode as Json
 import Json.Encode
+import Set exposing (Set)
 import VirtualDom
 
 
@@ -42,6 +37,149 @@ map fn el =
                 (\s ->
                     Html.map fn (elem s)
                 )
+
+
+type Msg
+    = RuleNew String
+    | Trans Phase String (List TransitionDetails)
+
+
+type State
+    = State
+        { added : Set String
+        , rules : List String
+        }
+
+
+update : Msg -> State -> State
+update msg ((State details) as unchanged) =
+    case msg of
+        RuleNew new ->
+            if Set.member new details.added then
+                unchanged
+
+            else
+                State
+                    { rules = new :: details.rules
+                    , added = Set.insert new details.added
+                    }
+
+        Trans phase classStr transition ->
+            if Set.member classStr details.added then
+                unchanged
+
+            else
+                let
+                    arrivingTransitionStr =
+                        renderArrivingTransitionString transition
+
+                    departingTransitionStr =
+                        renderDepartingTransitionString transition
+
+                    stylesStr =
+                        renderStylesString transition
+
+                    phaseStr =
+                        case phase of
+                            Focused ->
+                                ":focus"
+
+                            Hovered ->
+                                ":hover"
+
+                            Pressed ->
+                                ":active"
+
+                    new =
+                        ("." ++ classStr ++ phaseStr ++ " {")
+                            ++ ("transition:" ++ arrivingTransitionStr ++ ";\n")
+                            ++ stylesStr
+                            ++ "}"
+
+                    newReturn =
+                        ("." ++ classStr ++ " {")
+                            ++ ("transition:" ++ departingTransitionStr ++ ";")
+                            ++ "}"
+                in
+                State
+                    { rules = new :: newReturn :: details.rules
+                    , added = Set.insert classStr details.added
+                    }
+
+
+renderStylesString : List TransitionDetails -> String
+renderStylesString transitions =
+    case transitions of
+        [] ->
+            ""
+
+        top :: remaining ->
+            renderStylesString remaining ++ top.prop ++ ":" ++ top.val ++ " !important;"
+
+
+renderArrivingTransitionString : List TransitionDetails -> String
+renderArrivingTransitionString transitions =
+    case transitions of
+        [] ->
+            ""
+
+        top :: remaining ->
+            let
+                transition =
+                    case top.transition of
+                        Transition deets ->
+                            deets
+
+                duration =
+                    Bitwise.and Bits.duration transition.arriving.durDelay
+
+                delay =
+                    Bitwise.and Bits.delay transition.arriving.durDelay
+
+                curve =
+                    "cubic-bezier("
+                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierOne transition.arriving.curve) / 255) ++ " ")
+                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierTwo transition.arriving.curve) / 255) ++ " ")
+                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierThree transition.arriving.curve) / 255) ++ " ")
+                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierFour transition.arriving.curve) / 255) ++ " ")
+                        ++ ")"
+
+                transitionStr =
+                    top.prop ++ " " ++ String.fromInt duration ++ "ms " ++ curve ++ String.fromInt delay ++ "ms"
+            in
+            -- transition: <property> <duration> <timing-function> <delay>;
+            case remaining of
+                [] ->
+                    transitionStr
+
+                _ ->
+                    renderArrivingTransitionString remaining ++ ", " ++ transitionStr
+
+
+renderDepartingTransitionString : List TransitionDetails -> String
+renderDepartingTransitionString transitions =
+    case transitions of
+        [] ->
+            ""
+
+        top :: remaining ->
+            renderDepartingTransitionString remaining ++ top.prop ++ " 200ms"
+
+
+transitionDetailsToClass : TransitionDetails -> String
+transitionDetailsToClass details =
+    transitionToClass details.transition
+
+
+transitionToClass : Transition -> String
+transitionToClass (Transition transition) =
+    String.fromInt transition.arriving.durDelay
+        ++ "-"
+        ++ String.fromInt transition.arriving.curve
+        ++ "-"
+        ++ String.fromInt transition.departing.durDelay
+        ++ "-"
+        ++ String.fromInt transition.departing.curve
 
 
 mapAttr : (a -> b) -> Attribute a -> Attribute b
@@ -111,6 +249,21 @@ mapAttr fn attr =
         Nearby loc el ->
             Nearby loc (map fn el)
 
+        When toMsg when ->
+            When (fn << toMsg)
+                { phase = when.phase
+                , class = when.class
+                , transition = when.transition
+                , prop = when.prop
+                , val = when.val
+                }
+
+        WhenAll toMsg trigger classStr props ->
+            WhenAll (fn << toMsg)
+                trigger
+                classStr
+                props
+
 
 type Layout
     = AsRow
@@ -162,6 +315,56 @@ type Attribute msg
       --                 class  var    value
     | ClassAndStyle Flag String String String
     | Nearby Location (Element msg)
+    | When (Msg -> msg) TransitionDetails
+    | WhenAll (Msg -> msg) Trigger String (List Animated)
+
+
+type Trigger
+    = OnHovered
+    | OnPressed
+    | OnFocused
+    | OnIf Bool
+
+
+type Animated
+    = Anim String Personality String AnimValue
+
+
+type AnimValue
+    = AnimFloat Float
+    | AnimColor Style.Color
+
+
+type alias Personality =
+    { arriving :
+        -- durDelay is duration and delay in one int
+        -- likewise bitwise encoded
+        { durDelay : Int
+
+        -- this is a cubic bezier curve
+        -- bitwise encoded as a single int
+        , curve : Int
+        }
+    , departing :
+        -- durDelay is duration and delay in one int
+        -- likewise bitwise encoded
+        { durDelay : Int
+
+        -- this is a cubic bezier curve
+        -- bitwise encoded as a single int
+        , curve : Int
+        }
+    , wobble : Float
+    }
+
+
+type alias TransitionDetails =
+    { phase : Phase
+    , class : String
+    , transition : Transition
+    , prop : String
+    , val : String
+    }
 
 
 hasFlag flag attr =
@@ -217,13 +420,35 @@ type Location
 
 type Option
     = FocusStyleOption FocusStyle
-    | RenderModeOption RenderMode
 
 
-type RenderMode
-    = Layout
-    | NoStaticStyleSheet
-    | WithVirtualCss
+type Transition
+    = Transition
+        { arriving :
+            -- durDelay is duration and delay in one int
+            -- likewise bitwise encoded
+            { durDelay : Int
+
+            -- this is a cubic bezier curve
+            -- bitwise encoded as a single int
+            , curve : Int
+            }
+        , departing :
+            -- durDelay is duration and delay in one int
+            -- likewise bitwise encoded
+            { durDelay : Int
+
+            -- this is a cubic bezier curve
+            -- bitwise encoded as a single int
+            , curve : Int
+            }
+        }
+
+
+type Phase
+    = Hovered
+    | Focused
+    | Pressed
 
 
 {-| -}
@@ -287,7 +512,7 @@ emptyEdges =
     }
 
 
-emptyDetails : Details
+emptyDetails : Details msg
 emptyDetails =
     { name = "div"
     , node = 0
@@ -304,6 +529,9 @@ emptyDetails =
     , y = 0
     , rotate = 0
     , scale = 1
+    , hover = Nothing
+    , focus = Nothing
+    , active = Nothing
     }
 
 
@@ -406,7 +634,7 @@ text str =
 
 none : Element msg
 none =
-    Element (always (Html.text ""))
+    Element (\_ -> Html.text "")
 
 
 type alias Rendered msg =
@@ -441,7 +669,7 @@ type alias Edges =
     }
 
 
-type alias Details =
+type alias Details msg =
     -- Node reprsents html node like `div` or `a`.
     -- right now `0: div` and `1:
     { name : String
@@ -459,6 +687,24 @@ type alias Details =
     , y : Float
     , rotate : Float
     , scale : Float
+    , hover :
+        Maybe
+            { toMsg : Msg -> msg
+            , class : String
+            , transitions : List TransitionDetails
+            }
+    , focus :
+        Maybe
+            { toMsg : Msg -> msg
+            , class : String
+            , transitions : List TransitionDetails
+            }
+    , active :
+        Maybe
+            { toMsg : Msg -> msg
+            , class : String
+            , transitions : List TransitionDetails
+            }
     }
 
 
@@ -561,7 +807,7 @@ nonRowBits =
 
 render :
     Layout
-    -> Details
+    -> Details msg
     -> List (Element msg)
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
@@ -776,9 +1022,48 @@ render layout details children has htmlAttrs classes nearby attrs =
                                 Attr.class Style.classes.heightFill
                                     :: attrsWithWidth
 
+                        attrsWithHover =
+                            case details.hover of
+                                Nothing ->
+                                    attrsWithHeight
+
+                                Just transition ->
+                                    Events.onMouseEnter
+                                        (transition.toMsg
+                                            (Trans Hovered transition.class transition.transitions)
+                                        )
+                                        :: Attr.class transition.class
+                                        :: attrsWithHeight
+
+                        attrsWithFocus =
+                            case details.focus of
+                                Nothing ->
+                                    attrsWithHover
+
+                                Just transition ->
+                                    Events.onFocus
+                                        (transition.toMsg
+                                            (Trans Focused transition.class transition.transitions)
+                                        )
+                                        :: Attr.class transition.class
+                                        :: attrsWithHover
+
+                        attrsWithActive =
+                            case details.active of
+                                Nothing ->
+                                    attrsWithFocus
+
+                                Just transition ->
+                                    Events.onMouseDown
+                                        (transition.toMsg
+                                            (Trans Pressed transition.class transition.transitions)
+                                        )
+                                        :: Attr.class transition.class
+                                        :: attrsWithFocus
+
                         attributes =
                             Attr.class classes
-                                :: attrsWithHeight
+                                :: attrsWithActive
 
                         finalChildren =
                             case layout of
@@ -836,6 +1121,9 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , y = details.y
                 , rotate = details.rotate
                 , scale = details.scale
+                , hover = details.hover
+                , focus = details.focus
+                , active = details.active
                 }
                 children
                 has
@@ -892,6 +1180,9 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , y = details.y
                 , rotate = details.rotate
                 , scale = details.scale
+                , hover = details.hover
+                , focus = details.focus
+                , active = details.active
                 }
                 children
                 (case font.adjustments of
@@ -1136,6 +1427,9 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , hover = details.hover
+                    , focus = details.focus
+                    , active = details.active
                     }
                     children
                     (Flag.add flag has)
@@ -1189,6 +1483,9 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , hover = details.hover
+                    , focus = details.focus
+                    , active = details.active
                     }
                     children
                     (Flag.add flag has)
@@ -1242,6 +1539,9 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , hover = details.hover
+                    , focus = details.focus
+                    , active = details.active
                     }
                     children
                     (Flag.add Flag.height has)
@@ -1282,6 +1582,9 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , hover = details.hover
+                    , focus = details.focus
+                    , active = details.active
                     }
                     children
                     (Flag.add Flag.width has)
@@ -1289,6 +1592,105 @@ render layout details children has htmlAttrs classes nearby attrs =
                     classes
                     nearby
                     remain
+
+        (When toMsg when) :: remain ->
+            render
+                layout
+                { name = details.name
+                , node = details.node
+                , spacingX = details.spacingX
+                , spacingY = details.spacingY
+                , fontOffset = details.fontOffset
+                , fontHeight =
+                    details.fontHeight
+                , fontSize =
+                    details.fontSize
+                , heightFill = details.heightFill
+                , widthFill = details.widthFill
+                , padding = details.padding
+                , borders = details.borders
+                , x = details.x
+                , y = details.y
+                , rotate = details.rotate
+                , scale = details.scale
+                , hover =
+                    case when.phase of
+                        Hovered ->
+                            case details.hover of
+                                Nothing ->
+                                    Just
+                                        { toMsg = toMsg
+                                        , class = when.class
+                                        , transitions = [ when ]
+                                        }
+
+                                Just transition ->
+                                    Just
+                                        { toMsg = toMsg
+                                        , class = when.class ++ "-" ++ transition.class
+                                        , transitions = when :: transition.transitions
+                                        }
+
+                        _ ->
+                            details.hover
+                , focus =
+                    case when.phase of
+                        Focused ->
+                            case details.focus of
+                                Nothing ->
+                                    Just
+                                        { toMsg = toMsg
+                                        , class = when.class
+                                        , transitions = [ when ]
+                                        }
+
+                                Just transition ->
+                                    Just
+                                        { toMsg = toMsg
+                                        , class = when.class ++ "-" ++ transition.class
+                                        , transitions = when :: transition.transitions
+                                        }
+
+                        _ ->
+                            details.focus
+                , active =
+                    case when.phase of
+                        Pressed ->
+                            case details.active of
+                                Nothing ->
+                                    Just
+                                        { toMsg = toMsg
+                                        , class = when.class
+                                        , transitions = [ when ]
+                                        }
+
+                                Just transition ->
+                                    Just
+                                        { toMsg = toMsg
+                                        , class = when.class ++ "-" ++ transition.class
+                                        , transitions = when :: transition.transitions
+                                        }
+
+                        _ ->
+                            details.active
+                }
+                children
+                has
+                htmlAttrs
+                classes
+                nearby
+                remain
+
+        (WhenAll toMsg trigger classStr props) :: remain ->
+            render
+                layout
+                details
+                children
+                has
+                htmlAttrs
+                classes
+                nearby
+                remain
 
 
 {-| -}

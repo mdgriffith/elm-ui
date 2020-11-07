@@ -1,11 +1,11 @@
 module Element2.Background exposing
-    ( color, gradient
+    ( color, colorWhen, gradient
     , image, uncropped, tiled, tiledX, tiledY
     )
 
 {-|
 
-@docs color, gradient
+@docs color, colorWhen, gradient
 
 
 # Images
@@ -16,6 +16,7 @@ module Element2.Background exposing
 
 -}
 
+import Animator
 import Element2 exposing (Attribute, Color)
 import Html.Attributes as Attr
 import Internal.Flag2 as Flag
@@ -35,6 +36,35 @@ color (Style.Rgb red green blue) =
                 ++ ")"
             )
         )
+
+
+{-| -}
+colorWhen : (Element2.Msg -> msg) -> Element2.Phase -> Element2.Transition -> Color -> Two.Attribute msg
+colorWhen toMsg phase transition (Style.Rgb red green blue) =
+    let
+        redStr =
+            String.fromInt red
+
+        greenStr =
+            String.fromInt green
+
+        blueStr =
+            String.fromInt blue
+    in
+    Two.When toMsg
+        { phase = phase
+        , transition = transition
+        , class =
+            ("bg-" ++ redStr ++ "-" ++ greenStr ++ "-" ++ blueStr)
+                ++ ("-" ++ Two.transitionToClass transition)
+        , prop = "background-color"
+        , val =
+            "rgb("
+                ++ redStr
+                ++ ("," ++ greenStr)
+                ++ ("," ++ blueStr)
+                ++ ")"
+        }
 
 
 {-| Resize the image to fit the containing element while maintaining proportions and cropping the overflow.

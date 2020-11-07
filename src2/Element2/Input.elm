@@ -1005,6 +1005,27 @@ redistribute2 input attrs =
     </label>
 
 -}
+redistributeOver2 :
+    TextKind
+    -> Two.Attribute msg
+    ->
+        { parent :
+            List (Two.Attribute msg)
+        , textAreaFiller : List (Html.Attribute b)
+        , input : List (Two.Attribute msg)
+        , textAreaWrapper : List (Two.Attribute msg)
+        , inputParent : List (Two.Attribute msg)
+        , placeholder : List (Two.Attribute msg)
+        }
+    ->
+        { parent :
+            List (Two.Attribute msg)
+        , textAreaFiller : List (Html.Attribute b)
+        , input : List (Two.Attribute msg)
+        , textAreaWrapper : List (Two.Attribute msg)
+        , inputParent : List (Two.Attribute msg)
+        , placeholder : List (Two.Attribute msg)
+        }
 redistributeOver2 input attr els =
     case attr of
         Two.Spacing flag xSpace ySpace ->
@@ -1134,6 +1155,12 @@ redistributeOver2 input attr els =
                 | parent = attr :: els.parent
                 , inputParent = attr :: els.inputParent
             }
+
+        Two.When _ _ ->
+            { els | parent = attr :: els.parent }
+
+        Two.WhenAll _ _ _ _ ->
+            { els | parent = attr :: els.parent }
 
 
 {-| -}
