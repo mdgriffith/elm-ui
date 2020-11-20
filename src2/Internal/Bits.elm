@@ -15,6 +15,11 @@ top10 =
     Bitwise.shiftRightZfBy (32 - 10) ones
 
 
+top8 : Int
+top8 =
+    Bitwise.shiftRightZfBy (32 - 8) ones
+
+
 top6 : Int
 top6 =
     Bitwise.shiftRightZfBy (32 - 6) ones
@@ -87,6 +92,11 @@ bezierTwo =
         (Bitwise.shiftRightZfBy 16 ones)
 
 
+bezierTwoOffset : Int
+bezierTwoOffset =
+    8
+
+
 bezierThree : Int
 bezierThree =
     Bitwise.and
@@ -94,6 +104,16 @@ bezierThree =
         (Bitwise.shiftRightZfBy 8 ones)
 
 
+bezierThreeOffset : Int
+bezierThreeOffset =
+    16
+
+
 bezierFour : Int
 bezierFour =
     Bitwise.shiftLeftBy 24 ones
+
+
+bezierFourOffset : Int
+bezierFourOffset =
+    24

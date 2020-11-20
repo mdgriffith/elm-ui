@@ -240,6 +240,20 @@ overrides =
         ++ trackReset
         ++ thumbReset
         ++ explainer
+        ++ animationTriggerKeyframes
+
+
+{-| This probably looks super weird!
+But these animations are just used to fire animation events
+NOT to actually animate anything.
+They need separate names because we want to know what event occurred.
+-}
+animationTriggerKeyframes =
+    """
+@keyframes on-hovered { from {} to {} }
+@keyframes on-focused { from {} to {} }
+@keyframes on-pressed { from {} to {} }
+"""
 
 
 inputTextReset =
@@ -548,6 +562,7 @@ baseSheet =
                 , Prop "z-index" "20"
                 ]
             ]
+        
         ]
     , Class (dot classes.nearby)
         [ Prop "position" "relative"
@@ -684,6 +699,7 @@ baseSheet =
         -- There's no way to change this.  How crazy is that?
         , Prop "text-decoration" "none"
         , Prop "font-style" "inherit"
+        , Batch animationTriggers
         , Descriptor (dot classes.textGradient)
             [ AllChildren (dot classes.text)
                 [ Prop "background" "var(--text-gradient)"
@@ -1358,6 +1374,21 @@ baseSheet =
             [ Prop "font-style" "normal"
             ]
         ]
+    ]
+
+animationTriggers =
+    [ Descriptor ".on-hovered:hover"
+        [ Prop "animation" "on-hovered 0ms" 
+        ]
+
+    , Descriptor ".on-focused:focus"
+        [ Prop "animation" "on-focused 0ms" 
+        ]
+
+    , Descriptor ".on-pressed:active"
+        [ Prop "animation" "on-pressed 0ms"
+        ]
+
     ]
 
 

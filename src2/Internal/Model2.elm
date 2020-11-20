@@ -42,6 +42,7 @@ map fn el =
 type Msg
     = RuleNew String
     | Trans Phase String (List TransitionDetails)
+    | Animate Trigger String (List Animated)
 
 
 type State
@@ -62,6 +63,51 @@ update msg ((State details) as unchanged) =
                 State
                     { rules = new :: details.rules
                     , added = Set.insert new details.added
+                    }
+
+        Animate trigger classString props ->
+            if Set.member classString details.added then
+                unchanged
+
+            else
+                let
+                    arrivingTransitionStr =
+                        transitionFor .arriving False props
+
+                    departingTransitionStr =
+                        transitionFor .departing False props
+
+                    stylesStr =
+                        renderTargetAnimatedStyle Nothing props
+
+                    phaseStr =
+                        case trigger of
+                            OnFocused ->
+                                ":focus"
+
+                            OnHovered ->
+                                ":hover"
+
+                            OnPressed ->
+                                ":active"
+
+                            OnIf on ->
+                                ""
+
+                    new =
+                        ("." ++ classString ++ phaseStr ++ " {")
+                            ++ ("transition:" ++ arrivingTransitionStr ++ ";\n")
+                            ++ stylesStr
+                            ++ "}"
+
+                    newReturn =
+                        ("." ++ classString ++ " {")
+                            ++ ("transition:" ++ departingTransitionStr ++ ";")
+                            ++ "}"
+                in
+                State
+                    { rules = new :: newReturn :: details.rules
+                    , added = Set.insert classString details.added
                     }
 
         Trans phase classStr transition ->
@@ -107,6 +153,164 @@ update msg ((State details) as unchanged) =
                     }
 
 
+type alias Transform =
+    { scale : Float
+    , x : Float
+    , y : Float
+    , rotation : Float
+    }
+
+
+renderTargetAnimatedStyle : Maybe Transform -> List Animated -> String
+renderTargetAnimatedStyle transform props =
+    case props of
+        [] ->
+            case transform of
+                Nothing ->
+                    ""
+
+                Just details ->
+                    "transform: "
+                        ++ ("translate("
+                                ++ String.fromFloat details.x
+                                ++ "px, "
+                                ++ String.fromFloat details.y
+                                ++ "px) rotate("
+                                ++ String.fromFloat details.rotation
+                                ++ "rad) scale("
+                                ++ String.fromFloat details.scale
+                                ++ ") !important;"
+                           )
+
+        (Anim _ _ name (AnimFloat val unit)) :: remaining ->
+            if name == "rotate" then
+                case transform of
+                    Nothing ->
+                        renderTargetAnimatedStyle
+                            (Just
+                                { scale = 1
+                                , x = 0
+                                , y = 0
+                                , rotation = val
+                                }
+                            )
+                            remaining
+
+                    Just trans ->
+                        renderTargetAnimatedStyle
+                            (Just
+                                { scale = trans.scale
+                                , x = trans.x
+                                , y = trans.y
+                                , rotation = val
+                                }
+                            )
+                            remaining
+
+            else if name == "scale" then
+                case transform of
+                    Nothing ->
+                        renderTargetAnimatedStyle
+                            (Just
+                                { scale = val
+                                , x = 0
+                                , y = 0
+                                , rotation = 0
+                                }
+                            )
+                            remaining
+
+                    Just trans ->
+                        renderTargetAnimatedStyle
+                            (Just
+                                { scale = val
+                                , x = trans.x
+                                , y = trans.y
+                                , rotation = trans.rotation
+                                }
+                            )
+                            remaining
+
+            else
+                renderTargetAnimatedStyle transform remaining
+                    ++ name
+                    ++ ":"
+                    ++ String.fromFloat val
+                    ++ unit
+                    ++ " !important;"
+
+        (Anim _ _ name (AnimTwo details)) :: remaining ->
+            if name == "position" then
+                case transform of
+                    Nothing ->
+                        renderTargetAnimatedStyle
+                            (Just
+                                { scale = 1
+                                , x = details.one
+                                , y = details.two
+                                , rotation = 0
+                                }
+                            )
+                            remaining
+
+                    Just trans ->
+                        renderTargetAnimatedStyle
+                            (Just
+                                { scale = trans.scale
+                                , x = details.one
+                                , y = details.two
+                                , rotation = trans.rotation
+                                }
+                            )
+                            remaining
+
+            else
+                renderTargetAnimatedStyle transform remaining
+                    ++ name
+                    ++ ":"
+                    ++ String.fromFloat details.one
+                    ++ details.oneUnit
+                    ++ " "
+                    ++ String.fromFloat details.two
+                    ++ details.twoUnit
+                    ++ " !important;"
+
+        (Anim _ _ name (AnimQuad details)) :: remaining ->
+            renderTargetAnimatedStyle transform remaining
+                ++ name
+                ++ ":"
+                ++ String.fromFloat details.one
+                ++ details.oneUnit
+                ++ " "
+                ++ String.fromFloat details.two
+                ++ details.twoUnit
+                ++ " "
+                ++ String.fromFloat details.three
+                ++ details.threeUnit
+                ++ " "
+                ++ String.fromFloat details.four
+                ++ details.fourUnit
+                ++ " !important;"
+
+        (Anim _ _ name (AnimColor (Style.Rgb red green blue))) :: remaining ->
+            let
+                redStr =
+                    String.fromInt red
+
+                greenStr =
+                    String.fromInt green
+
+                blueStr =
+                    String.fromInt blue
+            in
+            renderTargetAnimatedStyle transform remaining
+                ++ name
+                ++ (":rgb(" ++ redStr)
+                ++ ("," ++ greenStr)
+                ++ ("," ++ blueStr)
+                ++ ") !important;"
+
+
 renderStylesString : List TransitionDetails -> String
 renderStylesString transitions =
     case transitions of
@@ -115,6 +319,83 @@ renderStylesString transitions =
 
         top :: remaining ->
             renderStylesString remaining ++ top.prop ++ ":" ++ top.val ++ " !important;"
+
+
+transitionFor : (Personality -> Approach) -> Bool -> List Animated -> String
+transitionFor toApproach transformRendered animated =
+    case animated of
+        [] ->
+            ""
+
+        (Anim _ transition propName _) :: remaining ->
+            let
+                isTransform =
+                    propName == "rotate" || propName == "scale" || propName == "position"
+            in
+            if isTransform && transformRendered then
+                transitionFor toApproach transformRendered remaining
+
+            else
+                let
+                    prop =
+                        if isTransform then
+                            "transform"
+
+                        else
+                            propName
+
+                    approach =
+                        toApproach transition
+
+                    duration =
+                        Bitwise.and Bits.duration approach.durDelay
+
+                    delay =
+                        Bitwise.and Bits.delay approach.durDelay
+
+                    curve =
+                        "cubic-bezier("
+                            ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierOne approach.curve) / 255) ++ ", ")
+                            ++ (String.fromFloat
+                                    (toFloat
+                                        (Bitwise.shiftRightZfBy Bits.bezierTwoOffset
+                                            (Bitwise.and Bits.bezierTwo approach.curve)
+                                        )
+                                        / 255
+                                    )
+                                    ++ ", "
+                               )
+                            ++ (String.fromFloat
+                                    (toFloat
+                                        (Bitwise.shiftRightZfBy Bits.bezierThreeOffset
+                                            (Bitwise.and Bits.bezierThree approach.curve)
+                                        )
+                                        / 255
+                                    )
+                                    ++ ", "
+                               )
+                            ++ (String.fromFloat
+                                    (toFloat
+                                        (Bitwise.shiftRightZfBy
+                                            Bits.bezierFourOffset
+                                            (Bitwise.and Bits.bezierFour approach.curve)
+                                        )
+                                        / 255
+                                    )
+                                    ++ " "
+                               )
+                            ++ ")"
+
+                    transitionStr =
+                        prop ++ " " ++ String.fromInt duration ++ "ms " ++ curve ++ String.fromInt delay ++ "ms"
+                in
+                -- transition: <property> <duration> <timing-function> <delay>;
+                case remaining of
+                    [] ->
+                        transitionStr
+
+                    _ ->
+                        transitionFor toApproach (isTransform || transformRendered) remaining ++ ", " ++ transitionStr
 
 
 renderArrivingTransitionString : List TransitionDetails -> String
@@ -138,11 +419,11 @@ renderArrivingTransitionString transitions =
 
                 curve =
                     "cubic-bezier("
-                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierOne transition.arriving.curve) / 255) ++ " ")
-                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierTwo transition.arriving.curve) / 255) ++ " ")
-                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierThree transition.arriving.curve) / 255) ++ " ")
+                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierOne transition.arriving.curve) / 255) ++ ", ")
+                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierTwo transition.arriving.curve) / 255) ++ ", ")
+                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierThree transition.arriving.curve) / 255) ++ ", ")
                         ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierFour transition.arriving.curve) / 255) ++ " ")
-                        ++ ")"
+                        ++ ") "
 
                 transitionStr =
                     top.prop ++ " " ++ String.fromInt duration ++ "ms " ++ curve ++ String.fromInt delay ++ "ms"
@@ -331,29 +612,40 @@ type Animated
 
 
 type AnimValue
-    = AnimFloat Float
+    = AnimFloat Float String
     | AnimColor Style.Color
+    | AnimTwo
+        { one : Float
+        , oneUnit : String
+        , two : Float
+        , twoUnit : String
+        }
+    | AnimQuad
+        { one : Float
+        , oneUnit : String
+        , two : Float
+        , twoUnit : String
+        , three : Float
+        , threeUnit : String
+        , four : Float
+        , fourUnit : String
+        }
+
+
+type alias Approach =
+    -- durDelay is duration and delay in one int
+    -- likewise bitwise encoded
+    { durDelay : Int
+
+    -- this is a cubic bezier curve
+    -- bitwise encoded as a single int
+    , curve : Int
+    }
 
 
 type alias Personality =
-    { arriving :
-        -- durDelay is duration and delay in one int
-        -- likewise bitwise encoded
-        { durDelay : Int
-
-        -- this is a cubic bezier curve
-        -- bitwise encoded as a single int
-        , curve : Int
-        }
-    , departing :
-        -- durDelay is duration and delay in one int
-        -- likewise bitwise encoded
-        { durDelay : Int
-
-        -- this is a cubic bezier curve
-        -- bitwise encoded as a single int
-        , curve : Int
-        }
+    { arriving : Approach
+    , departing : Approach
     , wobble : Float
     }
 
@@ -529,6 +821,7 @@ emptyDetails =
     , y = 0
     , rotate = 0
     , scale = 1
+    , animEvents = []
     , hover = Nothing
     , focus = Nothing
     , active = Nothing
@@ -687,6 +980,7 @@ type alias Details msg =
     , y : Float
     , rotate : Float
     , scale : Float
+    , animEvents : List (Json.Decoder msg)
     , hover :
         Maybe
             { toMsg : Msg -> msg
@@ -919,15 +1213,15 @@ render layout details children has htmlAttrs classes nearby attrs =
                         attrsWithTransform =
                             if Flag.present Flag.transform has then
                                 Attr.style "transform"
-                                    ("rotate("
-                                        ++ String.fromFloat details.rotate
-                                        ++ "rad) translate("
+                                    ("translate("
                                         ++ String.fromFloat details.x
                                         ++ "px, "
                                         ++ String.fromFloat details.y
-                                        ++ "px) scale("
+                                        ++ "px) rotate("
+                                        ++ String.fromFloat details.rotate
+                                        ++ "rad) scale("
                                         ++ String.fromFloat details.scale
-                                        ++ ")"
+                                        ++ ") !important"
                                     )
                                     :: attrsWithSpacing
 
@@ -1061,9 +1355,19 @@ render layout details children has htmlAttrs classes nearby attrs =
                                         :: Attr.class transition.class
                                         :: attrsWithFocus
 
+                        attrsWithAnimations =
+                            case details.animEvents of
+                                [] ->
+                                    attrsWithActive
+
+                                animEvents ->
+                                    Events.on "animationstart"
+                                        (Json.field "animationName" (Json.oneOf details.animEvents))
+                                        :: attrsWithActive
+
                         attributes =
                             Attr.class classes
-                                :: attrsWithActive
+                                :: attrsWithAnimations
 
                         finalChildren =
                             case layout of
@@ -1121,6 +1425,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , y = details.y
                 , rotate = details.rotate
                 , scale = details.scale
+                , animEvents = details.animEvents
                 , hover = details.hover
                 , focus = details.focus
                 , active = details.active
@@ -1180,6 +1485,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , y = details.y
                 , rotate = details.rotate
                 , scale = details.scale
+                , animEvents = details.animEvents
                 , hover = details.hover
                 , focus = details.focus
                 , active = details.active
@@ -1427,6 +1733,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
                     , active = details.active
@@ -1483,6 +1790,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
                     , active = details.active
@@ -1539,6 +1847,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
                     , active = details.active
@@ -1582,6 +1891,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     , y = details.y
                     , rotate = details.rotate
                     , scale = details.scale
+                    , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
                     , active = details.active
@@ -1613,6 +1923,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 , y = details.y
                 , rotate = details.rotate
                 , scale = details.scale
+                , animEvents = details.animEvents
                 , hover =
                     case when.phase of
                         Hovered ->
@@ -1682,15 +1993,78 @@ render layout details children has htmlAttrs classes nearby attrs =
                 remain
 
         (WhenAll toMsg trigger classStr props) :: remain ->
+            let
+                triggerClass =
+                    triggerName trigger
+
+                event =
+                    Json.string
+                        |> Json.andThen
+                            (\name ->
+                                let
+                                    _ =
+                                        Debug.log "ANIM" name
+                                in
+                                if name == triggerClass then
+                                    Json.succeed
+                                        (toMsg
+                                            (Animate trigger classStr props)
+                                        )
+
+                                else
+                                    Json.fail "Nonmatching animation"
+                            )
+            in
             render
                 layout
-                details
+                { name = details.name
+                , node = details.node
+                , spacingX = details.spacingX
+                , spacingY = details.spacingY
+                , fontOffset = details.fontOffset
+                , fontHeight =
+                    details.fontHeight
+                , fontSize =
+                    details.fontSize
+                , heightFill = details.heightFill
+                , widthFill = details.widthFill
+                , padding = details.padding
+                , borders = details.borders
+                , x = details.x
+                , y = details.y
+                , rotate = details.rotate
+                , scale = details.scale
+                , animEvents = event :: details.animEvents
+                , hover =
+                    details.focus
+                , focus =
+                    details.focus
+                , active =
+                    details.active
+                }
                 children
                 has
                 htmlAttrs
-                classes
+                (classStr ++ " " ++ triggerClass ++ " " ++ classes)
                 nearby
                 remain
+
+
+triggerName : Trigger -> String
+triggerName trigger =
+    case trigger of
+        OnHovered ->
+            "on-hovered"
+
+        OnPressed ->
+            "on-pressed"
+
+        OnFocused ->
+            "on-focused"
+
+        OnIf bool ->
+            -- Note, could trigger this via attribute index
+            ""
 
 
 {-| -}
