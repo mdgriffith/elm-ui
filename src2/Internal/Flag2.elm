@@ -33,6 +33,7 @@ module Internal.Flag2 exposing
     , heightFill
     , heightTextAreaContent
     , hover
+    , id
     , lineHeight
     , merge
     , none
@@ -223,6 +224,10 @@ fontColor =
 
 fontAdjustment =
     flag 15
+
+
+id =
+    flag 16
 
 
 txtShadows =

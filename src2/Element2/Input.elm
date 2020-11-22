@@ -198,8 +198,8 @@ import Json.Encode as Encode
 
 
 {-| -}
-type Placeholder msg
-    = Placeholder (List (Two.Attribute msg)) (Two.Element msg)
+type Placeholder id msg
+    = Placeholder (List (Two.Attribute id msg)) (Two.Element msg)
 
 
 white2 =
@@ -218,7 +218,7 @@ charcoal2 =
 
 
 {-| -}
-placeholder : List (Two.Attribute msg) -> Two.Element msg -> Placeholder msg
+placeholder : List (Two.Attribute id msg) -> Two.Element msg -> Placeholder id msg
 placeholder =
     Placeholder
 
@@ -231,31 +231,31 @@ type LabelLocation
 
 
 {-| -}
-type Label msg
-    = Label LabelLocation (List (Two.Attribute msg)) (Two.Element msg)
+type Label id msg
+    = Label LabelLocation (List (Two.Attribute id msg)) (Two.Element msg)
     | HiddenLabel String
 
 
 {-| -}
-labelRight : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelRight : List (Two.Attribute id msg) -> Two.Element msg -> Label id msg
 labelRight =
     Label OnRight
 
 
 {-| -}
-labelLeft : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelLeft : List (Two.Attribute id msg) -> Two.Element msg -> Label id msg
 labelLeft =
     Label OnLeft
 
 
 {-| -}
-labelAbove : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelAbove : List (Two.Attribute id msg) -> Two.Element msg -> Label id msg
 labelAbove =
     Label Above
 
 
 {-| -}
-labelBelow : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelBelow : List (Two.Attribute id msg) -> Two.Element msg -> Label id msg
 labelBelow =
     Label Below
 
@@ -272,7 +272,7 @@ The situations where a hidden label makes sense:
 Basically, a hidden label works when there are other contextual clues that sighted people can pick up on.
 
 -}
-labelHidden : String -> Label msg
+labelHidden : String -> Label id msg
 labelHidden =
     HiddenLabel
 
@@ -312,12 +312,12 @@ hasFocusStyle attr =
 
 -}
 checkbox :
-    List (Two.Attribute msg)
+    List (Two.Attribute id msg)
     ->
         { onChange : Bool -> msg
         , icon : Bool -> Two.Element msg
         , checked : Bool
-        , label : Label msg
+        , label : Label id msg
         }
     -> Two.Element msg
 checkbox attrs { label, icon, checked, onChange } =
@@ -373,11 +373,11 @@ checkbox attrs { label, icon, checked, onChange } =
 
 {-| -}
 type Thumb
-    = Thumb (List (Two.Attribute Never))
+    = Thumb (List (Two.Attribute Never Never))
 
 
 {-| -}
-thumb : List (Two.Attribute Never) -> Thumb
+thumb : List (Two.Attribute Never Never) -> Thumb
 thumb =
     Thumb
 
@@ -434,10 +434,10 @@ The slider can be vertical or horizontal depending on the width/height of the sl
 
 -}
 sliderX :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : Float -> msg
-        , label : Label msg
+        , label : Label id msg
         , min : Float
         , max : Float
         , value : Float
@@ -532,10 +532,10 @@ sliderX attributes input =
 
 
 sliderY :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : Float -> msg
-        , label : Label msg
+        , label : Label id msg
         , min : Float
         , max : Float
         , value : Float
@@ -709,16 +709,16 @@ type TextKind
 
 
 {-| -}
-type alias Text2 msg =
+type alias Text2 id msg =
     { onChange : String -> msg
     , text : String
-    , placeholder : Maybe (Placeholder msg)
-    , label : Label msg
+    , placeholder : Maybe (Placeholder id msg)
+    , label : Label id msg
     }
 
 
 {-| -}
-textHelper2 : TextInput -> List (Two.Attribute msg) -> Text2 msg -> Two.Element msg
+textHelper2 : TextInput -> List (Element2.Attribute id msg) -> Text2 id msg -> Two.Element msg
 textHelper2 textInput attrs textOptions =
     {- General overview:
 
@@ -938,13 +938,13 @@ redistribute them to the parent, the input, or the cover.
 -}
 redistribute2 :
     TextKind
-    -> List (Two.Attribute msg)
+    -> List (Element2.Attribute id msg)
     ->
-        { parent : List (Two.Attribute msg)
-        , inputParent : List (Two.Attribute msg)
-        , input : List (Two.Attribute msg)
-        , placeholder : List (Two.Attribute msg)
-        , textAreaWrapper : List (Two.Attribute msg)
+        { parent : List (Element2.Attribute id msg)
+        , inputParent : List (Element2.Attribute id msg)
+        , input : List (Element2.Attribute id msg)
+        , placeholder : List (Element2.Attribute id msg)
+        , textAreaWrapper : List (Element2.Attribute id msg)
         , textAreaFiller : List (Html.Attribute msg)
         }
 redistribute2 input attrs =
@@ -1007,24 +1007,24 @@ redistribute2 input attrs =
 -}
 redistributeOver2 :
     TextKind
-    -> Two.Attribute msg
+    -> Element2.Attribute id msg
     ->
         { parent :
-            List (Two.Attribute msg)
+            List (Element2.Attribute id msg)
         , textAreaFiller : List (Html.Attribute b)
-        , input : List (Two.Attribute msg)
-        , textAreaWrapper : List (Two.Attribute msg)
-        , inputParent : List (Two.Attribute msg)
-        , placeholder : List (Two.Attribute msg)
+        , input : List (Element2.Attribute id msg)
+        , textAreaWrapper : List (Element2.Attribute id msg)
+        , inputParent : List (Element2.Attribute id msg)
+        , placeholder : List (Element2.Attribute id msg)
         }
     ->
         { parent :
-            List (Two.Attribute msg)
+            List (Element2.Attribute id msg)
         , textAreaFiller : List (Html.Attribute b)
-        , input : List (Two.Attribute msg)
-        , textAreaWrapper : List (Two.Attribute msg)
-        , inputParent : List (Two.Attribute msg)
-        , placeholder : List (Two.Attribute msg)
+        , input : List (Element2.Attribute id msg)
+        , textAreaWrapper : List (Element2.Attribute id msg)
+        , inputParent : List (Element2.Attribute id msg)
+        , placeholder : List (Element2.Attribute id msg)
         }
 redistributeOver2 input attr els =
     case attr of
@@ -1162,15 +1162,18 @@ redistributeOver2 input attr els =
         Two.WhenAll _ _ _ _ ->
             { els | parent = attr :: els.parent }
 
+        Two.Animated _ _ ->
+            { els | parent = attr :: els.parent }
+
 
 {-| -}
 text :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         }
     -> Two.Element msg
 text =
@@ -1184,12 +1187,12 @@ text =
 {-| If spell checking is available, this input will be spellchecked.
 -}
 spellChecked :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         }
     -> Two.Element msg
 spellChecked =
@@ -1202,12 +1205,12 @@ spellChecked =
 
 {-| -}
 search :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         }
     -> Two.Element msg
 search =
@@ -1226,12 +1229,12 @@ A password takes all the arguments a normal `Input.text` would, and also **show*
 
 -}
 newPassword :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         , show : Bool
         }
     -> Two.Element msg
@@ -1257,12 +1260,12 @@ newPassword attrs pass =
 
 {-| -}
 currentPassword :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         , show : Bool
         }
     -> Two.Element msg
@@ -1288,12 +1291,12 @@ currentPassword attrs pass =
 
 {-| -}
 username :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         }
     -> Two.Element msg
 username =
@@ -1306,12 +1309,12 @@ username =
 
 {-| -}
 email :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         }
     -> Two.Element msg
 email =
@@ -1328,12 +1331,12 @@ By default it will have a minimum height of one line and resize based on it's co
 
 -}
 multiline :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder msg)
-        , label : Label msg
+        , placeholder : Maybe (Placeholder id msg)
+        , label : Label id msg
         , spellcheck : Bool
         }
     -> Two.Element msg
@@ -1361,7 +1364,7 @@ isHiddenLabel label =
             False
 
 
-applyLabel : List (Two.Attribute msg) -> Label msg -> Two.Element msg -> Two.Element msg
+applyLabel : List (Element2.Attribute id msg) -> Label id msg -> Two.Element msg -> Two.Element msg
 applyLabel attrs label input =
     case label of
         HiddenLabel labelText ->
@@ -1434,12 +1437,12 @@ optionWith val view =
 
 {-| -}
 radio :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : option -> msg
         , options : List (Option option msg)
         , selected : Maybe option
-        , label : Label msg
+        , label : Label id msg
         }
     -> Two.Element msg
 radio =
@@ -1449,12 +1452,12 @@ radio =
 {-| Same as radio, but displayed as a row
 -}
 radioRow :
-    List (Two.Attribute msg)
+    List (Element2.Attribute id msg)
     ->
         { onChange : option -> msg
         , options : List (Option option msg)
         , selected : Maybe option
-        , label : Label msg
+        , label : Label id msg
         }
     -> Two.Element msg
 radioRow =
@@ -1527,12 +1530,12 @@ defaultRadioOption optionLabel status =
 
 radioHelper2 :
     Orientation
-    -> List (Two.Attribute msg)
+    -> List (Element2.Attribute id msg)
     ->
         { onChange : option -> msg
         , options : List (Option option msg)
         , selected : Maybe option
-        , label : Label msg
+        , label : Label id msg
         }
     -> Two.Element msg
 radioHelper2 orientation attrs input =
@@ -1740,7 +1743,7 @@ space =
 
 
 {-| -}
-onKeyLookup2 : (String -> Maybe msg) -> Two.Attribute msg
+onKeyLookup2 : (String -> Maybe msg) -> Element2.Attribute id msg
 onKeyLookup2 lookup =
     let
         decode code =
@@ -1763,7 +1766,7 @@ onKeyLookup2 lookup =
 You should only have a maximum of one per page.
 
 -}
-focusedOnLoad : Two.Attribute msg
+focusedOnLoad : Element2.Attribute id msg
 focusedOnLoad =
     Two.Attr <| Html.Attributes.autofocus True
 
@@ -1772,7 +1775,7 @@ focusedOnLoad =
 {- Style Defaults -}
 
 
-defaultTextBoxStyle2 : List (Two.Attribute msg)
+defaultTextBoxStyle2 : List (Element2.Attribute id msg)
 defaultTextBoxStyle2 =
     [ Element2.paddingXY 12 12
     , Border2.rounded 3

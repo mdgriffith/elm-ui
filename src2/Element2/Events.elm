@@ -32,49 +32,49 @@ import VirtualDom
 
 
 {-| -}
-onMouseDown : msg -> Attribute msg
+onMouseDown : msg -> Attribute id msg
 onMouseDown =
     Two.Attr << Html.Events.onMouseDown
 
 
 {-| -}
-onMouseUp : msg -> Attribute msg
+onMouseUp : msg -> Attribute id msg
 onMouseUp =
     Two.Attr << Html.Events.onMouseUp
 
 
 {-| -}
-onClick : msg -> Attribute msg
+onClick : msg -> Attribute id msg
 onClick =
     Two.Attr << Html.Events.onClick
 
 
 {-| -}
-onDoubleClick : msg -> Attribute msg
+onDoubleClick : msg -> Attribute id msg
 onDoubleClick =
     Two.Attr << Html.Events.onDoubleClick
 
 
 {-| -}
-onPress : msg -> Attribute msg
+onPress : msg -> Attribute id msg
 onPress msg =
     Two.OnPress msg
 
 
 {-| -}
-onMouseEnter : msg -> Attribute msg
+onMouseEnter : msg -> Attribute id msg
 onMouseEnter =
     Two.Attr << Html.Events.onMouseEnter
 
 
 {-| -}
-onMouseLeave : msg -> Attribute msg
+onMouseLeave : msg -> Attribute id msg
 onMouseLeave =
     Two.Attr << Html.Events.onMouseLeave
 
 
 {-| -}
-onMouseMove : msg -> Attribute msg
+onMouseMove : msg -> Attribute id msg
 onMouseMove msg =
     on "mousemove" (Json.succeed msg)
 
@@ -97,37 +97,37 @@ onMouseMove msg =
 
 
 {-| -}
-onClickCoords : (Coords -> msg) -> Attribute msg
+onClickCoords : (Coords -> msg) -> Attribute id msg
 onClickCoords msg =
     on "click" (Json.map msg localCoords)
 
 
 {-| -}
-onClickScreenCoords : (Coords -> msg) -> Attribute msg
+onClickScreenCoords : (Coords -> msg) -> Attribute id msg
 onClickScreenCoords msg =
     on "click" (Json.map msg screenCoords)
 
 
 {-| -}
-onClickPageCoords : (Coords -> msg) -> Attribute msg
+onClickPageCoords : (Coords -> msg) -> Attribute id msg
 onClickPageCoords msg =
     on "click" (Json.map msg pageCoords)
 
 
 {-| -}
-onMouseCoords : (Coords -> msg) -> Attribute msg
+onMouseCoords : (Coords -> msg) -> Attribute id msg
 onMouseCoords msg =
     on "mousemove" (Json.map msg localCoords)
 
 
 {-| -}
-onMouseScreenCoords : (Coords -> msg) -> Attribute msg
+onMouseScreenCoords : (Coords -> msg) -> Attribute id msg
 onMouseScreenCoords msg =
     on "mousemove" (Json.map msg screenCoords)
 
 
 {-| -}
-onMousePageCoords : (Coords -> msg) -> Attribute msg
+onMousePageCoords : (Coords -> msg) -> Attribute id msg
 onMousePageCoords msg =
     on "mousemove" (Json.map msg pageCoords)
 
@@ -165,13 +165,13 @@ pageCoords =
 
 
 {-| -}
-onLoseFocus : msg -> Attribute msg
+onLoseFocus : msg -> Attribute id msg
 onLoseFocus =
     Two.Attr << Html.Events.onBlur
 
 
 {-| -}
-onFocus : msg -> Attribute msg
+onFocus : msg -> Attribute id msg
 onFocus =
     Two.Attr << Html.Events.onFocus
 
@@ -185,7 +185,7 @@ you have the power! Here is how `onClick` is defined for example:
 
     import Json.Decode as Json
 
-    onClick : msg -> Attribute msg
+    onClick : msg -> Attribute id msg
     onClick message =
         on "click" (Json.succeed message)
 
@@ -202,7 +202,7 @@ It really does help!
 [tutorial]: <https://github.com/evancz/elm-architecture-tutorial/>
 
 -}
-on : String -> Json.Decoder msg -> Attribute msg
+on : String -> Json.Decoder msg -> Attribute id msg
 on event decode =
     Two.Attr <| Html.Events.on event decode
 
@@ -210,7 +210,7 @@ on event decode =
 
 -- {-| Same as `on` but you can set a few options.
 -- -}
--- onWithOptions : String -> Html.Events.Options -> Json.Decoder msg -> Attribute msg
+-- onWithOptions : String -> Html.Events.Options -> Json.Decoder msg -> Attribute id msg
 -- onWithOptions event options decode =
 --     Two.Attr <| Html.Events.onWithOptions event options decode
 -- COMMON DECODERS
@@ -221,7 +221,7 @@ on event decode =
 
     import Json.Decode as Json
 
-    onInput : (String -> msg) -> Attribute msg
+    onInput : (String -> msg) -> Attribute id msg
     onInput tagger =
         on "input" (Json.map tagger targetValue)
 
@@ -239,7 +239,7 @@ targetValue =
 
     import Json.Decode as Json
 
-    onCheck : (Bool -> msg) -> Attribute msg
+    onCheck : (Bool -> msg) -> Attribute id msg
     onCheck tagger =
         on "input" (Json.map tagger targetChecked)
 
@@ -254,7 +254,7 @@ keyboard listeners like this:
 
     import Json.Decode as Json
 
-    onKeyUp : (Int -> msg) -> Attribute msg
+    onKeyUp : (Int -> msg) -> Attribute id msg
     onKeyUp tagger =
         on "keyup" (Json.map tagger keyCode)
 

@@ -253,6 +253,7 @@ animationTriggerKeyframes =
 @keyframes on-hovered { from {} to {} }
 @keyframes on-focused { from {} to {} }
 @keyframes on-pressed { from {} to {} }
+@keyframes on-rendered { from {} to {} }
 """
 
 
@@ -1380,15 +1381,15 @@ animationTriggers =
     [ Descriptor ".on-hovered:hover"
         [ Prop "animation" "on-hovered 0ms" 
         ]
-
     , Descriptor ".on-focused:focus"
         [ Prop "animation" "on-focused 0ms" 
         ]
-
     , Descriptor ".on-pressed:active"
         [ Prop "animation" "on-pressed 0ms"
         ]
-
+    , Descriptor ".on-rendered"
+        [ Prop "animation" "on-rendered 0ms"
+        ]
     ]
 
 

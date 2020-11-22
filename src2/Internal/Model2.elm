@@ -39,20 +39,38 @@ map fn el =
                 )
 
 
-type Msg
+type Msg id
     = RuleNew String
     | Trans Phase String (List TransitionDetails)
-    | Animate Trigger String (List Animated)
+    | BoxNew id Box
+    | Animate
+        (Maybe
+            { id : id
+            , box : Box
+            }
+        )
+        Trigger
+        String
+        (List Animated)
 
 
-type State
+type State id
     = State
         { added : Set String
         , rules : List String
+        , boxes : List ( id, Box )
         }
 
 
-update : Msg -> State -> State
+type alias Box =
+    { x : Float
+    , y : Float
+    , width : Float
+    , height : Float
+    }
+
+
+update : Msg id -> State id -> State id
 update msg ((State details) as unchanged) =
     case msg of
         RuleNew new ->
@@ -63,9 +81,17 @@ update msg ((State details) as unchanged) =
                 State
                     { rules = new :: details.rules
                     , added = Set.insert new details.added
+                    , boxes = details.boxes
                     }
 
-        Animate trigger classString props ->
+        BoxNew id box ->
+            State
+                { rules = details.rules
+                , added = details.added
+                , boxes = ( id, box ) :: details.boxes
+                }
+
+        Animate maybeId trigger classString props ->
             if Set.member classString details.added then
                 unchanged
 
@@ -108,6 +134,7 @@ update msg ((State details) as unchanged) =
                 State
                     { rules = new :: newReturn :: details.rules
                     , added = Set.insert classString details.added
+                    , boxes = details.boxes
                     }
 
         Trans phase classStr transition ->
@@ -150,6 +177,7 @@ update msg ((State details) as unchanged) =
                 State
                     { rules = new :: newReturn :: details.rules
                     , added = Set.insert classStr details.added
+                    , boxes = details.boxes
                     }
 
 
@@ -463,7 +491,7 @@ transitionToClass (Transition transition) =
         ++ String.fromInt transition.departing.curve
 
 
-mapAttr : (a -> b) -> Attribute a -> Attribute b
+mapAttr : (a -> b) -> Attribute id a -> Attribute id b
 mapAttr fn attr =
     case attr of
         NoAttribute ->
@@ -540,10 +568,14 @@ mapAttr fn attr =
                 }
 
         WhenAll toMsg trigger classStr props ->
-            WhenAll (fn << toMsg)
+            WhenAll
+                (fn << toMsg)
                 trigger
                 classStr
                 props
+
+        Animated toMsg id ->
+            Animated (fn << toMsg) id
 
 
 type Layout
@@ -557,12 +589,12 @@ type Layout
     | AsRoot
 
 
-class : String -> Attribute msg
+class : String -> Attribute id msg
 class cls =
     Attr (Attr.class cls)
 
 
-type Attribute msg
+type Attribute id msg
     = NoAttribute
     | OnPress msg
     | Attr (Html.Attribute msg)
@@ -596,8 +628,9 @@ type Attribute msg
       --                 class  var    value
     | ClassAndStyle Flag String String String
     | Nearby Location (Element msg)
-    | When (Msg -> msg) TransitionDetails
-    | WhenAll (Msg -> msg) Trigger String (List Animated)
+    | When (Msg id -> msg) TransitionDetails
+    | WhenAll (Msg id -> msg) Trigger String (List Animated)
+    | Animated (Msg id -> msg) id
 
 
 type Trigger
@@ -784,7 +817,7 @@ emptyPair =
     ( 0, 0 )
 
 
-element : Layout -> List (Attribute msg) -> List (Element msg) -> Element msg
+element : Layout -> List (Attribute id msg) -> List (Element msg) -> Element msg
 element layout attrs children =
     render layout
         emptyDetails
@@ -804,7 +837,7 @@ emptyEdges =
     }
 
 
-emptyDetails : Details msg
+emptyDetails : Details id msg
 emptyDetails =
     { name = "div"
     , node = 0
@@ -962,7 +995,7 @@ type alias Edges =
     }
 
 
-type alias Details msg =
+type alias Details id msg =
     -- Node reprsents html node like `div` or `a`.
     -- right now `0: div` and `1:
     { name : String
@@ -983,19 +1016,19 @@ type alias Details msg =
     , animEvents : List (Json.Decoder msg)
     , hover :
         Maybe
-            { toMsg : Msg -> msg
+            { toMsg : Msg id -> msg
             , class : String
             , transitions : List TransitionDetails
             }
     , focus :
         Maybe
-            { toMsg : Msg -> msg
+            { toMsg : Msg id -> msg
             , class : String
             , transitions : List TransitionDetails
             }
     , active :
         Maybe
-            { toMsg : Msg -> msg
+            { toMsg : Msg id -> msg
             , class : String
             , transitions : List TransitionDetails
             }
@@ -1101,13 +1134,13 @@ nonRowBits =
 
 render :
     Layout
-    -> Details msg
+    -> Details id msg
     -> List (Element msg)
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
     -> String
     -> NearbyChildren msg
-    -> List (Attribute msg)
+    -> List (Attribute id msg)
     -> Element msg
 render layout details children has htmlAttrs classes nearby attrs =
     case attrs of
@@ -1362,7 +1395,7 @@ render layout details children has htmlAttrs classes nearby attrs =
 
                                 animEvents ->
                                     Events.on "animationstart"
-                                        (Json.field "animationName" (Json.oneOf details.animEvents))
+                                        (Json.oneOf details.animEvents)
                                         :: attrsWithActive
 
                         attributes =
@@ -1998,7 +2031,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     triggerName trigger
 
                 event =
-                    Json.string
+                    Json.field "animationName" Json.string
                         |> Json.andThen
                             (\name ->
                                 let
@@ -2008,7 +2041,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                                 if name == triggerClass then
                                     Json.succeed
                                         (toMsg
-                                            (Animate trigger classStr props)
+                                            (Animate Nothing trigger classStr props)
                                         )
 
                                 else
@@ -2048,6 +2081,68 @@ render layout details children has htmlAttrs classes nearby attrs =
                 (classStr ++ " " ++ triggerClass ++ " " ++ classes)
                 nearby
                 remain
+
+        (Animated toMsg id) :: remain ->
+            if Flag.present Flag.id has then
+                render
+                    layout
+                    details
+                    children
+                    has
+                    htmlAttrs
+                    classes
+                    nearby
+                    remain
+
+            else
+                let
+                    event =
+                        Json.map2
+                            (\_ box ->
+                                toMsg (BoxNew id box)
+                            )
+                            (Json.field "animationName" Json.string
+                                |> Json.andThen
+                                    (\name ->
+                                        if name == "on-rendered" then
+                                            Json.succeed ()
+
+                                        else
+                                            Json.fail "Nonmatching animation"
+                                    )
+                            )
+                            decodeBoundingBox
+                in
+                render
+                    layout
+                    { name = details.name
+                    , node = details.node
+                    , spacingX = details.spacingX
+                    , spacingY = details.spacingY
+                    , fontOffset = details.fontOffset
+                    , fontHeight =
+                        details.fontHeight
+                    , fontSize =
+                        details.fontSize
+                    , heightFill = details.heightFill
+                    , widthFill = details.widthFill
+                    , padding = details.padding
+                    , borders = details.borders
+                    , x = details.x
+                    , y = details.y
+                    , rotate = details.rotate
+                    , scale = details.scale
+                    , animEvents = event :: details.animEvents
+                    , hover = details.hover
+                    , focus = details.focus
+                    , active = details.active
+                    }
+                    children
+                    (Flag.add Flag.id has)
+                    htmlAttrs
+                    ("on-rendered " ++ classes)
+                    nearby
+                    remain
 
 
 triggerName : Trigger -> String
@@ -2468,3 +2563,173 @@ contextClasses context =
 
         AsTextColumn ->
             textColumnClass
+
+
+
+{- DECODERS -}
+
+
+decodeBoundingBox2 =
+    Json.field "target"
+        (Json.map4
+            Box
+            (Json.field "clientLeft" Json.float)
+            (Json.field "clientTop" Json.float)
+            (Json.field "clientWidth" Json.float)
+            (Json.field "clientHeight" Json.float)
+         -- (decodeBoundingBoxParent 0 0)
+        )
+
+
+
+-- decodeBoundingBoxParent left top =
+--     Json.field "parentNode"
+--         (Json.field "nodeName"
+--         )
+
+
+decodeBoundingBox : Json.Decoder Box
+decodeBoundingBox =
+    Json.field "target"
+        (decodeInitialElementPosition
+            |> Json.andThen
+                (\pos ->
+                    let
+                        x =
+                            toFloat (floor pos.clientLeft - floor pos.offsetLeft)
+
+                        y =
+                            toFloat (floor pos.clientTop - floor pos.offsetTop)
+                    in
+                    Json.map3
+                        (\w h ( top, left ) ->
+                            { width = w
+                            , height = h
+                            , x = left
+                            , y = top
+                            }
+                        )
+                        (Json.field "clientWidth" Json.float)
+                        (Json.field "clientHeight" Json.float)
+                        (decodeElementPosition (negate y) (negate x))
+                )
+        )
+
+
+type alias ElementBox =
+    { clientLeft : Float
+    , clientTop : Float
+    , offsetLeft : Float
+    , offsetTop : Float
+    }
+
+
+decodeInitialElementPosition =
+    Json.map4 ElementBox
+        (Json.field "clientLeft" Json.float)
+        (Json.field "clientTop" Json.float)
+        (Json.field "offsetLeft" Json.float)
+        (Json.field "offsetTop" Json.float)
+
+
+{-| -}
+decodeElementPosition : Float -> Float -> Json.Decoder ( Float, Float )
+decodeElementPosition top left =
+    Json.oneOf
+        [ Json.field "offsetParent" (Json.nullable (Json.succeed ()))
+            |> Json.andThen
+                (\maybeNull ->
+                    case  maybeNull of
+                        Nothing ->
+                            -- there is no offset parent
+                            Json.map4
+                                (\clientLeft clientTop offsetLeft offsetTop ->
+                                    let
+                                        newTop =
+                                            top + (offsetTop + clientTop)
+
+                                        newLeft =
+                                            left + (offsetLeft + clientLeft)
+                                    in
+                                    ( newTop, newLeft )
+                                )
+                                (Json.field "clientLeft" Json.float)
+                                (Json.field "clientTop" Json.float)
+                                (Json.field "offsetLeft" Json.float)
+                                (Json.field "offsetTop" Json.float)
+
+                        Just () ->
+                            -- there is an offset parent
+                            Json.map4
+                                (\clientLeft clientTop offsetLeft offsetTop ->
+                                    let
+                                        newTop =
+                                            top + (offsetTop + clientTop)
+
+                                        newLeft =
+                                            left + (offsetLeft + clientLeft)
+                                    in
+                                    ( newTop, newLeft )
+                                )
+                                (Json.field "clientLeft" Json.float)
+                                (Json.field "clientTop" Json.float)
+                                (Json.field "offsetLeft" Json.float)
+                                (Json.field "offsetTop" Json.float)
+                                |> Json.andThen
+                                    (\( newTop, newLeft ) ->
+                                        Json.field "offsetParent"
+                                            (Json.lazy
+                                                (\_ ->
+                                                    decodeElementPosition
+                                                        newTop
+                                                        newLeft
+                                                )
+                                            )
+                                    )
+                )
+        , Json.succeed ( top, left )
+        ]
+
+
+type alias Overflow =
+    { moreOnLeft : Bool
+    , moreOnRight : Bool
+    , moreAbove : Bool
+    , moreBelow : Bool
+    }
+
+
+defaultOverflow : Overflow
+defaultOverflow =
+    { moreOnLeft = False
+    , moreOnRight = False
+    , moreAbove = False
+    , moreBelow = False
+    }
+
+
+decodeScrollPosition : Json.Decoder Overflow
+decodeScrollPosition =
+    Json.field "target"
+        (Json.map6
+            (\scrollLeft scrollTop clientWidth clientHeight scrollWidth scrollHeight ->
+                let
+                    onLeftEdge =
+                        scrollLeft == 0
+
+                    onRightEdge =
+                        abs ((clientWidth + scrollLeft) - scrollWidth) == 0
+                in
+                { moreOnLeft = not onLeftEdge
+                , moreOnRight = not onRightEdge
+                , moreAbove = scrollTop /= 0
+                , moreBelow = abs ((clientHeight + scrollTop) - scrollHeight) /= 0
+                }
+            )
+            (Json.field "scrollLeft" Json.int)
+            (Json.field "scrollTop" Json.int)
+            (Json.field "clientWidth" Json.int)
+            (Json.field "clientHeight" Json.int)
+            (Json.field "scrollWidth" Json.int)
+            (Json.field "scrollHeight" Json.int)
+        )

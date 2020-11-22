@@ -77,15 +77,34 @@ wobble wob (Two.Anim cls personality name val) =
         val
 
 
-with : (Msg -> msg) -> Timeline state -> (state -> List Animated) -> Attribute msg
-with toMsg timeine fn =
+with : (Msg id -> msg) -> Timeline state -> (state -> List Animated) -> Attribute id msg
+with toMsg timeline fn =
     Debug.todo ""
 
 
 {-| -}
-hovered : (Msg -> msg) -> List Animated -> Attribute msg
+id : (Msg id -> msg) -> id -> Attribute id msg
+id toMsg identifier =
+    --  attach a class and a message handler for the animation message
+    -- we could also need to gather up any animateable state as well
+    Two.Animated toMsg identifier
+
+
+{-| -}
+animated : (Msg id -> msg) -> List Animated -> Attribute id msg
+animated toMsg attrs =
+    Two.WhenAll
+        toMsg
+        (Two.OnIf True)
+        (className attrs)
+        attrs
+
+
+{-| -}
+hovered : (Msg id -> msg) -> List Animated -> Attribute id msg
 hovered toMsg attrs =
-    Two.WhenAll toMsg
+    Two.WhenAll
+        toMsg
         Two.OnHovered
         (className attrs)
         attrs
@@ -105,27 +124,30 @@ className attrs =
 
 
 {-| -}
-focused : (Msg -> msg) -> List Animated -> Attribute msg
+focused : (Msg id -> msg) -> List Animated -> Attribute id msg
 focused toMsg attrs =
-    Two.WhenAll toMsg
+    Two.WhenAll
+        toMsg
         Two.OnFocused
         (className attrs)
         attrs
 
 
 {-| -}
-pressed : (Msg -> msg) -> List Animated -> Attribute msg
+pressed : (Msg id -> msg) -> List Animated -> Attribute id msg
 pressed toMsg attrs =
-    Two.WhenAll toMsg
+    Two.WhenAll
+        toMsg
         Two.OnPressed
         (className attrs)
         attrs
 
 
 {-| -}
-when : (Msg -> msg) -> Bool -> List Animated -> Attribute msg
+when : (Msg id -> msg) -> Bool -> List Animated -> Attribute id msg
 when toMsg trigger attrs =
-    Two.WhenAll toMsg
+    Two.WhenAll
+        toMsg
         (Two.OnIf trigger)
         (className attrs)
         attrs
@@ -136,7 +158,7 @@ when toMsg trigger attrs =
 _NOTE_ this may be unreliable
 
 -}
-created : (Msg -> msg) -> List Animated -> Attribute msg
+created : (Msg id -> msg) -> List Animated -> Attribute id msg
 created toMsg attrs =
     Debug.todo ""
 

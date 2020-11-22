@@ -82,7 +82,7 @@ type Font
 
 
 {-| -}
-color : Color -> Two.Attribute msg
+color : Color -> Two.Attribute id msg
 color fontColor =
     Two.Attr (Attr.style "color" (Style.color fontColor))
 
@@ -102,7 +102,7 @@ color fontColor =
             (text "")
 
 -}
-family : List Font -> Attribute msg
+family : List Font -> Attribute id msg
 family typefaces =
     Two.Attr (Attr.style "font-family" (renderFont typefaces ""))
 
@@ -217,7 +217,7 @@ with :
     , sizing : Sizing
     , variants : List Variant
     }
-    -> Attribute msg
+    -> Attribute id msg
 with details =
     case details.sizing of
         Full ->
@@ -289,14 +289,14 @@ renderVariants variants str =
 
 {-| Font sizes are always given as `px`.
 -}
-size : Int -> Two.Attribute msg
+size : Int -> Two.Attribute id msg
 size i =
     Two.FontSize i
 
 
 {-| In `px`.
 -}
-letterSpacing : Float -> Attribute msg
+letterSpacing : Float -> Attribute id msg
 letterSpacing offset =
     Two.Attr
         (Attr.style "letter-spacing" (String.fromFloat offset ++ "px"))
@@ -304,7 +304,7 @@ letterSpacing offset =
 
 {-| In `px`.
 -}
-wordSpacing : Float -> Two.Attribute msg
+wordSpacing : Float -> Two.Attribute id msg
 wordSpacing offset =
     Two.Attr
         (Attr.style "word-spacing" (String.fromFloat offset ++ "px"))
@@ -312,113 +312,113 @@ wordSpacing offset =
 
 {-| Align the font to the left.
 -}
-alignLeft : Attribute msg
+alignLeft : Attribute id msg
 alignLeft =
     Two.Class Flag.fontAlignment Style.classes.textLeft
 
 
 {-| Align the font to the right.
 -}
-alignRight : Attribute msg
+alignRight : Attribute id msg
 alignRight =
     Two.Class Flag.fontAlignment Style.classes.textRight
 
 
 {-| Center align the font.
 -}
-center : Attribute msg
+center : Attribute id msg
 center =
     Two.Class Flag.fontAlignment Style.classes.textCenter
 
 
 {-| -}
-justify : Attribute msg
+justify : Attribute id msg
 justify =
     Two.Class Flag.fontAlignment Style.classes.textJustify
 
 
 
 -- {-| -}
--- justifyAll : Attribute msg
+-- justifyAll : Attribute id msg
 -- justifyAll =
 --     Internal.class Style.classesTextJustifyAll
 
 
 {-| -}
-underline : Attribute msg
+underline : Attribute id msg
 underline =
     Two.class Style.classes.underline
 
 
 {-| -}
-strike : Attribute msg
+strike : Attribute id msg
 strike =
     Two.class Style.classes.strike
 
 
 {-| -}
-italic : Attribute msg
+italic : Attribute id msg
 italic =
     Two.class Style.classes.italic
 
 
 {-| -}
-bold : Attribute msg
+bold : Attribute id msg
 bold =
     Two.Attr (Attr.style "font-weight" "700")
 
 
 {-| -}
-light : Attribute msg
+light : Attribute id msg
 light =
     Two.Attr (Attr.style "font-weight" "300")
 
 
 {-| -}
-hairline : Attribute msg
+hairline : Attribute id msg
 hairline =
     Two.Attr (Attr.style "font-weight" "100")
 
 
 {-| -}
-extraLight : Attribute msg
+extraLight : Attribute id msg
 extraLight =
     Two.Attr (Attr.style "font-weight" "200")
 
 
 {-| -}
-regular : Attribute msg
+regular : Attribute id msg
 regular =
     Two.Attr (Attr.style "font-weight" "400")
 
 
 {-| -}
-semiBold : Attribute msg
+semiBold : Attribute id msg
 semiBold =
     Two.Attr (Attr.style "font-weight" "600")
 
 
 {-| -}
-medium : Attribute msg
+medium : Attribute id msg
 medium =
     Two.Attr (Attr.style "font-weight" "500")
 
 
 {-| -}
-extraBold : Attribute msg
+extraBold : Attribute id msg
 extraBold =
     Two.Attr (Attr.style "font-weight" "800")
 
 
 {-| -}
-heavy : Attribute msg
+heavy : Attribute id msg
 heavy =
     Two.Attr (Attr.style "font-weight" "900")
 
 
 {-| This will reset bold and italic.
 -}
-unitalicized : Attribute msg
+unitalicized : Attribute id msg
 unitalicized =
     Two.Attr (Attr.class Style.classes.textUnitalicized)
 
@@ -429,7 +429,7 @@ shadow :
     , blur : Float
     , color : Color
     }
-    -> Attribute msg
+    -> Attribute id msg
 shadow shade =
     -- Two.Style Flag.txtShadows
     --     ("text-shadow:"
@@ -451,7 +451,7 @@ shadow shade =
 
 {-| A glow is just a simplified shadow.
 -}
-glow : Color -> Float -> Attribute msg
+glow : Color -> Float -> Attribute id msg
 glow clr i =
     let
         shade =
@@ -565,7 +565,7 @@ gradient :
     { angle : Float
     , steps : List Color
     }
-    -> Attribute msg
+    -> Attribute id msg
 gradient details =
     -- Two.ClassAndStyle Flag.fontColor
     --     Style.classes.textGradient

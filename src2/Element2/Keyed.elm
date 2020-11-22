@@ -26,21 +26,21 @@ import Internal.Style2 as Style
 
 
 {-| -}
-el : List (Attribute msg) -> ( String, Element msg ) -> Element msg
+el : List (Attribute id msg) -> ( String, Element msg ) -> Element msg
 el attrs child =
     -- Two.elementKeyed Two.AsEl attrs [ child ]
     Debug.todo "Implement the keyed renderer!"
 
 
 {-| -}
-row : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
+row : List (Attribute id msg) -> List ( String, Element msg ) -> Element msg
 row =
     -- Two.elementKeyed Two.AsRow
     Debug.todo "Implement the keyed renderer!"
 
 
 {-| -}
-column : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
+column : List (Attribute id msg) -> List ( String, Element msg ) -> Element msg
 column =
     -- Two.elementKeyed Two.AsColumn
     Debug.todo "Implement the keyed renderer!"

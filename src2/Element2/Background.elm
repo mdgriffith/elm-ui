@@ -25,7 +25,7 @@ import Internal.Style2 as Style
 
 
 {-| -}
-color : Color -> Two.Attribute msg
+color : Color -> Two.Attribute id msg
 color (Style.Rgb red green blue) =
     Two.Attr
         (Attr.style "background-color"
@@ -40,7 +40,7 @@ color (Style.Rgb red green blue) =
 
 {-| Resize the image to fit the containing element while maintaining proportions and cropping the overflow.
 -}
-image : String -> Attribute msg
+image : String -> Attribute id msg
 image src =
     Two.Attr
         (Attr.style "background"
@@ -50,7 +50,7 @@ image src =
 
 {-| A centered background image that keeps its natural proportions, but scales to fit the space.
 -}
-uncropped : String -> Attribute msg
+uncropped : String -> Attribute id msg
 uncropped src =
     Two.Attr
         (Attr.style "background"
@@ -60,7 +60,7 @@ uncropped src =
 
 {-| Tile an image in the x and y axes.
 -}
-tiled : String -> Attribute msg
+tiled : String -> Attribute id msg
 tiled src =
     Two.Attr
         (Attr.style "background"
@@ -70,7 +70,7 @@ tiled src =
 
 {-| Tile an image in the x axis.
 -}
-tiledX : String -> Attribute msg
+tiledX : String -> Attribute id msg
 tiledX src =
     Two.Attr
         (Attr.style "background"
@@ -80,7 +80,7 @@ tiledX src =
 
 {-| Tile an image in the y axis.
 -}
-tiledY : String -> Attribute msg
+tiledY : String -> Attribute id msg
 tiledY src =
     Two.Attr
         (Attr.style "background"
@@ -135,7 +135,7 @@ gradient :
     { angle : Float
     , steps : List Color
     }
-    -> Attribute msg
+    -> Attribute id msg
 gradient { angle, steps } =
     case steps of
         [] ->
@@ -164,7 +164,7 @@ gradient { angle, steps } =
 
 
 -- {-| -}
--- gradientWith : { direction : Direction, steps : List Step } -> Attribute msg
+-- gradientWith : { direction : Direction, steps : List Step } -> Attribute id msg
 -- gradientWith { direction, steps } =
 --     StyleClass <|
 --         Single ("bg-gradient-" ++ (String.join "-" <| renderDirectionClass direction :: List.map renderStepClass steps))
