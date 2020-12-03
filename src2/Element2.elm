@@ -4,7 +4,7 @@ module Element2 exposing
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
     , Attribute, Length, px, fill, portion, width, height
-    , ellip, transition
+    , ellip
     , explain
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
@@ -21,7 +21,7 @@ module Element2 exposing
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , map, mapAttribute
     , html, htmlAttribute
-    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, init, scrollbarX, scrollbarY, update
+    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, init, scrollbarX, scrollbarY, transition, update
     )
 
 {-|
@@ -269,7 +269,7 @@ map =
 
 
 {-| -}
-mapAttribute :  (Msg msg2 -> msg2) -> (msg -> msg2) -> Attribute msg -> Attribute msg2
+mapAttribute : (Msg msg2 -> msg2) -> (msg -> msg2) -> Attribute msg -> Attribute msg2
 mapAttribute =
     Two.mapAttr
 
@@ -374,10 +374,12 @@ duration dur =
             }
         }
 
-{-|-}
+
+{-| -}
 transition : (Msg msg -> msg) -> msg -> msg
 transition toMsg appMsg =
     toMsg (Two.RefreshBoxesAndThen appMsg)
+
 
 update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
 update =
