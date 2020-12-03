@@ -30,7 +30,7 @@ main =
         --     [ Font.typeface "EB Garamond"
         --     , Font.sansSerif
         --     ]
-        , Font.familyWith
+        , Font.with
             { name = "EB Garamond"
             , fallback = [ Font.serif ]
             , sizing =

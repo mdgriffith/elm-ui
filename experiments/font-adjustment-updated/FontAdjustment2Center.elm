@@ -1,4 +1,4 @@
-module FontAdjustment exposing (main)
+module FontAdjustment2Center exposing (main)
 
 {-| Line Height as its specified through CSS doesn't make a whole lot of sense typographically.
 
@@ -24,11 +24,8 @@ import Html.Attributes
 
 
 type alias FontAdjustment =
-    { lineHeight : Float
-    , capital : Line
-    , lowercase : Line
-    , baseline : Line
-    , descender : Line
+    { offset : Float
+    , height : Float
     }
 
 
@@ -47,15 +44,19 @@ edges =
     , left = 0
     }
 
+reset = 
+    { offset = 0
+    , height = 1
+
+    }
+
 
 garamond =
     let
         default =
-            { capital = 1.09
-            , lowercase = 0.81
-            , baseline = 0.385
-            , descender = 0.095
-            , lineHeight = 1.5
+             { offset = 0
+            , height = 1
+
             }
     in
     { adjustment =
@@ -67,11 +68,7 @@ garamond =
         , name = "EB Garamond"
         , variants = []
         , adjustment =
-            { capital = default.capital
-            , lowercase = default.lowercase
-            , baseline = default.baseline
-            , descender = default.descender
-            }
+            default
         }
     }
 
@@ -79,11 +76,9 @@ garamond =
 catamaran =
     let
         default =
-            { capital = 1.15
-            , lowercase = 0.96
-            , baseline = 0.465
-            , descender = 0.245
-            , lineHeight = 1.5
+             { offset = 0
+                , height = 1
+
             }
     in
     { adjustment =
@@ -95,11 +90,7 @@ catamaran =
         , name = "Catamaran"
         , variants = []
         , adjustment =
-            { capital = default.capital
-            , lowercase = default.lowercase
-            , baseline = default.baseline
-            , descender = default.descender
-            }
+           default
         }
     }
 
@@ -107,12 +98,10 @@ catamaran =
 poiret =
     let
         default =
-            { capital = 1.12
-            , lowercase = 0.82
-            , baseline = 0.365
-            , descender = 0.18
-            , lineHeight = 1.5
-            }
+             { offset = 0
+                , height = 1
+
+                }
     in
     { adjustment =
         default
@@ -123,11 +112,7 @@ poiret =
         , name = "Poiret One"
         , variants = []
         , adjustment =
-            { capital = default.capital
-            , lowercase = default.lowercase
-            , baseline = default.baseline
-            , descender = default.descender
-            }
+            default
         }
     }
 
@@ -135,12 +120,10 @@ poiret =
 roboto =
     let
         default =
-            { capital = 1.115
-            , lowercase = 0.93
-            , baseline = 0.4
-            , descender = 0.19
-            , lineHeight = 1.5
-            }
+             { offset = 0
+                , height = 1
+
+                }
     in
     { adjustment =
         default
@@ -150,11 +133,7 @@ roboto =
         { url = Just "https://fonts.googleapis.com/css?family=Roboto"
         , name = "Roboto"
         , adjustment =
-            { capital = default.capital
-            , lowercase = default.lowercase
-            , baseline = default.baseline
-            , descender = default.descender
-            }
+           default
         , variants = []
         }
     }
@@ -183,11 +162,7 @@ update msg model =
                 , font =
                     { font
                         | adjustment =
-                            { capital = adj.capital
-                            , lowercase = adj.lowercase
-                            , baseline = adj.baseline
-                            , descender = adj.descender
-                            }
+                            adj
                     }
             }
 
@@ -224,14 +199,15 @@ view model =
               --     { url = "https://fonts.googleapis.com/css?family=Catamaran"
               --     , name = "Catamaran"
               --     }
-              Font.with
-                { name = model.font.name
-                , adjustment = Just model.font.adjustment
-                , variants = model.font.variants
-                }
+            --   Font.with
+            --     { name = model.font.name
+            --     , adjustment = Just model.font.adjustment
+            --     , variants = model.font.variants
+            --     }
 
             -- model.font
-            , Font.sansSerif
+            -- , 
+            Font.sansSerif
             ]
         ]
     <|
@@ -256,29 +232,39 @@ charcoal =
 adjustor size adjustment =
     let
         labels =
-            [ viewAdjustment "Type Height" adjustment.capital size 180 adjustment.lineHeight (\capital -> { adjustment | capital = capital })
-            , viewAdjustment "Lowercase Height" adjustment.lowercase size 60 adjustment.lineHeight (\lowercase -> { adjustment | lowercase = lowercase })
-            , viewAdjustment "Baseline" adjustment.baseline size 120 adjustment.lineHeight (\baseline -> { adjustment | baseline = baseline })
-            , viewAdjustment "Descender" adjustment.descender size 0 adjustment.lineHeight (\descender -> { adjustment | descender = descender })
+            [ viewAdjustment "Offset" adjustment.offset 180  
+                -1 0
+                (\offset -> { adjustment | offset = offset })
+            , viewAdjustment "Height" adjustment.height 50 
+                0
+                1
+                (\height -> { adjustment | height = height })
             ]
     in
     el
         ([ centerX
          , centerY
          , Background.color (rgb 0 0.8 0.9)
-        --  , class "lh-15"
-         , style "line-height" (String.fromFloat adjustment.lineHeight)
-         , onRight
+         , inFront
             (el
-                [ centerY
-                , width (px 40)
-
-                -- , height (px (round (toFloat size * (1 / 1.5))))
-                , height (px size)
-                , Background.color (rgb 0.9 0.8 0)
+                [ height (px (round (toFloat size *  adjustment.height)))
+                , width (px 800)
+                , moveRight 10
+                -- , alignBottom
+                , moveUp (toFloat size * adjustment.offset)
+                , Border.color (rgb 0 0 0)
+                , Border.dashed
+                , Border.widthEach
+                    { top = 1
+                    , right = 0
+                    , bottom = 1
+                    , left = 0
+                    }
                 ]
                 none
             )
+        
+         , style "line-height" "1"
          , Font.size size
          ]
             ++ labels
@@ -425,71 +411,25 @@ corrected converted label =
         )
 
 
-convertAdjustment adjustment =
-    let
-        base =
-            adjustment.lineHeight
 
-        normalDescender =
-            (adjustment.lineHeight - 1)
-                / 2
+type alias Details =  
+    { offset : Float
+    , height : Float
+    
 
-        oldMiddle =
-            adjustment.lineHeight / 2
-
-        newCapitalMiddle =
-            ((ascender - newBaseline) / 2) + newBaseline
-
-        newFullMiddle =
-            ((ascender - descender) / 2) + descender
-
-        lines =
-            [ adjustment.capital
-            , adjustment.baseline
-            , adjustment.descender
-            , adjustment.lowercase
-            ]
-
-        ascender =
-            Maybe.withDefault adjustment.capital (List.maximum lines)
-
-        descender =
-            Maybe.withDefault adjustment.descender (List.minimum lines)
-
-        newBaseline =
-            lines
-                |> List.filter (\x -> x /= descender)
-                |> List.minimum
-                |> Maybe.withDefault adjustment.baseline
-
-        capitalVertical =
-            (oldMiddle - newCapitalMiddle) * 2
-
-        fullVertical =
-            (oldMiddle - newFullMiddle) * 2
-    in
-    { full =
-        { vertical = fullVertical
-        , height =
-            (ascender - descender)
-                - abs fullVertical
-        }
-    , capital =
-        { vertical = capitalVertical
-        , height = (ascender - newBaseline) - abs capitalVertical
-        }
     }
 
+convertAdjustment : FontAdjustment -> Details
+convertAdjustment adjustment =
+    adjustment
 
-viewAdjustment label adjustment size left lineHeight updateWith =
-    let
-        fullHeight =
-            toFloat size * 1.5
-    in
+
+viewAdjustment label adjustment left minVal maxVal updateWith =
+  
     onLeft
         (el
             [ moveLeft left
-            , height (px (round (toFloat size * lineHeight)))
+            , height fill
             ]
          <|
             Input.slider
@@ -504,33 +444,16 @@ viewAdjustment label adjustment size left lineHeight updateWith =
                         ]
                         Element.none
                     )
-                , height (px (round fullHeight))
+                , height fill
                 , width (px 1)
                 , spacing 0
                 , Background.color charcoal
                 , below (el [ centerX ] (text (String.fromFloat adjustment)))
-                , onRight
-                    (el
-                        [ height (px 0)
-                        , width (px 800)
-                        , moveRight 10
-                        , alignBottom
-                        , moveUp (fullHeight * (adjustment / lineHeight))
-                        , Border.color (rgb 0 0 0)
-                        , Border.dashed
-                        , Border.widthEach
-                            { top = 1
-                            , right = 0
-                            , bottom = 0
-                            , left = 0
-                            }
-                        ]
-                        none
-                    )
+                
                 ]
                 { label = Input.labelHidden "font adjustment"
-                , max = lineHeight
-                , min = 0
+                , max = maxVal
+                , min = minVal
                 , onChange =
                     \x ->
                         UpdateAdjustment
