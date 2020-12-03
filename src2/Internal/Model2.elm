@@ -12,6 +12,10 @@ import Json.Decode as Json
 import Json.Encode
 import Set exposing (Set)
 import VirtualDom
+import Task
+import Browser.Dom
+import Animator
+import Animator.Css
 
 
 {-| Data to potentially pass down.
@@ -38,14 +42,32 @@ map fn el =
                     Html.map fn (elem s)
                 )
 
+mapUIMsg : (a -> b) -> Msg a -> Msg b
+mapUIMsg fn msg = 
+    case msg of
+        RuleNew str ->
+            RuleNew str
+        Trans phase str detailList ->
+            Trans phase str detailList
+        BoxNew id box ->
+            BoxNew id box 
+        RefreshBoxesAndThen externalMsg ->
+            RefreshBoxesAndThen (fn externalMsg)
+        Animate maybeBox  trigger classString props ->
+            Animate maybeBox trigger classString props
 
-type Msg id
+        BoxesNew externalMsg newBoxes  ->
+            BoxesNew (fn externalMsg) newBoxes 
+
+type Msg msg
     = RuleNew String
     | Trans Phase String (List TransitionDetails)
-    | BoxNew id Box
+    | BoxNew Id Box
+    | RefreshBoxesAndThen msg
+    | BoxesNew msg (List ( Id, Box ))
     | Animate
         (Maybe
-            { id : id
+            { id : Id
             , box : Box
             }
         )
@@ -54,11 +76,11 @@ type Msg id
         (List Animated)
 
 
-type State id
+type State 
     = State
         { added : Set String
         , rules : List String
-        , boxes : List ( id, Box )
+        , boxes : List ( Id, Box )
         }
 
 
@@ -70,30 +92,127 @@ type alias Box =
     }
 
 
-update : Msg id -> State id -> State id
-update msg ((State details) as unchanged) =
+
+{-|
+  refreshed means this new box will completely replace an existing one.
+
+-}
+matchBox : 
+    Id 
+        -> List (Id, Box) 
+        -> Maybe 
+            { box : Box
+            , transition : Bool
+            , others : List (Id, Box)
+            }
+matchBox id boxes =
+   matchBoxHelper id boxes []
+
+
+matchBoxHelper ((Id identifier instance) as id) boxes passed =
+    case boxes of 
+        [] ->
+            Nothing
+        (((Id topIdentifier topInstance) as topId), topBox) :: others ->
+            if topIdentifier == identifier then 
+                Just 
+                    { box = topBox
+                    , transition = instance /= topInstance
+                    , others = passed ++ others
+                    }
+
+            else 
+                matchBoxHelper id others ((topId, topBox) :: passed)
+                    
+
+
+moveAnimation className previous current =
+    let 
+        from = 
+            bboxCss previous
+
+        to =
+            bboxCss current
+        keyframes = "@keyframes "++className ++" { from { " ++ from ++ " } to { "++ to ++ "} }"
+        classRule = "." ++ className ++ "{ position:fixed; animation: " ++ className ++ " 2000ms !important; animation-fill-mode: both !important; }"
+    in
+    (keyframes ++ classRule)
+
+   
+
+bboxCss box =
+    "left:" ++ String.fromFloat box.x ++ "px; top: "
+         ++ String.fromFloat box.y ++ "px; width:"
+         ++ String.fromFloat box.width ++ "px; height:"
+         ++ String.fromFloat box.height ++ "px;"
+
+
+type alias Animator model =
+    Animator.Animator model
+
+
+
+
+
+updateWith : (Msg msg -> msg) -> Msg msg -> State -> 
+                { ui : (State -> model)
+                , timelines : Animator model
+                } -> 
+                (State, Cmd msg)
+updateWith toAppMsg msg ((State details) as unchanged) config =
+    (unchanged, Cmd.none)
+
+update : (Msg msg -> msg) -> Msg msg -> State -> (State, Cmd msg)
+update toAppMsg msg ((State details) as unchanged) =
     case msg of
         RuleNew new ->
             if Set.member new details.added then
-                unchanged
+                (unchanged, Cmd.none)
 
             else
-                State
+                ( State
                     { rules = new :: details.rules
                     , added = Set.insert new details.added
                     , boxes = details.boxes
                     }
+                , Cmd.none
+                )
 
         BoxNew id box ->
-            State
-                { rules = details.rules
-                , added = details.added
-                , boxes = ( id, box ) :: details.boxes
-                }
+            -- if this id matches an existing box in the cache
+            -- it means this box was previously rendered at the position found
+            case matchBox id details.boxes of 
+                Nothing ->
+                    (State
+                        { rules = details.rules
+                        , added = details.added
+                        , boxes = ( id, box ) :: details.boxes
+                        }
+                    , Cmd.none 
+                    )
+                
+                Just found ->
+                    (State
+                        { rules = 
+                            if found.transition then 
+                                let 
+                                    previous = found.box
+                                    current = box
+
+                                in
+                                moveAnimation (toCssClass id) previous current
+                                    :: details.rules
+                            else 
+                                details.rules
+                        , added = details.added
+                        , boxes = ( id, box ) :: found.others
+                        }
+                    , Cmd.none
+                    )
 
         Animate maybeId trigger classString props ->
             if Set.member classString details.added then
-                unchanged
+                (unchanged, Cmd.none)
 
             else
                 let
@@ -131,15 +250,17 @@ update msg ((State details) as unchanged) =
                             ++ ("transition:" ++ departingTransitionStr ++ ";")
                             ++ "}"
                 in
-                State
+                (State
                     { rules = new :: newReturn :: details.rules
                     , added = Set.insert classString details.added
                     , boxes = details.boxes
                     }
+                , Cmd.none
+                )
 
         Trans phase classStr transition ->
             if Set.member classStr details.added then
-                unchanged
+                (unchanged, Cmd.none )
 
             else
                 let
@@ -174,11 +295,59 @@ update msg ((State details) as unchanged) =
                             ++ ("transition:" ++ departingTransitionStr ++ ";")
                             ++ "}"
                 in
-                State
+                ( State
                     { rules = new :: newReturn :: details.rules
                     , added = Set.insert classStr details.added
                     , boxes = details.boxes
                     }
+                , Cmd.none
+                )
+
+        RefreshBoxesAndThen uiMsg ->
+            ( unchanged
+            , requestBoundingBoxes details.boxes 
+                |> Task.perform 
+                    (toAppMsg << (BoxesNew uiMsg))
+            )
+
+        BoxesNew uiMsg newBoxes ->
+            -- we've received new boxes
+            -- This represents ground truth for the moment
+            ( State
+                { details | boxes = newBoxes
+                }
+            , Task.succeed uiMsg
+                |> Task.perform identity
+            )
+
+
+requestBoundingBoxes boxes =
+    Task.succeed [] 
+        |> requestBoundingBoxesHelper boxes
+
+
+requestBoundingBoxesHelper boxes task =
+    case boxes of 
+        [] ->
+            task
+        
+        ((topId, topBox) ::remaining) ->
+            let
+                newTask = 
+                    task |> Task.andThen 
+                            (\list ->
+                                Browser.Dom.getElement (toCssId topId)
+                                    |> Task.map 
+                                        (\newBox ->
+                                            (topId, newBox.element) :: list
+                                        )
+                                    |> Task.onError 
+                                        (\_ -> Task.succeed list)
+                            )
+            in
+            requestBoundingBoxesHelper remaining newTask
+            
+                
 
 
 type alias Transform =
@@ -491,8 +660,8 @@ transitionToClass (Transition transition) =
         ++ String.fromInt transition.departing.curve
 
 
-mapAttr : (a -> b) -> Attribute id a -> Attribute id b
-mapAttr fn attr =
+mapAttr : (Msg b -> b) -> (a -> b) -> Attribute a -> Attribute b
+mapAttr uiFn fn attr =
     case attr of
         NoAttribute ->
             NoAttribute
@@ -559,7 +728,7 @@ mapAttr fn attr =
             Nearby loc (map fn el)
 
         When toMsg when ->
-            When (fn << toMsg)
+            When uiFn
                 { phase = when.phase
                 , class = when.class
                 , transition = when.transition
@@ -569,13 +738,13 @@ mapAttr fn attr =
 
         WhenAll toMsg trigger classStr props ->
             WhenAll
-                (fn << toMsg)
+                uiFn
                 trigger
                 classStr
                 props
 
         Animated toMsg id ->
-            Animated (fn << toMsg) id
+            Animated uiFn id
 
 
 type Layout
@@ -588,13 +757,24 @@ type Layout
     | AsTextColumn
     | AsRoot
 
+{-|-}
+type Id = Id String String
 
-class : String -> Attribute id msg
+toCssClass : Id -> String
+toCssClass (Id one two) =
+    one ++ "_" ++ two
+
+toCssId : Id -> String
+toCssId (Id one two) =
+    one ++ "_" ++ two
+
+
+class : String -> Attribute  msg
 class cls =
     Attr (Attr.class cls)
 
 
-type Attribute id msg
+type Attribute msg
     = NoAttribute
     | OnPress msg
     | Attr (Html.Attribute msg)
@@ -628,9 +808,9 @@ type Attribute id msg
       --                 class  var    value
     | ClassAndStyle Flag String String String
     | Nearby Location (Element msg)
-    | When (Msg id -> msg) TransitionDetails
-    | WhenAll (Msg id -> msg) Trigger String (List Animated)
-    | Animated (Msg id -> msg) id
+    | When (Msg msg -> msg) TransitionDetails
+    | WhenAll (Msg msg -> msg) Trigger String (List Animated)
+    | Animated (Msg msg -> msg) Id
 
 
 type Trigger
@@ -817,7 +997,7 @@ emptyPair =
     ( 0, 0 )
 
 
-element : Layout -> List (Attribute id msg) -> List (Element msg) -> Element msg
+element : Layout -> List (Attribute msg) -> List (Element msg) -> Element msg
 element layout attrs children =
     render layout
         emptyDetails
@@ -837,7 +1017,7 @@ emptyEdges =
     }
 
 
-emptyDetails : Details id msg
+emptyDetails : Details msg
 emptyDetails =
     { name = "div"
     , node = 0
@@ -995,7 +1175,7 @@ type alias Edges =
     }
 
 
-type alias Details id msg =
+type alias Details msg =
     -- Node reprsents html node like `div` or `a`.
     -- right now `0: div` and `1:
     { name : String
@@ -1016,19 +1196,19 @@ type alias Details id msg =
     , animEvents : List (Json.Decoder msg)
     , hover :
         Maybe
-            { toMsg : Msg id -> msg
+            { toMsg : Msg msg -> msg
             , class : String
             , transitions : List TransitionDetails
             }
     , focus :
         Maybe
-            { toMsg : Msg id -> msg
+            { toMsg : Msg msg -> msg
             , class : String
             , transitions : List TransitionDetails
             }
     , active :
         Maybe
-            { toMsg : Msg id -> msg
+            { toMsg : Msg msg -> msg
             , class : String
             , transitions : List TransitionDetails
             }
@@ -1134,13 +1314,13 @@ nonRowBits =
 
 render :
     Layout
-    -> Details id msg
+    -> Details  msg
     -> List (Element msg)
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
     -> String
     -> NearbyChildren msg
-    -> List (Attribute id msg)
+    -> List (Attribute msg)
     -> Element msg
 render layout details children has htmlAttrs classes nearby attrs =
     case attrs of
@@ -2139,8 +2319,8 @@ render layout details children has htmlAttrs classes nearby attrs =
                     }
                     children
                     (Flag.add Flag.id has)
-                    htmlAttrs
-                    ("on-rendered " ++ classes)
+                    (Attr.id (toCssId id) :: htmlAttrs)
+                    ("on-rendered " ++ toCssClass id ++ " " ++ classes)
                     nearby
                     remain
 
@@ -2577,15 +2757,7 @@ decodeBoundingBox2 =
             (Json.field "clientTop" Json.float)
             (Json.field "clientWidth" Json.float)
             (Json.field "clientHeight" Json.float)
-         -- (decodeBoundingBoxParent 0 0)
         )
-
-
-
--- decodeBoundingBoxParent left top =
---     Json.field "parentNode"
---         (Json.field "nodeName"
---         )
 
 
 decodeBoundingBox : Json.Decoder Box
@@ -2595,23 +2767,26 @@ decodeBoundingBox =
             |> Json.andThen
                 (\pos ->
                     let
-                        x =
-                            toFloat (floor pos.clientLeft - floor pos.offsetLeft)
+                    --     x =
+                    --         toFloat (floor pos.clientLeft - floor pos.offsetLeft)
 
-                        y =
-                            toFloat (floor pos.clientTop - floor pos.offsetTop)
+                    --     y =
+                    --         toFloat (floor pos.clientTop - floor pos.offsetTop)
+
+                        _ = Debug.log "initial" pos
                     in
                     Json.map3
                         (\w h ( top, left ) ->
-                            { width = w
-                            , height = h
-                            , x = left
-                            , y = top
-                            }
+                            Debug.log "final" 
+                                { width = w
+                                , height = h
+                                , x = left
+                                , y = top
+                                }
                         )
                         (Json.field "clientWidth" Json.float)
                         (Json.field "clientHeight" Json.float)
-                        (decodeElementPosition (negate y) (negate x))
+                        (decodeElementPosition 0 0)
                 )
         )
 
@@ -2639,17 +2814,28 @@ decodeElementPosition top left =
         [ Json.field "offsetParent" (Json.nullable (Json.succeed ()))
             |> Json.andThen
                 (\maybeNull ->
-                    case  maybeNull of
+                    case maybeNull of
                         Nothing ->
                             -- there is no offset parent
                             Json.map4
                                 (\clientLeft clientTop offsetLeft offsetTop ->
                                     let
+                                        _ = Debug.log "no offset parent parent" 
+                                            [clientLeft, clientTop, offsetLeft, offsetTop]
                                         newTop =
-                                            top + (offsetTop + clientTop)
+                                            -- top + (offsetTop + clientTop)
+                                            if offsetTop /= 0 then
+                                                offsetTop
+                                            else
+                                                top
 
                                         newLeft =
-                                            left + (offsetLeft + clientLeft)
+                                            -- left + (offsetLeft + clientLeft)
+                                            if offsetLeft /= 0 then
+                                                -- offsetLeft
+                                                left + (offsetLeft + clientLeft)
+                                            else
+                                                left
                                     in
                                     ( newTop, newLeft )
                                 )
@@ -2663,11 +2849,22 @@ decodeElementPosition top left =
                             Json.map4
                                 (\clientLeft clientTop offsetLeft offsetTop ->
                                     let
+                                        _ = Debug.log "offset parent" 
+                                            [clientLeft, clientTop, offsetLeft, offsetTop]
                                         newTop =
-                                            top + (offsetTop + clientTop)
+                                            -- top + (offsetTop + clientTop)
+                                            if offsetTop /= 0 then
+                                                offsetTop
+                                            else
+                                                top
 
                                         newLeft =
-                                            left + (offsetLeft + clientLeft)
+                                            -- left + (offsetLeft + clientLeft)
+                                            if offsetLeft /= 0 then
+                                                -- offsetLeft
+                                                left + (offsetLeft + clientLeft)
+                                            else
+                                                left
                                     in
                                     ( newTop, newLeft )
                                 )

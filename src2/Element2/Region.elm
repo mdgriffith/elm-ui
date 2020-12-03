@@ -39,30 +39,30 @@ import Internal.Model2 as Two
 
 {-| **Note** - You should only have _one_ of these on a given page.
 -}
-mainContent : Attribute id msg
+mainContent : Attribute msg
 mainContent =
     Two.Attr (Html.Attributes.attribute "role" "main")
 
 
 {-| -}
-aside : Attribute id msg
+aside : Attribute msg
 aside =
     -- TODO! if there is more than one of these on a page, it should be labeled.
     Two.Attr (Html.Attributes.attribute "role" "complementary")
 
 
 {-| -}
-navigation : Attribute id msg
+navigation : Attribute msg
 navigation =
     -- TODO! if there is more than one of these, it should be labeled.
     Two.Attr (Html.Attributes.attribute "role" "navigation")
 
 
 
--- form : Attribute id msg
+-- form : Attribute msg
 -- form =
 --     Internal.Describe Form
--- search : Attribute id msg
+-- search : Attribute msg
 -- search =
 --     Internal.Describe Search
 
@@ -74,7 +74,7 @@ This is very commonly the footer of the page.
 **Note** - You should only have _one_ of these on a given page.
 
 -}
-info : Attribute id msg
+info : Attribute msg
 info =
     -- VoiceOver does NOT recognize `footer` elements
     -- https://bugs.webkit.org/show_bug.cgi?id=146930
@@ -101,7 +101,7 @@ will generate
     </a>
 
 -}
-heading : Int -> Attribute id msg
+heading : Int -> Attribute msg
 heading level =
     -- Internal.Describe << Heading
     -- TODO: add heading level!!
@@ -110,14 +110,14 @@ heading level =
 
 {-| Screen readers will announce changes to this element and potentially interrupt any other announcement.
 -}
-announceUrgently : Attribute id msg
+announceUrgently : Attribute msg
 announceUrgently =
     Two.Attr (Html.Attributes.attribute "aria-live" "assertive")
 
 
 {-| Screen readers will announce when changes to this element are made.
 -}
-announce : Attribute id msg
+announce : Attribute msg
 announce =
     Two.Attr (Html.Attributes.attribute "aria-live" "polite")
 
@@ -127,6 +127,6 @@ announce =
 A common use for this would be to label buttons that only have an icon.
 
 -}
-description : String -> Attribute id msg
+description : String -> Attribute msg
 description label =
     Two.Attr (Html.Attributes.attribute "aria-label" label)

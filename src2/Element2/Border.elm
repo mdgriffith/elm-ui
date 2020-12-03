@@ -41,14 +41,14 @@ import Internal.Style2 as Style
 
 
 {-| -}
-color : Color -> Attribute id msg
+color : Color -> Attribute msg
 color clr =
     Two.Attr
         (Attr.style "border-color" (Style.color clr))
 
 
 {-| -}
-width : Int -> Attribute id msg
+width : Int -> Attribute msg
 width x =
     Two.BorderWidth Flag.borderWidth
         { top = x
@@ -60,7 +60,7 @@ width x =
 
 {-| Set horizontal and vertical borders.
 -}
-widthXY : Int -> Int -> Attribute id msg
+widthXY : Int -> Int -> Attribute msg
 widthXY x y =
     Two.BorderWidth Flag.borderWidth
         { top = y
@@ -77,27 +77,27 @@ widthEach :
     , right : Int
     , top : Int
     }
-    -> Attribute id msg
+    -> Attribute msg
 widthEach border =
     Two.BorderWidth Flag.borderWidth border
 
 
 {-| -}
-solid : Attribute id msg
+solid : Attribute msg
 solid =
     Two.Attr
         (Attr.style "border-style" "solid")
 
 
 {-| -}
-dashed : Attribute id msg
+dashed : Attribute msg
 dashed =
     Two.Attr
         (Attr.style "border-style" "dashed")
 
 
 {-| -}
-dotted : Attribute id msg
+dotted : Attribute msg
 dotted =
     Two.Attr
         (Attr.style "border-style" "dotted")
@@ -105,7 +105,7 @@ dotted =
 
 {-| Round all corners.
 -}
-rounded : Int -> Attribute id msg
+rounded : Int -> Attribute msg
 rounded radius =
     Two.Attr
         (Attr.style "border-radius" (String.fromInt radius ++ "px"))
@@ -118,7 +118,7 @@ roundEach :
     , bottomLeft : Int
     , bottomRight : Int
     }
-    -> Attribute id msg
+    -> Attribute msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
     Two.Attr
         (Attr.style "border-radius"
@@ -132,7 +132,7 @@ roundEach { topLeft, topRight, bottomLeft, bottomRight } =
 
 {-| A simple glow by specifying the color and size.
 -}
-glow : Color -> Float -> Attribute id msg
+glow : Color -> Float -> Attribute msg
 glow clr size =
     -- shadow
     --     { offset = ( 0, 0 )
@@ -144,7 +144,7 @@ glow clr size =
 
 
 {-| -}
-innerGlow : Color -> Float -> Attribute id msg
+innerGlow : Color -> Float -> Attribute msg
 innerGlow clr size =
     -- innerShadow
     --     { offset = ( 0, 0 )
@@ -164,7 +164,7 @@ shadows :
         , blur : Float
         , color : Color
         }
-    -> Attribute id msg
+    -> Attribute msg
 shadows shades =
     Two.Attr
         (Attr.style
@@ -183,7 +183,7 @@ innerShadow :
     , blur : Float
     , color : Color
     }
-    -> Attribute id msg
+    -> Attribute msg
 innerShadow shade =
     Two.Attr
         (Attr.style
@@ -203,7 +203,7 @@ lights :
             , hardness : Float
             }
     }
-    -> Attribute id msg
+    -> Attribute msg
 lights details =
     Two.Attr
         (Attr.style "box-shadow"

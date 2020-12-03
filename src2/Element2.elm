@@ -4,7 +4,7 @@ module Element2 exposing
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
     , Attribute, Length, px, fill, portion, width, height
-    , ellip
+    , ellip, transition
     , explain
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
@@ -246,8 +246,8 @@ type alias Element msg =
 
 {-| An attribute that can be attached to an `Element`
 -}
-type alias Attribute id msg =
-    Two.Attribute id msg
+type alias Attribute msg =
+    Two.Attribute msg
 
 
 {-| -}
@@ -257,7 +257,7 @@ html x =
 
 
 {-| -}
-htmlAttribute : Html.Attribute msg -> Attribute id msg
+htmlAttribute : Html.Attribute msg -> Attribute msg
 htmlAttribute =
     Two.Attr
 
@@ -269,7 +269,7 @@ map =
 
 
 {-| -}
-mapAttribute : (msg -> msg1) -> Attribute id msg -> Attribute id msg1
+mapAttribute :  (Msg msg2 -> msg2) -> (msg -> msg2) -> Attribute msg -> Attribute msg2
 mapAttribute =
     Two.mapAttr
 
@@ -298,7 +298,7 @@ fill =
     Fill 1
 
 
-ellip : Attribute id msg
+ellip : Attribute msg
 ellip =
     Two.Attr (Attr.class Style.classes.ellipses)
 
@@ -317,7 +317,7 @@ portion =
 
 {-| This is your top level node where you can turn `Element` into `Html`.
 -}
-layout : List (Attribute id msg) -> Two.Element msg -> Html msg
+layout : List (Attribute msg) -> Two.Element msg -> Html msg
 layout attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
@@ -333,7 +333,7 @@ layout attrs content =
             ]
 
 
-init : State id
+init : State
 init =
     Two.State
         { added = Set.empty
@@ -343,13 +343,13 @@ init =
 
 
 {-| -}
-type alias State id =
-    Two.State id
+type alias State =
+    Two.State
 
 
 {-| -}
-type alias Msg id =
-    Two.Msg id
+type alias Msg msg =
+    Two.Msg msg
 
 
 {-| -}
@@ -374,14 +374,18 @@ duration dur =
             }
         }
 
+{-|-}
+transition : (Msg msg -> msg) -> msg -> msg
+transition toMsg appMsg =
+    toMsg (Two.RefreshBoxesAndThen appMsg)
 
-update : Msg id -> State id -> State id
+update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
 update =
     Two.update
 
 
 {-| -}
-layoutWith : { options : List Option } -> State id -> List (Attribute id msg) -> Two.Element msg -> Html msg
+layoutWith : { options : List Option } -> State -> List (Attribute msg) -> Two.Element msg -> Html msg
 layoutWith { options } (Two.State state) attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
@@ -412,6 +416,7 @@ viewBox ( id, box ) =
         , Attr.style "background-color" "rgba(255,0,0,0.1)"
         , Attr.style "border-radius" "3px"
         , Attr.style "border" "3px dashed rgba(255,0,0,0.2)"
+        , Attr.style "box-sizing" "border-box"
         ]
         [ Html.text (Debug.toString id)
         ]
@@ -422,7 +427,7 @@ viewBox ( id, box ) =
 You'll need to include it manually yourself
 
 -}
-embed : List (Attribute id msg) -> Two.Element msg -> Html msg
+embed : List (Attribute msg) -> Two.Element msg -> Html msg
 embed attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
@@ -528,7 +533,7 @@ If you want multiple children, you'll need to use something like `row` or `colum
             (Element.text "You've made a stylish element!")
 
 -}
-el : List (Attribute id msg) -> Two.Element msg -> Two.Element msg
+el : List (Attribute msg) -> Two.Element msg -> Two.Element msg
 el attrs child =
     Two.render Two.AsEl
         Two.emptyDetails
@@ -546,7 +551,7 @@ el attrs child =
 
 
 {-| -}
-row : List (Attribute id msg) -> List (Two.Element msg) -> Two.Element msg
+row : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 row attrs children =
     Two.render Two.AsRow
         Two.emptyDetails
@@ -564,7 +569,7 @@ row attrs children =
 
 
 {-| -}
-column : List (Attribute id msg) -> List (Two.Element msg) -> Two.Element msg
+column : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 column attrs children =
     Two.render Two.AsColumn
         Two.emptyDetails
@@ -583,7 +588,7 @@ column attrs children =
 
 {-| Same as `row`, but will wrap if it takes up too much horizontal space.
 -}
-wrappedRow : List (Attribute id msg) -> List (Two.Element msg) -> Two.Element msg
+wrappedRow : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 wrappedRow attrs children =
     -- in order to make spacing work:
     --      the margin is only applied to the right and bottom of child elements
@@ -618,7 +623,7 @@ type alias Todo =
         (text "Help, I'm being debugged!")
 
 -}
-explain : Todo -> Attribute id msg
+explain : Todo -> Attribute msg
 explain _ =
     Two.class "explain"
 
@@ -676,7 +681,7 @@ We could render it using
 
 -}
 table :
-    List (Attribute id msg)
+    List (Attribute msg)
     ->
         { data : List records
         , columns : List (Column records msg)
@@ -702,7 +707,7 @@ type alias IndexedColumn record msg =
 {-| Same as `Element.table` except the `view` for each column will also receive the row index as well as the record.
 -}
 indexedTable :
-    List (Attribute id msg)
+    List (Attribute msg)
     ->
         { data : List records
         , columns : List (IndexedColumn records msg)
@@ -730,7 +735,7 @@ type InternalTableColumn record msg
     | InternalColumn (Column record msg)
 
 
-tableHelper : List (Attribute id msg) -> InternalTable data msg -> Two.Element msg
+tableHelper : List (Attribute msg) -> InternalTable data msg -> Two.Element msg
 tableHelper attrs config =
     -- let
     --     ( sX, sY ) =
@@ -881,7 +886,7 @@ Which will look something like
 **Note** `spacing` on a paragraph will set the pixel spacing between lines.
 
 -}
-paragraph : List (Attribute id msg) -> List (Two.Element msg) -> Two.Element msg
+paragraph : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 paragraph attrs children =
     -- Internal.element
     --     Internal.asParagraph
@@ -927,7 +932,7 @@ Which will result in something like:
 ![A text layout where an image is on the left.](https://mdgriffith.gitbooks.io/style-elements/content/assets/Screen%20Shot%202017-08-25%20at%208.42.39%20PM.png)
 
 -}
-textColumn : List (Attribute id msg) -> List (Two.Element msg) -> Two.Element msg
+textColumn : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 textColumn attrs children =
     -- Internal.element
     --     Internal.asTextColumn
@@ -964,7 +969,7 @@ Leaving the description blank will cause the image to be ignored by assistive te
 So, take a moment to describe your image as you would to someone who has a harder time seeing.
 
 -}
-image : List (Attribute id msg) -> { src : String, description : String } -> Two.Element msg
+image : List (Attribute msg) -> { src : String, description : String } -> Two.Element msg
 image attrs { src, description } =
     -- let
     --     imageAttributes =
@@ -1018,27 +1023,27 @@ image attrs { src, description } =
         (text "A link to my favorite fruit provider.")
 
 -}
-link : String -> Attribute id msg
+link : String -> Attribute msg
 link =
     Two.Link False
 
 
 {-| -}
-linkNewTab : String -> Attribute id msg
+linkNewTab : String -> Attribute msg
 linkNewTab =
     Two.Link True
 
 
 {-| A link to download a file.
 -}
-download : String -> Attribute id msg
+download : String -> Attribute msg
 download url =
     Two.Download url ""
 
 
 {-| A link to download a file, but you can specify the filename.
 -}
-downloadAs : { url : String, filename : String } -> Attribute id msg
+downloadAs : { url : String, filename : String } -> Attribute msg
 downloadAs { url, filename } =
     Two.Download url filename
 
@@ -1048,25 +1053,25 @@ downloadAs { url, filename } =
 
 
 {-| -}
-below : Two.Element msg -> Attribute id msg
+below : Two.Element msg -> Attribute msg
 below element =
     Two.Nearby Two.Below element
 
 
 {-| -}
-above : Two.Element msg -> Attribute id msg
+above : Two.Element msg -> Attribute msg
 above element =
     Two.Nearby Two.Above element
 
 
 {-| -}
-onRight : Two.Element msg -> Attribute id msg
+onRight : Two.Element msg -> Attribute msg
 onRight element =
     Two.Nearby Two.OnRight element
 
 
 {-| -}
-onLeft : Two.Element msg -> Attribute id msg
+onLeft : Two.Element msg -> Attribute msg
 onLeft element =
     Two.Nearby Two.OnLeft element
 
@@ -1076,20 +1081,20 @@ onLeft element =
 **Note:** If you use this on a `layout` element, it will place the element as fixed to the viewport which can be useful for modals and overlays.
 
 -}
-inFront : Two.Element msg -> Attribute id msg
+inFront : Two.Element msg -> Attribute msg
 inFront element =
     Two.Nearby Two.InFront element
 
 
 {-| This will place an element between the background and the content of an element.
 -}
-behindContent : Two.Element msg -> Attribute id msg
+behindContent : Two.Element msg -> Attribute msg
 behindContent element =
     Two.Nearby Two.Behind element
 
 
 {-| -}
-width : Length -> Attribute id msg
+width : Length -> Attribute msg
 width len =
     case len of
         Px x ->
@@ -1106,7 +1111,7 @@ width len =
 
 
 {-| -}
-widthMin : Int -> Attribute id msg
+widthMin : Int -> Attribute msg
 widthMin x =
     Two.ClassAndStyle Flag.widthBetween
         Style.classes.widthBounded
@@ -1115,7 +1120,7 @@ widthMin x =
 
 
 {-| -}
-widthMax : Int -> Attribute id msg
+widthMax : Int -> Attribute msg
 widthMax x =
     -- Two.Attr (Attr.style "max-width" (String.fromInt x ++ "px"))
     Two.ClassAndStyle Flag.widthBetween
@@ -1125,7 +1130,7 @@ widthMax x =
 
 
 {-| -}
-heightMin : Int -> Attribute id msg
+heightMin : Int -> Attribute msg
 heightMin x =
     Two.ClassAndStyle Flag.heightBetween
         Style.classes.heightBounded
@@ -1134,7 +1139,7 @@ heightMin x =
 
 
 {-| -}
-heightMax : Int -> Attribute id msg
+heightMax : Int -> Attribute msg
 heightMax x =
     Two.ClassAndStyle Flag.heightBetween
         Style.classes.heightBounded
@@ -1143,7 +1148,7 @@ heightMax x =
 
 
 {-| -}
-height : Length -> Attribute id msg
+height : Length -> Attribute msg
 height len =
     case len of
         Px x ->
@@ -1160,44 +1165,44 @@ height len =
 
 
 {-| -}
-scale : Float -> Attribute id msg
+scale : Float -> Attribute msg
 scale =
     Two.Scale
 
 
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
-rotate : Float -> Attribute id msg
+rotate : Float -> Attribute msg
 rotate =
     Two.Rotate
 
 
 {-| -}
-moveUp : Float -> Attribute id msg
+moveUp : Float -> Attribute msg
 moveUp =
     Two.TranslateY << negate
 
 
 {-| -}
-moveDown : Float -> Attribute id msg
+moveDown : Float -> Attribute msg
 moveDown =
     Two.TranslateY
 
 
 {-| -}
-moveRight : Float -> Attribute id msg
+moveRight : Float -> Attribute msg
 moveRight =
     Two.TranslateX
 
 
 {-| -}
-moveLeft : Float -> Attribute id msg
+moveLeft : Float -> Attribute msg
 moveLeft =
     Two.TranslateX << negate
 
 
 {-| -}
-padding : Int -> Attribute id msg
+padding : Int -> Attribute msg
 padding x =
     Two.Padding Flag.padding
         { top = x
@@ -1209,7 +1214,7 @@ padding x =
 
 {-| Set horizontal and vertical padding.
 -}
-paddingXY : Int -> Int -> Attribute id msg
+paddingXY : Int -> Int -> Attribute msg
 paddingXY x y =
     Two.Padding Flag.padding
         { top = y
@@ -1233,55 +1238,55 @@ And then just do
     paddingEach { edges | right = 5 }
 
 -}
-paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute id msg
+paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute msg
 paddingEach pad =
     Two.Padding Flag.padding pad
 
 
 {-| -}
-centerX : Attribute id msg
+centerX : Attribute msg
 centerX =
     Two.Class Flag.xAlign Style.classes.alignCenterX
 
 
 {-| -}
-centerY : Attribute id msg
+centerY : Attribute msg
 centerY =
     Two.Class Flag.yAlign Style.classes.alignCenterY
 
 
 {-| -}
-alignTop : Attribute id msg
+alignTop : Attribute msg
 alignTop =
     Two.Class Flag.yAlign Style.classes.alignTop
 
 
 {-| -}
-alignBottom : Attribute id msg
+alignBottom : Attribute msg
 alignBottom =
     Two.Class Flag.yAlign Style.classes.alignBottom
 
 
 {-| -}
-alignLeft : Attribute id msg
+alignLeft : Attribute msg
 alignLeft =
     Two.Class Flag.xAlign Style.classes.alignLeft
 
 
 {-| -}
-alignRight : Attribute id msg
+alignRight : Attribute msg
 alignRight =
     Two.Class Flag.xAlign Style.classes.alignRight
 
 
 {-| -}
-spaceEvenly : Attribute id msg
+spaceEvenly : Attribute msg
 spaceEvenly =
     Two.Class Flag.spacing Style.classes.spaceEvenly
 
 
 {-| -}
-spacing : Int -> Attribute id msg
+spacing : Int -> Attribute msg
 spacing x =
     Two.Spacing Flag.spacing x x
 
@@ -1291,14 +1296,14 @@ spacing x =
 However for some layouts, like `textColumn`, you may want to set a different spacing for the x axis compared to the y axis.
 
 -}
-spacingXY : Int -> Int -> Attribute id msg
+spacingXY : Int -> Int -> Attribute msg
 spacingXY x y =
     Two.Spacing Flag.spacing x y
 
 
 {-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.
 -}
-transparent : Bool -> Attribute id msg
+transparent : Bool -> Attribute msg
 transparent on =
     if on then
         Two.Attr (Attr.style "opacity" "1")
@@ -1312,13 +1317,13 @@ transparent on =
 Semantically equivalent to html opacity.
 
 -}
-alpha : Float -> Attribute id msg
+alpha : Float -> Attribute msg
 alpha o =
     Two.Attr (Attr.style "opacity" (String.fromFloat 0))
 
 
 {-| -}
-viewport : List (Attribute id msg) -> Two.Element msg -> Two.Element msg
+viewport : List (Attribute msg) -> Two.Element msg -> Two.Element msg
 viewport attrs child =
     Two.element Two.AsEl
         (scrollbars
@@ -1330,19 +1335,19 @@ viewport attrs child =
 
 
 {-| -}
-scrollbars : Attribute id msg
+scrollbars : Attribute msg
 scrollbars =
     Two.Class Flag.overflow Style.classes.scrollbars
 
 
 {-| -}
-scrollbarY : Attribute id msg
+scrollbarY : Attribute msg
 scrollbarY =
     Two.Class Flag.overflow Style.classes.scrollbarsY
 
 
 {-| -}
-scrollbarX : Attribute id msg
+scrollbarX : Attribute msg
 scrollbarX =
     Two.Class Flag.overflow Style.classes.scrollbarsX
 
@@ -1354,7 +1359,7 @@ Similar to `viewport`, this element will fill the space it's given.
 If the content overflows this element, it will be clipped.
 
 -}
-clipped : List (Attribute id msg) -> Two.Element msg -> Two.Element msg
+clipped : List (Attribute msg) -> Two.Element msg -> Two.Element msg
 clipped attrs child =
     Two.element Two.AsEl
         (clip
@@ -1366,38 +1371,38 @@ clipped attrs child =
 
 
 {-| -}
-clip : Attribute id msg
+clip : Attribute msg
 clip =
     Two.Class Flag.overflow Style.classes.clip
 
 
 {-| -}
-clipY : Attribute id msg
+clipY : Attribute msg
 clipY =
     Two.Class Flag.overflow Style.classes.clipY
 
 
 {-| -}
-clipX : Attribute id msg
+clipX : Attribute msg
 clipX =
     Two.Class Flag.overflow Style.classes.clipX
 
 
 {-| Set the cursor to be a pointing hand when it's hovering over this element.
 -}
-pointer : Attribute id msg
+pointer : Attribute msg
 pointer =
     Two.Class Flag.cursor Style.classes.cursorPointer
 
 
 {-| -}
-grab : Attribute id msg
+grab : Attribute msg
 grab =
     Two.Class Flag.cursor Style.classes.cursorGrab
 
 
 {-| -}
-grabbing : Attribute id msg
+grabbing : Attribute msg
 grabbing =
     Two.Class Flag.cursor Style.classes.cursorGrabbing
 
