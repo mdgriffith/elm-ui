@@ -15,6 +15,7 @@ import Json.Decode as Json
 import Json.Encode
 import Set exposing (Set)
 import Task
+import Time
 import VirtualDom
 
 
@@ -46,6 +47,9 @@ map fn el =
 mapUIMsg : (a -> b) -> Msg a -> Msg b
 mapUIMsg fn msg =
     case msg of
+        Tick time ->
+            Tick time
+
         RuleNew str ->
             RuleNew str
 
@@ -66,7 +70,8 @@ mapUIMsg fn msg =
 
 
 type Msg msg
-    = RuleNew String
+    = Tick Time.Posix
+    | RuleNew String
     | Trans Phase String (List TransitionDetails)
     | BoxNew Id Box
     | RefreshBoxesAndThen msg
@@ -159,8 +164,10 @@ bboxCss box =
         ++ "px;"
 
 
-type alias Animator model =
-    Animator.Animator model
+type alias Animator msg model =
+    { animator : Animator.Animator model
+    , onStateChange : model -> List (Time.Posix, msg)
+    }
 
 
 updateWith :
@@ -169,16 +176,38 @@ updateWith :
     -> State
     ->
         { ui : State -> model
-        , timelines : Animator model
+        , timelines : Animator msg model
         }
-    -> ( State, Cmd msg )
-updateWith toAppMsg msg ((State details) as unchanged) config =
-    ( unchanged, Cmd.none )
+    -> ( model, Cmd msg )
+updateWith toAppMsg msg state config =
+    let
+        ( newState, stateCmd ) =
+            update toAppMsg msg state
+    in
+    ( case msg of
+        Tick newTime ->
+            config.ui newState
+                |> Animator.update newTime config.timelines.animator
+
+        _ ->
+            config.ui newState
+    , Cmd.batch
+        [ stateCmd
+        ]
+    )
+
+
+subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
+subscription toAppMsg state animator model =
+    Animator.toSubscription (toAppMsg << Tick) model animator.animator
 
 
 update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
 update toAppMsg msg ((State details) as unchanged) =
     case msg of
+        Tick _ ->
+            ( unchanged, Cmd.none )
+
         RuleNew new ->
             if Set.member new details.added then
                 ( unchanged, Cmd.none )

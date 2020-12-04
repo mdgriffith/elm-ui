@@ -19,9 +19,11 @@ module Element2 exposing
     , Color, rgb
     , above, below, onRight, onLeft, inFront, behindContent
     , Device, DeviceClass(..), Orientation(..), classifyDevice
+    , update
+    , updateWith, subscription
     , map, mapAttribute
     , html, htmlAttribute
-    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, init, scrollbarX, scrollbarY, transition, update
+    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, init, scrollbarX, scrollbarY, transition
     )
 
 {-|
@@ -197,6 +199,13 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 @docs Device, DeviceClass, Orientation, classifyDevice
 
 
+# Animation
+
+@docs update
+
+@docs Animator, updateWith, subscription, watching
+
+
 # Mapping
 
 @docs map, mapAttribute
@@ -208,6 +217,7 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 
 -}
 
+import Animator
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Keyed
@@ -381,9 +391,59 @@ transition toMsg appMsg =
     toMsg (Two.RefreshBoxesAndThen appMsg)
 
 
+{-| -}
+type alias Animator msg model =
+    Two.Animator msg model
+
+
+{-| -}
 update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
 update =
     Two.update
+
+
+{-| -}
+updateWith :
+    (Msg msg -> msg)
+    -> Msg msg
+    -> State
+    ->
+        { ui : State -> model
+        , timelines : Animator msg model
+        }
+    -> ( model, Cmd msg )
+updateWith =
+    Two.updateWith 
+
+
+subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
+subscription =
+    Two.subscription 
+
+
+watching :
+    { get : model -> Animator.Timeline state
+    , set : Animator.Timeline state -> model -> model
+    , onStateChange : state -> Maybe msg
+    }
+    -> Animator msg model
+    -> Animator msg model
+watching config anim =
+    { animator = Animator.watching config.get config.set anim.animator
+    , onStateChange = 
+        -- config.onStateChange << config.get
+        
+        \model ->
+            let
+                future = 
+                    []
+                    -- TODO: wire this up once elm-animator supports Animator.future
+                    -- Animator.future (config.get model)
+                        -- |> List.map (Tuple.mapSecond anim.onStateChange)
+                
+            in
+            future ++ anim.onStateChange model
+    }
 
 
 {-| -}

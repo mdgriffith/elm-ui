@@ -12,12 +12,12 @@
             "elm/core": "1.0.0",
             "elm/html": "1.0.0",
             "elm/json": "1.0.0",
+            "elm/time": "1.0.0",
             "elm/virtual-dom": "1.0.2",
             "mdgriffith/elm-animator": "1.1.1"
         },
         "indirect": {
             "avh4/elm-color": "1.0.0",
-            "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "ianmackenzie/elm-units": "2.7.0"
         }
