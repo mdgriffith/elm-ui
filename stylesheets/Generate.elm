@@ -240,6 +240,7 @@ overrides =
         ++ trackReset
         ++ thumbReset
         ++ explainer
+        ++ transitionPlaceholders
         ++ animationTriggerKeyframes
 
 
@@ -353,6 +354,33 @@ explainer =
 .explain > .ctr > .""" ++ classes.any ++ """ {
     border: 4px dashed rgb(0, 151, 167) !important;
 }
+
+"""
+
+{-
+
+-}
+transitionPlaceholders = """
+.ui-placeholder {
+    visibility: hidden;
+    border: 0px !important;
+}
+.explain > .ui-placeholder {
+    border: 0px !important;
+}
+.ui-movable {
+    position: absolute !important;
+    visibility: visible;
+    margin:0px !important;
+    left:0px;
+    top:0px;
+    width:100%;
+    height:100%;
+}
+.ui-movable.on-rendered {
+    animation: none !important;
+}
+
 
 """
 

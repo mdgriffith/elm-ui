@@ -1,7 +1,6 @@
-module Internal.Style.Generated exposing (Var(..), classes, stylesheet, vars)
+module Internal.Style.Generated exposing (Var(..), classes, vars, stylesheet)
 
-{-| This file is generated via 'npm run stylesheet' in the elm-ui repository
--}
+{-| This file is generated via 'npm run stylesheet' in the elm-ui repository -}
 
 {- BEGIN COPY -}
 
@@ -167,9 +166,9 @@ vars =
     }
 
 
+
 stylesheet : String
-stylesheet =
-    """@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {.s.r > .s { flex-basis: auto !important; } .s.r > .s.ctr { flex-basis: auto !important; }}
+stylesheet = """@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {.s.r > .s { flex-basis: auto !important; } .s.r > .s.ctr { flex-basis: auto !important; }}
 input[type="search"],
 input[type="search"]::-webkit-search-decoration,
 input[type="search"]::-webkit-search-cancel-button,
@@ -217,6 +216,28 @@ input[type="search"]::-webkit-search-results-decoration {
 .explain > .ctr > .s {
     border: 4px dashed rgb(0, 151, 167) !important;
 }
+
+
+.ui-placeholder {
+    visibility: hidden;
+    border: 0px !important;
+}
+.explain > .ui-placeholder {
+    border: 0px !important;
+}
+.ui-movable {
+    position: absolute !important;
+    visibility: visible;
+    margin:0px !important;
+    left:0px;
+    top:0px;
+    width:100%;
+    height:100%;
+}
+.ui-movable.on-rendered {
+    animation: none !important;
+}
+
 
 
 @keyframes on-hovered { from {} to {} }

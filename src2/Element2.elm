@@ -480,7 +480,7 @@ viewBox ( id, box ) =
         , Attr.style "border" "3px dashed rgba(255,0,0,0.2)"
         , Attr.style "box-sizing" "border-box"
         ]
-        [ Html.text (Debug.toString id)
+        [ --Html.text (Debug.toString id)
         ]
 
 

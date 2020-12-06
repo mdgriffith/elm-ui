@@ -135,7 +135,7 @@ matchBoxHelper ((Id identifier instance) as id) boxes passed =
                 matchBoxHelper id others (( topId, topBox ) :: passed)
 
 
-moveAnimation className previous current =
+moveAnimationFixed className previous current =
     let
         from =
             bboxCss previous
@@ -152,6 +152,7 @@ moveAnimation className previous current =
     keyframes ++ classRule
 
 
+
 bboxCss box =
     "left:"
         ++ String.fromFloat box.x
@@ -162,6 +163,46 @@ bboxCss box =
         ++ "px; height:"
         ++ String.fromFloat box.height
         ++ "px;"
+
+
+bboxTransform box =
+    "transform:translate("
+        ++ String.fromFloat box.x
+        ++ "px, "
+        ++ String.fromFloat box.y
+        ++ "px); width:"
+        ++ String.fromFloat box.width
+        ++ "px; height:"
+        ++ String.fromFloat box.height
+        ++ "px;"
+
+moveAnimation className previous current =
+    let
+
+        from =
+            bboxTransform 
+                { x = previous.x - current.x
+                , y = previous.y - current.y
+                , width = previous.width
+                , height = previous.height
+                }
+
+        to =
+            bboxTransform 
+                { x = 0
+                , y = 0
+                , width = current.width
+                , height = current.height
+                }
+
+        keyframes =
+            "@keyframes " ++ className ++ " { from { " ++ from ++ " } to { " ++ to ++ "} }"
+
+        classRule =
+            ".ui-movable." ++ className ++ 
+                "{ animation: " ++ className ++ " 2000ms !important; animation-fill-mode: both !important; }"
+    in
+    keyframes ++ classRule
 
 
 type alias Animator msg model =
@@ -1629,40 +1670,59 @@ render layout details children has htmlAttrs classes nearby attrs =
                                         :: attrsWithActive
 
                         attributes =
-                            Attr.class classes
+                            Attr.class (classes)
                                 :: attrsWithAnimations
 
                         finalChildren =
                             case layout of
                                 AsParagraph ->
-                                    spacerTop (toFloat details.spacingY / -2)
-                                        :: renderedChildren
-                                        ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+                                    if Flag.present Flag.id has then
+                                         Html.div (Attr.class "ui-movable" :: attributes) renderedChildren 
+                                            :: spacerTop (toFloat details.spacingY / -2)
+                                            :: renderedChildren
+                                            ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+                                    else 
+                                        spacerTop (toFloat details.spacingY / -2)
+                                            :: renderedChildren
+                                            ++ [ spacerBottom (toFloat details.spacingY / -2) ]
 
                                 _ ->
-                                    renderedChildren
+                                    if Flag.present Flag.id has then
+                                        Html.div (Attr.class "ui-movable" :: attributes) renderedChildren 
+                                            :: renderedChildren
+                                    else 
+                                        renderedChildren
+                            
+                        
+                        
+                        finalAttributes =
+                            if Flag.present Flag.id has then
+                                Attr.class "ui-placeholder" :: attributes
+                            else
+                                attributes
                     in
-                    if details.node == 0 then
-                        -- Note: these functions are ever so slightly faster than `Html.node`
-                        -- because they can skip elm's built in security check for `script`
-                        Html.div
-                            attributes
-                            finalChildren
+                    case details.node of
+                        0 ->
+                            -- Note: these functions (div, a) are ever so slightly faster than `Html.node`
+                            -- because they can skip elm's built in security check for `script`
+                            Html.div
+                                finalAttributes
+                                finalChildren
 
-                    else if details.node == 1 then
-                        Html.a
-                            attributes
-                            finalChildren
+                        1 ->
+                            Html.a
+                                finalAttributes
+                                finalChildren
 
-                    else if details.node == 2 then
-                        Html.input
-                            attributes
-                            finalChildren
+                        2 ->
+                            Html.input
+                                finalAttributes
+                                finalChildren
 
-                    else
-                        Html.node details.name
-                            attributes
-                            finalChildren
+                        _ ->
+                            Html.node details.name
+                                finalAttributes
+                                finalChildren
                 )
 
         NoAttribute :: remain ->
@@ -2813,30 +2873,18 @@ decodeBoundingBox2 =
 decodeBoundingBox : Json.Decoder Box
 decodeBoundingBox =
     Json.field "target"
-        (decodeInitialElementPosition
-            |> Json.andThen
-                (\pos ->
-                    let
-                        --     x =
-                        --         toFloat (floor pos.clientLeft - floor pos.offsetLeft)
-                        --     y =
-                        --         toFloat (floor pos.clientTop - floor pos.offsetTop)
-                        _ =
-                            Debug.log "initial" pos
-                    in
-                    Json.map3
-                        (\w h ( top, left ) ->
-                            Debug.log "final"
-                                { width = w
-                                , height = h
-                                , x = left
-                                , y = top
-                                }
-                        )
-                        (Json.field "clientWidth" Json.float)
-                        (Json.field "clientHeight" Json.float)
-                        (decodeElementPosition 0 0)
-                )
+        (Json.map3
+            (\w h ( top, left ) ->
+                Debug.log "final"
+                    { width = w
+                    , height = h
+                    , x = left
+                    , y = top
+                    }
+            )
+            (Json.field "offsetWidth" Json.float)
+            (Json.field "offsetHeight" Json.float)
+            (decodeElementPosition True 0 0)
         )
 
 
@@ -2857,8 +2905,8 @@ decodeInitialElementPosition =
 
 
 {-| -}
-decodeElementPosition : Float -> Float -> Json.Decoder ( Float, Float )
-decodeElementPosition top left =
+decodeElementPosition : Bool -> Float -> Float -> Json.Decoder ( Float, Float )
+decodeElementPosition ignoreBorders top left =
     Json.oneOf
         [ Json.field "offsetParent" (Json.nullable (Json.succeed ()))
             |> Json.andThen
@@ -2869,26 +2917,20 @@ decodeElementPosition top left =
                             Json.map4
                                 (\clientLeft clientTop offsetLeft offsetTop ->
                                     let
-                                        _ =
-                                            Debug.log "no offset parent parent"
-                                                [ clientLeft, clientTop, offsetLeft, offsetTop ]
-
+                                        
                                         newTop =
-                                            -- top + (offsetTop + clientTop)
-                                            if offsetTop /= 0 then
-                                                offsetTop
-
+                                            if ignoreBorders then 
+                                                top + (offsetTop)
                                             else
-                                                top
+                                                top + (offsetTop + clientTop)
+                                           
 
                                         newLeft =
-                                            -- left + (offsetLeft + clientLeft)
-                                            if offsetLeft /= 0 then
-                                                -- offsetLeft
-                                                left + (offsetLeft + clientLeft)
-
+                                            if ignoreBorders then 
+                                                left + offsetLeft
                                             else
-                                                left
+                                                left + (offsetLeft + clientLeft)
+                                            
                                     in
                                     ( newTop, newLeft )
                                 )
@@ -2902,26 +2944,18 @@ decodeElementPosition top left =
                             Json.map4
                                 (\clientLeft clientTop offsetLeft offsetTop ->
                                     let
-                                        _ =
-                                            Debug.log "offset parent"
-                                                [ clientLeft, clientTop, offsetLeft, offsetTop ]
-
                                         newTop =
-                                            -- top + (offsetTop + clientTop)
-                                            if offsetTop /= 0 then
-                                                offsetTop
-
+                                            if ignoreBorders then 
+                                                top + (offsetTop)
                                             else
-                                                top
+                                                top + (offsetTop + clientTop)
 
                                         newLeft =
-                                            -- left + (offsetLeft + clientLeft)
-                                            if offsetLeft /= 0 then
-                                                -- offsetLeft
-                                                left + (offsetLeft + clientLeft)
-
+                                            if ignoreBorders then 
+                                                left + offsetLeft
                                             else
-                                                left
+                                                left + (offsetLeft + clientLeft)
+                                            
                                     in
                                     ( newTop, newLeft )
                                 )
@@ -2935,6 +2969,7 @@ decodeElementPosition top left =
                                             (Json.lazy
                                                 (\_ ->
                                                     decodeElementPosition
+                                                        False
                                                         newTop
                                                         newLeft
                                                 )

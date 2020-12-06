@@ -111,13 +111,13 @@ view model =
             , height fill
             
             ]
-            [ row [height fill, width (px 500)] 
+            [ row [height (px 800), width (px 500), explain Debug.todo ] 
                 [ if model.focus == Mini then
                     viewData model.focus
                 else 
                     none
                 ]
-            , row [height fill, width (px 500), padding 80, spacing 200] 
+            , row [height (px 800), width (px 500), padding 80, spacing 10, explain Debug.todo] 
                 [ if model.focus == Detail then
                     viewData model.focus
                 else 
