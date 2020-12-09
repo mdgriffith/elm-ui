@@ -2,21 +2,21 @@ module Transition exposing (..)
 
 {-| -}
 
-import Element2 exposing (..)
-import Element2.Background as Background
-import Element2.Border as Border
-import Element2.Events
-import Element2.Font as Font
-import Element2.Keyed
-import Element2.Lazy
-import Element2.Region
+import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Events
+import Element.Font as Font
+import Element.Keyed
+import Element.Lazy
+import Element.Region
 import Browser
-import Element2.Input as Input
+import Element.Input as Input
 import Html.Events as Events
 import Json.Decode
 import Html
 import Html.Attributes as Attr
-import Element2.Animated as Animated
+import Element.Animated as Animated
 
 
 on str decoder = 
@@ -38,7 +38,7 @@ main =
 
 init () = 
     ({ focus = Detail
-    , ui = Element2.init
+    , ui = Element.init
     }, Cmd.none)
 
 
@@ -57,7 +57,7 @@ id val =
 
 
 type Msg 
-    = UI (Element2.Msg Msg)
+    = UI (Element.Msg Msg)
     | Focus Focus
 
 
@@ -67,7 +67,7 @@ update msg model =
     case msg of
         UI uiMsg ->
             let 
-                (newUI, cmd) = Element2.update UI uiMsg model.ui
+                (newUI, cmd) = Element.update UI uiMsg model.ui
             in
             ({ model | ui = newUI }
             , cmd
@@ -94,8 +94,8 @@ view model =
             , variants =
                 []
             }
-        , Element2.Events.onClick 
-            (Element2.transition UI 
+        , Element.Events.onClick 
+            (Element.transition UI 
                 (Focus 
                     (case model.focus of 
                         Detail -> Mini

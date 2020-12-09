@@ -1,4 +1,4 @@
-module Element2.Region exposing
+module Element.Region exposing
     ( mainContent, info
     , navigation, heading, aside
     , description
@@ -31,7 +31,7 @@ Here's an example of annotating your navigation region:
 
 -}
 
-import Element2 exposing (Attribute)
+import Element exposing (Attribute)
 import Html
 import Html.Attributes
 import Internal.Model2 as Two

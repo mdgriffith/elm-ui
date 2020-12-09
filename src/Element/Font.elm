@@ -1,4 +1,4 @@
-module Element2.Font exposing
+module Element.Font exposing
     ( size, color, gradient
     , family, with, Font, typeface, serif, sansSerif, monospace
     , Sizing, full, byCapital, Adjustment
@@ -66,7 +66,7 @@ module Element2.Font exposing
 -}
 
 import Bitwise
-import Element2 exposing (Attribute, Color)
+import Element exposing (Attribute, Color)
 import Html.Attributes as Attr
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two

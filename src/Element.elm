@@ -1,4 +1,4 @@
-module Element2 exposing
+module Element exposing
     ( Element, none, text, el
     , row, wrappedRow, column
     , paragraph, textColumn
@@ -413,12 +413,12 @@ updateWith :
         }
     -> ( model, Cmd msg )
 updateWith =
-    Two.updateWith 
+    Two.updateWith
 
 
 subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
 subscription =
-    Two.subscription 
+    Two.subscription
 
 
 watching :
@@ -430,17 +430,16 @@ watching :
     -> Animator msg model
 watching config anim =
     { animator = Animator.watching config.get config.set anim.animator
-    , onStateChange = 
+    , onStateChange =
         -- config.onStateChange << config.get
-        
         \model ->
             let
-                future = 
+                future =
                     []
-                    -- TODO: wire this up once elm-animator supports Animator.future
-                    -- Animator.future (config.get model)
-                        -- |> List.map (Tuple.mapSecond anim.onStateChange)
-                
+
+                -- TODO: wire this up once elm-animator supports Animator.future
+                -- Animator.future (config.get model)
+                -- |> List.map (Tuple.mapSecond anim.onStateChange)
             in
             future ++ anim.onStateChange model
     }
@@ -480,7 +479,7 @@ viewBox ( id, box ) =
         , Attr.style "border" "3px dashed rgba(255,0,0,0.2)"
         , Attr.style "box-sizing" "border-box"
         ]
-        [ --Html.text (Debug.toString id)
+        [--Html.text (Debug.toString id)
         ]
 
 

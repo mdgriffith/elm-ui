@@ -1,4 +1,4 @@
-module Element2.Background exposing
+module Element.Background exposing
     ( color, gradient
     , image, uncropped, tiled, tiledX, tiledY
     )
@@ -17,7 +17,7 @@ module Element2.Background exposing
 -}
 
 import Animator
-import Element2 exposing (Attribute, Color)
+import Element exposing (Attribute, Color)
 import Html.Attributes as Attr
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two

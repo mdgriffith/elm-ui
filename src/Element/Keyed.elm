@@ -1,4 +1,4 @@
-module Element2.Keyed exposing (el, column, row)
+module Element.Keyed exposing (el, column, row)
 
 {-| Notes from the `Html.Keyed` on how keyed works:
 
@@ -20,7 +20,7 @@ This means if a key is changed between renders, then the diffing step will be sk
 
 -}
 
-import Element2 exposing (Attribute, Element)
+import Element exposing (Attribute, Element)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 

@@ -1,4 +1,4 @@
-module Element2.Border exposing
+module Element.Border exposing
     ( color
     , width, widthXY, widthEach
     , solid, dashed, dotted
@@ -33,7 +33,7 @@ module Element2.Border exposing
 
 -}
 
-import Element2 exposing (Attribute, Color)
+import Element exposing (Attribute, Color)
 import Html.Attributes as Attr
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two

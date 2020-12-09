@@ -1,10 +1,10 @@
-module Element2.Animated exposing (..)
+module Element.Animated exposing (..)
 
 {-| -}
 
 import Animator exposing (Timeline)
 import Bitwise
-import Element2 exposing (Attribute, Element, Msg)
+import Element exposing (Attribute, Element, Msg)
 import Internal.Bits as Bits
 import Internal.Model2 as Two
 import Internal.Style2 as Style
