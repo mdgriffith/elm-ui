@@ -3,7 +3,7 @@ module Element exposing
     , row, wrappedRow, column
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
-    , Attribute, Length, px, fill, portion, width, height
+    , Attribute, Length, px, fill, portion, width, widthMin, widthMax, height, heightMin, heightMax
     , ellip
     , explain
     , padding, paddingXY, paddingEach
