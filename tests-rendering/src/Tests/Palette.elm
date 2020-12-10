@@ -1,45 +1,50 @@
-module Tests.Palette exposing (black, blue, darkCharcoal, darkGrey, green, grey, lightGrey, red, rgba, white)
+module Tests.Palette exposing (black, blue, darkCharcoal, darkGrey, green, grey, lightGrey, red, white)
 
 {-| -}
 
 import Element
 
 
-rgba r g b a =
-    Element.rgba (r / 255) (g / 255) (b / 255) a
-
-
+black : Element.Color
 black =
     Element.rgb 0 0 0
 
 
+darkGrey : Element.Color
 darkGrey =
-    Element.rgb 0.8 0.8 0.8
+    Element.rgb 10 10 10
 
 
+darkCharcoal : Element.Color
 darkCharcoal =
-    Element.rgb 0.9 0.9 0.9
+    Element.rgb 20 20 20
 
 
+lightGrey : Element.Color
 lightGrey =
-    Element.rgb 0.5 0.5 0.5
+    Element.rgb 30 30 30
 
 
+grey : Element.Color
 grey =
     darkGrey
 
 
+red : Element.Color
 red =
-    Element.rgb 1 0 0
+    Element.rgb 255 0 0
 
 
+green : Element.Color
 green =
-    Element.rgb 0 1 0
+    Element.rgb 0 255 0
 
 
+white : Element.Color
 white =
-    Element.rgb 1 1 1
+    Element.rgb 255 255 255
 
 
+blue : Element.Color
 blue =
-    Element.rgb 0 0 1
+    Element.rgb 0 0 255

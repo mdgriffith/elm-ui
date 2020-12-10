@@ -36,13 +36,12 @@ import Dict exposing (Dict)
 import Element exposing (Color)
 import Html exposing (Html)
 import Html.Attributes
-import Internal.Model as Internal
+import Internal.Style2 as Style
 import Test exposing (Test)
 
 
 type Element msg
     = El (List (Attr msg)) (Element msg)
-    | Link String (List (Attr msg)) (Element msg)
     | Row (List (Attr msg)) (List (Element msg))
     | Column (List (Attr msg)) (List (Element msg))
     | TextColumn (List (Attr msg)) (List (Element msg))
@@ -90,9 +89,6 @@ toElementType : Element msg -> ElementType
 toElementType elem =
     case elem of
         El _ _ ->
-            ElType
-
-        Link _ _ _ ->
             ElType
 
         Row _ _ ->
@@ -335,9 +331,6 @@ getElementId level el =
         El attrs child ->
             id :: getElementId (0 :: level) child ++ attributeIDs attrs
 
-        Link _ attrs child ->
-            id :: getElementId (0 :: level) child ++ attributeIDs attrs
-
         Row attrs children ->
             id :: childrenIDs children ++ attributeIDs attrs
 
@@ -401,13 +394,6 @@ renderElement level el =
             Element.el
                 (id :: makeAttributes attrs)
                 (renderElement (0 :: level) child)
-
-        Link url attrs child ->
-            Element.link
-                (id :: makeAttributes attrs)
-                { url = url
-                , label = renderElement (0 :: level) child
-                }
 
         Row attrs children ->
             Element.row
@@ -600,9 +586,6 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                                 El _ _ ->
                                     InEl
 
-                                Link _ _ _ ->
-                                    InEl
-
                                 Row _ _ ->
                                     InRow
 
@@ -729,9 +712,6 @@ createTest { siblings, parent, cache, level, element, location, parentSpacing } 
                 El attrs child ->
                     tests self attrs [ child ]
 
-                Link _ attrs child ->
-                    tests self attrs [ child ]
-
                 Row attrs children ->
                     tests self attrs children
 
@@ -820,9 +800,6 @@ addAttribute attr el =
         El attrs child ->
             El (attr :: attrs) child
 
-        Link url attrs child ->
-            Link url (attr :: attrs) child
-
         Row attrs children ->
             Row (attr :: attrs) children
 
@@ -848,34 +825,19 @@ compareFormattedColor color expected =
 
 
 formatColorWithAlpha : Color -> String
-formatColorWithAlpha (Internal.Rgba red green blue alpha) =
-    if alpha == 1 then
-        ("rgba(" ++ String.fromInt (round (red * 255)))
-            ++ (", " ++ String.fromInt (round (green * 255)))
-            ++ (", " ++ String.fromInt (round (blue * 255)))
-            ++ ", 1"
-            ++ ")"
-
-    else
-        ("rgba(" ++ String.fromInt (round (red * 255)))
-            ++ (", " ++ String.fromInt (round (green * 255)))
-            ++ (", " ++ String.fromInt (round (blue * 255)))
-            ++ (", " ++ String.fromFloat alpha ++ ")")
+formatColorWithAlpha (Style.Rgb red green blue) =
+    ("rgba(" ++ String.fromInt red)
+        ++ (", " ++ String.fromInt green)
+        ++ (", " ++ String.fromInt blue)
+        ++ "1)"
 
 
 formatColor : Color -> String
-formatColor (Internal.Rgba red green blue alpha) =
-    if alpha == 1 then
-        ("rgb(" ++ String.fromInt (round (red * 255)))
-            ++ (", " ++ String.fromInt (round (green * 255)))
-            ++ (", " ++ String.fromInt (round (blue * 255)))
-            ++ ")"
-
-    else
-        ("rgb(" ++ String.fromInt (round (red * 255)))
-            ++ (", " ++ String.fromInt (round (green * 255)))
-            ++ (", " ++ String.fromInt (round (blue * 255)))
-            ++ ")"
+formatColor (Style.Rgb red green blue) =
+    ("rgb(" ++ String.fromInt red)
+        ++ (", " ++ String.fromInt green)
+        ++ (", " ++ String.fromInt blue)
+        ++ ")"
 
 
 getSpacingFromAttributes attrs =
@@ -916,9 +878,6 @@ getSpacing el =
     in
     case el of
         El attrs _ ->
-            filterAttrs attrs
-
-        Link _ attrs _ ->
             filterAttrs attrs
 
         Row attrs _ ->

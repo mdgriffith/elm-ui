@@ -252,7 +252,7 @@ box =
     el
         [ width (px 50)
         , height (px 50)
-        , Background.color (rgb (240 / 255) 0 (245 / 255))
+        , Background.color (rgb 240 0 245)
         , Font.color (rgb 1 1 1)
         ]
         none
@@ -345,16 +345,17 @@ lengths =
     [ px 50
     , fill
     , shrink
-    , fill
-        |> maximum 100
-    , fill
-        |> maximum 100
-        |> minimum 50
-    , shrink
-        |> maximum 100
-    , shrink
-        |> maximum 100
-        |> minimum 50
+
+    -- , fill
+    --     |> maximum 100
+    -- , fill
+    --     |> maximum 100
+    --     |> minimum 50
+    -- , shrink
+    --     |> maximum 100
+    -- , shrink
+    --     |> maximum 100
+    --     |> minimum 50
     ]
 
 

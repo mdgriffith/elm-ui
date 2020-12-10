@@ -189,10 +189,11 @@ import Html.Attributes
 import Html.Events
 import Internal.Flag2 as Flag2
 import Internal.Model2 as Two
-import Internal.Style2 as Style 
+import Internal.Style.Generated exposing (classes)
+import Internal.Style2 as Style
 import Json.Decode as Json
 import Json.Encode as Encode
-import Internal.Style.Generated exposing (classes)
+
 
 {-| -}
 type Placeholder id msg
@@ -277,6 +278,7 @@ labelHidden =
     HiddenLabel
 
 
+hiddenLabelAttribute2 : Label msg -> Element.Attribute a
 hiddenLabelAttribute2 label =
     case label of
         HiddenLabel textLabel ->
