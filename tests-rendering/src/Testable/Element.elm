@@ -104,7 +104,7 @@ paragraph : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.
 paragraph attrs =
     let
         withImplicits =
-            implicitTest (widthHelper (Fill 1))
+            implicitTest (widthHelper Shrink)
                 :: implicitTest (heightHelper Shrink)
                 :: attrs
     in
@@ -115,7 +115,7 @@ textColumn : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable
 textColumn attrs =
     let
         withImplicits =
-            implicitTest (widthHelper (Fill 1))
+            implicitTest (widthHelper Shrink)
                 :: implicitTest (heightHelper Shrink)
                 :: attrs
     in

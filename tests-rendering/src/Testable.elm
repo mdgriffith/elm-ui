@@ -263,7 +263,7 @@ floatToString x =
 lessThanOrEqual : String -> Float -> Float -> LayoutExpectation
 lessThanOrEqual label one two =
     Expect
-        { description = label ++ "  " ++ floatToString one ++ " <= " ++ floatToString two
+        { description = label ++ " " ++ floatToString one ++ " <= " ++ floatToString two
         , result = one <= two
         }
 
