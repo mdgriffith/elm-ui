@@ -27,7 +27,6 @@ module Internal.Flag exposing
     , gridPosition
     , gridTemplate
     , height
-    , visit
     , heightBetween
     , heightContent
     , heightFill
@@ -48,6 +47,7 @@ module Internal.Flag exposing
     , transparency
     , txtShadows
     , value
+    , visit
     , width
     , widthBetween
     , widthContent

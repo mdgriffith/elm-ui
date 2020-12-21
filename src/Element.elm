@@ -182,7 +182,7 @@ This is very useful for things like dropdown menus or tooltips.
 
 # Temporary Styling
 
-@docs Attr, Decoration, mouseOver, mouseDown, focused
+@docs Attr, Decoration, mouseOver, mouseDown, focused, visited
 
 
 # Responsiveness
