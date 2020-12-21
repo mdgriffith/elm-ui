@@ -17,7 +17,7 @@ module Element exposing
     , image
     , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
     , above, below, onRight, onLeft, inFront, behindContent
-    , Attr, Decoration, mouseOver, mouseDown, focused
+    , Attr, Decoration, mouseOver, mouseDown, focused, visited
     , Device, DeviceClass(..), Orientation(..), classifyDevice
     , modular
     , map, mapAttribute
@@ -1683,4 +1683,10 @@ focused : List Decoration -> Attribute msg
 focused decs =
     Internal.StyleClass Flag.focus <|
         Internal.PseudoSelector Internal.Focus
+            (Internal.unwrapDecorations decs)
+{-| -}
+visited : List Decoration -> Attribute msg
+visited decs =
+    Internal.StyleClass Flag.visit <|
+        Internal.PseudoSelector Internal.Visit
             (Internal.unwrapDecorations decs)

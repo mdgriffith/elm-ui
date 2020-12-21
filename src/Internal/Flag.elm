@@ -27,6 +27,7 @@ module Internal.Flag exposing
     , gridPosition
     , gridTemplate
     , height
+    , visit
     , heightBetween
     , heightContent
     , heightFill
@@ -120,9 +121,9 @@ merge (Field one two) (Field three four) =
 
 flag : Int -> Flag
 flag i =
-    if i > 31 then
+    if i > 32 then
         Second
-            (Bitwise.shiftLeftBy (i - 32) 1)
+            (Bitwise.shiftLeftBy (i - 33) 1)
 
     else
         Flag
@@ -260,13 +261,16 @@ active =
 hover =
     flag 33
 
-
-gridTemplate =
+visit =
     flag 34
 
 
-gridPosition =
+gridTemplate =
     flag 35
+
+
+gridPosition =
+    flag 36
 
 
 
@@ -274,52 +278,52 @@ gridPosition =
 
 
 heightContent =
-    flag 36
-
-
-heightFill =
     flag 37
 
 
-widthContent =
+heightFill =
     flag 38
 
 
-widthFill =
+widthContent =
     flag 39
 
 
-alignRight =
+widthFill =
     flag 40
 
 
-alignBottom =
+alignRight =
     flag 41
 
 
-centerX =
+alignBottom =
     flag 42
 
 
-centerY =
+centerX =
     flag 43
 
 
-widthBetween =
+centerY =
     flag 44
 
 
-heightBetween =
+widthBetween =
     flag 45
 
 
-behind =
+heightBetween =
     flag 46
 
 
-heightTextAreaContent =
+behind =
     flag 47
 
 
-fontVariant =
+heightTextAreaContent =
     flag 48
+
+
+fontVariant =
+    flag 49

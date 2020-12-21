@@ -203,6 +203,7 @@ type PseudoClass
     = Focus
     | Hover
     | Active
+    | Visit
 
 
 {-| -}
@@ -2644,6 +2645,9 @@ renderStyle options maybePseudo selector props =
                         AllowHover ->
                             [ selector ++ "-hv:hover {" ++ List.foldl (renderProps False) "" props ++ "\n}" ]
 
+                Visit ->
+                    [ selector ++ "-vs:visited {" ++ List.foldl (renderProps False) "" props ++ "\n}" ]
+
                 Focus ->
                     let
                         renderedProps =
@@ -3275,6 +3279,9 @@ getStyleName style =
 
                         Active ->
                             "act"
+
+                        Visit ->
+                            "vs"
             in
             List.map
                 (\sty ->
