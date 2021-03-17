@@ -16,3 +16,4 @@ CSS    |  Style Elements  | Description
 `:hover`, `:focus`, `:active` | `mouseOver`, `focused`, `mouseDown`  | Only certain styles are allowed to be in a pseudo state.  They have the type `Attr decorative msg`, which means they can be either an `Attribute` or a `Decoration`.
 `<form>` | __N/a__ | __Elm__ already has a mechanism for submiting data to a server, namely the `Http` package.  There has been some mention that the `form` element might be beneficial accessibility-wise, which I'm definitely open to hearing about!
 `onSubmit` | __N/A__ | Similar to `<form>`, there is no `onSubmit` behavior.  Likely if you're attempting to capture some of the keybaord related behavior of `onSubmit`, you're likely better just crafting a keyboard event handler in the first place!
+`<select>` | __N/A__ | See [#76](https://github.com/mdgriffith/elm-ui/issues/76).
