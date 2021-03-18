@@ -18,3 +18,4 @@ CSS    |  Style Elements  | Description
 `onSubmit` | __N/A__ | Similar to `<form>`, there is no `onSubmit` behavior.  Likely if you're attempting to capture some of the keybaord related behavior of `onSubmit`, you're likely better just crafting a keyboard event handler in the first place!
 `<select>` | __N/A__ | See [#76](https://github.com/mdgriffith/elm-ui/issues/76).
 `text-overflow: ellipsis` | __N/A__ | See [#112](https://github.com/mdgriffith/elm-ui/issues/112).
+`:hover { font-decoration: underline }` | __N/A__ | See [#158](https://github.com/mdgriffith/elm-ui/issues/158).
