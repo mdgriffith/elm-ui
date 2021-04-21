@@ -197,6 +197,7 @@ import Internal.Flag as Flag
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
 import Json.Decode as Json
+import VirtualDom
 
 
 {-| -}
@@ -402,6 +403,13 @@ hasFocusStyle attr =
         _ ->
             False
 
+mapMaybeNoAttribute : (a -> VirtualDom.Attribute msg) -> Maybe a -> Internal.Attribute aligned msg
+mapMaybeNoAttribute mapFunc maybeObj =
+    case maybeObj of
+        Just obj ->
+            Internal.Attr <| mapFunc obj
+        Nothing ->
+            Internal.NoAttribute
 
 {-| -}
 type alias Checkbox msg =
@@ -438,11 +446,7 @@ checkbox attrs { label, icon, checked, onChange } =
               else
                 Element.spacing
                     6
-            , case onChange of
-                Just onChangeValue ->
-                    Internal.Attr (Html.Events.onClick (onChangeValue (not checked)))
-                Nothing ->
-                    Internal.NoAttribute
+            , mapMaybeNoAttribute (\onChangeValue -> Html.Events.onClick (onChangeValue (not checked))) onChange
             , Region.announce
             , onKeyLookup <|
                 \code ->
