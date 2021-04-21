@@ -554,7 +554,7 @@ The slider can be vertical or horizontal depending on the width/height of the sl
 
   - set `step` to be `Just 1`, or some other whole value
   - `value = toFloat model.myInt`
-  - And finally, round the value before making a message `onChange = round >> AdjustValue`
+  - And finally, round the value before making a message `onChange = Just <| round >> AdjustValue`
 
 -}
 slider :
@@ -853,7 +853,7 @@ type TextKind
 
 {-| -}
 type alias Text msg =
-    { onChange : String -> msg
+    { onChange : Maybe (String -> msg)
     , text : String
     , placeholder : Maybe (Placeholder msg)
     , label : Label msg
@@ -955,7 +955,7 @@ textHelper textInput attrs textOptions =
                         ]
                  )
                     ++ [ value textOptions.text
-                       , Internal.Attr (Html.Events.onInput textOptions.onChange)
+                       , mapMaybeNoAttribute  (\onChangeValue -> Html.Events.onInput onChangeValue) textOptions.onChange
                        , hiddenLabelAttribute textOptions.label
                        , spellcheck textInput.spellchecked
                        , Maybe.map autofill textInput.autofill
@@ -1411,7 +1411,7 @@ redistributeOver isMultiline stacked attr els =
 text :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1430,7 +1430,7 @@ text =
 spellChecked :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1448,7 +1448,7 @@ spellChecked =
 search :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1472,7 +1472,7 @@ A password takes all the arguments a normal `Input.text` would, and also **show*
 newPassword :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1503,7 +1503,7 @@ newPassword attrs pass =
 currentPassword :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1534,7 +1534,7 @@ currentPassword attrs pass =
 username :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1552,7 +1552,7 @@ username =
 email :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
@@ -1576,7 +1576,7 @@ Use `Element.spacing` to change its line-height.
 multiline :
     List (Attribute msg)
     ->
-        { onChange : String -> msg
+        { onChange : Maybe (String -> msg)
         , text : String
         , placeholder : Maybe (Placeholder msg)
         , label : Label msg
