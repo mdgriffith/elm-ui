@@ -1688,7 +1688,7 @@ optionWith val view =
 radio :
     List (Attribute msg)
     ->
-        { onChange : option -> msg
+        { onChange : Maybe (option -> msg)
         , options : List (Option option msg)
         , selected : Maybe option
         , label : Label msg
@@ -1703,7 +1703,7 @@ radio =
 radioRow :
     List (Attribute msg)
     ->
-        { onChange : option -> msg
+        { onChange : Maybe (option -> msg)
         , options : List (Option option msg)
         , selected : Maybe option
         , label : Label msg
@@ -1782,7 +1782,7 @@ radioHelper :
     Orientation
     -> List (Attribute msg)
     ->
-        { onChange : option -> msg
+        { onChange : Maybe (option -> msg)
         , options : List (Option option msg)
         , selected : Maybe option
         , label : Label msg
@@ -1807,7 +1807,11 @@ radioHelper orientation attrs input =
 
                     Column ->
                         Element.width Element.fill
-                , Events.onClick (input.onChange val)
+                , case input.onChange of
+                    Just onChangeValue ->
+                        Events.onClick (onChangeValue val)
+                    Nothing ->
+                        Internal.NoAttribute
                 , case status of
                     Selected ->
                         Internal.Attr <|
@@ -1896,37 +1900,34 @@ radioHelper orientation attrs input =
             , Just <|
                 Internal.Attr <|
                     Html.Attributes.attribute "role" "radiogroup"
-            , case prevNext of
-                Nothing ->
-                    Nothing
-
-                Just ( prev, next ) ->
-                    Just
-                        (onKeyLookup <|
+            , input.onChange
+                |> Maybe.andThen (\onChangeValue ->
+                    Maybe.map (\(prev, next) ->
+                        onKeyLookup <|
                             \code ->
                                 if code == leftArrow then
-                                    Just (input.onChange prev)
+                                    Just (onChangeValue prev)
 
                                 else if code == upArrow then
-                                    Just (input.onChange prev)
+                                    Just (onChangeValue prev)
 
                                 else if code == rightArrow then
-                                    Just (input.onChange next)
+                                    Just (onChangeValue next)
 
                                 else if code == downArrow then
-                                    Just (input.onChange next)
+                                    Just (onChangeValue next)
 
                                 else if code == space then
                                     case input.selected of
                                         Nothing ->
-                                            Just (input.onChange prev)
+                                            Just (onChangeValue prev)
 
                                         _ ->
                                             Nothing
 
                                 else
                                     Nothing
-                        )
+                          ) prevNext )
             ]
             ++ events
          -- ++ hideIfEverythingisInvisible
