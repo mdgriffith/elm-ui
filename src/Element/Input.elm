@@ -423,7 +423,7 @@ type alias Checkbox msg =
 checkbox :
     List (Attribute msg)
     ->
-        { onChange : Bool -> msg
+        { onChange : Maybe (Bool -> msg)
         , icon : Bool -> Element msg
         , checked : Bool
         , label : Label msg
@@ -438,16 +438,16 @@ checkbox attrs { label, icon, checked, onChange } =
               else
                 Element.spacing
                     6
-            , Internal.Attr (Html.Events.onClick (onChange (not checked)))
+            , case onChange of
+                Just onChangeValue ->
+                    Internal.Attr (Html.Events.onClick (onChangeValue (not checked)))
+                Nothing ->
+                    Internal.NoAttribute
             , Region.announce
             , onKeyLookup <|
                 \code ->
-                    if code == enter then
-                        Just <| onChange (not checked)
-
-                    else if code == space then
-                        Just <| onChange (not checked)
-
+                    if code == enter || code == space then
+                        Maybe.map (\changeFunc -> changeFunc <| not checked) onChange
                     else
                         Nothing
             , tabindex 0
