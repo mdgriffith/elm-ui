@@ -197,6 +197,7 @@ import Internal.Flag as Flag
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
 import Json.Decode as Json
+import VirtualDom
 
 
 {-| -}
@@ -402,6 +403,13 @@ hasFocusStyle attr =
         _ ->
             False
 
+mapMaybeNoAttribute : (a -> VirtualDom.Attribute msg) -> Maybe a -> Internal.Attribute aligned msg
+mapMaybeNoAttribute mapFunc maybeObj =
+    case maybeObj of
+        Just obj ->
+            Internal.Attr <| mapFunc obj
+        Nothing ->
+            Internal.NoAttribute
 
 {-| -}
 type alias Checkbox msg =
@@ -438,11 +446,7 @@ checkbox attrs { label, icon, checked, onChange } =
               else
                 Element.spacing
                     6
-            , case onChange of
-                Just onChangeValue ->
-                    Internal.Attr (Html.Events.onClick (onChangeValue (not checked)))
-                Nothing ->
-                    Internal.NoAttribute
+            , mapMaybeNoAttribute (\onChangeValue -> Html.Events.onClick (onChangeValue (not checked))) onChange
             , Region.announce
             , onKeyLookup <|
                 \code ->
@@ -526,7 +530,7 @@ defaultThumb =
                 Element.none
             )
         ]
-        { onChange = AdjustValue
+        { onChange = Just AdjustValue
         , label =
             Input.labelAbove []
                 (text "My Slider Value")
@@ -556,7 +560,7 @@ The slider can be vertical or horizontal depending on the width/height of the sl
 slider :
     List (Attribute msg)
     ->
-        { onChange : Float -> msg
+        { onChange : Maybe (Float -> msg)
         , label : Label msg
         , min : Float
         , max : Float
@@ -714,19 +718,20 @@ slider attributes input =
                         thumbShadowStyle
                     )
                 , Internal.Attr (Html.Attributes.class (className ++ " ui-slide-bar focusable-parent"))
-                , Internal.Attr
-                    (Html.Events.onInput
-                        (\str ->
-                            case String.toFloat str of
-                                Nothing ->
-                                    -- This should never happen because the browser
-                                    -- should always provide a Float.
-                                    input.onChange 0
+                , mapMaybeNoAttribute (\onChangeValue ->
+                        (Html.Events.onInput
+                            (\str ->
+                                case String.toFloat str of
+                                    Nothing ->
+                                        -- This should never happen because the browser
+                                        -- should always provide a Float.
+                                        onChangeValue 0
 
-                                Just val ->
-                                    input.onChange val
+                                    Just val ->
+                                        onChangeValue val
+                            )
                         )
-                    )
+                    ) input.onChange
                 , Internal.Attr <|
                     Html.Attributes.type_ "range"
                 , Internal.Attr <|
