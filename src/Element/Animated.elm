@@ -1,6 +1,41 @@
-module Element.Animated exposing (..)
+module Element.Animated exposing
+    ( Animated
+    , animated, hovered, focused, pressed
+    , immediately, veryQuickly, quickly, slowly, verySlowly
+    , wobble, delay
+    , id
+    , onTimeline
+    , opacity, position, rotation, scale
+    , padding, paddingEach, background, border, font, height, width
+    )
 
-{-| -}
+{-|
+
+@docs Animated
+
+@docs animated, hovered, focused, pressed
+
+@docs immediately, veryQuickly, quickly, slowly, verySlowly
+
+@docs wobble, delay
+
+
+## Persistent Eleents
+
+@docs id
+
+@docs onTimeline
+
+---
+
+
+### Properties
+
+@docs opacity, position, rotation, scale
+
+@docs padding, paddingEach, background, border, font, height, width
+
+-}
 
 import Animator exposing (Timeline)
 import Bitwise
@@ -18,27 +53,28 @@ type alias Personality =
     Two.Personality
 
 
-duration : Int -> Animated -> Animated
-duration dur (Two.Anim cls personality name val) =
-    Two.Anim cls
-        { arriving =
-            { durDelay =
-                Bitwise.or
-                    (Bitwise.and dur Bits.top16)
-                    (Bitwise.and Bits.delay personality.arriving.durDelay)
-            , curve = personality.arriving.curve
-            }
-        , departing =
-            { durDelay =
-                Bitwise.or
-                    (Bitwise.and dur Bits.top16)
-                    (Bitwise.and Bits.delay personality.departing.durDelay)
-            , curve = personality.departing.curve
-            }
-        , wobble = personality.wobble
-        }
-        name
-        val
+
+-- duration : Int -> Animated -> Animated
+-- duration dur (Two.Anim cls personality name val) =
+--     Two.Anim cls
+--         { arriving =
+--             { durDelay =
+--                 Bitwise.or
+--                     (Bitwise.and dur Bits.top16)
+--                     (Bitwise.and Bits.delay personality.arriving.durDelay)
+--             , curve = personality.arriving.curve
+--             }
+--         , departing =
+--             { durDelay =
+--                 Bitwise.or
+--                     (Bitwise.and dur Bits.top16)
+--                     (Bitwise.and Bits.delay personality.departing.durDelay)
+--             , curve = personality.departing.curve
+--             }
+--         , wobble = personality.wobble
+--         }
+--         name
+--         val
 
 
 delay : Int -> Animated -> Animated
@@ -90,9 +126,19 @@ id toMsg group instance =
     Two.Animated toMsg (Two.Id group instance)
 
 
+animatedWith :
+    (Msg msg -> msg)
+    -> state
+    -> (state -> List (Step step))
+    -> (step -> List Animated.Property)
+    -> Attribute msg
+animatedWith =
+    Debug.todo ""
+
+
 {-| -}
-animated : (Msg msg -> msg) -> List Animated -> Attribute msg
-animated toMsg attrs =
+animated : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
+animated toMsg dur attrs =
     Two.WhenAll
         toMsg
         (Two.OnIf True)
@@ -101,11 +147,31 @@ animated toMsg attrs =
 
 
 {-| -}
-hovered : (Msg msg -> msg) -> List Animated -> Attribute msg
-hovered toMsg attrs =
+hovered : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
+hovered toMsg dur attrs =
     Two.WhenAll
         toMsg
         Two.OnHovered
+        (className attrs)
+        attrs
+
+
+{-| -}
+focused : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
+focused toMsg dur attrs =
+    Two.WhenAll
+        toMsg
+        Two.OnFocused
+        (className attrs)
+        attrs
+
+
+{-| -}
+pressed : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
+pressed toMsg dur attrs =
+    Two.WhenAll
+        toMsg
+        Two.OnPressed
         (className attrs)
         attrs
 
@@ -121,26 +187,6 @@ className attrs =
 
         (Two.Anim cls _ _ _) :: remain ->
             className remain ++ "_" ++ cls
-
-
-{-| -}
-focused : (Msg msg -> msg) -> List Animated -> Attribute msg
-focused toMsg attrs =
-    Two.WhenAll
-        toMsg
-        Two.OnFocused
-        (className attrs)
-        attrs
-
-
-{-| -}
-pressed : (Msg msg -> msg) -> List Animated -> Attribute msg
-pressed toMsg attrs =
-    Two.WhenAll
-        toMsg
-        Two.OnPressed
-        (className attrs)
-        attrs
 
 
 {-| The style we are just as the element is created.
@@ -451,36 +497,47 @@ border =
 {- DURATIONS! -}
 
 
+{-| -}
+type Duration
+    = Duration Int
+
+
+{-| -}
+ms : Int -> Duration
+ms =
+    Duration
+
+
 {-| 0ms
 -}
-immediately : Int
+immediately : Duration
 immediately =
-    0
+    ms 0
 
 
 {-| _100ms_.
 -}
-veryQuickly : Int
+veryQuickly : Duration
 veryQuickly =
-    100
+    ms 100
 
 
 {-| _200ms_ - Likely a good place to start!
 -}
-quickly : Int
+quickly : Duration
 quickly =
-    200
+    ms 200
 
 
 {-| _400ms_.
 -}
-slowly : Int
+slowly : Duration
 slowly =
-    400
+    ms 400
 
 
 {-| _500ms_.
 -}
-verySlowly : Int
+verySlowly : Duration
 verySlowly =
-    500
+    ms 500
