@@ -66,6 +66,10 @@ The work is based off of a rewrite of the [Style Elements](https://github.com/md
 
 The community around `elm-ui` is maintaining a collection of examples called the [elm-ui-cookbook](https://github.com/rofrol/elm-ui-cookbook). If you are just starting out with `elm-ui`, or get stuck on specific things, this can be a great resource.
 
+## Notes
+
+Make sure to have `<!DOCTYPE html>` on top of your application; otherwise, things might get messed up in some browsers.
+
 ## Contributing
 
 Want to help out fixing bugs or reporting issues?
