@@ -3,7 +3,7 @@ module Element exposing
     , row, wrappedRow, column
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
-    , Attribute, width, height, Length, px, shrink, fill, fillPortion, maximum, minimum
+    , Attribute, width, height, Length, px, shrink, fill, fillPortion, maximum, minimum, batchAttributes
     , explain
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
@@ -354,6 +354,16 @@ html =
 htmlAttribute : Html.Attribute msg -> Attribute msg
 htmlAttribute =
     Internal.Attr
+
+
+{-| Batches up multiple attributes as one.
+
+Usefull when composing styles to avoid calls to List.append
+
+-}
+batchAttributes : List (Attribute msg) -> Attribute msg
+batchAttributes batch =
+    Internal.Batch batch
 
 
 {-| -}

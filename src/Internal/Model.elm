@@ -313,6 +313,7 @@ type Attribute aligned msg
     | Height Length
     | Nearby Location (Element msg)
     | TransformComponent Flag TransformComponent
+    | Batch (List (Attribute aligned msg))
 
 
 type TransformComponent
@@ -1249,6 +1250,16 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             children
                             remaining
 
+                Batch batch ->
+                    gatherAttrRecursive classes
+                        node
+                        has
+                        transform
+                        styles
+                        attrs
+                        children
+                        (List.append batch remaining)
+
 
 addNearbyElement location elem existing =
     let
@@ -1850,67 +1861,79 @@ filter : List (Attribute aligned msg) -> List (Attribute aligned msg)
 filter attrs =
     Tuple.first <|
         List.foldr
-            (\x ( found, has ) ->
-                case x of
-                    NoAttribute ->
-                        ( found, has )
-
-                    Class key _ ->
-                        ( x :: found, has )
-
-                    Attr attr ->
-                        ( x :: found, has )
-
-                    StyleClass _ style ->
-                        ( x :: found, has )
-
-                    Width width ->
-                        if Set.member "width" has then
-                            ( found, has )
-
-                        else
-                            ( x :: found, Set.insert "width" has )
-
-                    Height height ->
-                        if Set.member "height" has then
-                            ( found, has )
-
-                        else
-                            ( x :: found, Set.insert "height" has )
-
-                    Describe description ->
-                        if Set.member "described" has then
-                            ( found, has )
-
-                        else
-                            ( x :: found, Set.insert "described" has )
-
-                    Nearby location elem ->
-                        ( x :: found, has )
-
-                    AlignX _ ->
-                        if Set.member "align-x" has then
-                            ( found, has )
-
-                        else
-                            ( x :: found, Set.insert "align-x" has )
-
-                    AlignY _ ->
-                        if Set.member "align-y" has then
-                            ( found, has )
-
-                        else
-                            ( x :: found, Set.insert "align-y" has )
-
-                    TransformComponent _ _ ->
-                        if Set.member "transform" has then
-                            ( found, has )
-
-                        else
-                            ( x :: found, Set.insert "transform" has )
-            )
+            filterFold
             ( [], Set.empty )
             attrs
+
+
+filterFold :
+    Attribute aligned msg
+    -> ( List (Attribute aligned msg), Set String )
+    -> ( List (Attribute aligned msg), Set String )
+filterFold x ( found, has ) =
+    case x of
+        NoAttribute ->
+            ( found, has )
+
+        Class key _ ->
+            ( x :: found, has )
+
+        Attr attr ->
+            ( x :: found, has )
+
+        StyleClass _ style ->
+            ( x :: found, has )
+
+        Width width ->
+            if Set.member "width" has then
+                ( found, has )
+
+            else
+                ( x :: found, Set.insert "width" has )
+
+        Height height ->
+            if Set.member "height" has then
+                ( found, has )
+
+            else
+                ( x :: found, Set.insert "height" has )
+
+        Describe description ->
+            if Set.member "described" has then
+                ( found, has )
+
+            else
+                ( x :: found, Set.insert "described" has )
+
+        Nearby location elem ->
+            ( x :: found, has )
+
+        AlignX _ ->
+            if Set.member "align-x" has then
+                ( found, has )
+
+            else
+                ( x :: found, Set.insert "align-x" has )
+
+        AlignY _ ->
+            if Set.member "align-y" has then
+                ( found, has )
+
+            else
+                ( x :: found, Set.insert "align-y" has )
+
+        TransformComponent _ _ ->
+            if Set.member "transform" has then
+                ( found, has )
+
+            else
+                ( x :: found, Set.insert "transform" has )
+
+        Batch batch ->
+            List.foldr
+                filterFold
+                ( found, has )
+                batch
 
 
 isContent len =
@@ -3385,6 +3408,9 @@ mapAttr fn attr =
         TransformComponent fl trans ->
             TransformComponent fl trans
 
+        Batch list ->
+            Batch (List.map (mapAttr fn) list)
+
 
 mapAttrFromStyle : (msg -> msg1) -> Attribute Never msg -> Attribute () msg1
 mapAttrFromStyle fn attr =
@@ -3422,6 +3448,9 @@ mapAttrFromStyle fn attr =
 
         TransformComponent fl trans ->
             TransformComponent fl trans
+
+        Batch list ->
+            Batch (List.map (mapAttrFromStyle fn) list)
 
 
 unwrapDecorations : List (Attribute Never Never) -> List Style
