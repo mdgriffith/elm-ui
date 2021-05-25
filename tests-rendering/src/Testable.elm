@@ -848,7 +848,7 @@ compareFormattedColor color expected =
 
 
 formatColorWithAlpha : Color -> String
-formatColorWithAlpha (Internal.Rgba red green blue alpha) =
+formatColorWithAlpha (Color.rgba red green blue alpha) =
     if alpha == 1 then
         ("rgba(" ++ String.fromInt (round (red * 255)))
             ++ (", " ++ String.fromInt (round (green * 255)))
@@ -864,7 +864,7 @@ formatColorWithAlpha (Internal.Rgba red green blue alpha) =
 
 
 formatColor : Color -> String
-formatColor (Internal.Rgba red green blue alpha) =
+formatColor (Color.rgba red green blue alpha) =
     if alpha == 1 then
         ("rgb(" ++ String.fromInt (round (red * 255)))
             ++ (", " ++ String.fromInt (round (green * 255)))

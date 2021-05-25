@@ -9,7 +9,7 @@ import Html.Events exposing (onClick)
 
 
 black =
-    Element.rgb 0 0 0
+    Color.rgb 0 0 0
 
 
 styles =

@@ -51,11 +51,11 @@ testable =
 
 
 palette =
-    { white = Element.rgb 1 1 1
-    , red = Element.rgb 1 0 0
-    , green = Element.rgb 0 1 0
-    , black = Element.rgb 0 0 0
-    , lightGrey = Element.rgb 0.7 0.7 0.7
+    { white = Color.rgb 1 1 1
+    , red = Color.rgb 1 0 0
+    , green = Color.rgb 0 1 0
+    , black = Color.rgb 0 0 0
+    , lightGrey = Color.rgb 0.7 0.7 0.7
     }
 
 

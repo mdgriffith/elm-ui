@@ -15,7 +15,6 @@ module Element exposing
     , layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
     , link, newTabLink, download, downloadAs
     , image
-    , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
     , above, below, onRight, onLeft, inFront, behindContent
     , Attr, Decoration, mouseOver, mouseDown, focused
     , Device, DeviceClass(..), Orientation(..), classifyDevice
@@ -212,107 +211,12 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 
 -}
 
+import Color exposing (Color)
 import Html exposing (Html)
 import Html.Attributes
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
-
-
-{-| -}
-type alias Color =
-    Internal.Color
-
-
-{-| Provide the red, green, and blue channels for the color.
-
-Each channel takes a value between 0 and 1.
-
--}
-rgb : Float -> Float -> Float -> Color
-rgb r g b =
-    Internal.Rgba r g b 1
-
-
-{-| -}
-rgba : Float -> Float -> Float -> Float -> Color
-rgba =
-    Internal.Rgba
-
-
-{-| Provide the red, green, and blue channels for the color.
-
-Each channel takes a value between 0 and 255.
-
--}
-rgb255 : Int -> Int -> Int -> Color
-rgb255 red green blue =
-    Internal.Rgba
-        (toFloat red / 255)
-        (toFloat green / 255)
-        (toFloat blue / 255)
-        1
-
-
-{-| -}
-rgba255 : Int -> Int -> Int -> Float -> Color
-rgba255 red green blue a =
-    Internal.Rgba
-        (toFloat red / 255)
-        (toFloat green / 255)
-        (toFloat blue / 255)
-        a
-
-
-{-| Create a color from an RGB record.
--}
-fromRgb :
-    { red : Float
-    , green : Float
-    , blue : Float
-    , alpha : Float
-    }
-    -> Color
-fromRgb clr =
-    Internal.Rgba
-        clr.red
-        clr.green
-        clr.blue
-        clr.alpha
-
-
-{-| -}
-fromRgb255 :
-    { red : Int
-    , green : Int
-    , blue : Int
-    , alpha : Float
-    }
-    -> Color
-fromRgb255 clr =
-    Internal.Rgba
-        (toFloat clr.red / 255)
-        (toFloat clr.green / 255)
-        (toFloat clr.blue / 255)
-        clr.alpha
-
-
-{-| Deconstruct a `Color` into its rgb channels.
--}
-toRgb :
-    Color
-    ->
-        { red : Float
-        , green : Float
-        , blue : Float
-        , alpha : Float
-        }
-toRgb (Internal.Rgba r g b a) =
-    { red = r
-    , green = g
-    , blue = b
-    , alpha = a
-    }
 
 
 {-| The basic building block of your layout.

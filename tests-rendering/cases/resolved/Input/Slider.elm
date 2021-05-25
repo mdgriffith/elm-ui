@@ -33,7 +33,7 @@ viewModal =
         [ Element.width Element.fill
         , Element.height Element.fill
         , Element.paddingEach { top = 100, left = 0, bottom = 0, right = 0 }
-        , Background.color <| Element.rgba 0 0 0 0.8
+        , Background.color <| Color.rgba 0 0 0 0.8
         ]
         (Element.el [] (Element.text "Hello Modal"))
 
@@ -51,7 +51,7 @@ view model =
                     [ Element.width Element.fill
                     , Element.height (Element.px 2)
                     , Element.centerY
-                    , Background.color (Element.rgb 0.5 0.5 0.5)
+                    , Background.color (Color.rgb 0.5 0.5 0.5)
                     ]
                     Element.none
             ]
