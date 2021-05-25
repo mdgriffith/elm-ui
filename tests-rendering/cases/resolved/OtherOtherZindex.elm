@@ -11,7 +11,7 @@ main =
                 (Element.el
                     [ Element.width (Element.px 70)
                     , Element.height (Element.px 70)
-                    , Element.Background.color (Element.rgb 0 0 0)
+                    , Element.Background.color (Color.rgb 0 0 0)
                     ]
                     Element.none
                 )
@@ -21,7 +21,7 @@ main =
                     (Element.el
                         [ Element.width (Element.px 50)
                         , Element.height (Element.px 50)
-                        , Element.Background.color (Element.rgb 1 0 0)
+                        , Element.Background.color (Color.rgb 1 0 0)
                         ]
                         Element.none
                     )

@@ -18,7 +18,7 @@ view () =
                 , padding 5
                 , width fill
                 , Border.rounded 0
-                , Font.color (Element.rgb 0 0.5 0.5)
+                , Font.color (Color.rgb 0 0.5 0.5)
                 ]
                 { onChange = always ()
                 , text = "Input.text"

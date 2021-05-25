@@ -12,23 +12,23 @@ import Element.Region as Region
 
 
 white =
-    Element.rgb 1 1 1
+    Color.rgb 1 1 1
 
 
 grey =
-    Element.rgb 0.9 0.9 0.9
+    Color.rgb 0.9 0.9 0.9
 
 
 blue =
-    Element.rgb 0 0 0.8
+    Color.rgb 0 0 0.8
 
 
 red =
-    Element.rgb 0.8 0 0
+    Color.rgb 0.8 0 0
 
 
 darkBlue =
-    Element.rgb 0 0 0.9
+    Color.rgb 0 0 0.9
 
 
 main =

@@ -15,7 +15,7 @@ main =
                 , text = ""
                 }
             , Element.Input.multiline
-                [ Element.focused [ Element.Background.color (Element.rgb 0 0 0) ] ]
+                [ Element.focused [ Element.Background.color (Color.rgb 0 0 0) ] ]
                 { label = Element.Input.labelHidden ""
                 , onChange = \_ -> ()
                 , placeholder = Nothing

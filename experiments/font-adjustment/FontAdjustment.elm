@@ -340,8 +340,8 @@ viewAdjustment label adjustment size left lineHeight updateWith =
                         , Element.height (Element.px 16)
                         , Border.rounded 8
                         , Border.width 1
-                        , Border.color (Element.rgb 0.5 0.5 0.5)
-                        , Background.color (Element.rgb 1 1 1)
+                        , Border.color (Color.rgb 0.5 0.5 0.5)
+                        , Background.color (Color.rgb 1 1 1)
 
                         -- , onRight
                         --     (el

@@ -29,7 +29,7 @@ view model =
         (Element.row
             [ Element.width (Element.px 100)
             , Element.padding 10
-            , Background.color (Element.rgb 1 0 0)
+            , Background.color (Color.rgb 1 0 0)
             ]
             [ Input.text
                 [ Element.width (Element.fillPortion 2)

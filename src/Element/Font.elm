@@ -16,7 +16,7 @@ module Element.Font exposing
 
     view =
         Element.el
-            [ Font.color (Element.rgb 0 0 1)
+            [ Font.color (Color.rgb 0 0 1)
             , Font.size 18
             , Font.family
                 [ Font.typeface "Open Sans"
@@ -65,7 +65,8 @@ module Element.Font exposing
 
 -}
 
-import Element exposing (Attr, Attribute, Color)
+import Color exposing (Color)
+import Element exposing (Attr, Attribute)
 import Internal.Flag as Flag
 import Internal.Model as Internal
 import Internal.Style exposing (classes)

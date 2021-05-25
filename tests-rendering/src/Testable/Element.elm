@@ -202,11 +202,11 @@ maximum =
 
 
 rgb =
-    Element.rgb
+    Color.rgb
 
 
 rgba =
-    Element.rgba
+    Color.rgba
 
 
 px : Int -> Length

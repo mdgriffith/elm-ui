@@ -4,7 +4,6 @@ module Internal.Model exposing
     , Attribute(..)
     , Axis(..)
     , Children(..)
-    , Color(..)
     , Description(..)
     , Element(..)
     , EmbedStyle(..)
@@ -107,6 +106,7 @@ module Internal.Model exposing
 
 {-| -}
 
+import Color exposing (Color)
 import Html
 import Html.Attributes
 import Html.Keyed
@@ -362,10 +362,6 @@ type Location
 
 
 {-| -}
-type Color
-    = Rgba Float Float Float Float
-
-
 type NodeName
     = Generic
     | NodeName String
@@ -2173,8 +2169,8 @@ rootStyle =
             , SansSerif
             ]
     in
-    [ StyleClass Flag.bgColor (Colored ("bg-" ++ formatColorClass (Rgba 1 1 1 0)) "background-color" (Rgba 1 1 1 0))
-    , StyleClass Flag.fontColor (Colored ("fc-" ++ formatColorClass (Rgba 0 0 0 1)) "color" (Rgba 0 0 0 1))
+    [ StyleClass Flag.bgColor (Colored ("bg-" ++ formatColorClass (Color.rgba 1 1 1 0)) "background-color" (Color.rgba 1 1 1 0))
+    , StyleClass Flag.fontColor (Colored ("fc-" ++ formatColorClass (Color.rgba 0 0 0 1)) "color" (Color.rgba 0 0 0 1))
     , StyleClass Flag.fontSize (FontSize 20)
     , StyleClass Flag.fontFamily <|
         FontFamily (List.foldl renderFontClassName "font-" families)
@@ -2281,7 +2277,7 @@ focusDefaultStyle =
     , shadow =
         Just
             { color =
-                Rgba (155 / 255) (203 / 255) 1 1
+                Color.rgba (155 / 255) (203 / 255) 1 1
             , offset = ( 0, 0 )
             , blur = 0
             , size = 3
@@ -3165,7 +3161,11 @@ floatClass x =
 
 
 formatColor : Color -> String
-formatColor (Rgba red green blue alpha) =
+formatColor color =
+    let
+        { red, green, blue, alpha } =
+            Color.toRgba color
+    in
     "rgba("
         ++ String.fromInt (round (red * 255))
         ++ ("," ++ String.fromInt (round (green * 255)))
@@ -3174,7 +3174,11 @@ formatColor (Rgba red green blue alpha) =
 
 
 formatColorClass : Color -> String
-formatColorClass (Rgba red green blue alpha) =
+formatColorClass color =
+    let
+        { red, green, blue, alpha } =
+            Color.toRgba color
+    in
     floatClass red
         ++ "-"
         ++ floatClass green

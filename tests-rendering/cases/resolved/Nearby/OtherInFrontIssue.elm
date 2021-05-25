@@ -23,7 +23,7 @@ main =
         [ Element.inFront <|
             Element.el
                 [ Element.alignLeft
-                , Background.color <| Element.rgb 1 0.5 0.5
+                , Background.color <| Color.rgb 1 0.5 0.5
                 , Element.height Element.fill
                 ]
             <|
@@ -36,7 +36,7 @@ contentPane =
     Element.column
         [ Element.width Element.fill
         , Element.height Element.fill
-        , Background.color <| Element.rgb 1 0 0
+        , Background.color <| Color.rgb 1 0 0
         ]
         [ Element.el
             [ Element.centerX
