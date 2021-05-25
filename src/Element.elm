@@ -1173,7 +1173,7 @@ link attrs { url, label } =
         (Internal.Unkeyed [ label ])
 
 
-{-| -}
+{-| Creates a link that on click opens in a new browser tab. Used the same way as @link -}
 newTabLink :
     List (Attribute msg)
     ->
