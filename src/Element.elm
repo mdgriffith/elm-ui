@@ -1492,7 +1492,7 @@ spacingXY x y =
     Internal.StyleClass Flag.spacing (Internal.SpacingStyle (Internal.spacingName x y) x y)
 
 
-{-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.
+{-| Make an element transparent and have it ignore any mouse or touch events, though it will still take up space.
 -}
 transparent : Bool -> Attr decorative msg
 transparent on =
