@@ -69,7 +69,7 @@ This is also the first input element that has a [`required label`](#Label).
 @docs Placeholder, placeholder
 
 
-## Text with autofill
+## Text with Autofill
 
 If we want to play nicely with a browser's ability to autofill a form, we need to be able to give it a hint about what we're expecting.
 
