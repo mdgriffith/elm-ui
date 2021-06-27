@@ -1,4 +1,4 @@
-# CSS Concepts and where to find them
+# CSS Concepts and Where to Find Them
 
 This library creates a new language around layout and style, though if you're already used to CSS, you're probably wondering where certain concepts lie.
 
