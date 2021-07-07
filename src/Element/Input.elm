@@ -20,7 +20,7 @@ We want all of our input elements to:
 
 While these three goals may seem pretty obvious, Html and CSS have made it surprisingly difficult to achieve!
 
-And incredibly difficult for developers to remember all the tricks necessary to make things work. If you've every tried to make a `<textarea>` be the height of it's content or restyle a radio button while maintaining accessibility, you may be familiar.
+And incredibly difficult for developers to remember all the tricks necessary to make things work. If you've ever tried to make a `<textarea>` be the height of it's content or restyle a radio button while maintaining accessibility, you may be familiar.
 
 This module is intended to be accessible by default. You shouldn't have to wade through docs, articles, and books to find out [exactly how accessible your html actually is](https://www.powermapper.com/tests/screen-readers/aria/index.html).
 
@@ -110,7 +110,7 @@ Nevertheless, here we are. Here's how you put one together
             ]
         }
 
-**Note** we're using `Input.option`, which will render the default radio icon you're probably used to. If you want compeltely custom styling, use `Input.optionWith`!
+**Note** we're using `Input.option`, which will render the default radio icon you're probably used to. If you want completely custom styling, use `Input.optionWith`!
 
 @docs radio, radioRow, Option, option, optionWith, OptionState
 
