@@ -3,6 +3,7 @@ module Element.Input exposing
     , button
     , checkbox, defaultCheckbox
     , text, multiline
+    , date, time
     , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
     , slider, Thumb, thumb, defaultThumb
@@ -64,7 +65,7 @@ This is also the first input element that has a [`required label`](#Label).
 
 # Text
 
-@docs text, multiline
+@docs text, multiline, date, time
 
 @docs Placeholder, placeholder
 
@@ -1415,6 +1416,40 @@ text :
 text =
     textHelper
         { type_ = TextInputNode "text"
+        , spellchecked = False
+        , autofill = Nothing
+        }
+
+{-| -}
+date :
+    List (Attribute msg)
+    ->
+        { onChange : String -> msg
+        , text : String
+        , placeholder : Maybe (Placeholder msg)
+        , label : Label msg
+        }
+    -> Element msg
+date =
+    textHelper
+        { type_ = TextInputNode "date"
+        , spellchecked = False
+        , autofill = Nothing
+        }
+
+{-| -}
+time :
+    List (Attribute msg)
+    ->
+        { onChange : String -> msg
+        , text : String
+        , placeholder : Maybe (Placeholder msg)
+        , label : Label msg
+        }
+    -> Element msg
+time =
+    textHelper
+        { type_ = TextInputNode "time"
         , spellchecked = False
         , autofill = Nothing
         }
