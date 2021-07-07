@@ -302,6 +302,7 @@ type alias Angle =
 type Attribute aligned msg
     = NoAttribute
     | Attr (VirtualDom.Attribute msg)
+    | BatchAttr (List (VirtualDom.Attribute msg))
     | Describe Description
       -- invalidation key and literal class
     | Class Flag String
@@ -933,6 +934,9 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
 
                 Attr actualAttribute ->
                     gatherAttrRecursive classes node has transform styles (actualAttribute :: attrs) children remaining
+
+                BatchAttr actualAttributes ->
+                    gatherAttrRecursive classes node has transform styles (actualAttributes ++ attrs) children remaining
 
                 StyleClass flag style ->
                     if Flag.present flag has then
@@ -1859,6 +1863,9 @@ filter attrs =
                         ( x :: found, has )
 
                     Attr attr ->
+                        ( x :: found, has )
+
+                    BatchAttr domAttrs ->
                         ( x :: found, has )
 
                     StyleClass _ style ->
@@ -3382,6 +3389,9 @@ mapAttr fn attr =
         Attr htmlAttr ->
             Attr (VirtualDom.mapAttribute fn htmlAttr)
 
+        BatchAttr htmlAttrs ->
+            BatchAttr (List.map (VirtualDom.mapAttribute fn) htmlAttrs)
+
         TransformComponent fl trans ->
             TransformComponent fl trans
 
@@ -3419,6 +3429,9 @@ mapAttrFromStyle fn attr =
 
         Attr htmlAttr ->
             Attr (VirtualDom.mapAttribute fn htmlAttr)
+
+        BatchAttr htmlAttrs ->
+            BatchAttr (List.map (VirtualDom.mapAttribute fn) htmlAttrs)
 
         TransformComponent fl trans ->
             TransformComponent fl trans
