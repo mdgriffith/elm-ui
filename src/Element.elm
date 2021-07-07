@@ -1,5 +1,4 @@
-module Element exposing
-    ( Element, none, text, el
+module Element exposing ( Element, none, text, el
     , row, wrappedRow, column
     , paragraph, textColumn
     , Column, table, IndexedColumn, indexedTable
@@ -15,7 +14,7 @@ module Element exposing
     , layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
     , link, newTabLink, download, downloadAs
     , image
-    , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
+    , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb, hex, hexOrRed
     , above, below, onRight, onLeft, inFront, behindContent
     , Attr, Decoration, mouseOver, mouseDown, focused
     , Device, DeviceClass(..), Orientation(..), classifyDevice
@@ -154,7 +153,7 @@ Add a scrollbar if the content is larger than the element.
 
 In order to use attributes like `Font.color` and `Background.color`, you'll need to make some colors!
 
-@docs Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
+@docs Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb, hex, hexOrRed
 
 
 # Nearby Elements
@@ -214,7 +213,8 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 
 import Html exposing (Html)
 import Html.Attributes
-import Internal.Flag as Flag exposing (Flag)
+import List.Extra exposing (elemIndex)
+import Internal.Flag as Flag
 import Internal.Model as Internal
 import Internal.Style exposing (classes)
 
@@ -263,6 +263,75 @@ rgba255 red green blue a =
         (toFloat blue / 255)
         a
 
+
+{-| Will convert hexadecimal number to int.
+
+Assumes String has been checked using checkHexCodeLength and HexParser.
+
+Will drop any chars that are not hex digits.
+-}
+checkedHexToInt : String -> Int
+checkedHexToInt code =
+    let
+        hexDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
+        charList = String.toList code
+        maybeIndexList = List.map (\c -> elemIndex c hexDigits) charList
+        intList = List.filterMap identity maybeIndexList
+        -- convert using base 16
+        powerList = List.reverse (List.map (\x -> 16^x) <| List.range 0 (List.length intList - 1))
+        fullInt = List.foldl (+) 0 <| List.map2 (\num pow -> num * pow) intList powerList
+    in
+        fullInt
+
+
+{-| Convert valid hex String into Color
+
+Hex String may start with hashtag, must be 3 or 6 characters long with all characters being hex digits.
+
+Use hexOrRed if you do not want to deal with Result handling.
+-}
+hex : String -> Result String Color
+hex codeStr =
+    let
+        codeCharList = String.toList <| String.toUpper codeStr
+
+        noHashtagCharList =
+            case codeCharList of
+                '#':: xs -> xs
+                xs -> xs
+
+        allHexDigits =
+            List.all identity
+            <| List.map (\c -> Char.isHexDigit c) noHashtagCharList
+
+        concatChars a b =
+            String.concat [String.fromChar a, String.fromChar b]
+
+        duplicateChar c = concatChars c c 
+    in
+        if allHexDigits then
+            case noHashtagCharList of
+                rA :: rB :: gA :: gB :: bA :: bB :: [] ->
+                    Ok <| rgb255
+                        (checkedHexToInt <| concatChars rA rB)
+                        (checkedHexToInt <| concatChars gA gB)
+                        (checkedHexToInt <| concatChars bA bB)
+
+                r :: g :: b :: [] ->
+                    Ok <| rgb255
+                        (checkedHexToInt <| duplicateChar r)
+                        (checkedHexToInt <| duplicateChar g)
+                        (checkedHexToInt <| duplicateChar b)
+                _ -> Err <| codeStr ++ " does not contain 3 or 6 hex digits."
+        else
+            Err <| codeStr ++ " does not entirely consist of hex digits."
+
+            
+{-| Convert valid hex String into Color, will return the Color red for invalid hex strings.
+-}
+hexOrRed : String -> Color
+hexOrRed codeStr =
+    Result.withDefault (rgb255 255 0 0) (hex codeStr)
 
 {-| Create a color from an RGB record.
 -}
