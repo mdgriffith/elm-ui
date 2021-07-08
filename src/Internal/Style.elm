@@ -708,6 +708,9 @@ overrides =
 
 inputTextReset =
     """
+:invalid, :-moz-ui-invalid {
+    box-shadow: none;
+}
 input[type="search"],
 input[type="search"]::-webkit-search-decoration,
 input[type="search"]::-webkit-search-cancel-button,
