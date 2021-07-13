@@ -240,6 +240,7 @@ classes =
     , textHeavy = "w9"
     , italic = "i"
     , strike = "sk"
+    , dashed = "d"
     , underline = "u"
     , textUnitalicized = "tun"
 
@@ -350,6 +351,7 @@ unicode =
     , textHeavy = "text-heavy"
     , italic = "italic"
     , strike = "strike"
+    , dashed = "dashed"
     , underline = "underline"
     , textUnitalicized = "text-unitalicized"
 
@@ -446,6 +448,7 @@ single =
     , textHeavy = "text-heavy"
     , italic = "i"
     , strike = "-"
+    , dashed = "d"
     , underline = "u"
     , textUnitalicized = "text-unitalicized"
 
@@ -1758,6 +1761,9 @@ baseSheet =
         , Descriptor (dot classes.strike)
             [ Prop "text-decoration" "line-through"
             ]
+        , Descriptor (dot classes.dashed)
+            [ Prop "text-decoration" "dashed"
+            ]
         , Descriptor (dot classes.underline)
             [ Prop "text-decoration" "underline"
             , Prop "text-decoration-skip-ink" "auto"
@@ -1765,6 +1771,11 @@ baseSheet =
             ]
         , Descriptor (dot classes.underline ++ dot classes.strike)
             [ Prop "text-decoration" "line-through underline"
+            , Prop "text-decoration-skip-ink" "auto"
+            , Prop "text-decoration-skip" "ink"
+            ]
+        , Descriptor (dot classes.underline ++ dot classes.dashed)
+            [ Prop "text-decoration" "dashed underline"
             , Prop "text-decoration-skip-ink" "auto"
             , Prop "text-decoration-skip" "ink"
             ]
