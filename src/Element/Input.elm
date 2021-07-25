@@ -155,7 +155,7 @@ Here are some alternatives to think about that don't involve explicitly disablin
                 { onPress =
                     Just SaveButtonPressed
                 , label =
-                    text "Save blog post"
+                    text "Save Blog Post"
                 }
 
         else
@@ -167,7 +167,7 @@ Here are some alternatives to think about that don't involve explicitly disablin
                 { onPress =
                     Just DisabledSaveButtonPressed
                 , label =
-                    text "Save Blog "
+                    text "Save Blog Post"
                 }
 
 Consider showing a hint if `DisabledSaveButtonPressed` is sent.
