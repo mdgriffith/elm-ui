@@ -72,6 +72,6 @@ Make sure to have `<!DOCTYPE html>` on top of your application; otherwise, thing
 
 ## Contributing
 
-Want to help out fixing bugs or reporting issues?
+Want to help out fixing bugs or reporting issues? Please [add issues you find](https://github.com/mdgriffith/elm-ui/issues/new/choose).
 
-Please add issues you find, and if you want to verify code you want to contribute, please read how to run the tests [here](https://github.com/mdgriffith/elm-ui/blob/master/notes/RUNNING_TESTS.md).
+If you want to verify code you want to contribute, please read [how to run the tests](https://github.com/mdgriffith/elm-ui/blob/master/notes/RUNNING_TESTS.md).
