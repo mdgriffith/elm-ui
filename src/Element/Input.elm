@@ -1679,15 +1679,18 @@ optionWith val view =
     Option val view
 
 
+type alias Radio msg =
+    { onChange : option -> msg
+    , options : List (Option option msg)
+    , selected : Maybe option
+    , label : Label msg
+    }
+
+
 {-| -}
 radio :
     List (Attribute msg)
-    ->
-        { onChange : option -> msg
-        , options : List (Option option msg)
-        , selected : Maybe option
-        , label : Label msg
-        }
+    -> Radio
     -> Element msg
 radio =
     radioHelper Column
@@ -1697,12 +1700,7 @@ radio =
 -}
 radioRow :
     List (Attribute msg)
-    ->
-        { onChange : option -> msg
-        , options : List (Option option msg)
-        , selected : Maybe option
-        , label : Label msg
-        }
+    -> Radio
     -> Element msg
 radioRow =
     radioHelper Row
@@ -1772,16 +1770,10 @@ defaultRadioOption optionLabel status =
         , Element.el [ Element.width Element.fill, Internal.htmlClass "unfocusable" ] optionLabel
         ]
 
-
 radioHelper :
     Orientation
     -> List (Attribute msg)
-    ->
-        { onChange : option -> msg
-        , options : List (Option option msg)
-        , selected : Maybe option
-        , label : Label msg
-        }
+    -> Radio
     -> Element msg
 radioHelper orientation attrs input =
     let
