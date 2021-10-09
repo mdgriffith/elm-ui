@@ -16,51 +16,76 @@ module Element.Background exposing
 
 -}
 
-import Element exposing (Attr, Attribute, Color)
-import Internal.Flag as Flag
-import Internal.Model as Internal
-import VirtualDom
+import Animator
+import Element exposing (Attribute, Color)
+import Html.Attributes as Attr
+import Internal.Flag2 as Flag
+import Internal.Model2 as Two
+import Internal.Style2 as Style
 
 
 {-| -}
-color : Color -> Attr decorative msg
-color clr =
-    Internal.StyleClass Flag.bgColor (Internal.Colored ("bg-" ++ Internal.formatColorClass clr) "background-color" clr)
+color : Color -> Two.Attribute msg
+color (Style.Rgb red green blue) =
+    Two.Attr
+        (Attr.style "background-color"
+            ("rgb("
+                ++ String.fromInt red
+                ++ ("," ++ String.fromInt green)
+                ++ ("," ++ String.fromInt blue)
+                ++ ")"
+            )
+        )
 
 
 {-| Resize the image to fit the containing element while maintaining proportions and cropping the overflow.
 -}
 image : String -> Attribute msg
 image src =
-    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") center / cover no-repeat"))
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / cover no-repeat")
+        )
 
 
 {-| A centered background image that keeps its natural proportions, but scales to fit the space.
 -}
 uncropped : String -> Attribute msg
 uncropped src =
-    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") center / contain no-repeat"))
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / contain no-repeat")
+        )
 
 
 {-| Tile an image in the x and y axes.
 -}
 tiled : String -> Attribute msg
 tiled src =
-    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") repeat"))
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / repeat")
+        )
 
 
 {-| Tile an image in the x axis.
 -}
 tiledX : String -> Attribute msg
 tiledX src =
-    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") repeat-x"))
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / repeat-x")
+        )
 
 
 {-| Tile an image in the y axis.
 -}
 tiledY : String -> Attribute msg
 tiledY src =
-    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") repeat-y"))
+    Two.Attr
+        (Attr.style "background"
+            ("url(\"" ++ src ++ "\") center / repeat-y")
+        )
 
 
 type Direction
@@ -110,21 +135,31 @@ gradient :
     { angle : Float
     , steps : List Color
     }
-    -> Attr decorative msg
+    -> Attribute msg
 gradient { angle, steps } =
     case steps of
         [] ->
-            Internal.NoAttribute
+            Two.NoAttribute
 
-        clr :: [] ->
-            Internal.StyleClass Flag.bgColor
-                (Internal.Colored ("bg-" ++ Internal.formatColorClass clr) "background-color" clr)
+        (Style.Rgb red green blue) :: [] ->
+            Two.Attr
+                (Attr.style "background-color"
+                    ("rgb("
+                        ++ String.fromInt red
+                        ++ ("," ++ String.fromInt green)
+                        ++ ("," ++ String.fromInt blue)
+                        ++ ")"
+                    )
+                )
 
         _ ->
-            Internal.StyleClass Flag.bgGradient <|
-                Internal.Single ("bg-grad-" ++ (String.join "-" <| Internal.floatClass angle :: List.map Internal.formatColorClass steps))
-                    "background-image"
-                    ("linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Internal.formatColor steps) ++ ")")
+            Two.Attr
+                (Attr.style "background-image"
+                    ("linear-gradient("
+                        ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps)
+                        ++ ")"
+                    )
+                )
 
 
 

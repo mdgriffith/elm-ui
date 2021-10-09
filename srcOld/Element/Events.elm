@@ -1,6 +1,12 @@
-module Element2.Events exposing
+module Element.Events exposing
     ( onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
     , onFocus, onLoseFocus
+    -- , onClickCoords
+    -- , onClickPageCoords
+    -- , onClickScreenCoords
+    -- , onMouseCoords
+    -- , onMousePageCoords
+    -- , onMouseScreenCoords
     )
 
 {-|
@@ -17,9 +23,9 @@ module Element2.Events exposing
 
 -}
 
-import Element2 exposing (Attribute)
+import Element exposing (Attribute)
 import Html.Events
-import Internal.Model2 as Two
+import Internal.Model as Internal
 import Json.Decode as Json
 import VirtualDom
 
@@ -31,37 +37,37 @@ import VirtualDom
 {-| -}
 onMouseDown : msg -> Attribute msg
 onMouseDown =
-    Two.Attr << Html.Events.onMouseDown
+    Internal.Attr << Html.Events.onMouseDown
 
 
 {-| -}
 onMouseUp : msg -> Attribute msg
 onMouseUp =
-    Two.Attr << Html.Events.onMouseUp
+    Internal.Attr << Html.Events.onMouseUp
 
 
 {-| -}
 onClick : msg -> Attribute msg
 onClick =
-    Two.Attr << Html.Events.onClick
+    Internal.Attr << Html.Events.onClick
 
 
 {-| -}
 onDoubleClick : msg -> Attribute msg
 onDoubleClick =
-    Two.Attr << Html.Events.onDoubleClick
+    Internal.Attr << Html.Events.onDoubleClick
 
 
 {-| -}
 onMouseEnter : msg -> Attribute msg
 onMouseEnter =
-    Two.Attr << Html.Events.onMouseEnter
+    Internal.Attr << Html.Events.onMouseEnter
 
 
 {-| -}
 onMouseLeave : msg -> Attribute msg
 onMouseLeave =
-    Two.Attr << Html.Events.onMouseLeave
+    Internal.Attr << Html.Events.onMouseLeave
 
 
 {-| -}
@@ -158,13 +164,13 @@ pageCoords =
 {-| -}
 onLoseFocus : msg -> Attribute msg
 onLoseFocus =
-    Two.Attr << Html.Events.onBlur
+    Internal.Attr << Html.Events.onBlur
 
 
 {-| -}
 onFocus : msg -> Attribute msg
 onFocus =
-    Two.Attr << Html.Events.onFocus
+    Internal.Attr << Html.Events.onFocus
 
 
 
@@ -195,7 +201,7 @@ It really does help!
 -}
 on : String -> Json.Decoder msg -> Attribute msg
 on event decode =
-    Two.Attr <| Html.Events.on event decode
+    Internal.Attr <| Html.Events.on event decode
 
 
 
@@ -203,7 +209,7 @@ on event decode =
 -- -}
 -- onWithOptions : String -> Html.Events.Options -> Json.Decoder msg -> Attribute msg
 -- onWithOptions event options decode =
---     Two.Attr <| Html.Events.onWithOptions event options decode
+--     Internal.Attr <| Html.Events.onWithOptions event options decode
 -- COMMON DECODERS
 
 

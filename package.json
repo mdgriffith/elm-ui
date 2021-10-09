@@ -11,7 +11,9 @@
     "test-render-sauce-automated": "node tests-rendering/automation/run.js --sauce --headless",
     "test-doc-preview": "bash tests-rendering/automation/doc-preview.sh",
     "bench": "node benchmarks/runtime/index.js",
-    "list-issues": "hub issue -f \"%i,%U,%t,'%L'%n\" > issues.csv"
+    "list-issues": "hub issue -f \"%i,%U,%t,'%L'%n\" > issues.csv",
+    "stylesheet": "node stylesheets/build.js",
+    "watch-stylesheet": "node stylesheets/build.js --watch"
   },
   "repository": {
     "type": "git",
@@ -30,5 +32,9 @@
     "elm-test": "^0.19.1-revision2",
     "node-elm-compiler": "^5.0.4",
     "selenium-webdriver": "^4.0.0-alpha.7"
+  },
+  "devDependencies": {
+    "@kachkaev/run-elm": "^3.0.0-beta.1",
+    "chokidar": "^3.4.2"
   }
 }

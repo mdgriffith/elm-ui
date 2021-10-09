@@ -51,11 +51,11 @@ testable =
 
 
 palette =
-    { white = Element.rgb 1 1 1
-    , red = Element.rgb 1 0 0
-    , green = Element.rgb 0 1 0
+    { white = Element.rgb 255 255 255
+    , red = Element.rgb 255 0 0
+    , green = Element.rgb 0 255 0
     , black = Element.rgb 0 0 0
-    , lightGrey = Element.rgb 0.7 0.7 0.7
+    , lightGrey = Element.rgb 250 250 250
     }
 
 
@@ -279,12 +279,10 @@ view model =
                     Element.row [ Element.width Element.fill, Element.height Element.fill ]
                         [ Element.el
                             [ Element.width
-                                (Element.fill
-                                    |> Element.maximum 900
-                                )
+                                Element.fill
+                            , Element.widthMax 900
                             , Element.alignTop
                             , Element.height Element.fill
-                            , Element.scrollbars
                             ]
                             (Element.el
                                 [ Element.centerX
@@ -314,7 +312,6 @@ view model =
                             , Element.padding 20
                             , Element.width Element.fill
                             , Element.height Element.fill
-                            , Element.scrollbarY
                             ]
                             (model.finished
                                 |> List.sortBy hasFailure

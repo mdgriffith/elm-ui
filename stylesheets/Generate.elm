@@ -1,6 +1,22 @@
-module Internal.StyleGen exposing (..)
+module Generate exposing (main, output)
 
-{- RESETS -}
+import Html
+
+
+{-| -}
+main =
+    Html.text output
+
+
+output : String
+output =
+    overrides
+        ++ renderCompact baseSheet
+        ++ renderCompact variable
+
+
+
+{- BEGIN COPY -}
 
 
 classes =
@@ -17,17 +33,19 @@ classes =
     , nowrap = "nowrp"
     , wrapped = "wrp"
     , transform = "move"
+    , ellipses = "ellip"
 
     -- widhts/heights
     , widthFill = "wf"
     , widthContent = "wc"
     , widthExact = "we"
     , widthFillPortion = "wfp"
+    , widthBounded = "wb"
     , heightFill = "hf"
     , heightContent = "hc"
     , heightExact = "he"
     , heightFillPortion = "hfp"
-    , seButton = "sbt"
+    , heightBounded = "hb"
 
     -- nearby elements
     , nearby = "nb"
@@ -70,6 +88,8 @@ classes =
     -- selection
     , noTextSelection = "notxt"
     , cursorPointer = "cptr"
+    , cursorGrab = "grab"
+    , cursorGrabbing = "grabbing"
     , cursorText = "ctxt"
 
     -- pointer events
@@ -122,33 +142,60 @@ classes =
 
     -- link
     , link = "lnk"
+    , fontAdjusted = "f-adj"
+    , textGradient = "tgrd"
     }
+
+
+type Var
+    = Var String
+
+
+vars =
+    { spaceX = Var "space-x"
+    , spaceY = Var "space-y"
+    , scale = Var "scale"
+    , moveX = Var "move-x"
+    , moveY = Var "move-y"
+    , rotate = Var "rotate"
+    , heightFill = Var "height-fill"
+    , widthFill = Var "width-fill"
+    , padLeft = Var "pad-left"
+    , padRight = Var "pad-right"
+    , padTop = Var "pad-top"
+    , padBottom = Var "pad-bottom"
+    , borderLeft = Var "border-left"
+    , borderRight = Var "border-right"
+    , borderTop = Var "border-top"
+    , borderBottom = Var "border-bottom"
+    , sliderWidth = Var "slider-width"
+    , sliderHeight = Var "slider-height"
+
+    --
+    , fontSizeFactor = Var "font-size-factor"
+    , vacuumTop = Var "vacuum-top"
+    , vacuumBottom = Var "vacuum-bottom"
+    , visibleTop = Var "visible-top"
+    , visibleBottom = Var "visible-bottom"
+    }
+
+
+
+{- END COPY -}
 
 
 dot c =
     "." ++ c
 
 
-rules : String
-rules =
-    overrides
-        ++ renderCompact baseSheet
-        ++ renderCompact variable
-
-
 type Class
     = Class String (List Rule)
-
-
-{-| We separate out vars so we
--}
-type Var
-    = Var String
 
 
 type Rule
     = Prop String String
     | Variable String Var
+    | SetVariable Var String
     | Calc String Calc
     | CalcPair String Calc Calc
     | Child String (List Rule)
@@ -171,6 +218,10 @@ type Color
     = Rgb Int Int Int
 
 
+
+{- RESETS -}
+
+
 overrides =
     """@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {"""
         ++ dot classes.any
@@ -189,6 +240,22 @@ overrides =
         ++ trackReset
         ++ thumbReset
         ++ explainer
+        ++ transitionPlaceholders
+        ++ animationTriggerKeyframes
+
+
+{-| This probably looks super weird!
+But these animations are just used to fire animation events
+NOT to actually animate anything.
+They need separate names because we want to know what event occurred.
+-}
+animationTriggerKeyframes =
+    """
+@keyframes on-hovered { from {} to {} }
+@keyframes on-focused { from {} to {} }
+@keyframes on-pressed { from {} to {} }
+@keyframes on-rendered { from {} to {} }
+"""
 
 
 inputTextReset =
@@ -287,6 +354,33 @@ explainer =
 .explain > .ctr > .""" ++ classes.any ++ """ {
     border: 4px dashed rgb(0, 151, 167) !important;
 }
+
+"""
+
+{-
+
+-}
+transitionPlaceholders = """
+.ui-placeholder {
+    visibility: hidden;
+    border: 0px !important;
+}
+.explain > .ui-placeholder {
+    border: 0px !important;
+}
+.ui-movable {
+    position: absolute !important;
+    visibility: visible;
+    margin:0px !important;
+    left:0px;
+    top:0px;
+    width:100%;
+    height:100%;
+}
+.ui-movable.on-rendered {
+    animation: none !important;
+}
+
 
 """
 
@@ -466,6 +560,21 @@ baseSheet =
         , Prop "height" "auto"
         , Prop "min-height" "100%"
         , Prop "z-index" "0"
+        , Prop "line-height" "1"
+        
+        -- defaults
+        , Prop "font-size" "16px"
+        , Prop "font-family" "\"Open Sans\", sans-serif"
+        , Prop "color" "#000"
+      
+
+        -- basics for EB Garamond
+        --font-size-factor: 1.4184397163120566;
+        --vacuum-top: -0.24851250000000005;
+        --vacuum-bottom: -0.24851250000000005;
+        --visible-top: 0;
+        --visible-bottom: 0.29000000000000004;
+        
         , Descriptor
             (dot classes.any
                 -- ++ dot classes.single
@@ -482,6 +591,7 @@ baseSheet =
                 , Prop "z-index" "20"
                 ]
             ]
+        
         ]
     , Class (dot classes.nearby)
         [ Prop "position" "relative"
@@ -618,8 +728,24 @@ baseSheet =
         -- There's no way to change this.  How crazy is that?
         , Prop "text-decoration" "none"
         , Prop "font-style" "inherit"
+        , Batch animationTriggers
+        , Descriptor (dot classes.textGradient)
+            [ AllChildren (dot classes.text)
+                [ Prop "background" "var(--text-gradient)"
+                , Prop "-webkit-background-clip" "text"
+                , Prop "-webkit-text-fill-color" "transparent"
+                ]
+            ]
+        , Descriptor (dot classes.fontAdjusted)
+            [ Prop "font-size" "calc(1em * var(--font-size-factor))"
+            ]
         , Descriptor (dot classes.wrapped)
             [ Prop "flex-wrap" "wrap"
+            ]
+        , Descriptor (dot classes.ellipses)
+            [ AllChildren (dot classes.text)
+                [ Prop "text-overflow" "ellipsis"
+                ]
             ]
         , Descriptor (dot classes.noTextSelection)
             [ Prop "-moz-user-select" "none"
@@ -629,6 +755,12 @@ baseSheet =
             ]
         , Descriptor (dot classes.cursorPointer)
             [ Prop "cursor" "pointer"
+            ]
+        , Descriptor (dot classes.cursorGrab)
+            [ Prop "cursor" "grab"
+            ]
+        , Descriptor (dot classes.cursorGrabbing)
+            [ Prop "cursor" "grabbing"
             ]
         , Descriptor (dot classes.cursorText)
             [ Prop "cursor" "text"
@@ -697,19 +829,47 @@ baseSheet =
             ]
         , Descriptor (dot classes.clip)
             [ Prop "overflow" "hidden"
+            , Prop "min-width" "min-content"
+            , Prop "min-height" "min-content"
+            , Descriptor (dot classes.widthBounded)
+                -- if the bound is a min-width, it will override this
+                [ Prop "min-width" "auto"
+                ]
+            , Descriptor (dot classes.heightBounded)
+                -- if the bound is a min-height, it will override this
+                [ Prop "min-height" "auto"
+                ]
             ]
         , Descriptor (dot classes.clipX)
             [ Prop "overflow-x" "hidden"
+            , Prop "min-width" "min-content"
+            , Descriptor (dot classes.widthBounded)
+                -- if the bound is a min-width, it will override this
+                [ Prop "min-width" "auto"
+                ]
             ]
         , Descriptor (dot classes.clipY)
             [ Prop "overflow-y" "hidden"
+            , Prop "min-height" "min-content"
+            , Descriptor (dot classes.heightBounded)
+                -- if the bound is a min-height, it will override this
+                [ Prop "min-height" "auto"
+                ]
             ]
         , Descriptor (dot classes.widthContent)
             [ Prop "width" "auto"
             ]
         , Descriptor (dot classes.text)
-            [ Prop "white-space" "pre"
-            , Prop "display" "inline-block"
+            [ --Prop "white-space" "pre"
+            -- , 
+            Prop "display" "inline-block"
+            , Prop "width" "100%"
+            , Prop "overflow" "hidden"
+            -- , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
+            -- , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-bottom) - var(--visible-bottom)) ))"
+            -- , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
+            -- , Prop "padding-top" "calc(var(--visible-top) * (1em/var(--font-size-factor)))"
+            -- , Prop "padding-bottom" "calc(var(--visible-bottom) * (1em/var(--font-size-factor)))"
             ]
         , Descriptor (dot classes.single)
             elDescription
@@ -717,12 +877,22 @@ baseSheet =
             [ Prop "display" "flex"
             , Prop "flex-direction" "row"
             , Child (dot classes.any)
-                [ Prop "flex-basis" "0%"
-                , Descriptor (dot classes.widthExact)
-                    [ Prop "flex-basis" "auto"
+                [ Prop "flex-basis" "auto"
+                , Prop "flex-shrink" "1"
+                , Descriptor (dot classes.widthFill)
+                    [ Prop "flex-basis" "0px"
+                    , Prop "flex-shrink" "0"
                     ]
-                , Descriptor (dot classes.link)
-                    [ Prop "flex-basis" "auto"
+                , Descriptor (dot classes.clip)
+                    [ Descriptor (dot classes.widthFill)
+                        [ Prop "min-width" "auto" ]
+                    ]
+                , Descriptor (dot classes.clipX)
+                    [ Descriptor (dot classes.widthFill)
+                        [ Prop "min-width" "auto" ]
+                    ]
+                , Descriptor (dot classes.widthExact)
+                    [ Prop "flex-shrink" "0"
                     ]
                 ]
             , Child (dot classes.heightFill)
@@ -861,12 +1031,18 @@ baseSheet =
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
             , Child (dot classes.any)
-                -- *Note* - While rows have flex-basis 0%,
-                -- which allows for the children of a row to default to their content size
-                -- This apparently is a different story for columns.
-                -- Safari has an issue if this is flex-basis: 0%, as it goes entirely to 0,
-                -- instead of the expected content size.
-                [ Prop "flex-basis" "auto"
+                -- So we add `min-height: min-content`, which isn't supported by IE, but works for all other browsers!
+                -- Separately, 0% is different than 0px, but only for columns
+                -- In columns, 0% will actually be calculated as `auto` for columns
+                -- So, 0px is the one we want.
+                [ Prop "flex-basis" "0px"
+                , Prop "min-height" "min-content"
+                , Descriptor (dot classes.heightExact)
+                    [ Prop "flex-basis" "auto"
+                    ]
+                , Descriptor (dot classes.clip)
+                    [ Prop "flex-basis" "auto"
+                    ]
                 ]
 
             -- , Child (dot classes.heightFill)
@@ -1229,27 +1405,30 @@ baseSheet =
         ]
     ]
 
+animationTriggers =
+    [ Descriptor ".on-hovered:hover"
+        [ Prop "animation" "on-hovered 0ms" 
+        ]
+    , Descriptor ".on-focused:focus"
+        [ Prop "animation" "on-focused 0ms" 
+        ]
+    , Descriptor ".on-pressed:active"
+        [ Prop "animation" "on-pressed 0ms"
+        ]
+    , Descriptor ".on-rendered"
+        [ Prop "animation" "on-rendered 0ms"
+        ]
+    ]
+
 
 elDescription =
     [ Prop "display" "flex"
     , Prop "flex-direction" "column"
-    , Prop "white-space" "pre"
+    -- , Prop "white-space" "pre"
     , Descriptor (dot classes.hasBehind)
         [ Prop "z-index" "0"
         , Child (dot classes.behind)
             [ Prop "z-index" "-1"
-            ]
-        ]
-    , Descriptor (dot classes.seButton)
-        -- Special default for text in a button.
-        -- This is overridden is they put the text inside an `el`
-        [ Child (dot classes.text)
-            [ Descriptor (dot classes.heightFill)
-                [ Prop "flex-grow" "0"
-                ]
-            , Descriptor (dot classes.widthFill)
-                [ Prop "align-self" "auto !important"
-                ]
             ]
         ]
     , Child (dot classes.heightContent)
@@ -1430,28 +1609,6 @@ color (Rgb red green blue) =
         ++ ("," ++ String.fromInt green)
         ++ ("," ++ String.fromInt blue)
         ++ ")"
-
-
-vars =
-    { spaceX = Var "space-x"
-    , spaceY = Var "space-y"
-    , scale = Var "scale"
-    , moveX = Var "move-x"
-    , moveY = Var "move-y"
-    , rotate = Var "rotate"
-    , heightFill = Var "height-fill"
-    , widthFill = Var "width-fill"
-    , padLeft = Var "pad-left"
-    , padRight = Var "pad-right"
-    , padTop = Var "pad-top"
-    , padBottom = Var "pad-bottom"
-    , borderLeft = Var "border-left"
-    , borderRight = Var "border-right"
-    , borderTop = Var "border-top"
-    , borderBottom = Var "border-bottom"
-    , sliderWidth = Var "slider-width"
-    , sliderHeight = Var "slider-height"
-    }
 
 
 transform =
@@ -1848,6 +2005,9 @@ generateIntermediates parent rule rendered =
 
         Variable name var ->
             { rendered | props = ( name, renderVar var ) :: rendered.props }
+
+        SetVariable (Var var) val ->
+            { rendered | props = ( "--" ++ var, val ) :: rendered.props }
 
         Calc name calc ->
             { rendered | props = ( name, renderCalc calc ) :: rendered.props }

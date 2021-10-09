@@ -26,3 +26,5 @@ benchmarks/results
 tests/tmp
 
 tmp
+
+stylesheets/generated/dev*

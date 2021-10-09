@@ -11,8 +11,6 @@ module Internal.Flag2 exposing
     , bgGradient
     , bgImage
     , borderColor
-    , borderRound
-    , borderStyle
     , borderWidth
     , centerX
     , centerY
@@ -20,6 +18,7 @@ module Internal.Flag2 exposing
     , equal
     , flag
     , focus
+    , fontAdjustment
     , fontAlignment
     , fontColor
     , fontFamily
@@ -34,27 +33,25 @@ module Internal.Flag2 exposing
     , heightFill
     , heightTextAreaContent
     , hover
-    , letterSpacing
+    , id
     , lineHeight
     , merge
-    , moveX
-    , moveY
     , none
     , overflow
     , padding
     , present
-    , rotate
-    , scale
     , shadows
     , spacing
+    , transform
     , transparency
     , txtShadows
     , value
+    , viewBits
+    , viewBitsHelper
     , width
     , widthBetween
     , widthContent
     , widthFill
-    , wordSpacing
     , xAlign
     , yAlign
     )
@@ -62,6 +59,23 @@ module Internal.Flag2 exposing
 {-| -}
 
 import Bitwise
+
+
+viewBits : Int -> String
+viewBits i =
+    String.fromInt i ++ ":" ++ viewBitsHelper i 32
+
+
+viewBitsHelper : Int -> Int -> String
+viewBitsHelper field slot =
+    if slot <= 0 then
+        ""
+
+    else if Bitwise.and slot field - slot == 0 then
+        viewBitsHelper field (slot - 1) ++ "1"
+
+    else
+        viewBitsHelper field (slot - 1) ++ "0"
 
 
 type Field
@@ -196,10 +210,6 @@ bgGradient =
     flag 10
 
 
-borderStyle =
-    flag 11
-
-
 fontAlignment =
     flag 12
 
@@ -212,16 +222,12 @@ fontColor =
     flag 14
 
 
-wordSpacing =
+fontAdjustment =
     flag 15
 
 
-letterSpacing =
+id =
     flag 16
-
-
-borderRound =
-    flag 17
 
 
 txtShadows =
@@ -240,20 +246,8 @@ cursor =
     flag 21
 
 
-scale =
+transform =
     flag 23
-
-
-rotate =
-    flag 24
-
-
-moveX =
-    flag 25
-
-
-moveY =
-    flag 26
 
 
 borderWidth =

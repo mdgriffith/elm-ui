@@ -20,51 +20,27 @@ This means if a key is changed between renders, then the diffing step will be sk
 
 -}
 
-import Element exposing (Attribute, Element, fill, height, shrink, width)
-import Internal.Model as Internal
-import Internal.Style exposing (classes)
+import Element exposing (Attribute, Element)
+import Internal.Model2 as Two
+import Internal.Style2 as Style
 
 
 {-| -}
 el : List (Attribute msg) -> ( String, Element msg ) -> Element msg
 el attrs child =
-    Internal.element
-        Internal.asEl
-        Internal.div
-        (width shrink
-            :: height shrink
-            :: attrs
-        )
-        (Internal.Keyed [ child ])
+    -- Two.elementKeyed Two.AsEl attrs [ child ]
+    Debug.todo "Implement the keyed renderer!"
 
 
 {-| -}
 row : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
-row attrs children =
-    Internal.element
-        Internal.asRow
-        Internal.div
-        (Internal.htmlClass (classes.contentLeft ++ " " ++ classes.contentCenterY)
-            :: width shrink
-            :: height shrink
-            :: attrs
-        )
-        (Internal.Keyed children)
+row =
+    -- Two.elementKeyed Two.AsRow
+    Debug.todo "Implement the keyed renderer!"
 
 
 {-| -}
 column : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
-column attrs children =
-    Internal.element
-        Internal.asColumn
-        Internal.div
-        (Internal.htmlClass
-            (classes.contentTop
-                ++ " "
-                ++ classes.contentLeft
-            )
-            :: height shrink
-            :: width shrink
-            :: attrs
-        )
-        (Internal.Keyed children)
+column =
+    -- Two.elementKeyed Two.AsColumn
+    Debug.todo "Implement the keyed renderer!"

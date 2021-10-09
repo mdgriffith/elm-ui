@@ -3,7 +3,8 @@ module Element.Border exposing
     , width, widthXY, widthEach
     , solid, dashed, dotted
     , rounded, roundEach
-    , glow, innerGlow, shadow, innerShadow
+    , glow, innerGlow, shadows, innerShadow
+    , lights
     )
 
 {-|
@@ -28,59 +29,45 @@ module Element.Border exposing
 
 ## Shadows
 
-@docs glow, innerGlow, shadow, innerShadow
+@docs glow, innerGlow, shadows, innerShadow
 
 -}
 
-import Element exposing (Attr, Attribute, Color)
-import Internal.Flag as Flag
-import Internal.Model as Internal
-import Internal.Style as Style exposing (classes)
+import Element exposing (Attribute, Color)
+import Html.Attributes as Attr
+import Internal.Flag2 as Flag
+import Internal.Model2 as Two
+import Internal.Style2 as Style
 
 
 {-| -}
-color : Color -> Attr decorative msg
+color : Color -> Attribute msg
 color clr =
-    Internal.StyleClass
-        Flag.borderColor
-        (Internal.Colored
-            ("bc-" ++ Internal.formatColorClass clr)
-            "border-color"
-            clr
-        )
+    Two.Attr
+        (Attr.style "border-color" (Style.color clr))
 
 
 {-| -}
 width : Int -> Attribute msg
-width v =
-    Internal.StyleClass
-        Flag.borderWidth
-        (Internal.BorderWidth
-            ("b-" ++ String.fromInt v)
-            v
-            v
-            v
-            v
-        )
+width x =
+    Two.BorderWidth Flag.borderWidth
+        { top = x
+        , left = x
+        , bottom = x
+        , right = x
+        }
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Internal.StyleClass
-        Flag.borderWidth
-        (Internal.BorderWidth
-            ("b-"
-                ++ String.fromInt x
-                ++ "-"
-                ++ String.fromInt y
-            )
-            y
-            x
-            y
-            x
-        )
+    Two.BorderWidth Flag.borderWidth
+        { top = y
+        , left = x
+        , bottom = y
+        , right = x
+        }
 
 
 {-| -}
@@ -91,70 +78,37 @@ widthEach :
     , top : Int
     }
     -> Attribute msg
-widthEach { bottom, top, left, right } =
-    if top == bottom && left == right then
-        if top == right then
-            width top
-
-        else
-            widthXY left top
-
-    else
-        Internal.StyleClass Flag.borderWidth
-            (Internal.BorderWidth
-                ("b-"
-                    ++ String.fromInt top
-                    ++ "-"
-                    ++ String.fromInt right
-                    ++ "-"
-                    ++ String.fromInt bottom
-                    ++ "-"
-                    ++ String.fromInt left
-                )
-                top
-                right
-                bottom
-                left
-            )
-
-
-
--- {-| No Borders
--- -}
--- none : Attribute msg
--- none =
---     Class "border" "border-none"
+widthEach border =
+    Two.BorderWidth Flag.borderWidth border
 
 
 {-| -}
 solid : Attribute msg
 solid =
-    Internal.Class Flag.borderStyle classes.borderSolid
+    Two.Attr
+        (Attr.style "border-style" "solid")
 
 
 {-| -}
 dashed : Attribute msg
 dashed =
-    Internal.Class Flag.borderStyle classes.borderDashed
+    Two.Attr
+        (Attr.style "border-style" "dashed")
 
 
 {-| -}
 dotted : Attribute msg
 dotted =
-    Internal.Class Flag.borderStyle classes.borderDotted
+    Two.Attr
+        (Attr.style "border-style" "dotted")
 
 
 {-| Round all corners.
 -}
 rounded : Int -> Attribute msg
 rounded radius =
-    Internal.StyleClass
-        Flag.borderRound
-        (Internal.Single
-            ("br-" ++ String.fromInt radius)
-            "border-radius"
-            (String.fromInt radius ++ "px")
-        )
+    Two.Attr
+        (Attr.style "border-radius" (String.fromInt radius ++ "px"))
 
 
 {-| -}
@@ -166,116 +120,109 @@ roundEach :
     }
     -> Attribute msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
-    Internal.StyleClass Flag.borderRound
-        (Internal.Single
-            ("br-"
-                ++ String.fromInt topLeft
-                ++ "-"
-                ++ String.fromInt topRight
-                ++ String.fromInt bottomLeft
-                ++ "-"
-                ++ String.fromInt bottomRight
-            )
-            "border-radius"
-            (String.fromInt topLeft
-                ++ "px "
-                ++ String.fromInt topRight
-                ++ "px "
-                ++ String.fromInt bottomRight
-                ++ "px "
-                ++ String.fromInt bottomLeft
-                ++ "px"
+    Two.Attr
+        (Attr.style "border-radius"
+            ((String.fromInt topLeft ++ "px ")
+                ++ (String.fromInt topRight ++ "px ")
+                ++ (String.fromInt bottomRight ++ "px ")
+                ++ (String.fromInt bottomLeft ++ "px")
             )
         )
 
 
 {-| A simple glow by specifying the color and size.
 -}
-glow : Color -> Float -> Attr decorative msg
+glow : Color -> Float -> Attribute msg
 glow clr size =
-    shadow
-        { offset = ( 0, 0 )
-        , size = size
-        , blur = size * 2
-        , color = clr
-        }
+    -- shadow
+    --     { offset = ( 0, 0 )
+    --     , size = size
+    --     , blur = size * 2
+    --     , color = clr
+    --     }
+    Two.class "DO we really need glow?"
 
 
 {-| -}
-innerGlow : Color -> Float -> Attr decorative msg
+innerGlow : Color -> Float -> Attribute msg
 innerGlow clr size =
-    innerShadow
-        { offset = ( 0, 0 )
-        , size = size
-        , blur = size * 2
-        , color = clr
-        }
+    -- innerShadow
+    --     { offset = ( 0, 0 )
+    --     , size = size
+    --     , blur = size * 2
+    --     , color = clr
+    --     }
+    Two.class "DO we really need glow?"
 
 
 {-| -}
-shadow :
-    { offset : ( Float, Float )
-    , size : Float
-    , blur : Float
-    , color : Color
-    }
-    -> Attr decorative msg
-shadow almostShade =
-    let
-        shade =
-            { inset = False
-            , offset = almostShade.offset
-            , size = almostShade.size
-            , blur = almostShade.blur
-            , color = almostShade.color
-            }
-    in
-    Internal.StyleClass Flag.shadows <|
-        Internal.Single
-            (Internal.boxShadowClass shade)
+shadows :
+    List
+        { x : Float
+        , y : Float
+        , size : Float
+        , blur : Float
+        , color : Color
+        }
+    -> Attribute msg
+shadows shades =
+    Two.Attr
+        (Attr.style
             "box-shadow"
-            (Internal.formatBoxShadow shade)
+            (List.map Style.singleShadow shades
+                |> String.join ", "
+            )
+        )
 
 
 {-| -}
 innerShadow :
-    { offset : ( Float, Float )
+    { x : Float
+    , y : Float
     , size : Float
     , blur : Float
     , color : Color
     }
-    -> Attr decorative msg
-innerShadow almostShade =
-    let
-        shade =
-            { inset = True
-            , offset = almostShade.offset
-            , size = almostShade.size
-            , blur = almostShade.blur
-            , color = almostShade.color
-            }
-    in
-    Internal.StyleClass Flag.shadows <|
-        Internal.Single
-            (Internal.boxShadowClass shade)
+    -> Attribute msg
+innerShadow shade =
+    Two.Attr
+        (Attr.style
             "box-shadow"
-            (Internal.formatBoxShadow shade)
+            ("inset " ++ Style.singleShadow shade)
+        )
 
 
+{-| direction: 0 is up, 0.5 is down
+-}
+lights :
+    { elevation : Float
+    , lights :
+        List
+            { direction : Float
+            , elevation : Float
+            , hardness : Float
+            }
+    }
+    -> Attribute msg
+lights details =
+    Two.Attr
+        (Attr.style "box-shadow"
+            (List.map (renderLight details.elevation) details.lights
+                |> String.join ", "
+            )
+        )
 
--- {-| -}
--- shadow :
---     { offset : ( Float, Float )
---     , blur : Float
---     , size : Float
---     , color : Color
---     }
---     -> Attr decorative msg
--- shadow shade =
---     Internal.BoxShadow
---         { inset = False
---         , offset = shade.offset
---         , size = shade.size
---         , blur = shade.blur
---         , color = shade.color
---         }
+
+renderLight elevation light =
+    let
+        ( x, y ) =
+            fromPolar ( elevation, turns (0.25 + light.direction) )
+    in
+    Style.quad
+        (Style.floatPx x)
+        (Style.floatPx y)
+        -- blur
+        (Style.floatPx light.hardness)
+        -- size
+        -- (Style.floatPx (10 * light.elevation))
+        ("rgba(0,0,0," ++ String.fromFloat ((100 - elevation) / 500) ++ ")")

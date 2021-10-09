@@ -15,15 +15,12 @@ module Testable.Element exposing
     , el
     , expectRoundedEquality
     , fill
-    , fillPortion
     , height
     , inFront
     , isVisible
     , label
     , layout
     , link
-    , maximum
-    , minimum
     , moveDown
     , moveLeft
     , moveRight
@@ -34,13 +31,10 @@ module Testable.Element exposing
     , padding
     , paddingXY
     , paragraph
+    , portion
     , px
     , rgb
-    , rgba
     , row
-    , scrollbarX
-    , scrollbarY
-    , scrollbars
     , shrink
     , spacing
     , text
@@ -110,8 +104,8 @@ paragraph : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable.
 paragraph attrs =
     let
         withImplicits =
-            implicitTest (widthHelper Nothing Nothing (Fill 1))
-                :: implicitTest (heightHelper Nothing Nothing Shrink)
+            implicitTest (widthHelper Shrink)
+                :: implicitTest (heightHelper Shrink)
                 :: attrs
     in
     Testable.Paragraph (skipOverridden withImplicits)
@@ -121,46 +115,34 @@ textColumn : List (Testable.Attr msg) -> List (Testable.Element msg) -> Testable
 textColumn attrs =
     let
         withImplicits =
-            implicitTest (widthHelper (Just 500) (Just 750) (Fill 1))
-                :: implicitTest (heightHelper Nothing Nothing Shrink)
+            implicitTest (widthHelper Shrink)
+                :: implicitTest (heightHelper Shrink)
                 :: attrs
     in
     Testable.TextColumn (skipOverridden withImplicits)
-
-
-link :
-    List (Testable.Attr msg)
-    ->
-        { url : String
-        , label : Testable.Element msg
-        }
-    -> Testable.Element msg
-link attrs details =
-    Testable.Link details.url
-        (implicitWidthHeightShrink attrs)
-        details.label
 
 
 clip =
     Testable.Attr Element.clip
 
 
-{-| -}
-scrollbars : Testable.Attr msg
-scrollbars =
-    Testable.Attr Element.scrollbars
+link details =
+    Testable.Attr (Element.link details)
 
 
-{-| -}
-scrollbarY : Testable.Attr msg
-scrollbarY =
-    Testable.Attr Element.scrollbarY
 
-
-{-| -}
-scrollbarX : Testable.Attr msg
-scrollbarX =
-    Testable.Attr Element.scrollbarX
+-- {-| -}
+-- scrollbars : Testable.Attr msg
+-- scrollbars =
+--     Testable.Attr Element.scrollbars
+-- {-| -}
+-- scrollbarY : Testable.Attr msg
+-- scrollbarY =
+--     Testable.Attr Element.scrollbarY
+-- {-| -}
+-- scrollbarX : Testable.Attr msg
+-- scrollbarX =
+--     Testable.Attr Element.scrollbarX
 
 
 {-| Old labeling mechanism that i removed to hastily
@@ -189,24 +171,11 @@ type Length
     = Px Int
     | Fill Int
     | Shrink
-    | Minimum Int Length
-    | Maximum Int Length
 
 
-minimum =
-    Minimum
-
-
-maximum =
-    Maximum
-
-
+rgb : Int -> Int -> Int -> Element.Color
 rgb =
     Element.rgb
-
-
-rgba =
-    Element.rgba
 
 
 px : Int -> Length
@@ -224,8 +193,8 @@ shrink =
     Shrink
 
 
-fillPortion : Int -> Length
-fillPortion =
+portion : Int -> Length
+portion =
     Fill
 
 
@@ -339,97 +308,37 @@ listIf ls =
         |> List.map Tuple.second
 
 
-widthHelper maybeMin maybeMax len =
-    let
-        addMin l =
-            case maybeMin of
-                Nothing ->
-                    l
-
-                Just minPx ->
-                    l |> Element.minimum minPx
-
-        addMax l =
-            case maybeMax of
-                Nothing ->
-                    l
-
-                Just maxPx ->
-                    l |> Element.maximum maxPx
-
-        minLabel =
-            case maybeMin of
-                Nothing ->
-                    ""
-
-                Just i ->
-                    " min:" ++ String.fromInt i
-
-        maxLabel =
-            case maybeMax of
-                Nothing ->
-                    ""
-
-                Just i ->
-                    " max:" ++ String.fromInt i
-
-        minMaxTest actualWidth =
-            case ( maybeMin, maybeMax ) of
-                ( Nothing, Nothing ) ->
-                    True
-
-                ( Just lower, Nothing ) ->
-                    lower <= actualWidth
-
-                ( Just lower, Just higher ) ->
-                    lower <= actualWidth && actualWidth <= higher
-
-                ( Nothing, Just higher ) ->
-                    actualWidth <= higher
-    in
+widthHelper len =
     case len of
-        Minimum m newLen ->
-            widthHelper (Just m) maybeMax newLen
-
-        Maximum m newLen ->
-            widthHelper maybeMin (Just m) newLen
-
         Px val ->
             -- Pixel values should ignore min and max?
             Testable.LabeledTest
-                { label = "width " ++ String.fromInt val ++ "px" ++ minLabel ++ maxLabel
+                { label = "width " ++ String.fromInt val ++ "px"
                 , id = Testable.IsWidth
                 , attr =
                     Element.width
-                        (Element.px val
-                            |> addMin
-                            |> addMax
-                        )
+                        (Element.px val)
                 , test =
                     \found ->
                         [ expectRoundedEquality
                             { expected = toFloat val
                             , found = found.self.bbox.width
                             }
-                        , Testable.true "min/max is upheld" (minMaxTest (floor found.self.bbox.width))
                         ]
                 }
 
-        Fill portion ->
+        Fill p ->
             Testable.LabeledTest
                 { label =
-                    if portion == 1 then
-                        "width fill" ++ minLabel ++ maxLabel
+                    if p == 1 then
+                        "width fill"
 
                     else
-                        "width fill-" ++ String.fromInt portion ++ minLabel ++ maxLabel
+                        "width fill-" ++ String.fromInt p
                 , id = Testable.IsWidth
                 , attr =
                     Element.width
-                        (Element.fillPortion portion
-                            |> addMin
-                            |> addMax
-                        )
+                        (Element.portion p)
                 , test =
                     \context ->
                         if List.member context.parentLayout [ Testable.IsNearby Testable.OnRight, Testable.IsNearby Testable.OnLeft ] then
@@ -444,22 +353,17 @@ widthHelper maybeMin maybeMax len =
                                 [ case context.parentLayout of
                                     Testable.IsNearby _ ->
                                         [ Testable.true "Nearby Element has fill width"
-                                            ((floor context.parent.bbox.width == floor context.self.bbox.width)
-                                                || minMaxTest (floor context.self.bbox.width)
-                                            )
+                                            (floor context.parent.bbox.width == floor context.self.bbox.width)
                                         ]
 
                                     Testable.InColumn ->
                                         [ Testable.true "Element within column has fill width"
-                                            ((floor parentAvailableWidth == floor context.self.bbox.width)
-                                                || minMaxTest (floor context.self.bbox.width)
-                                            )
+                                            (floor parentAvailableWidth == floor context.self.bbox.width)
                                         ]
 
                                     Testable.InEl ->
                                         [ Testable.true "Element within element has fill width" <|
                                             (floor parentAvailableWidth == floor context.self.bbox.width)
-                                                || minMaxTest (floor context.self.bbox.width)
                                         ]
 
                                     _ ->
@@ -469,7 +373,6 @@ widthHelper maybeMin maybeMax len =
                                         in
                                         [ Testable.true "element has fill width" <|
                                             (floor spacePerPortion == floor context.self.bbox.width)
-                                                || minMaxTest (floor context.self.bbox.width)
                                         ]
                                 , [ Testable.lessThanOrEqual "not larger than parent"
                                         context.self.bbox.width
@@ -531,47 +434,16 @@ widthHelper maybeMin maybeMax len =
 
         Shrink ->
             Testable.LabeledTest
-                { label = "width shrink" ++ minLabel ++ maxLabel
+                { label = "width shrink"
                 , attr =
-                    Element.width
-                        (Element.shrink
-                            |> addMin
-                            |> addMax
-                        )
+                    -- This is now the default for all elements
+                    -- so we're just attaching a test here
+                    Element.htmlAttribute (Html.Attributes.class "")
                 , id = Testable.IsWidth
                 , test =
                     \context ->
                         case context.selfElement of
                             Testable.El _ _ ->
-                                let
-                                    childWidth child =
-                                        child.bbox.width
-
-                                    totalChildren =
-                                        context.children
-                                            |> List.map childWidth
-                                            |> List.append (List.map .width context.self.textMetrics)
-                                            |> List.sum
-
-                                    horizontalPadding =
-                                        context.self.bbox.padding.left + context.self.bbox.padding.right
-                                in
-                                listIf
-                                    [ ( (context.parentLayout /= Testable.InParagraph)
-                                            && (context.parentLayout /= Testable.InTextCol)
-                                      , Testable.rounded "equals children"
-                                            { expected = totalChildren + horizontalPadding
-                                            , found = context.self.bbox.width
-                                            }
-                                      )
-                                    , ( context.parentLayout /= Testable.AtRoot
-                                      , Testable.lessThanOrEqual "not larger than parent"
-                                            context.self.bbox.width
-                                            context.parent.bbox.width
-                                      )
-                                    ]
-
-                            Testable.Link _ _ _ ->
                                 let
                                     childWidth child =
                                         child.bbox.width
@@ -746,71 +618,16 @@ widthHelper maybeMin maybeMax len =
                 }
 
 
-heightHelper maybeMin maybeMax len =
-    let
-        addMin l =
-            case maybeMin of
-                Nothing ->
-                    l
-
-                Just minPx ->
-                    l |> Element.minimum minPx
-
-        addMax l =
-            case maybeMax of
-                Nothing ->
-                    l
-
-                Just maxPx ->
-                    l |> Element.maximum maxPx
-
-        minLabel =
-            case maybeMin of
-                Nothing ->
-                    ""
-
-                Just i ->
-                    " min:" ++ String.fromInt i
-
-        maxLabel =
-            case maybeMax of
-                Nothing ->
-                    ""
-
-                Just i ->
-                    " max:" ++ String.fromInt i
-
-        minMaxTest actualheight =
-            case ( maybeMin, maybeMax ) of
-                ( Nothing, Nothing ) ->
-                    True
-
-                ( Just lower, Nothing ) ->
-                    lower <= actualheight
-
-                ( Just lower, Just higher ) ->
-                    lower <= actualheight && actualheight <= higher
-
-                ( Nothing, Just higher ) ->
-                    actualheight <= higher
-    in
+heightHelper : Length -> Testable.Attr msg
+heightHelper len =
     case len of
-        Minimum m newLen ->
-            heightHelper (Just m) maybeMax newLen
-
-        Maximum m newLen ->
-            heightHelper maybeMin (Just m) newLen
-
         Px val ->
             -- Pixel values should ignore min and max?
             Testable.LabeledTest
-                { label = "height " ++ String.fromInt val ++ "px" ++ minLabel ++ maxLabel
+                { label = "height " ++ String.fromInt val ++ "px"
                 , attr =
                     Element.height
-                        (Element.px val
-                            |> addMin
-                            |> addMax
-                        )
+                        (Element.px val)
                 , id = Testable.IsHeight
                 , test =
                     \found ->
@@ -818,20 +635,15 @@ heightHelper maybeMin maybeMax len =
                             { expected = toFloat val
                             , found = found.self.bbox.height
                             }
-                        , Testable.true "min/max holds true"
-                            (minMaxTest (floor found.self.bbox.height))
                         ]
                 }
 
-        Fill portion ->
+        Fill p ->
             Testable.LabeledTest
-                { label = "height fill-" ++ String.fromInt portion ++ minLabel ++ maxLabel
+                { label = "height fill-" ++ String.fromInt p
                 , attr =
                     Element.height
-                        (Element.fillPortion portion
-                            |> addMin
-                            |> addMax
-                        )
+                        (Element.portion p)
                 , id = Testable.IsHeight
                 , test =
                     \context ->
@@ -846,20 +658,15 @@ heightHelper maybeMin maybeMax len =
                             case context.parentLayout of
                                 Testable.IsNearby _ ->
                                     Testable.true "Nearby Element has fill height"
-                                        ((floor context.parent.bbox.height == floor context.self.bbox.height)
-                                            || minMaxTest (floor context.self.bbox.height)
-                                        )
+                                        (floor context.parent.bbox.height == floor context.self.bbox.height)
 
                                 Testable.InColumn ->
                                     Testable.true "Element within column has fill height"
-                                        ((floor parentAvailableHeight == floor context.self.bbox.height)
-                                            || minMaxTest (floor context.self.bbox.height)
-                                        )
+                                        (floor parentAvailableHeight == floor context.self.bbox.height)
 
                                 Testable.InEl ->
                                     Testable.true "Element within el has fill height" <|
                                         (floor parentAvailableHeight == floor context.self.bbox.height)
-                                            || minMaxTest (floor context.self.bbox.height)
 
                                 _ ->
                                     let
@@ -868,52 +675,21 @@ heightHelper maybeMin maybeMax len =
                                     in
                                     Testable.true "el has fill height" <|
                                         (floor spacePerPortion == floor context.self.bbox.height)
-                                            || minMaxTest (floor context.self.bbox.height)
                         ]
                 }
 
         Shrink ->
             Testable.LabeledTest
-                { label = "height shrink" ++ minLabel ++ maxLabel
+                { label = "height shrink"
                 , attr =
-                    Element.height
-                        (Element.shrink
-                            |> addMin
-                            |> addMax
-                        )
+                    -- This is now the default for all elements
+                    -- so we're just attaching a test here
+                    Element.htmlAttribute (Html.Attributes.class "")
                 , id = Testable.IsHeight
                 , test =
                     \context ->
                         case context.selfElement of
                             Testable.El _ _ ->
-                                let
-                                    childHeight child =
-                                        child.bbox.height
-                                in
-                                if List.isEmpty context.children then
-                                    -- context.self.textMetrics
-                                    --     |> List.map Testable.textHeight
-                                    --     |> List.sum
-                                    -- TODO: apparently the font metrics we have are for the literal characters rendered
-                                    -- not for the font itself.
-                                    [ Testable.todo "calculate height from actual text metrics"
-                                    ]
-
-                                else
-                                    [ expectRoundedEquality
-                                        { expected =
-                                            context.children
-                                                |> List.map childHeight
-                                                |> List.sum
-                                                |> (\h -> h + context.self.bbox.padding.top + context.self.bbox.padding.bottom)
-                                        , found = context.self.bbox.height
-                                        }
-                                    , Testable.lessThanOrEqual "not larger than parent"
-                                        context.self.bbox.height
-                                        context.parent.bbox.height
-                                    ]
-
-                            Testable.Link _ _ _ ->
                                 let
                                     childHeight child =
                                         child.bbox.height
@@ -1014,12 +790,42 @@ heightHelper maybeMin maybeMax len =
 
 width : Length -> Testable.Attr msg
 width len =
-    widthHelper Nothing Nothing len
+    widthHelper len
+
+
+widthMax : Int -> Testable.Attr msg
+widthMax m =
+    Testable.LabeledTest
+        { label = "width max " ++ String.fromInt m ++ "px"
+        , id = Testable.NoId
+        , attr =
+            Element.widthMax m
+        , test =
+            \found ->
+                [ Testable.true "max width is upheld"
+                    (floor found.self.bbox.width <= m)
+                ]
+        }
+
+
+widthMin : Int -> Testable.Attr msg
+widthMin m =
+    Testable.LabeledTest
+        { label = "width min " ++ String.fromInt m ++ "px"
+        , id = Testable.NoId
+        , attr =
+            Element.widthMax m
+        , test =
+            \found ->
+                [ Testable.true "min width is upheld"
+                    (floor found.self.bbox.width >= m)
+                ]
+        }
 
 
 height : Length -> Testable.Attr msg
 height len =
-    heightHelper Nothing Nothing len
+    heightHelper len
 
 
 spacing : Int -> Testable.Attr msg
@@ -1648,8 +1454,8 @@ behindContent element =
 implicitWidthHeightShrink attrs =
     let
         withImplicits =
-            implicitTest (widthHelper Nothing Nothing Shrink)
-                :: implicitTest (heightHelper Nothing Nothing Shrink)
+            implicitTest (widthHelper Shrink)
+                :: implicitTest (heightHelper Shrink)
                 :: attrs
     in
     skipOverridden withImplicits

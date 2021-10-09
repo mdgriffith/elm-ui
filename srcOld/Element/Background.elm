@@ -1,4 +1,4 @@
-module Element2.Background exposing
+module Element.Background exposing
     ( color, gradient
     , image, uncropped, tiled, tiledX, tiledY
     )
@@ -16,51 +16,51 @@ module Element2.Background exposing
 
 -}
 
-import Element2 exposing (Attribute, Color)
-import Internal.Flag2 as Flag
-import Internal.Model2 as Two
-import Internal.StyleGenerator as Style
+import Element exposing (Attr, Attribute, Color)
+import Internal.Flag as Flag
+import Internal.Model as Internal
+import VirtualDom
 
 
 {-| -}
-color : Color -> Two.Attribute msg
+color : Color -> Attr decorative msg
 color clr =
-    Two.Style Flag.bgColor (Style.prop "background-color" (Style.color clr))
+    Internal.StyleClass Flag.bgColor (Internal.Colored ("bg-" ++ Internal.formatColorClass clr) "background-color" clr)
 
 
 {-| Resize the image to fit the containing element while maintaining proportions and cropping the overflow.
 -}
 image : String -> Attribute msg
 image src =
-    Two.Style Flag.bg (Style.prop "background" ("url(\"" ++ src ++ "\") center / cover no-repeat"))
+    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") center / cover no-repeat"))
 
 
 {-| A centered background image that keeps its natural proportions, but scales to fit the space.
 -}
 uncropped : String -> Attribute msg
 uncropped src =
-    Two.Style Flag.bg (Style.prop "background" ("url(\"" ++ src ++ "\") center / contain no-repeat"))
+    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") center / contain no-repeat"))
 
 
 {-| Tile an image in the x and y axes.
 -}
 tiled : String -> Attribute msg
 tiled src =
-    Two.Style Flag.bg (Style.prop "background" ("url(\"" ++ src ++ "\") repeat"))
+    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") repeat"))
 
 
 {-| Tile an image in the x axis.
 -}
 tiledX : String -> Attribute msg
 tiledX src =
-    Two.Style Flag.bg (Style.prop "background" ("url(\"" ++ src ++ "\") repeat-x"))
+    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") repeat-x"))
 
 
 {-| Tile an image in the y axis.
 -}
 tiledY : String -> Attribute msg
 tiledY src =
-    Two.Style Flag.bg (Style.prop "background" ("url(\"" ++ src ++ "\") repeat-y"))
+    Internal.Attr (VirtualDom.style "background" ("url(\"" ++ src ++ "\") repeat-y"))
 
 
 type Direction
@@ -110,21 +110,21 @@ gradient :
     { angle : Float
     , steps : List Color
     }
-    -> Attribute msg
+    -> Attr decorative msg
 gradient { angle, steps } =
     case steps of
         [] ->
-            Two.NoAttribute
+            Internal.NoAttribute
 
         clr :: [] ->
-            Two.Style Flag.bgColor
-                (Style.prop "background-color" (Style.color clr))
+            Internal.StyleClass Flag.bgColor
+                (Internal.Colored ("bg-" ++ Internal.formatColorClass clr) "background-color" clr)
 
         _ ->
-            Two.Style Flag.bgGradient <|
-                Style.prop
+            Internal.StyleClass Flag.bgGradient <|
+                Internal.Single ("bg-grad-" ++ (String.join "-" <| Internal.floatClass angle :: List.map Internal.formatColorClass steps))
                     "background-image"
-                    ("linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps) ++ ")")
+                    ("linear-gradient(" ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Internal.formatColor steps) ++ ")")
 
 
 

@@ -22,96 +22,57 @@ benchmark to be sure!
 
 -}
 
-import Internal.Model exposing (..)
-import VirtualDom
+import Element exposing (Element)
+import Html
+import Html.Lazy
+import Internal.Model2 as Two
 
 
 {-| -}
 lazy : (a -> Element msg) -> a -> Element msg
 lazy fn a =
-    Unstyled <| VirtualDom.lazy3 apply1 fn a
+    Two.Element (\s -> Html.Lazy.lazy3 apply1 fn a s)
 
 
 {-| -}
 lazy2 : (a -> b -> Element msg) -> a -> b -> Element msg
 lazy2 fn a b =
-    Unstyled <| VirtualDom.lazy4 apply2 fn a b
+    Two.Element (\s -> Html.Lazy.lazy4 apply2 fn a b s)
 
 
 {-| -}
 lazy3 : (a -> b -> c -> Element msg) -> a -> b -> c -> Element msg
 lazy3 fn a b c =
-    Unstyled <| VirtualDom.lazy5 apply3 fn a b c
+    Two.Element (\s -> Html.Lazy.lazy5 apply3 fn a b c s)
 
 
 {-| -}
 lazy4 : (a -> b -> c -> d -> Element msg) -> a -> b -> c -> d -> Element msg
 lazy4 fn a b c d =
-    Unstyled <| VirtualDom.lazy6 apply4 fn a b c d
+    Two.Element (\s -> Html.Lazy.lazy6 apply4 fn a b c d s)
 
 
 {-| -}
 lazy5 : (a -> b -> c -> d -> e -> Element msg) -> a -> b -> c -> d -> e -> Element msg
 lazy5 fn a b c d e =
-    Unstyled <| VirtualDom.lazy7 apply5 fn a b c d e
+    Two.Element (\s -> Html.Lazy.lazy7 apply5 fn a b c d e s)
 
 
-apply1 fn a =
-    embed (fn a)
+apply1 fn a s =
+    Two.unwrap s (fn a)
 
 
-apply2 fn a b =
-    embed (fn a b)
+apply2 fn a b s =
+    Two.unwrap s (fn a b)
 
 
-apply3 fn a b c =
-    embed (fn a b c)
+apply3 fn a b c s =
+    Two.unwrap s (fn a b c)
 
 
-apply4 fn a b c d =
-    embed (fn a b c d)
+apply4 fn a b c d s =
+    Two.unwrap s (fn a b c d)
 
 
-apply5 fn a b c d e =
-    embed (fn a b c d e)
-
-
-{-| -}
-embed : Element msg -> LayoutContext -> VirtualDom.Node msg
-embed x =
-    case x of
-        Unstyled html ->
-            html
-
-        Styled styled ->
-            styled.html
-                (Internal.Model.OnlyDynamic
-                    { hover = AllowHover
-                    , focus =
-                        { borderColor = Nothing
-                        , shadow = Nothing
-                        , backgroundColor = Nothing
-                        }
-                    , mode = Layout
-                    }
-                    styled.styles
-                )
-
-        -- -- (Just
-        -- --     (toStyleSheetString
-        --         { hover = AllowHover
-        --         , focus =
-        --             { borderColor = Nothing
-        --             , shadow = Nothing
-        --             , backgroundColor = Nothing
-        --             }
-        --         , mode = Layout
-        --         }
-        -- --         styled.styles
-        -- --     )
-        -- -- )
-        Text text ->
-            always (VirtualDom.text text)
-
-        Empty ->
-            always (VirtualDom.text "")
+apply5 fn a b c d e s =
+    Two.unwrap s (fn a b c d e)

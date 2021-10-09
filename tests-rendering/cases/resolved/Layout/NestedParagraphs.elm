@@ -40,23 +40,15 @@ view =
                 ]
             , paragraph []
                 [ text "This is a paragraph with a "
-                , link []
-                    { label =
-                        el [ Font.bold ]
-                            (text Testable.Generator.lorem)
-                    , url = "http://example.com"
-                    }
+                , el [ Font.bold, link "http://example.com" ]
+                    (text Testable.Generator.lorem)
                 , text " of depth two."
                 ]
             , el [ Font.size 32 ] (text "Many nested els")
             , paragraph []
                 [ text "This is a paragraph with a "
-                , link []
-                    { label =
-                        el [ Font.bold ]
-                            (text Testable.Generator.lorem)
-                    , url = "http://example.com"
-                    }
+                , el [ Font.bold, link "http://example.com" ]
+                    (text Testable.Generator.lorem)
                 , text " of depth two."
                 , el [] (el [] (el [] (text Testable.Generator.lorem)))
                 , el [] (el [] (el [] (el [] (text Testable.Generator.lorem))))
@@ -64,12 +56,8 @@ view =
             , el [ Font.size 32 ] (text "NestedParas in els")
             , paragraph []
                 [ text "This is a paragraph with a "
-                , link []
-                    { label =
-                        el [ Font.bold ]
-                            (text Testable.Generator.lorem)
-                    , url = "http://example.com"
-                    }
+                , el [ Font.bold, link "http://example.com" ]
+                    (text Testable.Generator.lorem)
                 , text " of depth two."
                 , el [] (el [] (el [] (text Testable.Generator.lorem)))
                 , el []
@@ -82,12 +70,8 @@ view =
             , el [ Font.size 32 ] (text "Nested with link")
             , paragraph []
                 [ text "This is a paragraph with a "
-                , link []
-                    { label =
-                        el [ Font.bold ] <|
-                            text "child"
-                    , url = "http://example.com"
-                    }
+                , el [ Font.bold, link "http://example.com" ]
+                    (text Testable.Generator.lorem)
                 , text " of depth two."
                 ]
             , el [ Font.size 32 ] (text "Para with boxes")

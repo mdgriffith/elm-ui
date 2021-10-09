@@ -169,7 +169,7 @@ async function run_test(driver, url) {
   await compile_and_embed({
     template: "./tests-rendering/automation/templates/gather-styles.html",
     target: "./tmp/test.html",
-    elm: "src/Tests/All.elm",
+    elm: "src/Tests.elm",
     elmOptions: { cwd: "./tests-rendering" },
   });
   console.log("Done compiling");
@@ -267,6 +267,7 @@ function print_results(label, tests) {
   if (program.verbose) {
     console.log(label);
   }
+
   for (i = 0; i < tests.length; i++) {
     var passed = 0;
     var failed = 0;
@@ -281,16 +282,25 @@ function print_results(label, tests) {
           console.log(tests[i].label);
         }
         failed = failed + 1;
-        console.log("    " + chalk.red("fail") + " ->");
-        console.log("        " + tests[i].results[j].description);
+        if (tests[i].results[j].todo) {
+          console.log(
+            "    " +
+              chalk.yellow("todo") +
+              " (will count as failure for now) ->"
+          );
+          console.log("        " + tests[i].results[j].description);
+        } else {
+          console.log("    " + chalk.red("fail") + " ->");
+          console.log("        " + tests[i].results[j].description);
+        }
       }
     }
     total_passed = total_passed + passed;
     total_failed = total_failed + failed;
 
     if (failed != 0) {
-      console.log(chalk.green(`    ${passed} tests passed`));
-      console.log(chalk.red(`    ${failed} tests failed`));
+      console.log(chalk.green(`    ${passed} passed`));
+      console.log(chalk.red(`    ${failed} failed`));
       console.log();
     } else if (program.verbose) {
       console.log(tests[i].label + chalk.green(`    ${passed} tests passed`));

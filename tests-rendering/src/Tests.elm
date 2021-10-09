@@ -1,9 +1,11 @@
-module Tests.All exposing (main)
+module Tests exposing (main)
 
-{-| -}
+{-| This is the main entrypoint for running tests.
+-}
 
 import Layout.NestedParagraphs
 import Layout.SafariBugIssue147
+import Testable.Element exposing (..)
 import Testable.Generator
 import Testable.Runner
 import Tests.Alignment
@@ -16,17 +18,25 @@ import Tests.Transparency
 main : Testable.Runner.TestableProgram
 main =
     (Testable.Runner.program << List.concat)
-        [ Testable.Generator.elementInLayout "Basics" []
-        , Tests.Nearby.view
-        , Tests.Alignment.view
-        , Tests.Spacing.view
+        [ --Testable.Generator.elementInLayout "Basics" []
+          [ layout [ height fill ] <|
+                el [ height fill ] <|
+                    column
+                        [ height fill ]
+                        [ el [] <| text "Element that Safari gives height 0, if inside an el and not just text."
+                        , text "Text below the el above"
+                        ]
+          ]
 
+        -- , Tests.Nearby.view
+        -- , Tests.Alignment.view
+        -- , Tests.Spacing.view
         -- [
         -- , Tuple.pair "Transparency" Tests.Transparency.view
         -- ]
         -- , [ Tuple.pair "Paragraph wrapping" Tests.TextWrapping.view
         --   ]
-        , issues
+        -- , issues
         ]
 
 
