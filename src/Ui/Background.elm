@@ -1,4 +1,4 @@
-module Element.Background exposing
+module Ui.Background exposing
     ( color, gradient
     , image, uncropped, tiled, tiledX, tiledY
     )
@@ -12,16 +12,16 @@ module Element.Background exposing
 
 @docs image, uncropped, tiled, tiledX, tiledY
 
-**Note** if you want more control over a background image than is provided here, you should try just using a normal `Element.image` with something like `Element.behindContent`.
+**Note** if you want more control over a background image than is provided here, you should try just using a normal `Ui.image` with something like `Ui.behindContent`.
 
 -}
 
 import Animator
-import Element exposing (Attribute, Color)
 import Html.Attributes as Attr
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
+import Ui exposing (Attribute, Color)
 
 
 {-| -}

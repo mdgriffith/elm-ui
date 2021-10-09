@@ -1,4 +1,4 @@
-module Element exposing
+module Ui exposing
     ( Element, none, text, el
     , row, wrappedRow, column
     , paragraph, textColumn
@@ -75,10 +75,10 @@ Padding is the distance between the outer edge and the content, and spacing is t
 
 So, if we have the following row, with some padding and spacing.
 
-    Element.row [ padding 10, spacing 7 ]
-        [ Element.el [] none
-        , Element.el [] none
-        , Element.el [] none
+    Ui.row [ padding 10, spacing 7 ]
+        [ Ui.el [] none
+        , Ui.el [] none
+        , Ui.el [] none
         ]
 
 Here's what we can expect:
@@ -96,15 +96,15 @@ Here's what we can expect:
 
 Alignment can be used to align an `Element` within another `Element`.
 
-    Element.el [ centerX, alignTop ] (text "I'm centered and aligned top!")
+    Ui.el [ centerX, alignTop ] (text "I'm centered and aligned top!")
 
 If alignment is set on elements in a layout such as a `row`, then the element will push the other elements in that direction. Here's an example.
 
-    Element.row []
-        [ Element.el [] Element.none
-        , Element.el [ alignLeft ] Element.none
-        , Element.el [ centerX ] Element.none
-        , Element.el [ alignRight ] Element.none
+    Ui.row []
+        [ Ui.el [] Ui.none
+        , Ui.el [ alignLeft ] Ui.none
+        , Ui.el [ centerX ] Ui.none
+        , Ui.el [ alignRight ] Ui.none
         ]
 
 will result in a layout like
@@ -113,7 +113,7 @@ will result in a layout like
 
 Where there are two elements on the left, one on the right, and one in the center of the space between the elements on the left and right.
 
-**Note** For text alignment, check out `Element.Font`!
+**Note** For text alignment, check out `Ui.Font`!
 
 @docs centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
 
@@ -168,11 +168,11 @@ In order to use attributes like `Font.color` and `Background.color`, you'll need
 
 Let's say we want a dropdown menu. Essentially we want to say: _put this element below this other element, but don't affect the layout when you do_.
 
-    Element.row []
-        [ Element.el
-            [ Element.below (Element.text "I'm below!")
+    Ui.row []
+        [ Ui.el
+            [ Ui.below (Ui.text "I'm below!")
             ]
-            (Element.text "I'm normal!")
+            (Ui.text "I'm normal!")
         ]
 
 This will result in
@@ -181,7 +181,7 @@ This will result in
 ---------------/
 I'm below
 
-Where `"I'm Below"` doesn't change the size of `Element.row`.
+Where `"I'm Below"` doesn't change the size of `Ui.row`.
 
 This is very useful for things like dropdown menus or tooltips.
 
@@ -247,7 +247,7 @@ rgb r g b =
 
     howdy : Element msg
     howdy =
-        Element.el [] (Element.text "Howdy!")
+        Ui.el [] (Ui.text "Howdy!")
 
 -}
 type alias Element msg =
@@ -582,16 +582,16 @@ You can think of an `el` as a `div`, but it can only have one child.
 If you want multiple children, you'll need to use something like `row` or `column`
 
     import Element exposing (Element, rgb)
-    import Element.Background as Background
-    import Element.Border as Border
+    import Ui.Background as Background
+    import Ui.Border as Border
 
     myElement : Element msg
     myElement =
-        Element.el
+        Ui.el
             [ Background.color (rgb 0 0.5 0)
             , Border.color (rgb 0 0.7 0)
             ]
-            (Element.text "You've made a stylish element!")
+            (Ui.text "You've made a stylish element!")
 
 -}
 el : List (Attribute msg) -> Two.Element msg -> Two.Element msg
@@ -679,7 +679,7 @@ type alias Todo =
 **Note** This attribute needs to be handed `Debug.todo` in order to work, even though it won't do anything with it. This is a safety measure so you don't accidently ship code with `explain` in it, as Elm won't compile with `--optimize` if you still have a `Debug` statement in your code.
 
     el
-        [ Element.explain Debug.todo
+        [ Ui.explain Debug.todo
         ]
         (text "Help, I'm being debugged!")
 
@@ -720,25 +720,25 @@ So, if we have a list of `persons`:
 
 We could render it using
 
-    Element.table []
+    Ui.table []
         { data = persons
         , columns =
-            [ { header = Element.text "First Name"
+            [ { header = Ui.text "First Name"
               , width = fill
               , view =
                     \person ->
-                        Element.text person.firstName
+                        Ui.text person.firstName
               }
-            , { header = Element.text "Last Name"
+            , { header = Ui.text "Last Name"
               , width = fill
               , view =
                     \person ->
-                        Element.text person.lastName
+                        Ui.text person.lastName
               }
             ]
         }
 
-**Note:** Sometimes you might not have a list of records directly in your model. In this case it can be really nice to write a function that transforms some part of your model into a list of records before feeding it into `Element.table`.
+**Note:** Sometimes you might not have a list of records directly in your model. In this case it can be really nice to write a function that transforms some part of your model into a list of records before feeding it into `Ui.table`.
 
 -}
 table :
@@ -765,7 +765,7 @@ type alias IndexedColumn record msg =
     }
 
 
-{-| Same as `Element.table` except the `view` for each column will also receive the row index as well as the record.
+{-| Same as `Ui.table` except the `view` for each column will also receive the row index as well as the record.
 -}
 indexedTable :
     List (Attribute msg)
@@ -912,7 +912,7 @@ tableHelper attrs config =
 {-| A paragraph will layout all children as wrapped, inline elements.
 
     import Element exposing (el, paragraph, text)
-    import Element.Font as Font
+    import Ui.Font as Font
 
     view =
         paragraph []
@@ -928,7 +928,7 @@ Also, if a child element has `alignLeft` or `alignRight`, then it will be moved 
 This makes it particularly easy to do something like a [dropped capital](https://en.wikipedia.org/wiki/Initial).
 
     import Element exposing (alignLeft, el, padding, paragraph, text)
-    import Element.Font as Font
+    import Ui.Font as Font
 
     view =
         paragraph []
@@ -982,7 +982,7 @@ The main difference between a `column` and a `textColumn` is that `textColumn` w
 
 In the following example, we have a `textColumn` where one child has `alignLeft`.
 
-    Element.textColumn [ spacing 10, padding 10 ]
+    Ui.textColumn [ spacing 10, padding 10 ]
         [ paragraph [] [ text "lots of text ...." ]
         , el [ alignLeft ] none
         , paragraph [] [ text "lots of text ...." ]
@@ -1147,7 +1147,7 @@ inFront element =
     Two.Nearby Two.InFront element
 
 
-{-| This will place an element between the background and the content of an element.
+{-| This will place an element between the background and the content of an Ui.
 -}
 behindContent : Two.Element msg -> Attribute msg
 behindContent element =
@@ -1449,7 +1449,7 @@ clipX =
     Two.Class Flag.overflow Style.classes.clipX
 
 
-{-| Set the cursor to be a pointing hand when it's hovering over this element.
+{-| Set the cursor to be a pointing hand when it's hovering over this Ui.
 -}
 pointer : Attribute msg
 pointer =

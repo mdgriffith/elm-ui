@@ -1,4 +1,4 @@
-module Element.Animated exposing
+module Ui.Animated exposing
     ( Animated
     , animated, hovered, focused, pressed
     , immediately, veryQuickly, quickly, slowly, verySlowly
@@ -39,10 +39,10 @@ module Element.Animated exposing
 
 import Animator exposing (Timeline)
 import Bitwise
-import Element exposing (Attribute, Element, Msg)
 import Internal.Bits as Bits
 import Internal.Model2 as Two
 import Internal.Style2 as Style
+import Ui exposing (Attribute, Element, Msg)
 
 
 type alias Animated =

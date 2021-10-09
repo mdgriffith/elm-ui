@@ -1,4 +1,4 @@
-module Element.Font exposing
+module Ui.Font exposing
     ( size, color, gradient
     , family, with, Font, typeface, serif, sansSerif, monospace
     , Sizing, full, byCapital, Adjustment
@@ -12,22 +12,22 @@ module Element.Font exposing
 {-|
 
     import Element
-    import Element.Font as Font
+    import Ui.Font as Font
 
     view =
-        Element.el
-            [ Font.color (Element.rgb 0 0 1)
+        Ui.el
+            [ Font.color (Ui.rgb 0 0 1)
             , Font.size 18
             , Font.family
                 [ Font.typeface "Open Sans"
                 , Font.sansSerif
                 ]
             ]
-            (Element.text "Woohoo, I'm stylish text")
+            (Ui.text "Woohoo, I'm stylish text")
 
 **Note:** `Font.color`, `Font.size`, and `Font.family` are inherited, meaning you can set them at the top of your view and all subsequent nodes will have that value.
 
-**Other Note:** If you're looking for something like `line-height`, it's handled by `Element.spacing` on a `paragraph`.
+**Other Note:** If you're looking for something like `line-height`, it's handled by `Ui.spacing` on a `paragraph`.
 
 @docs size, color, gradient
 
@@ -66,11 +66,11 @@ module Element.Font exposing
 -}
 
 import Bitwise
-import Element exposing (Attribute, Color)
 import Html.Attributes as Attr
 import Internal.Flag2 as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
+import Ui exposing (Attribute, Color)
 
 
 {-| -}
@@ -90,10 +90,10 @@ color fontColor =
 {-|
 
     import Element
-    import Element.Font as Font
+    import Ui.Font as Font
 
     myElement =
-        Element.el
+        Ui.el
             [ Font.family
                 [ Font.typeface "Helvetica"
                 , Font.sansSerif

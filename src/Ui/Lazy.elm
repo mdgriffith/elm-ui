@@ -1,4 +1,4 @@
-module Element.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy5)
+module Ui.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy5)
 
 {-| Same as `Html.lazy`. In case you're unfamiliar, here's a note from the `Html` library!
 
@@ -22,10 +22,10 @@ benchmark to be sure!
 
 -}
 
-import Element exposing (Element)
 import Html
 import Html.Lazy
 import Internal.Model2 as Two
+import Ui exposing (Element)
 
 
 {-| -}

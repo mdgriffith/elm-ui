@@ -1,4 +1,4 @@
-module Element.Events exposing
+module Ui.Events exposing
     ( onPress
     , onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
     , onFocus, onLoseFocus
@@ -20,10 +20,10 @@ module Element.Events exposing
 
 -}
 
-import Element exposing (Attribute)
 import Html.Events
 import Internal.Model2 as Two
 import Json.Decode as Json
+import Ui exposing (Attribute)
 import VirtualDom
 
 

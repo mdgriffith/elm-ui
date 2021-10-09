@@ -1,4 +1,4 @@
-module Element.Region exposing
+module Ui.Region exposing
     ( mainContent, info
     , navigation, heading, aside
     , description
@@ -14,7 +14,7 @@ All you have to do is add them to elements in your app where you see fit.
 Here's an example of annotating your navigation region:
 
     import Element exposing (row)
-    import Element.Region as Region
+    import Ui.Region as Region
 
     myNavigation =
         row [ Region.navigation ]
@@ -31,10 +31,10 @@ Here's an example of annotating your navigation region:
 
 -}
 
-import Element exposing (Attribute)
 import Html
 import Html.Attributes
 import Internal.Model2 as Two
+import Ui exposing (Attribute)
 
 
 {-| **Note** - You should only have _one_ of these on a given page.
