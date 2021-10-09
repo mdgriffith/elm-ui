@@ -1,4 +1,4 @@
-module Internal.Bits exposing (..)
+module Internal.BitMask exposing (..)
 
 {-| -}
 

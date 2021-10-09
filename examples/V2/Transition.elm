@@ -3,16 +3,16 @@ module Transition exposing (..)
 {-| -}
 
 import Browser
-import Element exposing (..)
-import Element.Animated as Animated
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events
-import Element.Font as Font
-import Element.Input as Input
-import Element.Keyed
-import Element.Lazy
-import Element.Region
+import Ui exposing (..)
+import Ui.Animated as Animated
+import Ui.Background as Background
+import Ui.Border as Border
+import Ui.Events
+import Ui.Font as Font
+import Ui.Input as Input
+import Ui.Keyed
+import Ui.Lazy
+import Ui.Region
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -38,7 +38,7 @@ main =
 
 init () =
     ( { focus = Detail
-      , ui = Element.init
+      , ui = Ui.init
       }
     , Cmd.none
     )
@@ -51,11 +51,11 @@ type Id
 id val =
     case val of
         One i ->
-            Animated.id UI "one" (String.fromInt i)
+            Animated.id Ui "one" (String.fromInt i)
 
 
 type Msg
-    = UI (Element.Msg Msg)
+    = Ui (Ui.Msg Msg)
     | Focus Focus
 
 
@@ -66,10 +66,10 @@ type Focus
 
 update msg model =
     case msg of
-        UI uiMsg ->
+        Ui uiMsg ->
             let
                 ( newUI, cmd ) =
-                    Element.update UI uiMsg model.ui
+                    Ui.update Ui uiMsg model.ui
             in
             ( { model | ui = newUI }
             , cmd
@@ -97,8 +97,8 @@ view model =
             , variants =
                 []
             }
-        , Element.Events.onClick
-            (Element.transition UI
+        , Ui.Events.onClick
+            (Ui.transition Ui
                 (Focus
                     (case model.focus of
                         Detail ->
@@ -134,7 +134,7 @@ view model =
         )
 
 
-viewData : Focus -> Element Msg
+viewData : Focus -> Ui.Element Msg
 viewData focus =
     case focus of
         Mini ->

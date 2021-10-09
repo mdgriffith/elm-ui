@@ -37,7 +37,7 @@ A checkbox requires you to store a `Bool` in your model.
 
 This is also the first input element that has a [`required label`](#Label).
 
-    import Element exposing (text)
+    import Ui exposing (text)
     import Ui.Input as Input
 
     type Msg

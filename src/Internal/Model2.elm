@@ -1,14 +1,15 @@
 module Internal.Model2 exposing (..)
 
 import Animator
-import Animator.Css
+import Animator.Timeline
+import Animator.Watcher
 import Bitwise
 import Browser.Dom
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed
-import Internal.Bits as Bits
+import Internal.BitMask as Bits
 import Internal.Flag2 as Flag exposing (Flag)
 import Internal.Style2 as Style
 import Json.Decode as Json
@@ -152,7 +153,6 @@ moveAnimationFixed className previous current =
     keyframes ++ classRule
 
 
-
 bboxCss box =
     "left:"
         ++ String.fromFloat box.x
@@ -176,11 +176,11 @@ bboxTransform box =
         ++ String.fromFloat box.height
         ++ "px;"
 
+
 moveAnimation className previous current =
     let
-
         from =
-            bboxTransform 
+            bboxTransform
                 { x = previous.x - current.x
                 , y = previous.y - current.y
                 , width = previous.width
@@ -188,7 +188,7 @@ moveAnimation className previous current =
                 }
 
         to =
-            bboxTransform 
+            bboxTransform
                 { x = 0
                 , y = 0
                 , width = current.width
@@ -199,15 +199,18 @@ moveAnimation className previous current =
             "@keyframes " ++ className ++ " { from { " ++ from ++ " } to { " ++ to ++ "} }"
 
         classRule =
-            ".ui-movable." ++ className ++ 
-                "{ animation: " ++ className ++ " 2000ms !important; animation-fill-mode: both !important; }"
+            ".ui-movable."
+                ++ className
+                ++ "{ animation: "
+                ++ className
+                ++ " 2000ms !important; animation-fill-mode: both !important; }"
     in
     keyframes ++ classRule
 
 
 type alias Animator msg model =
-    { animator : Animator.Animator model
-    , onStateChange : model -> List (Time.Posix, msg)
+    { animator : Animator.Watcher.Watching model
+    , onStateChange : model -> List ( Time.Posix, msg )
     }
 
 
@@ -228,7 +231,7 @@ updateWith toAppMsg msg state config =
     ( case msg of
         Tick newTime ->
             config.ui newState
-                |> Animator.update newTime config.timelines.animator
+                |> Animator.Watcher.update newTime config.timelines.animator
 
         _ ->
             config.ui newState
@@ -240,7 +243,7 @@ updateWith toAppMsg msg state config =
 
 subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
 subscription toAppMsg state animator model =
-    Animator.toSubscription (toAppMsg << Tick) model animator.animator
+    Animator.Watcher.toSubscription (toAppMsg << Tick) model animator.animator
 
 
 update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
@@ -1670,34 +1673,35 @@ render layout details children has htmlAttrs classes nearby attrs =
                                         :: attrsWithActive
 
                         attributes =
-                            Attr.class (classes)
+                            Attr.class classes
                                 :: attrsWithAnimations
 
                         finalChildren =
                             case layout of
                                 AsParagraph ->
                                     if Flag.present Flag.id has then
-                                         Html.div (Attr.class "ui-movable" :: attributes) renderedChildren 
+                                        Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
                                             :: spacerTop (toFloat details.spacingY / -2)
                                             :: renderedChildren
                                             ++ [ spacerBottom (toFloat details.spacingY / -2) ]
-                                    else 
+
+                                    else
                                         spacerTop (toFloat details.spacingY / -2)
                                             :: renderedChildren
                                             ++ [ spacerBottom (toFloat details.spacingY / -2) ]
 
                                 _ ->
                                     if Flag.present Flag.id has then
-                                        Html.div (Attr.class "ui-movable" :: attributes) renderedChildren 
+                                        Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
                                             :: renderedChildren
-                                    else 
+
+                                    else
                                         renderedChildren
-                            
-                        
-                        
+
                         finalAttributes =
                             if Flag.present Flag.id has then
                                 Attr.class "ui-placeholder" :: attributes
+
                             else
                                 attributes
                     in
@@ -2917,20 +2921,19 @@ decodeElementPosition ignoreBorders top left =
                             Json.map4
                                 (\clientLeft clientTop offsetLeft offsetTop ->
                                     let
-                                        
                                         newTop =
-                                            if ignoreBorders then 
-                                                top + (offsetTop)
+                                            if ignoreBorders then
+                                                top + offsetTop
+
                                             else
                                                 top + (offsetTop + clientTop)
-                                           
 
                                         newLeft =
-                                            if ignoreBorders then 
+                                            if ignoreBorders then
                                                 left + offsetLeft
+
                                             else
                                                 left + (offsetLeft + clientLeft)
-                                            
                                     in
                                     ( newTop, newLeft )
                                 )
@@ -2945,17 +2948,18 @@ decodeElementPosition ignoreBorders top left =
                                 (\clientLeft clientTop offsetLeft offsetTop ->
                                     let
                                         newTop =
-                                            if ignoreBorders then 
-                                                top + (offsetTop)
+                                            if ignoreBorders then
+                                                top + offsetTop
+
                                             else
                                                 top + (offsetTop + clientTop)
 
                                         newLeft =
-                                            if ignoreBorders then 
+                                            if ignoreBorders then
                                                 left + offsetLeft
+
                                             else
                                                 left + (offsetLeft + clientLeft)
-                                            
                                     in
                                     ( newTop, newLeft )
                                 )

@@ -218,6 +218,8 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 -}
 
 import Animator
+import Animator.Timeline
+import Animator.Watcher
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Keyed
@@ -422,14 +424,14 @@ subscription =
 
 
 watching :
-    { get : model -> Animator.Timeline state
-    , set : Animator.Timeline state -> model -> model
+    { get : model -> Animator.Timeline.Timeline state
+    , set : Animator.Timeline.Timeline state -> model -> model
     , onStateChange : state -> Maybe msg
     }
     -> Animator msg model
     -> Animator msg model
 watching config anim =
-    { animator = Animator.watching config.get config.set anim.animator
+    { animator = Animator.Watcher.watching config.get config.set anim.animator
     , onStateChange =
         -- config.onStateChange << config.get
         \model ->
@@ -1380,7 +1382,7 @@ Semantically equivalent to html opacity.
 -}
 alpha : Float -> Attribute msg
 alpha o =
-    Two.Attr (Attr.style "opacity" (String.fromFloat 0))
+    Two.Attr (Attr.style "opacity" (String.fromFloat (1 + (-1 * o))))
 
 
 {-| -}

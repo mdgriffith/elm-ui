@@ -37,9 +37,10 @@ module Ui.Animated exposing
 
 -}
 
-import Animator exposing (Timeline)
+import Animator
+import Animator.Timeline exposing (Timeline)
 import Bitwise
-import Internal.Bits as Bits
+import Internal.BitMask as Bits
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Element, Msg)
@@ -126,14 +127,15 @@ id toMsg group instance =
     Two.Animated toMsg (Two.Id group instance)
 
 
-animatedWith :
-    (Msg msg -> msg)
-    -> state
-    -> (state -> List (Step step))
-    -> (step -> List Animated.Property)
-    -> Attribute msg
-animatedWith =
-    Debug.todo ""
+
+-- animatedWith :
+--     (Msg msg -> msg)
+--     -> state
+--     -> (state -> List (Step step))
+--     -> (step -> List Animated.Property)
+--     -> Attribute msg
+-- animatedWith =
+--     Debug.todo ""
 
 
 {-| -}
