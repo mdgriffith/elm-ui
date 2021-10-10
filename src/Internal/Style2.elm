@@ -18,6 +18,15 @@ vars =
     Gen.vars
 
 
+type Angle
+    = Angle Float
+
+
+toRadians : Angle -> Float
+toRadians (Angle r) =
+    r
+
+
 type Color
     = Rgb Int Int Int
 

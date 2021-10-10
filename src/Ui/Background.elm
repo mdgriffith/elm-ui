@@ -1,11 +1,20 @@
 module Ui.Background exposing
-    ( color, gradient
+    ( color
+    , gradient
+    , gradients, Gradient, linear, conic, radial, circle, Step, px, percent
+    , center, top, bottom, left, right, topLeft, topRight, bottomLeft, bottomRight, offset
     , image, uncropped, tiled, tiledX, tiledY
     )
 
 {-|
 
-@docs color, gradient
+@docs color
+
+@docs gradient
+
+@docs gradients, Gradient, linear, conic, radial, circle, Step, px, percent
+
+@docs center, top, bottom, left, right, topLeft, topRight, bottomLeft, bottomRight, offset
 
 
 # Images
@@ -16,25 +25,18 @@ module Ui.Background exposing
 
 -}
 
-import Animator
 import Html.Attributes as Attr
-import Internal.Flag2 as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
-import Ui exposing (Attribute, Color)
+import Ui exposing (Angle, Attribute, Color)
 
 
 {-| -}
 color : Color -> Two.Attribute msg
-color (Style.Rgb red green blue) =
+color clr =
     Two.Attr
         (Attr.style "background-color"
-            ("rgb("
-                ++ String.fromInt red
-                ++ ("," ++ String.fromInt green)
-                ++ ("," ++ String.fromInt blue)
-                ++ ")"
-            )
+            (Style.color clr)
         )
 
 
@@ -88,40 +90,21 @@ tiledY src =
         )
 
 
-type Direction
-    = ToUp
-    | ToDown
-    | ToRight
-    | ToTopRight
-    | ToBottomRight
-    | ToLeft
-    | ToTopLeft
-    | ToBottomLeft
-    | ToAngle Float
-
-
 type Step
-    = ColorStep Color
-    | PercentStep Float Color
-    | PxStep Int Color
+    = Percent Int Color
+    | Pixel Int Color
 
 
 {-| -}
-step : Color -> Step
-step =
-    ColorStep
-
-
-{-| -}
-percent : Float -> Color -> Step
+percent : Int -> Color -> Step
 percent =
-    PercentStep
+    Percent
 
 
 {-| -}
 px : Int -> Color -> Step
 px =
-    PxStep
+    Pixel
 
 
 {-| A linear gradient.
@@ -132,130 +115,254 @@ The colors will be evenly spaced.
 
 -}
 gradient :
-    { angle : Float
-    , steps : List Color
-    }
+    Angle
+    -> List Color
     -> Attribute msg
-gradient { angle, steps } =
+gradient angle steps =
     case steps of
         [] ->
             Two.NoAttribute
 
-        (Style.Rgb red green blue) :: [] ->
+        [ clr ] ->
             Two.Attr
                 (Attr.style "background-color"
-                    ("rgb("
-                        ++ String.fromInt red
-                        ++ ("," ++ String.fromInt green)
-                        ++ ("," ++ String.fromInt blue)
-                        ++ ")"
-                    )
+                    (Style.color clr)
                 )
 
         _ ->
             Two.Attr
                 (Attr.style "background-image"
                     ("linear-gradient("
-                        ++ (String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps)
+                        ++ ((String.fromFloat (Style.toRadians angle) ++ "rad")
+                                :: List.map Style.color steps
+                                |> String.join ", "
+                           )
                         ++ ")"
                     )
                 )
 
 
+{-| -}
+gradients : List Gradient -> Attribute msg
+gradients grads =
+    case grads of
+        [] ->
+            Two.NoAttribute
 
--- {-| -}
--- gradientWith : { direction : Direction, steps : List Step } -> Attribute msg
--- gradientWith { direction, steps } =
---     StyleClass <|
---         Single ("bg-gradient-" ++ (String.join "-" <| renderDirectionClass direction :: List.map renderStepClass steps))
---             "background"
---             ("linear-gradient(" ++ (String.join ", " <| renderDirection direction :: List.map renderStep steps) ++ ")")
--- {-| -}
--- renderStep : Step -> String
--- renderStep step =
---     case step of
---         ColorStep color ->
---             formatColor color
---         PercentStep percent color ->
---             formatColor color ++ " " ++ toString percent ++ "%"
---         PxStep px color ->
---             formatColor color ++ " " ++ toString px ++ "px"
--- {-| -}
--- renderStepClass : Step -> String
--- renderStepClass step =
---     case step of
---         ColorStep color ->
---             formatColorClass color
---         PercentStep percent color ->
---             formatColorClass color ++ "-" ++ floatClass percent ++ "p"
---         PxStep px color ->
---             formatColorClass color ++ "-" ++ toString px ++ "px"
--- toUp : Direction
--- toUp =
---     ToUp
--- toDown : Direction
--- toDown =
---     ToDown
--- toRight : Direction
--- toRight =
---     ToRight
--- toTopRight : Direction
--- toTopRight =
---     ToTopRight
--- toBottomRight : Direction
--- toBottomRight =
---     ToBottomRight
--- toLeft : Direction
--- toLeft =
---     ToLeft
--- toTopLeft : Direction
--- toTopLeft =
---     ToTopLeft
--- toBottomLeft : Direction
--- toBottomLeft =
---     ToBottomLeft
--- angle : Float -> Direction
--- angle rad =
---     ToAngle rad
--- renderDirection : Direction -> String
--- renderDirection dir =
---     case dir of
---         ToUp ->
---             "to top"
---         ToDown ->
---             "to bottom"
---         ToRight ->
---             "to right"
---         ToTopRight ->
---             "to top right"
---         ToBottomRight ->
---             "to bottom right"
---         ToLeft ->
---             "to left"
---         ToTopLeft ->
---             "to top left"
---         ToBottomLeft ->
---             "to bottom left"
---         ToAngle angle ->
---             toString angle ++ "rad"
--- renderDirectionClass : Direction -> String
--- renderDirectionClass dir =
---     case dir of
---         ToUp ->
---             "to-top"
---         ToDown ->
---             "to-bottom"
---         ToRight ->
---             "to-right"
---         ToTopRight ->
---             "to-top-right"
---         ToBottomRight ->
---             "to-bottom-right"
---         ToLeft ->
---             "to-left"
---         ToTopLeft ->
---             "to-top-left"
---         ToBottomLeft ->
---             "to-bottom-left"
---         ToAngle angle ->
---             floatClass angle ++ "rad"
+        _ ->
+            Two.Attr
+                (Attr.style "background-image"
+                    (List.map toCssGradient grads
+                        |> String.join ", "
+                    )
+                )
+
+
+type Gradient
+    = Linear Angle (List Step)
+    | Radial Bool Anchor (List Step)
+    | Conic Anchor Angle (List ( Angle, Color ))
+
+
+toCssGradient : Gradient -> String
+toCssGradient grad =
+    case grad of
+        Linear angle steps ->
+            "repeating-linear-gradient("
+                ++ ((String.fromFloat (Style.toRadians angle) ++ "rad")
+                        :: List.map renderStep steps
+                        |> String.join ", "
+                   )
+                ++ ")"
+
+        Radial circle anchor steps ->
+            "repeating-radial-gradient("
+                ++ (if circle then
+                        "circle at "
+
+                    else
+                        "ellipse at "
+                   )
+                ++ (anchorToString anchor
+                        :: List.map renderStep steps
+                        |> String.join ", "
+                   )
+                ++ ")"
+
+        Conic anchor angle steps ->
+            "repeating-conic-gradient("
+                ++ ((String.fromFloat (Style.toRadians angle) ++ "rad")
+                        :: anchorToString anchor
+                        :: List.map
+                            (\( ang, clr ) ->
+                                Style.color clr
+                                    ++ " "
+                                    ++ String.fromFloat
+                                        (Style.toRadians ang)
+                                    ++ "rad"
+                            )
+                            steps
+                        |> String.join ", "
+                   )
+                ++ ")"
+
+
+{-| -}
+linear :
+    Angle
+    -> List Step
+    -> Gradient
+linear =
+    Linear
+
+
+{-| -}
+renderStep : Step -> String
+renderStep step =
+    case step of
+        Percent perc clr ->
+            Style.color clr ++ " " ++ String.fromInt perc ++ "%"
+
+        Pixel pixel clr ->
+            Style.color clr ++ " " ++ String.fromInt pixel ++ "px"
+
+
+{-| -}
+conic : Anchor -> Angle -> List ( Angle, Color ) -> Gradient
+conic =
+    Conic
+
+
+{-| -}
+radial :
+    Anchor
+    -> List Step
+    -> Gradient
+radial =
+    Radial False
+
+
+{-| -}
+circle :
+    Anchor
+    -> List Step
+    -> Gradient
+circle =
+    Radial True
+
+
+{-| -}
+type Anchor
+    = Anchor AnchorX AnchorY Int Int
+
+
+type AnchorX
+    = CenterX
+    | Left
+    | Right
+
+
+type AnchorY
+    = CenterY
+    | Top
+    | Bottom
+
+
+anchorToString : Anchor -> String
+anchorToString anchor =
+    case anchor of
+        Anchor CenterX CenterY 0 0 ->
+            "center"
+
+        Anchor anchorX anchorY x y ->
+            anchorXToString anchorX x
+                ++ " "
+                ++ anchorYToString anchorY y
+
+
+anchorXToString : AnchorX -> Int -> String
+anchorXToString anchorX x =
+    case anchorX of
+        CenterX ->
+            "left calc(50% + " ++ String.fromInt x ++ "px)"
+
+        Left ->
+            "left"
+
+        Right ->
+            "right"
+
+
+anchorYToString : AnchorY -> Int -> String
+anchorYToString anchorY y =
+    case anchorY of
+        CenterY ->
+            "top calc(50% - " ++ String.fromInt y ++ "px)"
+
+        Top ->
+            "top "
+                ++ (String.fromInt y ++ "px")
+
+        Bottom ->
+            "bottom "
+                ++ (String.fromInt y ++ "px")
+
+
+{-| -}
+center : Anchor
+center =
+    Anchor CenterX CenterY 0 0
+
+
+{-| -}
+top : Anchor
+top =
+    Anchor CenterX Top 0 0
+
+
+{-| -}
+bottom : Anchor
+bottom =
+    Anchor CenterX Bottom 0 0
+
+
+{-| -}
+left : Anchor
+left =
+    Anchor Left CenterY 0 0
+
+
+{-| -}
+right : Anchor
+right =
+    Anchor Right CenterY 0 0
+
+
+{-| -}
+topLeft : Anchor
+topLeft =
+    Anchor Left Top 0 0
+
+
+{-| -}
+topRight : Anchor
+topRight =
+    Anchor Right Top 0 0
+
+
+{-| -}
+bottomLeft : Anchor
+bottomLeft =
+    Anchor Left Bottom 0 0
+
+
+{-| -}
+bottomRight : Anchor
+bottomRight =
+    Anchor Right Bottom 0 0
+
+
+{-| -}
+offset : Int -> Int -> Anchor -> Anchor
+offset x y (Anchor ax ay _ _) =
+    Anchor ax ay x y

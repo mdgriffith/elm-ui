@@ -19,6 +19,8 @@ module Ui exposing
     , Color, rgb
     , above, below, onRight, onLeft, inFront, behindContent
     , Device, DeviceClass(..), Orientation(..), classifyDevice
+    , Angle, up, down, right, left
+    , turns, radians
     , update
     , updateWith, subscription
     , map, mapAttribute
@@ -199,6 +201,13 @@ You'll also need to retrieve the initial window size. You can either use [`Brows
 @docs Device, DeviceClass, Orientation, classifyDevice
 
 
+# Angles
+
+@docs Angle, up, down, right, left
+
+@docs turns, radians
+
+
 # Animation
 
 @docs update
@@ -293,10 +302,6 @@ type Length
     | Fill Int
 
 
-
--- | Bounded (Maybe Int) (Maybe Int) Length
-
-
 {-| -}
 px : Int -> Length
 px =
@@ -310,6 +315,7 @@ fill =
     Fill 1
 
 
+{-| -}
 ellip : Attribute msg
 ellip =
     Two.Attr (Attr.class Style.classes.ellipses)
@@ -1233,6 +1239,47 @@ scale =
     Two.Scale
 
 
+{-| -}
+type alias Angle =
+    Style.Angle
+
+
+{-| -}
+up : Angle
+up =
+    Style.Angle 0
+
+
+{-| -}
+down : Angle
+down =
+    Style.Angle pi
+
+
+{-| -}
+right : Angle
+right =
+    Style.Angle (pi / 2)
+
+
+{-| -}
+left : Angle
+left =
+    Style.Angle (pi + (pi / 2))
+
+
+{-| -}
+turns : Float -> Angle
+turns t =
+    Style.Angle (t * 2 * pi)
+
+
+{-| -}
+radians : Float -> Angle
+radians =
+    Style.Angle
+
+
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
 rotate : Float -> Attribute msg
@@ -1389,7 +1436,7 @@ alpha o =
 viewport : List (Attribute msg) -> Two.Element msg -> Two.Element msg
 viewport attrs child =
     Two.element Two.AsEl
-        (scrollbars
+        (scrollbarY
             :: width fill
             :: height fill
             :: attrs
