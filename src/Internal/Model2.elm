@@ -448,6 +448,28 @@ type alias Transform =
     }
 
 
+emptyTransform : Transform
+emptyTransform =
+    { scale = 1
+    , x = 0
+    , y = 0
+    , rotation = 0
+    }
+
+
+transformToString : Transform -> String
+transformToString trans =
+    "translate("
+        ++ String.fromFloat trans.x
+        ++ "px, "
+        ++ String.fromFloat trans.y
+        ++ "px) rotate("
+        ++ String.fromFloat trans.rotation
+        ++ "rad) scale("
+        ++ String.fromFloat trans.scale
+        ++ ") !important;"
+
+
 renderTargetAnimatedStyle : Maybe Transform -> List Animated -> String
 renderTargetAnimatedStyle transform props =
     case props of
@@ -458,16 +480,7 @@ renderTargetAnimatedStyle transform props =
 
                 Just details ->
                     "transform: "
-                        ++ ("translate("
-                                ++ String.fromFloat details.x
-                                ++ "px, "
-                                ++ String.fromFloat details.y
-                                ++ "px) rotate("
-                                ++ String.fromFloat details.rotation
-                                ++ "rad) scale("
-                                ++ String.fromFloat details.scale
-                                ++ ") !important;"
-                           )
+                        ++ transformToString details
 
         (Anim _ _ name (AnimFloat val unit)) :: remaining ->
             if name == "rotate" then
@@ -768,17 +781,8 @@ mapAttr uiFn fn attr =
         FontSize i ->
             FontSize i
 
-        TranslateX x ->
-            TranslateX x
-
-        TranslateY y ->
-            TranslateY y
-
-        Rotate r ->
-            Rotate r
-
-        Scale s ->
-            Scale s
+        TransformPiece s t ->
+            TransformPiece s t
 
         OnPress msg ->
             OnPress (fn msg)
@@ -871,6 +875,10 @@ class cls =
     Attr (Attr.class cls)
 
 
+type alias TransformSlot =
+    Int
+
+
 type Attribute msg
     = NoAttribute
     | OnPress msg
@@ -894,10 +902,11 @@ type Attribute msg
     | Spacing Flag Int Int
     | Padding Flag Edges
     | BorderWidth Flag Edges
-    | TranslateX Float
-    | TranslateY Float
-    | Rotate Float
-    | Scale Float
+      -- | TranslateX Float
+      -- | TranslateY Float
+      -- | Rotate Float
+      -- | Scale Float
+    | TransformPiece TransformSlot Float
       -- invalidation key and literal class
     | Class Flag String
       -- When using a css variable we want to attach the variable itself
@@ -1136,10 +1145,7 @@ emptyDetails =
     , fontOffset = 0
     , fontHeight = 63
     , fontSize = -1
-    , x = 0
-    , y = 0
-    , rotate = 0
-    , scale = 1
+    , transform = Nothing
     , animEvents = []
     , hover = Nothing
     , focus = Nothing
@@ -1295,10 +1301,7 @@ type alias Details msg =
     , fontOffset : Int
     , fontHeight : Int
     , fontSize : Int
-    , x : Float
-    , y : Float
-    , rotate : Float
-    , scale : Float
+    , transform : Maybe Transform
     , animEvents : List (Json.Decoder msg)
     , hover :
         Maybe
@@ -1532,18 +1535,14 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
                         attrsWithTransform =
                             if Flag.present Flag.transform has then
-                                Attr.style "transform"
-                                    ("translate("
-                                        ++ String.fromFloat details.x
-                                        ++ "px, "
-                                        ++ String.fromFloat details.y
-                                        ++ "px) rotate("
-                                        ++ String.fromFloat details.rotate
-                                        ++ "rad) scale("
-                                        ++ String.fromFloat details.scale
-                                        ++ ") !important"
-                                    )
-                                    :: attrsWithSpacing
+                                case details.transform of
+                                    Nothing ->
+                                        attrsWithSpacing
+
+                                    Just trans ->
+                                        Attr.style "transform"
+                                            (transformToString trans)
+                                            :: attrsWithSpacing
 
                             else
                                 attrsWithSpacing
@@ -1690,6 +1689,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                                 "" ->
                                     Attr.class classes
                                         :: attrsWithAnimations
+
                                 _ ->
                                     Attr.property "style" (Json.Encode.string vars)
                                         :: Attr.class classes
@@ -1767,10 +1767,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 , widthFill = details.widthFill
                 , padding = details.padding
                 , borders = details.borders
-                , x = details.x
-                , y = details.y
-                , rotate = details.rotate
-                , scale = details.scale
+                , transform = details.transform
                 , animEvents = details.animEvents
                 , hover = details.hover
                 , focus = details.focus
@@ -1828,10 +1825,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 , widthFill = details.widthFill
                 , padding = details.padding
                 , borders = details.borders
-                , x = details.x
-                , y = details.y
-                , rotate = details.rotate
-                , scale = details.scale
+                , transform = details.transform
                 , animEvents = details.animEvents
                 , hover = details.hover
                 , focus = details.focus
@@ -1853,46 +1847,10 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 vars
                 remain
 
-        (TranslateX x) :: remain ->
+        (TransformPiece slot val) :: remain ->
             render
                 layout
-                { details | x = x }
-                children
-                (Flag.add Flag.transform has)
-                htmlAttrs
-                classes
-                nearby
-                vars
-                remain
-
-        (TranslateY y) :: remain ->
-            render
-                layout
-                { details | y = y }
-                children
-                (Flag.add Flag.transform has)
-                htmlAttrs
-                classes
-                nearby
-                vars
-                remain
-
-        (Rotate rad) :: remain ->
-            render
-                layout
-                { details | rotate = rad }
-                children
-                (Flag.add Flag.transform has)
-                htmlAttrs
-                classes
-                nearby
-                vars
-                remain
-
-        (Scale scale) :: remain ->
-            render
-                layout
-                { details | scale = scale }
+                { details | transform = Just (upsertTransform slot val details.transform) }
                 children
                 (Flag.add Flag.transform has)
                 htmlAttrs
@@ -2050,7 +2008,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     htmlAttrs
                     (cls ++ " " ++ classes)
                     nearby
-                    (vars ++ "--" ++ varName ++ ":" ++ varVal ++ ";" )
+                    (vars ++ "--" ++ varName ++ ":" ++ varVal ++ ";")
                     remain
 
         (Nearby location elem) :: remain ->
@@ -2118,10 +2076,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     , widthFill = details.widthFill
                     , padding = padding
                     , borders = details.borders
-                    , x = details.x
-                    , y = details.y
-                    , rotate = details.rotate
-                    , scale = details.scale
+                    , transform = details.transform
                     , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
@@ -2177,10 +2132,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     , widthFill = details.widthFill
                     , padding = details.padding
                     , borders = borders
-                    , x = details.x
-                    , y = details.y
-                    , rotate = details.rotate
-                    , scale = details.scale
+                    , transform = details.transform
                     , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
@@ -2236,10 +2188,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     , widthFill = details.widthFill
                     , padding = details.padding
                     , borders = details.borders
-                    , x = details.x
-                    , y = details.y
-                    , rotate = details.rotate
-                    , scale = details.scale
+                    , transform = details.transform
                     , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
@@ -2282,10 +2231,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     , widthFill = i
                     , padding = details.padding
                     , borders = details.borders
-                    , x = details.x
-                    , y = details.y
-                    , rotate = details.rotate
-                    , scale = details.scale
+                    , transform = details.transform
                     , animEvents = details.animEvents
                     , hover = details.hover
                     , focus = details.focus
@@ -2315,10 +2261,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 , widthFill = details.widthFill
                 , padding = details.padding
                 , borders = details.borders
-                , x = details.x
-                , y = details.y
-                , rotate = details.rotate
-                , scale = details.scale
+                , transform = details.transform
                 , animEvents = details.animEvents
                 , hover =
                     case when.phase of
@@ -2398,10 +2341,6 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     Json.field "animationName" Json.string
                         |> Json.andThen
                             (\name ->
-                                let
-                                    _ =
-                                        Debug.log "ANIM" name
-                                in
                                 if name == triggerClass then
                                     Json.succeed
                                         (toMsg
@@ -2427,10 +2366,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 , widthFill = details.widthFill
                 , padding = details.padding
                 , borders = details.borders
-                , x = details.x
-                , y = details.y
-                , rotate = details.rotate
-                , scale = details.scale
+                , transform = details.transform
                 , animEvents = event :: details.animEvents
                 , hover =
                     details.focus
@@ -2494,10 +2430,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     , widthFill = details.widthFill
                     , padding = details.padding
                     , borders = details.borders
-                    , x = details.x
-                    , y = details.y
-                    , rotate = details.rotate
-                    , scale = details.scale
+                    , transform = details.transform
                     , animEvents = event :: details.animEvents
                     , hover = details.hover
                     , focus = details.focus
@@ -2546,6 +2479,39 @@ onKey desiredCode msg =
     in
     Events.preventDefaultOn "keyup"
         (Json.map (\fired -> ( fired, True )) isKey)
+
+
+upsertTransform : Int -> Float -> Maybe Transform -> Transform
+upsertTransform slot val maybeTransform =
+    let
+        t =
+            Maybe.withDefault emptyTransform maybeTransform
+    in
+    { scale =
+        if slot - 3 == 0 then
+            val
+
+        else
+            t.scale
+    , x =
+        if slot - 0 == 0 then
+            val
+
+        else
+            t.x
+    , y =
+        if slot - 1 == 0 then
+            val
+
+        else
+            t.y
+    , rotation =
+        if slot - 2 == 0 then
+            val
+
+        else
+            t.rotation
+    }
 
 
 
@@ -2952,12 +2918,12 @@ decodeBoundingBox =
     Json.field "target"
         (Json.map3
             (\w h ( top, left ) ->
-                Debug.log "final"
-                    { width = w
-                    , height = h
-                    , x = left
-                    , y = top
-                    }
+                -- Debug.log "final"
+                { width = w
+                , height = h
+                , x = left
+                , y = top
+                }
             )
             (Json.field "offsetWidth" Json.float)
             (Json.field "offsetHeight" Json.float)

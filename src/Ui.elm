@@ -978,7 +978,7 @@ paragraph attrs children =
         []
         Two.paragraphClass
         Two.NoNearbyChildren
-         ""
+        ""
         (List.reverse
             (width Content
                 :: height Content
@@ -1241,7 +1241,7 @@ height len =
 {-| -}
 scale : Float -> Attribute msg
 scale =
-    Two.Scale
+    Two.TransformPiece 3
 
 
 {-| -}
@@ -1289,31 +1289,31 @@ radians =
 -}
 rotate : Float -> Attribute msg
 rotate =
-    Two.Rotate
+    Two.TransformPiece 2
 
 
 {-| -}
 moveUp : Float -> Attribute msg
 moveUp =
-    Two.TranslateY << negate
+    Two.TransformPiece 1 << negate
 
 
 {-| -}
 moveDown : Float -> Attribute msg
 moveDown =
-    Two.TranslateY
+    Two.TransformPiece 1
 
 
 {-| -}
 moveRight : Float -> Attribute msg
 moveRight =
-    Two.TranslateX
+    Two.TransformPiece 0
 
 
 {-| -}
 moveLeft : Float -> Attribute msg
 moveLeft =
-    Two.TranslateX << negate
+    Two.TransformPiece 0 << negate
 
 
 {-| -}
