@@ -38,18 +38,18 @@ A checkbox requires you to store a `Bool` in your model.
 This is also the first input element that has a [`required label`](#Label).
 
     import Ui exposing (text)
-    import Ui.Input as Input
+    import Ui.Input
 
     type Msg
         = GuacamoleChecked Bool
 
     view model =
-        Input.checkbox []
+        Ui.Input.checkbox []
             { onChange = GuacamoleChecked
-            , icon = Input.defaultCheckbox
+            , icon = Ui.Input.defaultCheckbox
             , checked = model.guacamole
             , label =
-                Input.labelRight []
+                Ui.Input.labelRight []
                     (text "Do you want Guacamole?")
             }
 
@@ -1153,6 +1153,12 @@ redistributeOver2 input attr els =
             { els | parent = attr :: els.parent }
 
         Two.ClassAndStyle _ _ _ _ ->
+            { els
+                | parent = attr :: els.parent
+                , inputParent = attr :: els.inputParent
+            }
+
+        Two.ClassAndVar _ _ _ _ ->
             { els
                 | parent = attr :: els.parent
                 , inputParent = attr :: els.inputParent

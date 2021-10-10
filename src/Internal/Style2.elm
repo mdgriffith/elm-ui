@@ -139,3 +139,129 @@ singleShadow shadow =
         (floatPx shadow.blur)
         (floatPx shadow.size)
         (color shadow.color)
+
+
+
+{- GRADIENTS -}
+
+
+type Gradient
+    = Linear Angle (List Step)
+    | Radial Bool Anchor (List Step)
+    | Conic Anchor Angle (List ( Angle, Color ))
+
+
+type Step
+    = Percent Int Color
+    | Pixel Int Color
+
+
+{-| -}
+type Anchor
+    = Anchor AnchorX AnchorY Int Int
+
+
+type AnchorX
+    = CenterX
+    | Left
+    | Right
+
+
+type AnchorY
+    = CenterY
+    | Top
+    | Bottom
+
+
+toCssGradient : Gradient -> String
+toCssGradient grad =
+    case grad of
+        Linear angle steps ->
+            "repeating-linear-gradient("
+                ++ ((String.fromFloat (toRadians angle) ++ "rad")
+                        :: List.map renderStep steps
+                        |> String.join ", "
+                   )
+                ++ ")"
+
+        Radial isCircle anchor steps ->
+            "repeating-radial-gradient("
+                ++ (if isCircle then
+                        "circle at "
+
+                    else
+                        "ellipse at "
+                   )
+                ++ (anchorToString anchor
+                        :: List.map renderStep steps
+                        |> String.join ", "
+                   )
+                ++ ")"
+
+        Conic anchor angle steps ->
+            "repeating-conic-gradient("
+                ++ ((String.fromFloat (toRadians angle) ++ "rad")
+                        :: anchorToString anchor
+                        :: List.map
+                            (\( ang, clr ) ->
+                                color clr
+                                    ++ " "
+                                    ++ String.fromFloat
+                                        (toRadians ang)
+                                    ++ "rad"
+                            )
+                            steps
+                        |> String.join ", "
+                   )
+                ++ ")"
+
+
+anchorToString : Anchor -> String
+anchorToString anchor =
+    case anchor of
+        Anchor CenterX CenterY 0 0 ->
+            "center"
+
+        Anchor anchorX anchorY x y ->
+            anchorXToString anchorX x
+                ++ " "
+                ++ anchorYToString anchorY y
+
+
+anchorXToString : AnchorX -> Int -> String
+anchorXToString anchorX x =
+    case anchorX of
+        CenterX ->
+            "left calc(50% + " ++ String.fromInt x ++ "px)"
+
+        Left ->
+            "left"
+
+        Right ->
+            "right"
+
+
+anchorYToString : AnchorY -> Int -> String
+anchorYToString anchorY y =
+    case anchorY of
+        CenterY ->
+            "top calc(50% - " ++ String.fromInt y ++ "px)"
+
+        Top ->
+            "top "
+                ++ (String.fromInt y ++ "px")
+
+        Bottom ->
+            "bottom "
+                ++ (String.fromInt y ++ "px")
+
+
+{-| -}
+renderStep : Step -> String
+renderStep step =
+    case step of
+        Percent perc clr ->
+            color clr ++ " " ++ String.fromInt perc ++ "%"
+
+        Pixel pixel clr ->
+            color clr ++ " " ++ String.fromInt pixel ++ "px"

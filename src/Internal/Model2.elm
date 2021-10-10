@@ -814,6 +814,9 @@ mapAttr uiFn fn attr =
         ClassAndStyle flag cls name val ->
             ClassAndStyle flag cls name val
 
+        ClassAndVar flag cls name val ->
+            ClassAndVar flag cls name val
+
         Nearby loc el ->
             Nearby loc (map fn el)
 
@@ -899,8 +902,10 @@ type Attribute msg
     | Class Flag String
       -- When using a css variable we want to attach the variable itself
       -- and a class that implements the rule.
-      --                 class  var    value
+      --                 class  prop  value
     | ClassAndStyle Flag String String String
+      --                 class  var    val
+    | ClassAndVar Flag String String String
     | Nearby Location (Element msg)
     | When (Msg msg -> msg) TransitionDetails
     | WhenAll (Msg msg -> msg) Trigger String (List Animated)
@@ -983,6 +988,9 @@ hasFlag flag attr =
         ClassAndStyle f _ _ _ ->
             Flag.equal flag f
 
+        ClassAndVar f _ _ _ ->
+            Flag.equal flag f
+
         _ ->
             False
 
@@ -1002,6 +1010,9 @@ hasFlags flags attr =
             List.any (Flag.equal f) flags
 
         ClassAndStyle f _ _ _ ->
+            List.any (Flag.equal f) flags
+
+        ClassAndVar f _ _ _ ->
             List.any (Flag.equal f) flags
 
         _ ->
@@ -1100,6 +1111,7 @@ element layout attrs children =
         []
         (contextClasses layout)
         NoNearbyChildren
+        ""
         (List.reverse attrs)
 
 
@@ -1414,9 +1426,10 @@ render :
     -> List (VirtualDom.Attribute msg)
     -> String
     -> NearbyChildren msg
+    -> String
     -> List (Attribute msg)
     -> Element msg
-render layout details children has htmlAttrs classes nearby attrs =
+render layout details children has htmlAttrs classes nearby vars attrs =
     case attrs of
         [] ->
             Element
@@ -1673,8 +1686,14 @@ render layout details children has htmlAttrs classes nearby attrs =
                                         :: attrsWithActive
 
                         attributes =
-                            Attr.class classes
-                                :: attrsWithAnimations
+                            case vars of
+                                "" ->
+                                    Attr.class classes
+                                        :: attrsWithAnimations
+                                _ ->
+                                    Attr.property "style" (Json.Encode.string vars)
+                                        :: Attr.class classes
+                                        :: attrsWithAnimations
 
                         finalChildren =
                             case layout of
@@ -1730,7 +1749,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 )
 
         NoAttribute :: remain ->
-            render layout details children has htmlAttrs classes nearby remain
+            render layout details children has htmlAttrs classes nearby vars remain
 
         (FontSize size) :: remain ->
             render
@@ -1762,6 +1781,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 nearby
+                vars
                 remain
 
         (Font font) :: remain ->
@@ -1830,6 +1850,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 )
                 classes
                 nearby
+                vars
                 remain
 
         (TranslateX x) :: remain ->
@@ -1841,6 +1862,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 nearby
+                vars
                 remain
 
         (TranslateY y) :: remain ->
@@ -1852,6 +1874,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 nearby
+                vars
                 remain
 
         (Rotate rad) :: remain ->
@@ -1863,6 +1886,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 nearby
+                vars
                 remain
 
         (Scale scale) :: remain ->
@@ -1874,6 +1898,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 nearby
+                vars
                 remain
 
         (Attr attr) :: remain ->
@@ -1885,6 +1910,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 (attr :: htmlAttrs)
                 classes
                 nearby
+                vars
                 remain
 
         (OnPress press) :: remain ->
@@ -1902,6 +1928,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 )
                 classes
                 nearby
+                vars
                 remain
 
         (Link targetBlank url) :: remain ->
@@ -1923,6 +1950,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 )
                 classes
                 nearby
+                vars
                 remain
 
         (Download url downloadName) :: remain ->
@@ -1937,6 +1965,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 )
                 classes
                 nearby
+                vars
                 remain
 
         (NodeName nodeName) :: remain ->
@@ -1948,6 +1977,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 nearby
+                vars
                 remain
 
         (Class flag str) :: remain ->
@@ -1960,6 +1990,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -1971,6 +2002,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     (str ++ " " ++ classes)
                     nearby
+                    vars
                     remain
 
         (ClassAndStyle flag cls styleName styleVal) :: remain ->
@@ -1983,6 +2015,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -1993,6 +2026,31 @@ render layout details children has htmlAttrs classes nearby attrs =
                     (Attr.style styleName styleVal :: htmlAttrs)
                     (cls ++ " " ++ classes)
                     nearby
+                    vars
+                    remain
+
+        (ClassAndVar flag cls varName varVal) :: remain ->
+            if Flag.present flag has then
+                render
+                    layout
+                    details
+                    children
+                    has
+                    htmlAttrs
+                    classes
+                    nearby
+                    vars
+                    remain
+
+            else
+                render layout
+                    details
+                    children
+                    (Flag.add flag has)
+                    htmlAttrs
+                    (cls ++ " " ++ classes)
+                    nearby
+                    (vars ++ "--" ++ varName ++ ":" ++ varVal ++ ";" )
                     remain
 
         (Nearby location elem) :: remain ->
@@ -2004,6 +2062,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 (addNearbyElement location elem nearby)
+                vars
                 remain
 
         (Spacing flag x y) :: remain ->
@@ -2016,6 +2075,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -2027,6 +2087,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     (Style.classes.spacing ++ " " ++ classes)
                     nearby
+                    vars
                     remain
 
         (Padding flag padding) :: remain ->
@@ -2039,6 +2100,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -2083,6 +2145,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     )
                     classes
                     nearby
+                    vars
                     remain
 
         (BorderWidth flag borders) :: remain ->
@@ -2095,6 +2158,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -2140,6 +2204,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     )
                     classes
                     nearby
+                    vars
                     remain
 
         (HeightFill i) :: remain ->
@@ -2152,6 +2217,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -2184,6 +2250,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
         (WidthFill i) :: remain ->
@@ -2196,6 +2263,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -2228,6 +2296,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
         (When toMsg when) :: remain ->
@@ -2317,6 +2386,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 classes
                 nearby
+                vars
                 remain
 
         (WhenAll toMsg trigger classStr props) :: remain ->
@@ -2374,6 +2444,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                 htmlAttrs
                 (classStr ++ " " ++ triggerClass ++ " " ++ classes)
                 nearby
+                vars
                 remain
 
         (Animated toMsg id) :: remain ->
@@ -2386,6 +2457,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     htmlAttrs
                     classes
                     nearby
+                    vars
                     remain
 
             else
@@ -2436,6 +2508,7 @@ render layout details children has htmlAttrs classes nearby attrs =
                     (Attr.id (toCssId id) :: htmlAttrs)
                     ("on-rendered " ++ toCssClass id ++ " " ++ classes)
                     nearby
+                    vars
                     remain
 
 

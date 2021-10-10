@@ -611,6 +611,7 @@ el attrs child =
         []
         Two.singleClass
         Two.NoNearbyChildren
+        ""
         (List.reverse
             (width Content
                 :: height Content
@@ -629,6 +630,7 @@ row attrs children =
         []
         Two.rowClass
         Two.NoNearbyChildren
+        ""
         (List.reverse
             (width Content
                 :: height Content
@@ -647,6 +649,7 @@ column attrs children =
         []
         Two.columnClass
         Two.NoNearbyChildren
+        ""
         (List.reverse
             (width Content
                 :: height Content
@@ -672,6 +675,7 @@ wrappedRow attrs children =
             []
             Two.wrappedRowClass
             Two.NoNearbyChildren
+            ""
             (List.reverse (List.concatMap Two.wrappedRowAttributes attrs))
         ]
 
@@ -974,6 +978,7 @@ paragraph attrs children =
         []
         Two.paragraphClass
         Two.NoNearbyChildren
+         ""
         (List.reverse
             (width Content
                 :: height Content
@@ -1021,6 +1026,7 @@ textColumn attrs children =
         []
         Two.textColumnClass
         Two.NoNearbyChildren
+        ""
         (List.reverse
             (width Content
                 :: height Content
@@ -1191,7 +1197,6 @@ widthMin x =
 {-| -}
 widthMax : Int -> Attribute msg
 widthMax x =
-    -- Two.Attr (Attr.style "max-width" (String.fromInt x ++ "px"))
     Two.ClassAndStyle Flag.widthBetween
         Style.classes.widthBounded
         "max-width"

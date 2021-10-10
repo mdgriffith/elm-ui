@@ -3,7 +3,7 @@ module Ui.Font exposing
     , family, with, Font, typeface, serif, sansSerif, monospace
     , Sizing, full, byCapital, Adjustment
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
-    , underline, strike, italic, unitalicized
+    , underline, strike, italic
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
     , Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
@@ -11,16 +11,16 @@ module Ui.Font exposing
 
 {-|
 
-    import Element
-    import Ui.Font as Font
+    import Ui
+    import Ui.Font
 
     view =
         Ui.el
-            [ Font.color (Ui.rgb 0 0 1)
-            , Font.size 18
-            , Font.family
-                [ Font.typeface "Open Sans"
-                , Font.sansSerif
+            [ Ui.Font.color (Ui.rgb 0 0 1)
+            , Ui.Font.size 18
+            , Ui.Font.family
+                [ Ui.Font.typeface "Open Sans"
+                , Ui.Font.sansSerif
                 ]
             ]
             (Ui.text "Woohoo, I'm stylish text")
@@ -46,7 +46,7 @@ module Ui.Font exposing
 
 ## Font Styles
 
-@docs underline, strike, italic, unitalicized
+@docs underline, strike, italic
 
 
 ## Font Weight
@@ -71,6 +71,7 @@ import Internal.Flag2 as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Color)
+import Ui.Gradient
 
 
 {-| -}
@@ -87,19 +88,31 @@ color fontColor =
     Two.Attr (Attr.style "color" (Style.color fontColor))
 
 
+{-| -}
+gradient :
+    Ui.Gradient.Gradient
+    -> Attribute msg
+gradient grad =
+    Two.ClassAndVar Flag.fontColor
+        Style.classes.textGradient
+        "text-gradient"
+        -- "background-image"
+        (Style.toCssGradient grad)
+
+
 {-|
 
-    import Element
-    import Ui.Font as Font
+    import Ui
+    import Ui.Font
 
     myElement =
         Ui.el
-            [ Font.family
-                [ Font.typeface "Helvetica"
-                , Font.sansSerif
+            [ Ui.Font.family
+                [ Ui.Font.typeface "Helvetica"
+                , Ui.Font.sansSerif
                 ]
             ]
-            (text "")
+            (Ui.text "Hello!")
 
 -}
 family : List Font -> Attribute msg
@@ -557,22 +570,3 @@ In these cases we need to specify the index of the version we want.
 indexed : String -> Int -> Variant
 indexed name on =
     VariantIndexed name on
-
-
-{-| Color your text as a gradient.
--}
-gradient :
-    { angle : Float
-    , steps : List Color
-    }
-    -> Attribute msg
-gradient details =
-    -- Two.ClassAndStyle Flag.fontColor
-    --     Style.classes.textGradient
-    --     ("--text-gradient:linear-gradient(" ++ renderGradient (details.angle + (0.5 * pi)) details.steps ++ ");")
-    Two.NoAttribute
-
-
-renderGradient : Float -> List Color -> String
-renderGradient angle steps =
-    String.join ", " <| (String.fromFloat angle ++ "rad") :: List.map Style.color steps
