@@ -17,7 +17,7 @@ import Html
 import Html.Attributes as Attr
 import Html.Events as Events
 import Json.Decode
-
+import Ui.Gradient
 
 on str decoder =
     htmlAttribute <| Events.on str decoder
@@ -86,6 +86,15 @@ view model =
         model.ui
         [ Font.italic
         , Font.size 32
+        , Font.gradient 
+            (Ui.Gradient.linear Ui.right
+                [ Ui.Gradient.percent 0  (rgb 0 255 255)
+                , Ui.Gradient.percent 20  (rgb 255 255 255)
+                , Ui.Gradient.percent 100  (rgb 255 255 255)
+
+                ]
+
+            )
         , Font.with
             { name = "EB Garamond"
             , fallback = [ Font.serif ]
