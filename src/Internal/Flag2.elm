@@ -3,17 +3,7 @@ module Internal.Flag2 exposing
     , Flag(..)
     , active
     , add
-    , alignBottom
-    , alignRight
-    , behind
-    , bg
-    , bgColor
-    , bgGradient
-    , bgImage
-    , borderColor
     , borderWidth
-    , centerX
-    , centerY
     , cursor
     , equal
     , flag
@@ -23,18 +13,13 @@ module Internal.Flag2 exposing
     , fontColor
     , fontFamily
     , fontSize
-    , fontVariant
     , fontWeight
     , gridPosition
     , gridTemplate
     , height
     , heightBetween
-    , heightContent
-    , heightFill
-    , heightTextAreaContent
     , hover
     , id
-    , lineHeight
     , merge
     , none
     , overflow
@@ -43,15 +28,12 @@ module Internal.Flag2 exposing
     , shadows
     , spacing
     , transform
-    , transparency
     , txtShadows
     , value
     , viewBits
     , viewBitsHelper
     , width
     , widthBetween
-    , widthContent
-    , widthFill
     , xAlign
     , yAlign
     )
@@ -117,15 +99,8 @@ value myFlag =
 {-| If the query is in the truth, return True
 -}
 present : Flag -> Field -> Bool
-present myFlag (Field fieldOne) =
-    case myFlag of
-        Flag first ->
-            Bitwise.and first fieldOne - first == 0
-
-
-
--- Second second ->
---     Bitwise.and second fieldTwo - second == 0
+present (Flag first) (Field fieldOne) =
+    Bitwise.and first fieldOne - first == 0
 
 
 {-| Add a flag to a field.
@@ -170,10 +145,6 @@ flag i =
 {- Used for Style invalidation -}
 
 
-transparency =
-    flag 0
-
-
 padding =
     flag 2
 
@@ -196,18 +167,6 @@ width =
 
 height =
     flag 7
-
-
-bgColor =
-    flag 8
-
-
-bgImage =
-    flag 9
-
-
-bgGradient =
-    flag 10
 
 
 fontAlignment =
@@ -254,10 +213,6 @@ borderWidth =
     flag 27
 
 
-borderColor =
-    flag 28
-
-
 yAlign =
     flag 29
 
@@ -290,61 +245,9 @@ gridPosition =
 {- Notes -}
 
 
-heightContent =
-    flag 36
-
-
-heightFill =
-    flag 37
-
-
-widthContent =
-    flag 38
-
-
-widthFill =
-    flag 39
-
-
-alignRight =
-    flag 40
-
-
-alignBottom =
-    flag 41
-
-
-centerX =
-    flag 42
-
-
-centerY =
-    flag 43
-
-
 widthBetween =
     flag 44
 
 
 heightBetween =
     flag 45
-
-
-behind =
-    flag 46
-
-
-heightTextAreaContent =
-    flag 47
-
-
-fontVariant =
-    flag 48
-
-
-bg =
-    flag 49
-
-
-lineHeight =
-    flag 50
