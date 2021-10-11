@@ -604,58 +604,34 @@ If you want multiple children, you'll need to use something like `row` or `colum
 -}
 el : List (Attribute msg) -> Two.Element msg -> Two.Element msg
 el attrs child =
-    Two.render Two.AsEl
-        Two.emptyDetails
-        [ child ]
-        Flag.none
-        []
-        Two.singleClass
-        Two.NoNearbyChildren
-        ""
-        (List.reverse
-            (width Content
-                :: height Content
-                :: attrs
-            )
+    Two.element Two.AsEl
+        (width Content
+            :: height Content
+            :: attrs
         )
+        [ child ]
 
 
 {-| -}
 row : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 row attrs children =
-    Two.render Two.AsRow
-        Two.emptyDetails
-        children
-        Flag.none
-        []
-        Two.rowClass
-        Two.NoNearbyChildren
-        ""
-        (List.reverse
-            (width Content
-                :: height Content
-                :: attrs
-            )
+    Two.element Two.AsRow
+        (width Content
+            :: height Content
+            :: attrs
         )
+        children
 
 
 {-| -}
 column : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 column attrs children =
-    Two.render Two.AsColumn
-        Two.emptyDetails
-        children
-        Flag.none
-        []
-        Two.columnClass
-        Two.NoNearbyChildren
-        ""
-        (List.reverse
-            (width Content
-                :: height Content
-                :: attrs
-            )
+    Two.element Two.AsColumn
+        (width Content
+            :: height Content
+            :: attrs
         )
+        children
 
 
 {-| Same as `row`, but will wrap if it takes up too much horizontal space.
@@ -668,15 +644,9 @@ wrappedRow attrs children =
     --      There is some overflow with the intermediate element, so we set pointer events none on it and reenable pointer events on children.
     Two.element Two.AsEl
         attrs
-        [ Two.render Two.AsWrappedRow
-            Two.emptyDetails
+        [ Two.element Two.AsWrappedRow
+            (List.concatMap Two.wrappedRowAttributes attrs)
             children
-            Flag.none
-            []
-            Two.wrappedRowClass
-            Two.NoNearbyChildren
-            ""
-            (List.reverse (List.concatMap Two.wrappedRowAttributes attrs))
         ]
 
 
@@ -970,21 +940,12 @@ paragraph attrs children =
     --         :: attrs
     --     )
     --     (Internal.Unkeyed children)
-    -- Two.element Two.AsParagraph
-    Two.render Two.AsParagraph
-        Two.emptyDetails
-        children
-        Flag.none
-        []
-        Two.paragraphClass
-        Two.NoNearbyChildren
-        ""
-        (List.reverse
-            (width Content
-                :: height Content
-                :: attrs
-            )
+    Two.element Two.AsParagraph
+        (width Content
+            :: height Content
+            :: attrs
         )
+        children
 
 
 {-| Now that we have a paragraph, we need some way to attach a bunch of paragraph's together.
@@ -1019,20 +980,12 @@ textColumn attrs children =
     --         :: attrs
     --     )
     --     (Internal.Unkeyed children)
-    Two.render Two.AsTextColumn
-        Two.emptyDetails
-        children
-        Flag.none
-        []
-        Two.textColumnClass
-        Two.NoNearbyChildren
-        ""
-        (List.reverse
-            (width Content
-                :: height Content
-                :: attrs
-            )
+    Two.element Two.AsTextColumn
+        (width Content
+            :: height Content
+            :: attrs
         )
+        children
 
 
 {-| Both a source and a description are required for images.

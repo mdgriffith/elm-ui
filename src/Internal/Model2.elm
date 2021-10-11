@@ -1111,19 +1111,6 @@ emptyPair =
     ( 0, 0 )
 
 
-element : Layout -> List (Attribute msg) -> List (Element msg) -> Element msg
-element layout attrs children =
-    render layout
-        emptyDetails
-        children
-        Flag.none
-        []
-        (contextClasses layout)
-        NoNearbyChildren
-        ""
-        (List.reverse attrs)
-
-
 emptyEdges =
     { top = 0
     , left = 0
@@ -1421,8 +1408,33 @@ nonRowBits =
     Bitwise.shiftLeftBy 31 0
 
 
-render :
+element :
     Layout
+    -> List (Attribute msg)
+    -> List (Element msg)
+    -> Element msg
+element layout attrs children =
+    Element
+        (\parentEncoded ->
+            renderAttrs
+                parentEncoded
+                layout
+                emptyDetails
+                children
+                Flag.none
+                []
+                -- the "" below is the starting class
+                -- though we want some defaults based on the layout
+                (contextClasses layout)
+                NoNearbyChildren
+                ""
+                (List.reverse attrs)
+        )
+
+
+renderAttrs :
+    Int
+    -> Layout
     -> Details msg
     -> List (Element msg)
     -> Flag.Field
@@ -1431,328 +1443,325 @@ render :
     -> NearbyChildren msg
     -> String
     -> List (Attribute msg)
-    -> Element msg
-render layout details children has htmlAttrs classes nearby vars attrs =
+    -> Html.Html msg
+renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars attrs =
     case attrs of
         [] ->
-            Element
-                (\parentEncoded ->
-                    let
-                        encoded =
-                            if
-                                (details.spacingX == 0)
-                                    && (details.spacingY == 0)
-                                    && (details.fontOffset == 0)
-                                    && (details.fontHeight == 63)
-                            then
-                                case layout of
+            let
+                encoded =
+                    if
+                        (details.spacingX == 0)
+                            && (details.spacingY == 0)
+                            && (details.fontOffset == 0)
+                            && (details.fontHeight == 63)
+                    then
+                        case layout of
+                            AsRow ->
+                                Bitwise.and bitsFontAdjustments parentEncoded
+                                    |> Bitwise.or rowBits
+
+                            _ ->
+                                Bitwise.and bitsFontAdjustments parentEncoded
+                                    |> Bitwise.or nonRowBits
+
+                    else if Flag.present Flag.fontAdjustment has then
+                        -- font adjustment is present on this element, encode it
+                        Bitwise.and top10 details.spacingX
+                            |> Bitwise.or
+                                (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
+                            |> Bitwise.or
+                                (Bitwise.shiftLeftBy 20 (Bitwise.and top6 details.fontHeight))
+                            |> Bitwise.or
+                                (Bitwise.shiftLeftBy 26 (Bitwise.and top5 details.fontOffset))
+                            |> Bitwise.or
+                                (case layout of
                                     AsRow ->
-                                        Bitwise.and bitsFontAdjustments parentEncoded
-                                            |> Bitwise.or rowBits
+                                        rowBits
 
                                     _ ->
-                                        Bitwise.and bitsFontAdjustments parentEncoded
-                                            |> Bitwise.or nonRowBits
+                                        nonRowBits
+                                )
 
-                            else if Flag.present Flag.fontAdjustment has then
-                                -- font adjustment is present on this element, encode it
-                                Bitwise.and top10 details.spacingX
-                                    |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
-                                    |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 20 (Bitwise.and top6 details.fontHeight))
-                                    |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 26 (Bitwise.and top5 details.fontOffset))
-                                    |> Bitwise.or
-                                        (case layout of
-                                            AsRow ->
-                                                rowBits
+                    else
+                        -- font adjustment is NOT present on this element
+                        -- propagate existing font adjustments
+                        Bitwise.and bitsFontAdjustments parentEncoded
+                            |> Bitwise.or
+                                (Bitwise.and top10 details.spacingX)
+                            |> Bitwise.or
+                                (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
+                            |> Bitwise.or
+                                (case layout of
+                                    AsRow ->
+                                        rowBits
 
-                                            _ ->
-                                                nonRowBits
-                                        )
+                                    _ ->
+                                        nonRowBits
+                                )
 
-                            else
-                                -- font adjustment is NOT present on this element
-                                -- propagate existing font adjustments
-                                Bitwise.and bitsFontAdjustments parentEncoded
-                                    |> Bitwise.or
-                                        (Bitwise.and top10 details.spacingX)
-                                    |> Bitwise.or
-                                        (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
-                                    |> Bitwise.or
-                                        (case layout of
-                                            AsRow ->
-                                                rowBits
+                renderedChildren =
+                    case nearby of
+                        NoNearbyChildren ->
+                            List.map (unwrap encoded) children
 
-                                            _ ->
-                                                nonRowBits
-                                        )
+                        ChildrenBehind behind ->
+                            behind ++ List.map (unwrap encoded) children
 
-                        renderedChildren =
-                            case nearby of
-                                NoNearbyChildren ->
-                                    List.map (unwrap encoded) children
+                        ChildrenInFront inFront ->
+                            List.map (unwrap encoded) children ++ inFront
 
-                                ChildrenBehind behind ->
-                                    behind ++ List.map (unwrap encoded) children
+                        ChildrenBehindAndInFront behind inFront ->
+                            behind ++ List.map (unwrap encoded) children ++ inFront
 
-                                ChildrenInFront inFront ->
-                                    List.map (unwrap encoded) children ++ inFront
+                attrsWithParentSpacing =
+                    if parentEncoded == 0 then
+                        htmlAttrs
 
-                                ChildrenBehindAndInFront behind inFront ->
-                                    behind ++ List.map (unwrap encoded) children ++ inFront
-
-                        attrsWithParentSpacing =
-                            if parentEncoded == 0 then
-                                htmlAttrs
-
-                            else
-                                Attr.style "margin"
-                                    ((parentEncoded
-                                        |> Bitwise.shiftRightZfBy 10
-                                        |> Bitwise.and bitsSpacingY
-                                        |> String.fromInt
-                                     )
-                                        ++ "px "
-                                        ++ String.fromInt
-                                            (ones
-                                                |> Bitwise.shiftRightZfBy 22
-                                                |> Bitwise.and parentEncoded
-                                            )
-                                        ++ "px"
+                    else
+                        Attr.style "margin"
+                            ((parentEncoded
+                                |> Bitwise.shiftRightZfBy 10
+                                |> Bitwise.and bitsSpacingY
+                                |> String.fromInt
+                             )
+                                ++ "px "
+                                ++ String.fromInt
+                                    (ones
+                                        |> Bitwise.shiftRightZfBy 22
+                                        |> Bitwise.and parentEncoded
                                     )
-                                    :: htmlAttrs
+                                ++ "px"
+                            )
+                            :: htmlAttrs
 
-                        attrsWithSpacing =
-                            if Flag.present Flag.spacing has && layout == AsParagraph then
-                                Attr.style "line-height"
-                                    ("calc(1em + " ++ String.fromInt details.spacingY ++ "px")
-                                    :: attrsWithParentSpacing
+                attrsWithSpacing =
+                    if Flag.present Flag.spacing has && layout == AsParagraph then
+                        Attr.style "line-height"
+                            ("calc(1em + " ++ String.fromInt details.spacingY ++ "px")
+                            :: attrsWithParentSpacing
 
-                            else
-                                attrsWithParentSpacing
+                    else
+                        attrsWithParentSpacing
 
-                        attrsWithTransform =
-                            if Flag.present Flag.transform has then
-                                case details.transform of
-                                    Nothing ->
-                                        attrsWithSpacing
-
-                                    Just trans ->
-                                        Attr.style "transform"
-                                            (transformToString trans)
-                                            :: attrsWithSpacing
-
-                            else
+                attrsWithTransform =
+                    if Flag.present Flag.transform has then
+                        case details.transform of
+                            Nothing ->
                                 attrsWithSpacing
 
-                        adjustmentNotSet =
-                            details.fontOffset == 0 && details.fontHeight == 63
+                            Just trans ->
+                                Attr.style "transform"
+                                    (transformToString trans)
+                                    :: attrsWithSpacing
 
-                        {-
-                           no fontsize or adjustment -> skip
-                           if fontsize is set, not adjustment:
-                               -> set fontsize px
+                    else
+                        attrsWithSpacing
 
-                           adjsutment, not fontsize
-                               -> set font size (em
-                           if both are set
-                               -> fontsize px
+                adjustmentNotSet =
+                    details.fontOffset == 0 && details.fontHeight == 63
+
+                {-
+                   no fontsize or adjustment -> skip
+                   if fontsize is set, not adjustment:
+                       -> set fontsize px
+
+                   adjsutment, not fontsize
+                       -> set font size (em
+                   if both are set
+                       -> fontsize px
 
 
-                        -}
-                        attrsWithFontSize =
-                            if details.fontSize == -1 && adjustmentNotSet then
-                                -- no fontsize or adjustment set
-                                attrsWithTransform
+                -}
+                attrsWithFontSize =
+                    if details.fontSize == -1 && adjustmentNotSet then
+                        -- no fontsize or adjustment set
+                        attrsWithTransform
 
-                            else if adjustmentNotSet then
-                                -- font size is set, not adjustment
-                                -- set font size, adjust via inherited value
-                                let
-                                    height =
-                                        parentEncoded
-                                            |> Bitwise.shiftRightZfBy 20
-                                            |> Bitwise.and bitsFontHeight
-                                in
-                                Attr.style "font-size"
-                                    (String.fromFloat
-                                        (toFloat details.fontSize * (1 / (toFloat height / 63)))
-                                        ++ "px"
-                                    )
-                                    :: attrsWithTransform
+                    else if adjustmentNotSet then
+                        -- font size is set, not adjustment
+                        -- set font size, adjust via inherited value
+                        let
+                            height =
+                                parentEncoded
+                                    |> Bitwise.shiftRightZfBy 20
+                                    |> Bitwise.and bitsFontHeight
+                        in
+                        Attr.style "font-size"
+                            (String.fromFloat
+                                (toFloat details.fontSize * (1 / (toFloat height / 63)))
+                                ++ "px"
+                            )
+                            :: attrsWithTransform
 
-                            else if details.fontSize /= -1 then
-                                -- a font size is set as well as an adjustment
-                                -- set font size from details
-                                Attr.style "font-size"
-                                    (String.fromFloat
-                                        (toFloat details.fontSize * (1 / (toFloat details.fontHeight / 63)))
-                                        ++ "px"
-                                    )
-                                    :: attrsWithTransform
+                    else if details.fontSize /= -1 then
+                        -- a font size is set as well as an adjustment
+                        -- set font size from details
+                        Attr.style "font-size"
+                            (String.fromFloat
+                                (toFloat details.fontSize * (1 / (toFloat details.fontHeight / 63)))
+                                ++ "px"
+                            )
+                            :: attrsWithTransform
 
-                            else
-                                -- a font size is NOT set, but we have an adjustment
-                                -- operate on `em`
-                                Attr.style "font-size"
-                                    (String.fromFloat
-                                        (1 / (toFloat details.fontHeight / 63))
-                                        ++ "em"
-                                    )
-                                    :: attrsWithTransform
+                    else
+                        -- a font size is NOT set, but we have an adjustment
+                        -- operate on `em`
+                        Attr.style "font-size"
+                            (String.fromFloat
+                                (1 / (toFloat details.fontHeight / 63))
+                                ++ "em"
+                            )
+                            :: attrsWithTransform
 
-                        attrsWithWidth =
-                            if details.widthFill == 0 then
-                                attrsWithFontSize
+                attrsWithWidth =
+                    if details.widthFill == 0 then
+                        attrsWithFontSize
 
-                            else if Bitwise.and rowBits parentEncoded /= 0 then
-                                -- we're within a row, our flex-grow can be set
-                                Attr.class Style.classes.widthFill
-                                    :: Attr.style "flex-grow" (String.fromInt (details.widthFill * 100000))
-                                    :: attrsWithFontSize
+                    else if Bitwise.and rowBits parentEncoded /= 0 then
+                        -- we're within a row, our flex-grow can be set
+                        Attr.class Style.classes.widthFill
+                            :: Attr.style "flex-grow" (String.fromInt (details.widthFill * 100000))
+                            :: attrsWithFontSize
 
-                            else
-                                Attr.class Style.classes.widthFill
-                                    :: attrsWithFontSize
+                    else
+                        Attr.class Style.classes.widthFill
+                            :: attrsWithFontSize
 
-                        attrsWithHeight =
-                            if details.heightFill == 0 then
-                                attrsWithWidth
+                attrsWithHeight =
+                    if details.heightFill == 0 then
+                        attrsWithWidth
 
-                            else if details.heightFill == 1 then
-                                Attr.class Style.classes.heightFill
-                                    :: attrsWithWidth
+                    else if details.heightFill == 1 then
+                        Attr.class Style.classes.heightFill
+                            :: attrsWithWidth
 
-                            else if Bitwise.and rowBits parentEncoded == 0 then
-                                -- we're within a column, our flex-grow can be set safely
-                                Attr.class Style.classes.heightFill
-                                    :: Attr.style "flex-grow" (String.fromInt (details.heightFill * 100000))
-                                    :: attrsWithFontSize
+                    else if Bitwise.and rowBits parentEncoded == 0 then
+                        -- we're within a column, our flex-grow can be set safely
+                        Attr.class Style.classes.heightFill
+                            :: Attr.style "flex-grow" (String.fromInt (details.heightFill * 100000))
+                            :: attrsWithFontSize
 
-                            else
-                                Attr.class Style.classes.heightFill
-                                    :: attrsWithWidth
+                    else
+                        Attr.class Style.classes.heightFill
+                            :: attrsWithWidth
 
-                        attrsWithHover =
-                            case details.hover of
-                                Nothing ->
-                                    attrsWithHeight
+                attrsWithHover =
+                    case details.hover of
+                        Nothing ->
+                            attrsWithHeight
 
-                                Just transition ->
-                                    Events.onMouseEnter
-                                        (transition.toMsg
-                                            (Trans Hovered transition.class transition.transitions)
-                                        )
-                                        :: Attr.class transition.class
-                                        :: attrsWithHeight
+                        Just transition ->
+                            Events.onMouseEnter
+                                (transition.toMsg
+                                    (Trans Hovered transition.class transition.transitions)
+                                )
+                                :: Attr.class transition.class
+                                :: attrsWithHeight
 
-                        attrsWithFocus =
-                            case details.focus of
-                                Nothing ->
-                                    attrsWithHover
+                attrsWithFocus =
+                    case details.focus of
+                        Nothing ->
+                            attrsWithHover
 
-                                Just transition ->
-                                    Events.onFocus
-                                        (transition.toMsg
-                                            (Trans Focused transition.class transition.transitions)
-                                        )
-                                        :: Attr.class transition.class
-                                        :: attrsWithHover
+                        Just transition ->
+                            Events.onFocus
+                                (transition.toMsg
+                                    (Trans Focused transition.class transition.transitions)
+                                )
+                                :: Attr.class transition.class
+                                :: attrsWithHover
 
-                        attrsWithActive =
-                            case details.active of
-                                Nothing ->
-                                    attrsWithFocus
+                attrsWithActive =
+                    case details.active of
+                        Nothing ->
+                            attrsWithFocus
 
-                                Just transition ->
-                                    Events.onMouseDown
-                                        (transition.toMsg
-                                            (Trans Pressed transition.class transition.transitions)
-                                        )
-                                        :: Attr.class transition.class
-                                        :: attrsWithFocus
+                        Just transition ->
+                            Events.onMouseDown
+                                (transition.toMsg
+                                    (Trans Pressed transition.class transition.transitions)
+                                )
+                                :: Attr.class transition.class
+                                :: attrsWithFocus
 
-                        attrsWithAnimations =
-                            case details.animEvents of
-                                [] ->
-                                    attrsWithActive
+                attrsWithAnimations =
+                    case details.animEvents of
+                        [] ->
+                            attrsWithActive
 
-                                animEvents ->
-                                    Events.on "animationstart"
-                                        (Json.oneOf details.animEvents)
-                                        :: attrsWithActive
+                        animEvents ->
+                            Events.on "animationstart"
+                                (Json.oneOf details.animEvents)
+                                :: attrsWithActive
 
-                        attributes =
-                            case vars of
-                                "" ->
-                                    Attr.class classes
-                                        :: attrsWithAnimations
-
-                                _ ->
-                                    Attr.property "style" (Json.Encode.string vars)
-                                        :: Attr.class classes
-                                        :: attrsWithAnimations
-
-                        finalChildren =
-                            case layout of
-                                AsParagraph ->
-                                    if Flag.present Flag.id has then
-                                        Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
-                                            :: spacerTop (toFloat details.spacingY / -2)
-                                            :: renderedChildren
-                                            ++ [ spacerBottom (toFloat details.spacingY / -2) ]
-
-                                    else
-                                        spacerTop (toFloat details.spacingY / -2)
-                                            :: renderedChildren
-                                            ++ [ spacerBottom (toFloat details.spacingY / -2) ]
-
-                                _ ->
-                                    if Flag.present Flag.id has then
-                                        Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
-                                            :: renderedChildren
-
-                                    else
-                                        renderedChildren
-
-                        finalAttributes =
-                            if Flag.present Flag.id has then
-                                Attr.class "ui-placeholder" :: attributes
-
-                            else
-                                attributes
-                    in
-                    case details.node of
-                        0 ->
-                            -- Note: these functions (div, a) are ever so slightly faster than `Html.node`
-                            -- because they can skip elm's built in security check for `script`
-                            Html.div
-                                finalAttributes
-                                finalChildren
-
-                        1 ->
-                            Html.a
-                                finalAttributes
-                                finalChildren
-
-                        2 ->
-                            Html.input
-                                finalAttributes
-                                finalChildren
+                attributes =
+                    case vars of
+                        "" ->
+                            Attr.class classes
+                                :: attrsWithAnimations
 
                         _ ->
-                            Html.node details.name
-                                finalAttributes
-                                finalChildren
-                )
+                            Attr.property "style" (Json.Encode.string vars)
+                                :: Attr.class classes
+                                :: attrsWithAnimations
+
+                finalChildren =
+                    case layout of
+                        AsParagraph ->
+                            if Flag.present Flag.id has then
+                                Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
+                                    :: spacerTop (toFloat details.spacingY / -2)
+                                    :: renderedChildren
+                                    ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+
+                            else
+                                spacerTop (toFloat details.spacingY / -2)
+                                    :: renderedChildren
+                                    ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+
+                        _ ->
+                            if Flag.present Flag.id has then
+                                Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
+                                    :: renderedChildren
+
+                            else
+                                renderedChildren
+
+                finalAttributes =
+                    if Flag.present Flag.id has then
+                        Attr.class "ui-placeholder" :: attributes
+
+                    else
+                        attributes
+            in
+            case details.node of
+                0 ->
+                    -- Note: these functions (div, a) are ever so slightly faster than `Html.node`
+                    -- because they can skip elm's built in security check for `script`
+                    Html.div
+                        finalAttributes
+                        finalChildren
+
+                1 ->
+                    Html.a
+                        finalAttributes
+                        finalChildren
+
+                2 ->
+                    Html.input
+                        finalAttributes
+                        finalChildren
+
+                _ ->
+                    Html.node details.name
+                        finalAttributes
+                        finalChildren
 
         NoAttribute :: remain ->
-            render layout details children has htmlAttrs classes nearby vars remain
+            renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
 
         (FontSize size) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 { name = details.name
                 , node = details.node
@@ -1799,7 +1808,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                         Attr.style "font-feature-settings" font.variants
                             :: withSmallcaps
             in
-            render
+            renderAttrs parentEncoded
                 layout
                 { name = details.name
                 , node = details.node
@@ -1848,7 +1857,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 remain
 
         (TransformPiece slot val) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 { details | transform = Just (upsertTransform slot val details.transform) }
                 children
@@ -1860,7 +1869,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 remain
 
         (Attr attr) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 details
                 children
@@ -1875,7 +1884,8 @@ render layout details children has htmlAttrs classes nearby vars attrs =
             -- Make focusable
             -- Attach keyboard handler
             -- Attach click handler
-            render layout
+            renderAttrs parentEncoded
+                layout
                 details
                 children
                 has
@@ -1890,7 +1900,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 remain
 
         (Link targetBlank url) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 { details | node = 1 }
                 children
@@ -1912,7 +1922,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 remain
 
         (Download url downloadName) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 { details | node = 1 }
                 children
@@ -1927,7 +1937,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                 remain
 
         (NodeName nodeName) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 { details | name = nodeName, node = 4 }
                 children
@@ -1940,7 +1950,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (Class flag str) :: remain ->
             if Flag.present flag has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -1952,7 +1962,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -1965,7 +1975,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (ClassAndStyle flag cls styleName styleVal) :: remain ->
             if Flag.present flag has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -1977,7 +1987,8 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render layout
+                renderAttrs parentEncoded
+                    layout
                     details
                     children
                     (Flag.add flag has)
@@ -1989,7 +2000,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (ClassAndVar flag cls varName varVal) :: remain ->
             if Flag.present flag has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -2001,7 +2012,8 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render layout
+                renderAttrs parentEncoded
+                    layout
                     details
                     children
                     (Flag.add flag has)
@@ -2012,7 +2024,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
         (Nearby location elem) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 details
                 children
@@ -2025,7 +2037,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (Spacing flag x y) :: remain ->
             if Flag.present flag has || layout == AsEl then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -2037,7 +2049,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render
+                renderAttrs parentEncoded
                     layout
                     { details | spacingX = x, spacingY = y }
                     children
@@ -2050,7 +2062,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (Padding flag padding) :: remain ->
             if Flag.present flag has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -2062,7 +2074,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render
+                renderAttrs parentEncoded
                     layout
                     { name = details.name
                     , node = details.node
@@ -2105,7 +2117,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (BorderWidth flag borders) :: remain ->
             if Flag.present flag has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -2117,7 +2129,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render
+                renderAttrs parentEncoded
                     layout
                     { name = details.name
                     , node = details.node
@@ -2161,7 +2173,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (HeightFill i) :: remain ->
             if Flag.present Flag.height has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -2173,7 +2185,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render
+                renderAttrs parentEncoded
                     layout
                     { name = details.name
                     , node = details.node
@@ -2204,7 +2216,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (WidthFill i) :: remain ->
             if Flag.present Flag.width has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -2216,7 +2228,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
             else
-                render
+                renderAttrs parentEncoded
                     layout
                     { name = details.name
                     , node = details.node
@@ -2246,7 +2258,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                     remain
 
         (When toMsg when) :: remain ->
-            render
+            renderAttrs parentEncoded
                 layout
                 { name = details.name
                 , node = details.node
@@ -2351,7 +2363,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                                     Json.fail "Nonmatching animation"
                             )
             in
-            render
+            renderAttrs parentEncoded
                 layout
                 { name = details.name
                 , node = details.node
@@ -2385,7 +2397,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
 
         (Animated toMsg id) :: remain ->
             if Flag.present Flag.id has then
-                render
+                renderAttrs parentEncoded
                     layout
                     details
                     children
@@ -2415,7 +2427,7 @@ render layout details children has htmlAttrs classes nearby vars attrs =
                             )
                             decodeBoundingBox
                 in
-                render
+                renderAttrs parentEncoded
                     layout
                     { name = details.name
                     , node = details.node
