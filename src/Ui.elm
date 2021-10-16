@@ -1060,27 +1060,43 @@ image attrs { src, description } =
 link : String -> Attribute msg
 link uri =
     Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Link False uri
+        { flag = Flag.isLink
+        , attr =
+            Two.Link
+                { newTab = False
+                , url = uri
+                , download = Nothing
+                }
         }
 
 
 {-| -}
 linkNewTab : String -> Attribute msg
-linkNewTab str =
+linkNewTab uri =
     Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Link True str
+        { flag = Flag.isLink
+        , attr =
+            Two.Link
+                { newTab = True
+                , url = uri
+                , download = Nothing
+                }
         }
 
 
 {-| A link to download a file.
 -}
 download : String -> Attribute msg
-download url =
+download uri =
     Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Download url ""
+        { flag = Flag.isLink
+        , attr =
+            Two.Link
+                { newTab = False
+                , url = uri
+                , download =
+                    Just ""
+                }
         }
 
 
@@ -1089,8 +1105,14 @@ download url =
 downloadAs : { url : String, filename : String } -> Attribute msg
 downloadAs { url, filename } =
     Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Download url filename
+        { flag = Flag.isLink
+        , attr =
+            Two.Link
+                { newTab = False
+                , url = url
+                , download =
+                    Just filename
+                }
         }
 
 

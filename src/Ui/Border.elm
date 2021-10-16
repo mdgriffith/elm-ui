@@ -43,18 +43,22 @@ import Ui exposing (Attribute, Color)
 {-| -}
 color : Color -> Attribute msg
 color clr =
-    Two.Attr
+    Two.attribute
         (Attr.style "border-color" (Style.color clr))
 
 
 {-| -}
 width : Int -> Attribute msg
 width x =
-    Two.BorderWidth Flag.borderWidth
-        { top = x
-        , left = x
-        , bottom = x
-        , right = x
+    Two.Attribute
+        { flag = Flag.borderWidth
+        , attr =
+            Two.BorderWidth
+                { top = x
+                , left = x
+                , bottom = x
+                , right = x
+                }
         }
 
 
@@ -62,11 +66,15 @@ width x =
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Two.BorderWidth Flag.borderWidth
-        { top = y
-        , left = x
-        , bottom = y
-        , right = x
+    Two.Attribute
+        { flag = Flag.borderWidth
+        , attr =
+            Two.BorderWidth
+                { top = y
+                , left = x
+                , bottom = y
+                , right = x
+                }
         }
 
 
@@ -79,27 +87,30 @@ widthEach :
     }
     -> Attribute msg
 widthEach border =
-    Two.BorderWidth Flag.borderWidth border
+    Two.Attribute
+        { flag = Flag.borderWidth
+        , attr = Two.BorderWidth border
+        }
 
 
 {-| -}
 solid : Attribute msg
 solid =
-    Two.Attr
+    Two.attribute
         (Attr.style "border-style" "solid")
 
 
 {-| -}
 dashed : Attribute msg
 dashed =
-    Two.Attr
+    Two.attribute
         (Attr.style "border-style" "dashed")
 
 
 {-| -}
 dotted : Attribute msg
 dotted =
-    Two.Attr
+    Two.attribute
         (Attr.style "border-style" "dotted")
 
 
@@ -107,7 +118,7 @@ dotted =
 -}
 rounded : Int -> Attribute msg
 rounded radius =
-    Two.Attr
+    Two.attribute
         (Attr.style "border-radius" (String.fromInt radius ++ "px"))
 
 
@@ -120,7 +131,7 @@ roundEach :
     }
     -> Attribute msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
-    Two.Attr
+    Two.attribute
         (Attr.style "border-radius"
             ((String.fromInt topLeft ++ "px ")
                 ++ (String.fromInt topRight ++ "px ")
@@ -166,7 +177,7 @@ shadows :
         }
     -> Attribute msg
 shadows shades =
-    Two.Attr
+    Two.attribute
         (Attr.style
             "box-shadow"
             (List.map Style.singleShadow shades
@@ -185,7 +196,7 @@ innerShadow :
     }
     -> Attribute msg
 innerShadow shade =
-    Two.Attr
+    Two.attribute
         (Attr.style
             "box-shadow"
             ("inset " ++ Style.singleShadow shade)
@@ -205,7 +216,7 @@ lights :
     }
     -> Attribute msg
 lights details =
-    Two.Attr
+    Two.attribute
         (Attr.style "box-shadow"
             (List.map (renderLight details.elevation) details.lights
                 |> String.join ", "

@@ -802,14 +802,8 @@ mapAttr uiFn fn (Attribute attr) =
                 Attr a ->
                     Attr (Attr.map fn a)
 
-                Link target url ->
-                    Link target url
-
-                Download url filename ->
-                    Download url filename
-
-                NodeName name ->
-                    NodeName name
+                Link link ->
+                    Link link
 
                 -- invalidation key and literal class
                 Class cls ->
@@ -905,8 +899,11 @@ type Attr msg
     = NoAttribute
     | OnPress msg
     | Attr (Html.Attribute msg)
-    | Link Bool String
-    | Download String String
+    | Link
+        { newTab : Bool
+        , url : String
+        , download : Maybe String
+        }
     | WidthFill Int
     | HeightFill Int
     | Font
@@ -920,7 +917,6 @@ type Attr msg
         , smallCaps : Bool
         }
     | FontSize Int
-    | NodeName String
     | Spacing Int Int
     | Padding Edges
     | BorderWidth Edges
@@ -998,7 +994,7 @@ type alias TransitionDetails =
     }
 
 
-hasFlags flags attr =
+hasFlags flags (Attribute attr) =
     List.any (Flag.equal attr.flag) flags
 
 
@@ -1095,14 +1091,10 @@ emptyEdges =
 
 emptyDetails : Details msg
 emptyDetails =
-    { name = "div"
-    , node = 0
-    , spacingX = 0
+    { spacingX = 0
     , spacingY = 0
     , padding = emptyEdges
     , borders = emptyEdges
-    , heightFill = 0
-    , widthFill = 0
     , fontOffset = 0
     , fontHeight = 63
     , fontSize = -1
@@ -1271,14 +1263,10 @@ type alias Edges =
 type alias Details msg =
     -- Node reprsents html node like `div` or `a`.
     -- right now `0: div` and `1:
-    { name : String
-    , node : Int
-    , spacingX : Int
+    { spacingX : Int
     , spacingY : Int
     , padding : Edges
     , borders : Edges
-    , heightFill : Int
-    , widthFill : Int
     , fontOffset : Int
     , fontHeight : Int
     , fontSize : Int
@@ -1413,6 +1401,33 @@ element layout attrs children =
             renderAttrs
                 parentEncoded
                 layout
+                Html.div
+                emptyDetails
+                children
+                Flag.none
+                []
+                -- the "" below is the starting class
+                -- though we want some defaults based on the layout
+                (contextClasses layout)
+                NoNearbyChildren
+                ""
+                (List.reverse attrs)
+        )
+
+
+elementAs :
+    (List (Html.Attribute msg) -> List (Html.Html msg) -> Html.Html msg)
+    -> Layout
+    -> List (Attribute msg)
+    -> List (Element msg)
+    -> Element msg
+elementAs toNode layout attrs children =
+    Element
+        (\parentEncoded ->
+            renderAttrs
+                parentEncoded
+                layout
+                toNode
                 emptyDetails
                 children
                 Flag.none
@@ -1429,6 +1444,7 @@ element layout attrs children =
 renderAttrs :
     Int
     -> Layout
+    -> (List (Html.Attribute msg) -> List (Html.Html msg) -> Html.Html msg)
     -> Details msg
     -> List (Element msg)
     -> Flag.Field
@@ -1438,7 +1454,7 @@ renderAttrs :
     -> String
     -> List (Attribute msg)
     -> Html.Html msg
-renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars attrs =
+renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars attrs =
     case attrs of
         [] ->
             let
@@ -1528,28 +1544,19 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             )
                             :: htmlAttrs
 
-                attrsWithSpacing =
-                    if Flag.present Flag.spacing has && layout == AsParagraph then
-                        Attr.style "line-height"
-                            ("calc(1em + " ++ String.fromInt details.spacingY ++ "px")
-                            :: attrsWithParentSpacing
-
-                    else
-                        attrsWithParentSpacing
-
                 attrsWithTransform =
                     if Flag.present Flag.transform has then
                         case details.transform of
                             Nothing ->
-                                attrsWithSpacing
+                                attrsWithParentSpacing
 
                             Just trans ->
                                 Attr.style "transform"
                                     (transformToString trans)
-                                    :: attrsWithSpacing
+                                    :: attrsWithParentSpacing
 
                     else
-                        attrsWithSpacing
+                        attrsWithParentSpacing
 
                 adjustmentNotSet =
                     details.fontOffset == 0 && details.fontHeight == 63
@@ -1607,42 +1614,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             )
                             :: attrsWithTransform
 
-                attrsWithWidth =
-                    if details.widthFill == 0 then
-                        attrsWithFontSize
-
-                    else if Bitwise.and rowBits parentEncoded /= 0 then
-                        -- we're within a row, our flex-grow can be set
-                        Attr.class Style.classes.widthFill
-                            :: Attr.style "flex-grow" (String.fromInt (details.widthFill * 100000))
-                            :: attrsWithFontSize
-
-                    else
-                        Attr.class Style.classes.widthFill
-                            :: attrsWithFontSize
-
-                attrsWithHeight =
-                    if details.heightFill == 0 then
-                        attrsWithWidth
-
-                    else if details.heightFill == 1 then
-                        Attr.class Style.classes.heightFill
-                            :: attrsWithWidth
-
-                    else if Bitwise.and rowBits parentEncoded == 0 then
-                        -- we're within a column, our flex-grow can be set safely
-                        Attr.class Style.classes.heightFill
-                            :: Attr.style "flex-grow" (String.fromInt (details.heightFill * 100000))
-                            :: attrsWithFontSize
-
-                    else
-                        Attr.class Style.classes.heightFill
-                            :: attrsWithWidth
-
                 attrsWithHover =
                     case details.hover of
                         Nothing ->
-                            attrsWithHeight
+                            attrsWithFontSize
 
                         Just transition ->
                             Events.onMouseEnter
@@ -1650,7 +1625,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                     (Trans Hovered transition.class transition.transitions)
                                 )
                                 :: Attr.class transition.class
-                                :: attrsWithHeight
+                                :: attrsWithFontSize
 
                 attrsWithFocus =
                     case details.focus of
@@ -1728,28 +1703,11 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     else
                         attributes
             in
-            case details.node of
-                0 ->
-                    -- Note: these functions (div, a) are ever so slightly faster than `Html.node`
-                    -- because they can skip elm's built in security check for `script`
-                    Html.div
-                        finalAttributes
-                        finalChildren
+            if Flag.present Flag.isLink has then
+                Html.a finalAttributes finalChildren
 
-                1 ->
-                    Html.a
-                        finalAttributes
-                        finalChildren
-
-                2 ->
-                    Html.input
-                        finalAttributes
-                        finalChildren
-
-                _ ->
-                    Html.node details.name
-                        finalAttributes
-                        finalChildren
+            else
+                toNode finalAttributes finalChildren
 
         (Attribute { flag, attr }) :: remain ->
             let
@@ -1759,27 +1717,24 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             f - 0 == 0
             in
             if not present || not (Flag.present flag has) then
-                renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
+                renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars remain
 
             else
                 case attr of
                     NoAttribute ->
-                        renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
+                        renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars remain
 
                     FontSize size ->
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
                             , fontSize =
                                 size
-                            , heightFill = details.heightFill
-                            , widthFill = details.widthFill
                             , padding = details.padding
                             , borders = details.borders
                             , transform = details.transform
@@ -1816,9 +1771,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         in
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset =
                                 case font.adjustments of
@@ -1836,8 +1790,6 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                         adj.height
                             , fontSize =
                                 details.fontSize
-                            , heightFill = details.heightFill
-                            , widthFill = details.widthFill
                             , padding = details.padding
                             , borders = details.borders
                             , transform = details.transform
@@ -1865,9 +1817,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     TransformPiece slot val ->
                         renderAttrs parentEncoded
                             layout
+                            toNode
                             { details | transform = Just (upsertTransform slot val details.transform) }
                             children
-                            (Flag.add Flag.transform has)
+                            (Flag.add flag has)
                             htmlAttrs
                             classes
                             nearby
@@ -1877,6 +1830,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     Attr htmlAttr ->
                         renderAttrs parentEncoded
                             layout
+                            toNode
                             details
                             children
                             has
@@ -1892,9 +1846,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         -- Attach click handler
                         renderAttrs parentEncoded
                             layout
+                            toNode
                             details
                             children
-                            has
+                            (Flag.add flag has)
                             (Attr.style "tabindex" "0"
                                 :: Events.onClick press
                                 :: onKey "Enter" press
@@ -1905,50 +1860,30 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             vars
                             remain
 
-                    Link targetBlank url ->
+                    Link link ->
                         renderAttrs parentEncoded
                             layout
-                            { details | node = 1 }
+                            toNode
+                            details
                             children
-                            has
-                            (Attr.href url
+                            (Flag.add flag has)
+                            (Attr.href link.url
                                 :: Attr.rel "noopener noreferrer"
-                                :: Attr.target
-                                    (if targetBlank then
-                                        "_blank"
+                                :: (case link.download of
+                                        Nothing ->
+                                            Attr.target
+                                                (if link.newTab then
+                                                    "_blank"
 
-                                     else
-                                        "_self"
-                                    )
+                                                 else
+                                                    "_self"
+                                                )
+
+                                        Just downloadName ->
+                                            Attr.download downloadName
+                                   )
                                 :: htmlAttrs
                             )
-                            classes
-                            nearby
-                            vars
-                            remain
-
-                    Download url downloadName ->
-                        renderAttrs parentEncoded
-                            layout
-                            { details | node = 1 }
-                            children
-                            has
-                            (Attr.href url
-                                :: Attr.download downloadName
-                                :: htmlAttrs
-                            )
-                            classes
-                            nearby
-                            vars
-                            remain
-
-                    NodeName nodeName ->
-                        renderAttrs parentEncoded
-                            layout
-                            { details | name = nodeName, node = 4 }
-                            children
-                            has
-                            htmlAttrs
                             classes
                             nearby
                             vars
@@ -1957,6 +1892,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     Class str ->
                         renderAttrs parentEncoded
                             layout
+                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -1969,6 +1905,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     ClassAndStyle cls styleName styleVal ->
                         renderAttrs parentEncoded
                             layout
+                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -1981,6 +1918,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     ClassAndVar cls varName varVal ->
                         renderAttrs parentEncoded
                             layout
+                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -1993,6 +1931,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     Nearby location elem ->
                         renderAttrs parentEncoded
                             layout
+                            toNode
                             details
                             children
                             has
@@ -2006,6 +1945,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         if layout == AsEl then
                             renderAttrs parentEncoded
                                 layout
+                                toNode
                                 details
                                 children
                                 has
@@ -2018,10 +1958,18 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         else
                             renderAttrs parentEncoded
                                 layout
+                                toNode
                                 { details | spacingX = x, spacingY = y }
                                 children
                                 (Flag.add flag has)
-                                htmlAttrs
+                                (if layout == AsParagraph then
+                                    Attr.style "line-height"
+                                        ("calc(1em + " ++ String.fromInt details.spacingY ++ "px")
+                                        :: htmlAttrs
+
+                                 else
+                                    htmlAttrs
+                                )
                                 (Style.classes.spacing ++ " " ++ classes)
                                 nearby
                                 vars
@@ -2030,16 +1978,13 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     Padding padding ->
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontSize = details.fontSize
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
-                            , heightFill = details.heightFill
-                            , widthFill = details.widthFill
                             , padding = padding
                             , borders = details.borders
                             , transform = details.transform
@@ -2072,17 +2017,14 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     BorderWidth borders ->
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
                             , fontSize =
                                 details.fontSize
-                            , heightFill = details.heightFill
-                            , widthFill = details.widthFill
                             , padding = details.padding
                             , borders = borders
                             , transform = details.transform
@@ -2113,31 +2055,16 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     HeightFill i ->
-                        -- if Flag.present Flag.height has then
-                        --     renderAttrs parentEncoded
-                        --         layout
-                        --         details
-                        --         children
-                        --         has
-                        --         htmlAttrs
-                        --         classes
-                        --         nearby
-                        --         vars
-                        --         remain
-                        -- else
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
                             , fontSize =
                                 details.fontSize
-                            , heightFill = i
-                            , widthFill = details.widthFill
                             , padding = details.padding
                             , borders = details.borders
                             , transform = details.transform
@@ -2147,39 +2074,40 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             , active = details.active
                             }
                             children
-                            (Flag.add Flag.height has)
-                            htmlAttrs
+                            (Flag.add flag has)
+                            (if i == 0 then
+                                htmlAttrs
+
+                             else if i == 1 then
+                                Attr.class Style.classes.heightFill
+                                    :: htmlAttrs
+
+                             else if Bitwise.and rowBits parentEncoded == 0 then
+                                -- we're within a column, our flex-grow can be set safely
+                                Attr.class Style.classes.heightFill
+                                    :: Attr.style "flex-grow" (String.fromInt (i * 100000))
+                                    :: htmlAttrs
+
+                             else
+                                Attr.class Style.classes.heightFill
+                                    :: htmlAttrs
+                            )
                             classes
                             nearby
                             vars
                             remain
 
                     WidthFill i ->
-                        -- if Flag.present Flag.width has then
-                        --     renderAttrs parentEncoded
-                        --         layout
-                        --         details
-                        --         children
-                        --         has
-                        --         htmlAttrs
-                        --         classes
-                        --         nearby
-                        --         vars
-                        --         remain
-                        -- else
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
                             , fontSize =
                                 details.fontSize
-                            , heightFill = details.heightFill
-                            , widthFill = i
                             , padding = details.padding
                             , borders = details.borders
                             , transform = details.transform
@@ -2189,8 +2117,20 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             , active = details.active
                             }
                             children
-                            (Flag.add Flag.width has)
-                            htmlAttrs
+                            (Flag.add flag has)
+                            (if i == 0 then
+                                htmlAttrs
+
+                             else if Bitwise.and rowBits parentEncoded /= 0 then
+                                -- we're within a row, our flex-grow can be set
+                                Attr.class Style.classes.widthFill
+                                    :: Attr.style "flex-grow" (String.fromInt (i * 100000))
+                                    :: htmlAttrs
+
+                             else
+                                Attr.class Style.classes.widthFill
+                                    :: htmlAttrs
+                            )
                             classes
                             nearby
                             vars
@@ -2199,17 +2139,14 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                     When toMsg when ->
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
                             , fontSize =
                                 details.fontSize
-                            , heightFill = details.heightFill
-                            , widthFill = details.widthFill
                             , padding = details.padding
                             , borders = details.borders
                             , transform = details.transform
@@ -2304,17 +2241,14 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         in
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
                             , fontSize =
                                 details.fontSize
-                            , heightFill = details.heightFill
-                            , widthFill = details.widthFill
                             , padding = details.padding
                             , borders = details.borders
                             , transform = details.transform
@@ -2367,17 +2301,14 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         in
                         renderAttrs parentEncoded
                             layout
-                            { name = details.name
-                            , node = details.node
-                            , spacingX = details.spacingX
+                            toNode
+                            { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontOffset = details.fontOffset
                             , fontHeight =
                                 details.fontHeight
                             , fontSize =
                                 details.fontSize
-                            , heightFill = details.heightFill
-                            , widthFill = details.widthFill
                             , padding = details.padding
                             , borders = details.borders
                             , transform = details.transform

@@ -68,6 +68,7 @@ const flags = [
   "gridPosition",
   "widthBetween",
   "heightBetween",
+  "isLink",
 ];
 
 const base = `import Bitwise

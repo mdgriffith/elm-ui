@@ -206,3 +206,8 @@ heightBetween =
     flag 26
 
 
+isLink : Flag
+isLink =
+    flag 27
+
+

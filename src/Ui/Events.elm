@@ -21,10 +21,10 @@ module Ui.Events exposing
 -}
 
 import Html.Events
+import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Json.Decode as Json
 import Ui exposing (Attribute)
-import VirtualDom
 
 
 
@@ -34,43 +34,46 @@ import VirtualDom
 {-| -}
 onMouseDown : msg -> Attribute msg
 onMouseDown =
-    Two.Attr << Html.Events.onMouseDown
+    Two.attribute << Html.Events.onMouseDown
 
 
 {-| -}
 onMouseUp : msg -> Attribute msg
 onMouseUp =
-    Two.Attr << Html.Events.onMouseUp
+    Two.attribute << Html.Events.onMouseUp
 
 
 {-| -}
 onClick : msg -> Attribute msg
 onClick =
-    Two.Attr << Html.Events.onClick
+    Two.attribute << Html.Events.onClick
 
 
 {-| -}
 onDoubleClick : msg -> Attribute msg
 onDoubleClick =
-    Two.Attr << Html.Events.onDoubleClick
+    Two.attribute << Html.Events.onDoubleClick
 
 
 {-| -}
 onPress : msg -> Attribute msg
 onPress msg =
-    Two.OnPress msg
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.OnPress msg
+        }
 
 
 {-| -}
 onMouseEnter : msg -> Attribute msg
 onMouseEnter =
-    Two.Attr << Html.Events.onMouseEnter
+    Two.attribute << Html.Events.onMouseEnter
 
 
 {-| -}
 onMouseLeave : msg -> Attribute msg
 onMouseLeave =
-    Two.Attr << Html.Events.onMouseLeave
+    Two.attribute << Html.Events.onMouseLeave
 
 
 {-| -}
@@ -167,13 +170,13 @@ pageCoords =
 {-| -}
 onLoseFocus : msg -> Attribute msg
 onLoseFocus =
-    Two.Attr << Html.Events.onBlur
+    Two.attribute << Html.Events.onBlur
 
 
 {-| -}
 onFocus : msg -> Attribute msg
 onFocus =
-    Two.Attr << Html.Events.onFocus
+    Two.attribute << Html.Events.onFocus
 
 
 
@@ -204,7 +207,7 @@ It really does help!
 -}
 on : String -> Json.Decoder msg -> Attribute msg
 on event decode =
-    Two.Attr <| Html.Events.on event decode
+    Two.attribute <| Html.Events.on event decode
 
 
 

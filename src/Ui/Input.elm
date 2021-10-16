@@ -187,7 +187,7 @@ import Internal.Style.Generated exposing (classes)
 import Internal.Style2 as Style
 import Json.Decode as Json
 import Json.Encode as Encode
-import Ui
+import Ui exposing (Attribute, Element)
 import Ui.Background as Background2
 import Ui.Border as Border2
 import Ui.Events as Events2
@@ -197,7 +197,7 @@ import Ui.Region as Region2
 
 {-| -}
 type Placeholder id msg
-    = Placeholder (List (Two.Attribute msg)) (Two.Element msg)
+    = Placeholder (List (Attribute msg)) (Element msg)
 
 
 white2 : Ui.Color
@@ -219,7 +219,7 @@ charcoal2 =
 
 
 {-| -}
-placeholder : List (Two.Attribute msg) -> Two.Element msg -> Placeholder id msg
+placeholder : List (Attribute msg) -> Element msg -> Placeholder id msg
 placeholder =
     Placeholder
 
@@ -233,30 +233,30 @@ type LabelLocation
 
 {-| -}
 type Label msg
-    = Label LabelLocation (List (Two.Attribute msg)) (Two.Element msg)
+    = Label LabelLocation (List (Attribute msg)) (Element msg)
     | HiddenLabel String
 
 
 {-| -}
-labelRight : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelRight : List (Attribute msg) -> Element msg -> Label msg
 labelRight =
     Label OnRight
 
 
 {-| -}
-labelLeft : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelLeft : List (Attribute msg) -> Element msg -> Label msg
 labelLeft =
     Label OnLeft
 
 
 {-| -}
-labelAbove : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelAbove : List (Attribute msg) -> Element msg -> Label msg
 labelAbove =
     Label Above
 
 
 {-| -}
-labelBelow : List (Two.Attribute msg) -> Two.Element msg -> Label msg
+labelBelow : List (Attribute msg) -> Element msg -> Label msg
 labelBelow =
     Label Below
 
@@ -285,7 +285,7 @@ hiddenLabelAttribute2 label =
             Region2.description textLabel
 
         Label _ _ _ ->
-            Two.NoAttribute
+            Two.noAttr
 
 
 {-|
@@ -297,23 +297,23 @@ hiddenLabelAttribute2 label =
 
 -}
 checkbox :
-    List (Two.Attribute msg)
+    List (Attribute msg)
     ->
         { onChange : Bool -> msg
-        , icon : Bool -> Two.Element msg
+        , icon : Bool -> Element msg
         , checked : Bool
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 checkbox attrs { label, icon, checked, onChange } =
     let
         attributes =
             [ if isHiddenLabel label then
-                Two.NoAttribute
+                Two.noAttr
 
               else
                 Ui.spacing 6
-            , Two.Attr (Html.Events.onClick (onChange (not checked)))
+            , Two.attribute (Html.Events.onClick (onChange (not checked)))
             , Region2.announce
             , onKeyLookup2 <|
                 \code ->
@@ -325,7 +325,7 @@ checkbox attrs { label, icon, checked, onChange } =
 
                     else
                         Nothing
-            , Two.Attr (Html.Attributes.tabindex 0)
+            , Two.attribute (Html.Attributes.tabindex 0)
             , Ui.pointer
             , Ui.alignLeft
             , Ui.width Ui.fill
@@ -336,9 +336,9 @@ checkbox attrs { label, icon, checked, onChange } =
         label
         (Two.element
             Two.AsEl
-            [ Two.Attr <|
+            [ Two.attribute <|
                 Html.Attributes.attribute "role" "checkbox"
-            , Two.Attr <|
+            , Two.attribute <|
                 Html.Attributes.attribute "aria-checked" <|
                     if checked then
                         "true"
@@ -358,11 +358,11 @@ checkbox attrs { label, icon, checked, onChange } =
 
 {-| -}
 type Thumb msg
-    = Thumb (List (Two.Attribute msg))
+    = Thumb (List (Attribute msg))
 
 
 {-| -}
-thumb : List (Two.Attribute msg) -> Thumb msg
+thumb : List (Attribute msg) -> Thumb msg
 thumb =
     Thumb
 
@@ -474,12 +474,11 @@ sliderX attributes input =
         (Ui.row
             [ Ui.width Ui.fill
             ]
-            [ Two.element
+            [ Two.elementAs Html.input
                 Two.AsEl
-                [ Two.NodeName "input"
-                , hiddenLabelAttribute2 input.label
+                [ hiddenLabelAttribute2 input.label
                 , Two.class (Style.classes.slider ++ " focusable-parent")
-                , Two.Attr
+                , Two.attribute
                     (Html.Events.onInput
                         (\str ->
                             case String.toFloat str of
@@ -492,9 +491,9 @@ sliderX attributes input =
                                     input.onChange val
                         )
                     )
-                , Two.Attr
+                , Two.attribute
                     (Html.Attributes.type_ "range")
-                , Two.Attr <|
+                , Two.attribute <|
                     Html.Attributes.step
                         (case input.step of
                             Nothing ->
@@ -509,11 +508,11 @@ sliderX attributes input =
                             Just step ->
                                 String.fromFloat step
                         )
-                , Two.Attr
+                , Two.attribute
                     (Html.Attributes.min (String.fromFloat input.min))
-                , Two.Attr
+                , Two.attribute
                     (Html.Attributes.max (String.fromFloat input.max))
-                , Two.Attr <|
+                , Two.attribute <|
                     Html.Attributes.value (String.fromFloat input.value)
                 , Ui.width Ui.fill
                 , Ui.height Ui.fill
@@ -577,14 +576,13 @@ sliderY attrs input =
         (Ui.row
             [ Ui.width Ui.fill
             ]
-            [ Two.element
+            [ Two.elementAs Html.input
                 Two.AsEl
-                [ Two.NodeName "input"
-                , hiddenLabelAttribute2 input.label
+                [ hiddenLabelAttribute2 input.label
                 , Two.class (Style.classes.slider ++ " focusable-parent")
-                , Two.Attr <|
+                , Two.attribute <|
                     Html.Attributes.attribute "orient" "vertical"
-                , Two.Attr
+                , Two.attribute
                     (Html.Events.onInput
                         (\str ->
                             case String.toFloat str of
@@ -597,9 +595,9 @@ sliderY attrs input =
                                     input.onChange val
                         )
                     )
-                , Two.Attr
+                , Two.attribute
                     (Html.Attributes.type_ "range")
-                , Two.Attr <|
+                , Two.attribute <|
                     Html.Attributes.step
                         (case input.step of
                             Nothing ->
@@ -614,11 +612,11 @@ sliderY attrs input =
                             Just step ->
                                 String.fromFloat step
                         )
-                , Two.Attr
+                , Two.attribute
                     (Html.Attributes.min (String.fromFloat input.min))
-                , Two.Attr
+                , Two.attribute
                     (Html.Attributes.max (String.fromFloat input.max))
-                , Two.Attr <|
+                , Two.attribute <|
                     Html.Attributes.value (String.fromFloat input.value)
                 , Ui.width Ui.fill
                 , Ui.height Ui.fill
@@ -745,21 +743,26 @@ textHelper2 textInput attrs textOptions =
             redistribute2 textInput.type_ withDefaults
 
         inputElement =
-            Two.element
+            Two.elementAs
+                (case textInput.type_ of
+                    TextInputNode inputType ->
+                        Html.input
+
+                    TextArea ->
+                        Html.textarea
+                )
                 Two.AsEl
                 ((case textInput.type_ of
                     TextInputNode inputType ->
                         -- Note: Due to a weird edgecase in...Edge...
                         -- `type` needs to come _before_ `value`
                         -- More reading: https://github.com/mdgriffith/elm-ui/pull/94/commits/4f493a27001ccc3cf1f2baa82e092c35d3811876
-                        [ Two.NodeName "input"
-                        , Two.Attr (Html.Attributes.type_ inputType)
+                        [ Two.attribute (Html.Attributes.type_ inputType)
                         , Two.class classes.inputText
                         ]
 
                     TextArea ->
-                        [ Two.NodeName "textarea"
-                        , Two.Class Flag2.overflow Style.classes.clip
+                        [ Two.classWith Flag2.overflow Style.classes.clip
                         , Ui.height Ui.fill
                         , Two.class classes.inputMultiline
 
@@ -767,19 +770,19 @@ textHelper2 textInput attrs textOptions =
                         -- The only reason we do this padding trick is so that when the user clicks in the padding,
                         -- that the cursor will reset correctly.
                         -- This could probably be combined with the above `calcMoveToCompensateForPadding`
-                        , Two.Attr (Html.Attributes.style "box-sizing" "content-box")
+                        , Two.attribute (Html.Attributes.style "box-sizing" "content-box")
                         ]
                  )
-                    ++ [ Two.Attr (Html.Attributes.value textOptions.text)
-                       , Two.Attr (Html.Events.onInput textOptions.onChange)
+                    ++ [ Two.attribute (Html.Attributes.value textOptions.text)
+                       , Two.attribute (Html.Events.onInput textOptions.onChange)
                        , hiddenLabelAttribute2 textOptions.label
-                       , Two.Attr (Html.Attributes.spellcheck textInput.spellchecked)
+                       , Two.attribute (Html.Attributes.spellcheck textInput.spellchecked)
                        , case textInput.autofill of
                             Nothing ->
-                                Two.NoAttribute
+                                Two.noAttr
 
                             Just fill ->
-                                Two.Attr (Html.Attributes.attribute "autocomplete" fill)
+                                Two.attribute (Html.Attributes.attribute "autocomplete" fill)
                        ]
                     ++ redistributed.input
                 )
@@ -852,10 +855,10 @@ textHelper2 textInput attrs textOptions =
                         [ inputElement ]
     in
     applyLabel
-        (Two.Class Flag2.cursor classes.cursorText
+        (Two.classWith Flag2.cursor classes.cursorText
             :: Two.class Style.classes.inputTextParent
             :: (if isHiddenLabel textOptions.label then
-                    Two.NoAttribute
+                    Two.noAttr
 
                 else
                     Ui.spacing
@@ -877,7 +880,7 @@ renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
                         ++ " "
                         ++ Style.classes.passPointerEvents
                     )
-               , Two.Class Flag2.overflow Style.classes.clip
+               , Two.classWith Flag2.overflow Style.classes.clip
                , Ui.height Ui.fill
                , Ui.width Ui.fill
                , Ui.alpha
@@ -1028,9 +1031,9 @@ redistributeOver2 :
         , inputParent : List (Ui.Attribute msg)
         , placeholder : List (Ui.Attribute msg)
         }
-redistributeOver2 input attr els =
-    case attr of
-        Two.Spacing flag xSpace ySpace ->
+redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
+    case attrDetails.attr of
+        Two.Spacing xSpace ySpace ->
             case input of
                 TextArea ->
                     let
@@ -1049,8 +1052,8 @@ redistributeOver2 input attr els =
                         , input =
                             Ui.moveUp
                                 (toFloat (floor (toFloat ySpace / 2)))
-                                :: Two.Attr lineHeight
-                                :: Two.Attr height
+                                :: Two.attribute lineHeight
+                                :: Two.attribute height
                                 :: els.input
                         , textAreaWrapper = attr :: els.textAreaWrapper
                     }
@@ -1060,7 +1063,7 @@ redistributeOver2 input attr els =
                         | parent = attr :: els.parent
                     }
 
-        Two.Padding flag pad ->
+        Two.Padding pad ->
             case input of
                 TextArea ->
                     { els
@@ -1071,18 +1074,18 @@ redistributeOver2 input attr els =
                 TextInputNode _ ->
                     { els
                         | inputParent =
-                            Two.Padding flag Two.emptyEdges
+                            Ui.paddingEach Two.emptyEdges
                                 :: els.inputParent
                         , placeholder = attr :: els.placeholder
                         , input =
-                            Two.Attr
+                            Two.attribute
                                 (Html.Attributes.style "height"
                                     ("calc(1em + "
                                         ++ String.fromInt (pad.top + pad.bottom)
                                         ++ "px)"
                                     )
                                 )
-                                :: Two.Attr
+                                :: Two.attribute
                                     (Html.Attributes.style "line-height"
                                         ("calc(1em + "
                                             ++ String.fromInt (pad.top + pad.bottom)
@@ -1093,7 +1096,7 @@ redistributeOver2 input attr els =
                                 :: els.input
                     }
 
-        Two.BorderWidth _ _ ->
+        Two.BorderWidth _ ->
             { els
                 | inputParent = attr :: els.inputParent
             }
@@ -1112,7 +1115,7 @@ redistributeOver2 input attr els =
                 | input = attr :: els.input
             }
 
-        Two.Class _ _ ->
+        Two.Class _ ->
             { els | parent = attr :: els.parent }
 
         Two.FontSize _ ->
@@ -1131,34 +1134,19 @@ redistributeOver2 input attr els =
                 | parent = attr :: els.parent
             }
 
-        Two.Link _ _ ->
+        Two.Link _ ->
             els
 
-        Two.Download _ _ ->
-            els
-
-        Two.NodeName _ ->
-            els
-
-        Two.TranslateX _ ->
+        Two.TransformPiece _ _ ->
             { els | parent = attr :: els.parent }
 
-        Two.TranslateY _ ->
-            { els | parent = attr :: els.parent }
-
-        Two.Rotate _ ->
-            { els | parent = attr :: els.parent }
-
-        Two.Scale _ ->
-            { els | parent = attr :: els.parent }
-
-        Two.ClassAndStyle _ _ _ _ ->
+        Two.ClassAndStyle _ _ _ ->
             { els
                 | parent = attr :: els.parent
                 , inputParent = attr :: els.inputParent
             }
 
-        Two.ClassAndVar _ _ _ _ ->
+        Two.ClassAndVar _ _ _ ->
             { els
                 | parent = attr :: els.parent
                 , inputParent = attr :: els.inputParent
@@ -1378,9 +1366,9 @@ applyLabel attrs label input =
         HiddenLabel labelText ->
             -- NOTE: This means that the label is applied outside of this function!
             -- It would be nice to unify this logic, but it's a little tricky
-            Two.element
+            Two.elementAs Html.label
                 Two.AsColumn
-                (Two.NodeName "label" :: attrs)
+                attrs
                 [ input ]
 
         Label position labelAttrs labelChild ->
@@ -1393,27 +1381,27 @@ applyLabel attrs label input =
             in
             case position of
                 Above ->
-                    Two.element
+                    Two.elementAs Html.label
                         Two.AsColumn
-                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        (Two.class classes.inputLabel :: attrs)
                         [ labelElement, input ]
 
                 Below ->
-                    Two.element
+                    Two.elementAs Html.label
                         Two.AsColumn
-                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        (Two.class classes.inputLabel :: attrs)
                         [ input, labelElement ]
 
                 OnRight ->
-                    Two.element
+                    Two.elementAs Html.label
                         Two.AsRow
-                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        (Two.class classes.inputLabel :: attrs)
                         [ input, labelElement ]
 
                 OnLeft ->
-                    Two.element
+                    Two.elementAs Html.label
                         Two.AsRow
-                        (Two.NodeName "label" :: Two.class classes.inputLabel :: attrs)
+                        (Two.class classes.inputLabel :: attrs)
                         [ labelElement, input ]
 
 
@@ -1488,7 +1476,7 @@ defaultRadioOption optionLabel status =
                     Two.class "focusable"
 
                 _ ->
-                    Two.NoAttribute
+                    Two.noAttr
 
             -- , Border.shadow <|
             --     -- case status of
@@ -1614,10 +1602,10 @@ radioHelper2 orientation attrs input =
     in
     applyLabel
         ([ Ui.alignLeft
-         , Two.Attr (Html.Attributes.tabindex 0)
+         , Two.attribute (Html.Attributes.tabindex 0)
          , Two.class "focus"
          , Region2.announce
-         , Two.Attr <|
+         , Two.attribute <|
             Html.Attributes.attribute "role" "radiogroup"
          , case prevNext of
             Nothing ->
@@ -1669,22 +1657,22 @@ renderOption orientation input (Option val view) =
         [ Ui.pointer
         , case orientation of
             Row ->
-                Two.NoAttribute
+                Two.noAttr
 
             Column ->
                 Ui.width Ui.fill
         , Events2.onClick (input.onChange val)
         , case status of
             Selected ->
-                Two.Attr <|
+                Two.attribute <|
                     Html.Attributes.attribute "aria-checked"
                         "true"
 
             _ ->
-                Two.Attr <|
+                Two.attribute <|
                     Html.Attributes.attribute "aria-checked"
                         "false"
-        , Two.Attr <|
+        , Two.attribute <|
             Html.Attributes.attribute "role" "radio"
         ]
         (view status)
@@ -1766,7 +1754,7 @@ onKeyLookup2 lookup =
             Json.field "key" Json.string
                 |> Json.andThen decode
     in
-    Two.Attr <| Html.Events.on "keyup" isKey
+    Two.attribute <| Html.Events.on "keyup" isKey
 
 
 {-| Attach this attribute to any `Input` that you would like to be automatically focused when the page loads.
@@ -1776,7 +1764,7 @@ You should only have a maximum of one per page.
 -}
 focusedOnLoad : Ui.Attribute msg
 focusedOnLoad =
-    Two.Attr <| Html.Attributes.autofocus True
+    Two.attribute <| Html.Attributes.autofocus True
 
 
 

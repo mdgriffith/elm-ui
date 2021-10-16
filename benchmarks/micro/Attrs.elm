@@ -9,6 +9,7 @@ import Array exposing (Array)
 import Ui.Font
 import Ui.Background
 import Ui.Gradient
+import Ui.Input
 
 main : Benchmark.Runner.BenchmarkProgram
 main =
@@ -167,24 +168,20 @@ record =
 
         , Benchmark.benchmark "insert - full copy" 
             (\_ -> 
-                { name = details.name
-                    , node = details.node
-                    , spacingX = details.spacingX
-                    , spacingY = 10
-                    , fontSize = details.fontSize
-                    , fontOffset = details.fontOffset
-                    , fontHeight =
-                        details.fontHeight
-                    , heightFill = details.heightFill
-                    , widthFill = details.widthFill
-                    , padding = details.padding
-                    , borders = details.borders
-                   , transform = details.transform
-                    , animEvents = details.animEvents
-                    , hover = details.hover
-                    , focus = details.focus
-                    , active = details.active
-                    }
+                { spacingX = details.spacingX
+                , spacingY = 10
+                , fontSize = details.fontSize
+                , fontOffset = details.fontOffset
+                , fontHeight =
+                    details.fontHeight
+                , padding = details.padding
+                , borders = details.borders
+                , transform = details.transform
+                , animEvents = details.animEvents
+                , hover = details.hover
+                , focus = details.focus
+                , active = details.active
+                }
 
 
             )

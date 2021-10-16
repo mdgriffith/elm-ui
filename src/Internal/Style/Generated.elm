@@ -187,7 +187,6 @@ input[type="search"]::-webkit-search-results-decoration {
       width: 100%;
       height: 100%;
       opacity: 0;
-      // outline: dashed 1px;
     }
     
     input[type=range]::-moz-range-track {

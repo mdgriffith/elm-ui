@@ -41,21 +41,21 @@ import Ui exposing (Attribute)
 -}
 mainContent : Attribute msg
 mainContent =
-    Two.Attr (Html.Attributes.attribute "role" "main")
+    Two.attribute (Html.Attributes.attribute "role" "main")
 
 
 {-| -}
 aside : Attribute msg
 aside =
     -- TODO! if there is more than one of these on a page, it should be labeled.
-    Two.Attr (Html.Attributes.attribute "role" "complementary")
+    Two.attribute (Html.Attributes.attribute "role" "complementary")
 
 
 {-| -}
 navigation : Attribute msg
 navigation =
     -- TODO! if there is more than one of these, it should be labeled.
-    Two.Attr (Html.Attributes.attribute "role" "navigation")
+    Two.attribute (Html.Attributes.attribute "role" "navigation")
 
 
 
@@ -79,7 +79,7 @@ info =
     -- VoiceOver does NOT recognize `footer` elements
     -- https://bugs.webkit.org/show_bug.cgi?id=146930
     -- this has been open for 5 years.
-    Two.Attr (Html.Attributes.attribute "role" "contentinfo")
+    Two.attribute (Html.Attributes.attribute "role" "contentinfo")
 
 
 {-| This will mark an element as `h1`, `h2`, etc where possible.
@@ -105,21 +105,21 @@ heading : Int -> Attribute msg
 heading level =
     -- Internal.Describe << Heading
     -- TODO: add heading level!!
-    Two.Attr (Html.Attributes.attribute "role" "header")
+    Two.attribute (Html.Attributes.attribute "role" "header")
 
 
 {-| Screen readers will announce changes to this element and potentially interrupt any other announcement.
 -}
 announceUrgently : Attribute msg
 announceUrgently =
-    Two.Attr (Html.Attributes.attribute "aria-live" "assertive")
+    Two.attribute (Html.Attributes.attribute "aria-live" "assertive")
 
 
 {-| Screen readers will announce when changes to this element are made.
 -}
 announce : Attribute msg
 announce =
-    Two.Attr (Html.Attributes.attribute "aria-live" "polite")
+    Two.attribute (Html.Attributes.attribute "aria-live" "polite")
 
 
 {-| Adds an `aria-label`, which is used by accessibility software to identity otherwise unlabeled elements.
@@ -129,4 +129,4 @@ A common use for this would be to label buttons that only have an icon.
 -}
 description : String -> Attribute msg
 description label =
-    Two.Attr (Html.Attributes.attribute "aria-label" label)
+    Two.attribute (Html.Attributes.attribute "aria-label" label)
