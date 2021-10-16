@@ -1106,26 +1106,18 @@ emptyDetails =
     }
 
 
-
--- elementKeyed : Layout -> List (Attribute msg) -> List ( String, Element msg ) -> Element msg
--- elementKeyed layout attrs children =
---     renderKeyed layout
---         0
---         children
---         "div"
---         Flag.none
---         ""
---         []
---         (contextClasses layout)
---         NoNearbyChildren
---         (List.reverse attrs)
-
-
 unwrap : Int -> Element msg -> Html.Html msg
 unwrap s el =
     case el of
         Element html ->
             html s
+
+
+unwrapKeyed : Int -> ( String, Element msg ) -> ( String, Html.Html msg )
+unwrapKeyed s el =
+    case el of
+        ( key, Element html ) ->
+            ( key, html s )
 
 
 wrapText s el =
@@ -1398,20 +1390,33 @@ element :
 element layout attrs children =
     Element
         (\parentEncoded ->
-            renderAttrs
-                parentEncoded
-                layout
-                Html.div
-                emptyDetails
-                children
-                Flag.none
-                []
-                -- the "" below is the starting class
-                -- though we want some defaults based on the layout
-                (contextClasses layout)
-                NoNearbyChildren
-                ""
-                (List.reverse attrs)
+            let
+                ( asLink, renderedAttrs, renderedChildren ) =
+                    renderAttrs
+                        parentEncoded
+                        layout
+                        Html.div
+                        emptyDetails
+                        (ElemChildren children)
+                        Flag.none
+                        []
+                        -- the "" below is the starting class
+                        -- though we want some defaults based on the layout
+                        (contextClasses layout)
+                        NoNearbyChildren
+                        ""
+                        (List.reverse attrs)
+            in
+            case renderedChildren of
+                Children finalChildren ->
+                    if asLink then
+                        Html.a renderedAttrs finalChildren
+
+                    else
+                        Html.div renderedAttrs finalChildren
+
+                _ ->
+                    Html.div renderedAttrs []
         )
 
 
@@ -1424,21 +1429,86 @@ elementAs :
 elementAs toNode layout attrs children =
     Element
         (\parentEncoded ->
-            renderAttrs
-                parentEncoded
-                layout
-                toNode
-                emptyDetails
-                children
-                Flag.none
-                []
-                -- the "" below is the starting class
-                -- though we want some defaults based on the layout
-                (contextClasses layout)
-                NoNearbyChildren
-                ""
-                (List.reverse attrs)
+            let
+                ( asLink, renderedAttrs, renderedChildren ) =
+                    renderAttrs
+                        parentEncoded
+                        layout
+                        toNode
+                        emptyDetails
+                        (ElemChildren children)
+                        Flag.none
+                        []
+                        -- the "" below is the starting class
+                        -- though we want some defaults based on the layout
+                        (contextClasses layout)
+                        NoNearbyChildren
+                        ""
+                        (List.reverse attrs)
+            in
+            case renderedChildren of
+                Children finalChildren ->
+                    if asLink then
+                        Html.a renderedAttrs finalChildren
+
+                    else
+                        toNode renderedAttrs finalChildren
+
+                _ ->
+                    toNode renderedAttrs []
         )
+
+
+elementKeyed :
+    Layout
+    -> List (Attribute msg)
+    -> List ( String, Element msg )
+    -> Element msg
+elementKeyed layout attrs children =
+    Element
+        (\parentEncoded ->
+            let
+                ( asLink, renderedAttrs, renderedChildren ) =
+                    renderAttrs
+                        parentEncoded
+                        layout
+                        Html.div
+                        emptyDetails
+                        (ElemKeyed children)
+                        Flag.none
+                        []
+                        -- the "" below is the starting class
+                        -- though we want some defaults based on the layout
+                        (contextClasses layout)
+                        NoNearbyChildren
+                        ""
+                        (List.reverse attrs)
+            in
+            case renderedChildren of
+                Keyed finalChildren ->
+                    Html.Keyed.node
+                        (if asLink then
+                            "a"
+
+                         else
+                            "div"
+                        )
+                        renderedAttrs
+                        finalChildren
+
+                _ ->
+                    Html.div renderedAttrs []
+        )
+
+
+type ElemChildren msg
+    = ElemChildren (List (Element msg))
+    | ElemKeyed (List ( String, Element msg ))
+
+
+type Children msg
+    = Children (List (Html.Html msg))
+    | Keyed (List ( String, Html.Html msg ))
 
 
 renderAttrs :
@@ -1446,14 +1516,14 @@ renderAttrs :
     -> Layout
     -> (List (Html.Attribute msg) -> List (Html.Html msg) -> Html.Html msg)
     -> Details msg
-    -> List (Element msg)
+    -> ElemChildren msg
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
     -> String
     -> NearbyChildren msg
     -> String
     -> List (Attribute msg)
-    -> Html.Html msg
+    -> ( Bool, List (Html.Attribute msg), Children msg )
 renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars attrs =
     case attrs of
         [] ->
@@ -1510,18 +1580,68 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                                 )
 
                 renderedChildren =
-                    case nearby of
-                        NoNearbyChildren ->
-                            List.map (unwrap encoded) children
+                    case children of
+                        ElemChildren elems ->
+                            Children <|
+                                case nearby of
+                                    NoNearbyChildren ->
+                                        List.map (unwrap encoded) elems
 
-                        ChildrenBehind behind ->
-                            behind ++ List.map (unwrap encoded) children
+                                    ChildrenBehind behind ->
+                                        behind ++ List.map (unwrap encoded) elems
 
-                        ChildrenInFront inFront ->
-                            List.map (unwrap encoded) children ++ inFront
+                                    ChildrenInFront inFront ->
+                                        List.map (unwrap encoded) elems ++ inFront
 
-                        ChildrenBehindAndInFront behind inFront ->
-                            behind ++ List.map (unwrap encoded) children ++ inFront
+                                    ChildrenBehindAndInFront behind inFront ->
+                                        behind ++ List.map (unwrap encoded) elems ++ inFront
+
+                        ElemKeyed keyedElems ->
+                            Keyed <|
+                                case nearby of
+                                    NoNearbyChildren ->
+                                        List.map (unwrapKeyed encoded) keyedElems
+
+                                    ChildrenBehind behind ->
+                                        List.indexedMap
+                                            (\b elem ->
+                                                ( "behind-"
+                                                    ++ String.fromInt b
+                                                , elem
+                                                )
+                                            )
+                                            behind
+                                            ++ List.map (unwrapKeyed encoded) keyedElems
+
+                                    ChildrenInFront inFront ->
+                                        List.map (unwrapKeyed encoded) keyedElems
+                                            ++ List.indexedMap
+                                                (\b elem ->
+                                                    ( "infront-"
+                                                        ++ String.fromInt b
+                                                    , elem
+                                                    )
+                                                )
+                                                inFront
+
+                                    ChildrenBehindAndInFront behind inFront ->
+                                        List.indexedMap
+                                            (\b elem ->
+                                                ( "behind-"
+                                                    ++ String.fromInt b
+                                                , elem
+                                                )
+                                            )
+                                            behind
+                                            ++ List.map (unwrapKeyed encoded) keyedElems
+                                            ++ List.indexedMap
+                                                (\b elem ->
+                                                    ( "infront-"
+                                                        ++ String.fromInt b
+                                                    , elem
+                                                    )
+                                                )
+                                                inFront
 
                 attrsWithParentSpacing =
                     if parentEncoded == 0 then
@@ -1675,26 +1795,56 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                                 :: attrsWithAnimations
 
                 finalChildren =
-                    case layout of
-                        AsParagraph ->
-                            if Flag.present Flag.id has then
-                                Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
-                                    :: spacerTop (toFloat details.spacingY / -2)
-                                    :: renderedChildren
-                                    ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+                    case renderedChildren of
+                        Keyed keyedChilds ->
+                            case layout of
+                                AsParagraph ->
+                                    Keyed <|
+                                        if Flag.present Flag.id has then
+                                            ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: attributes) keyedChilds )
+                                                :: ( "top-spacer", spacerTop (toFloat details.spacingY / -2) )
+                                                :: keyedChilds
+                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat details.spacingY / -2) ) ]
 
-                            else
-                                spacerTop (toFloat details.spacingY / -2)
-                                    :: renderedChildren
-                                    ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+                                        else
+                                            ( "top-spacer", spacerTop (toFloat details.spacingY / -2) )
+                                                :: keyedChilds
+                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat details.spacingY / -2) ) ]
 
-                        _ ->
-                            if Flag.present Flag.id has then
-                                Html.div (Attr.class "ui-movable" :: attributes) renderedChildren
-                                    :: renderedChildren
+                                _ ->
+                                    if Flag.present Flag.id has then
+                                        (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: attributes) keyedChilds )
+                                            :: keyedChilds
+                                        )
+                                            |> Keyed
 
-                            else
-                                renderedChildren
+                                    else
+                                        renderedChildren
+
+                        Children childs ->
+                            case layout of
+                                AsParagraph ->
+                                    Children <|
+                                        if Flag.present Flag.id has then
+                                            Html.div (Attr.class "ui-movable" :: attributes) childs
+                                                :: spacerTop (toFloat details.spacingY / -2)
+                                                :: childs
+                                                ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+
+                                        else
+                                            spacerTop (toFloat details.spacingY / -2)
+                                                :: childs
+                                                ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+
+                                _ ->
+                                    if Flag.present Flag.id has then
+                                        (Html.div (Attr.class "ui-movable" :: attributes) childs
+                                            :: childs
+                                        )
+                                            |> Children
+
+                                    else
+                                        renderedChildren
 
                 finalAttributes =
                     if Flag.present Flag.id has then
@@ -1703,11 +1853,10 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     else
                         attributes
             in
-            if Flag.present Flag.isLink has then
-                Html.a finalAttributes finalChildren
-
-            else
-                toNode finalAttributes finalChildren
+            ( Flag.present Flag.isLink has
+            , finalAttributes
+            , finalChildren
+            )
 
         (Attribute { flag, attr }) :: remain ->
             let
