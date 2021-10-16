@@ -279,8 +279,11 @@ html x =
 
 {-| -}
 htmlAttribute : Html.Attribute msg -> Attribute msg
-htmlAttribute =
-    Two.Attr
+htmlAttribute a =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Attr a
+        }
 
 
 {-| -}
@@ -318,7 +321,10 @@ fill =
 {-| -}
 ellip : Attribute msg
 ellip =
-    Two.Attr (Attr.class Style.classes.ellipses)
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Attr (Attr.class Style.classes.ellipses)
+        }
 
 
 {-| Sometimes you may not want to split available space evenly. In this case you can use `portion` to define which elements should have what portion of the available space.
@@ -1052,28 +1058,40 @@ image attrs { src, description } =
 
 -}
 link : String -> Attribute msg
-link =
-    Two.Link False
+link uri =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Link False uri
+        }
 
 
 {-| -}
 linkNewTab : String -> Attribute msg
-linkNewTab =
-    Two.Link True
+linkNewTab str =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Link True str
+        }
 
 
 {-| A link to download a file.
 -}
 download : String -> Attribute msg
 download url =
-    Two.Download url ""
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Download url ""
+        }
 
 
 {-| A link to download a file, but you can specify the filename.
 -}
 downloadAs : { url : String, filename : String } -> Attribute msg
 downloadAs { url, filename } =
-    Two.Download url filename
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Download url filename
+        }
 
 
 
@@ -1083,25 +1101,37 @@ downloadAs { url, filename } =
 {-| -}
 below : Two.Element msg -> Attribute msg
 below element =
-    Two.Nearby Two.Below element
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Nearby Two.Below element
+        }
 
 
 {-| -}
 above : Two.Element msg -> Attribute msg
 above element =
-    Two.Nearby Two.Above element
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Nearby Two.Above element
+        }
 
 
 {-| -}
 onRight : Two.Element msg -> Attribute msg
 onRight element =
-    Two.Nearby Two.OnRight element
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Nearby Two.OnRight element
+        }
 
 
 {-| -}
 onLeft : Two.Element msg -> Attribute msg
 onLeft element =
-    Two.Nearby Two.OnLeft element
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Nearby Two.OnLeft element
+        }
 
 
 {-| This will place an element in front of another.
@@ -1111,14 +1141,20 @@ onLeft element =
 -}
 inFront : Two.Element msg -> Attribute msg
 inFront element =
-    Two.Nearby Two.InFront element
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Nearby Two.InFront element
+        }
 
 
 {-| This will place an element between the background and the content of an Ui.
 -}
 behindContent : Two.Element msg -> Attribute msg
 behindContent element =
-    Two.Nearby Two.Behind element
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Nearby Two.Behind element
+        }
 
 
 {-| -}
@@ -1126,52 +1162,78 @@ width : Length -> Attribute msg
 width len =
     case len of
         Px x ->
-            Two.ClassAndStyle Flag.width
-                Style.classes.widthExact
-                "width"
-                (Style.px x)
+            Two.Attribute
+                { flag = Flag.width
+                , attr =
+                    Two.ClassAndStyle
+                        Style.classes.widthExact
+                        "width"
+                        (Style.px x)
+                }
 
         Content ->
-            Two.Class Flag.width Style.classes.widthContent
+            Two.Attribute
+                { flag = Flag.width
+                , attr = Two.Class Style.classes.widthContent
+                }
 
         Fill f ->
-            Two.WidthFill f
+            Two.Attribute
+                { flag = Flag.skip
+                , attr = Two.WidthFill f
+                }
 
 
 {-| -}
 widthMin : Int -> Attribute msg
 widthMin x =
-    Two.ClassAndStyle Flag.widthBetween
-        Style.classes.widthBounded
-        "min-width"
-        (String.fromInt x ++ "px")
+    Two.Attribute
+        { flag = Flag.widthBetween
+        , attr =
+            Two.ClassAndStyle
+                Style.classes.widthBounded
+                "min-width"
+                (String.fromInt x ++ "px")
+        }
 
 
 {-| -}
 widthMax : Int -> Attribute msg
 widthMax x =
-    Two.ClassAndStyle Flag.widthBetween
-        Style.classes.widthBounded
-        "max-width"
-        (String.fromInt x ++ "px")
+    Two.Attribute
+        { flag = Flag.widthBetween
+        , attr =
+            Two.ClassAndStyle
+                Style.classes.widthBounded
+                "max-width"
+                (String.fromInt x ++ "px")
+        }
 
 
 {-| -}
 heightMin : Int -> Attribute msg
 heightMin x =
-    Two.ClassAndStyle Flag.heightBetween
-        Style.classes.heightBounded
-        "min-height"
-        (String.fromInt x ++ "px;")
+    Two.Attribute
+        { flag = Flag.heightBetween
+        , attr =
+            Two.ClassAndStyle
+                Style.classes.heightBounded
+                "min-height"
+                (String.fromInt x ++ "px")
+        }
 
 
 {-| -}
 heightMax : Int -> Attribute msg
 heightMax x =
-    Two.ClassAndStyle Flag.heightBetween
-        Style.classes.heightBounded
-        "max-height"
-        (String.fromInt x ++ "px")
+    Two.Attribute
+        { flag = Flag.heightBetween
+        , attr =
+            Two.ClassAndStyle
+                Style.classes.heightBounded
+                "max-height"
+                (String.fromInt x ++ "px")
+        }
 
 
 {-| -}
@@ -1179,22 +1241,36 @@ height : Length -> Attribute msg
 height len =
     case len of
         Px x ->
-            Two.ClassAndStyle Flag.height
-                Style.classes.heightExact
-                "height"
-                (String.fromInt x ++ "px")
+            Two.Attribute
+                { flag = Flag.height
+                , attr =
+                    Two.ClassAndStyle
+                        Style.classes.heightExact
+                        "height"
+                        (String.fromInt x ++ "px")
+                }
 
         Content ->
-            Two.Class Flag.height Style.classes.heightContent
+            Two.Attribute
+                { flag = Flag.height
+                , attr = Two.Class Style.classes.heightContent
+                }
 
         Fill f ->
-            Two.HeightFill f
+            Two.Attribute
+                { flag = Flag.height
+                , attr =
+                    Two.HeightFill f
+                }
 
 
 {-| -}
 scale : Float -> Attribute msg
-scale =
-    Two.TransformPiece 3
+scale s =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.TransformPiece 3 s
+        }
 
 
 {-| -}
@@ -1241,42 +1317,63 @@ radians =
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
 rotate : Float -> Attribute msg
-rotate =
-    Two.TransformPiece 2
+rotate r =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.TransformPiece 2 r
+        }
 
 
 {-| -}
 moveUp : Float -> Attribute msg
-moveUp =
-    Two.TransformPiece 1 << negate
+moveUp x =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.TransformPiece 1 (negate x)
+        }
 
 
 {-| -}
 moveDown : Float -> Attribute msg
-moveDown =
-    Two.TransformPiece 1
+moveDown x =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.TransformPiece 1 x
+        }
 
 
 {-| -}
 moveRight : Float -> Attribute msg
-moveRight =
-    Two.TransformPiece 0
+moveRight x =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr =
+            Two.TransformPiece 0 x
+        }
 
 
 {-| -}
 moveLeft : Float -> Attribute msg
-moveLeft =
-    Two.TransformPiece 0 << negate
+moveLeft x =
+    Two.Attribute
+        { flag = Flag.skip
+        , attr =
+            Two.TransformPiece 0 (negate x)
+        }
 
 
 {-| -}
 padding : Int -> Attribute msg
 padding x =
-    Two.Padding Flag.padding
-        { top = x
-        , left = x
-        , bottom = x
-        , right = x
+    Two.Attribute
+        { flag = Flag.padding
+        , attr =
+            Two.Padding
+                { top = x
+                , left = x
+                , bottom = x
+                , right = x
+                }
         }
 
 
@@ -1284,11 +1381,15 @@ padding x =
 -}
 paddingXY : Int -> Int -> Attribute msg
 paddingXY x y =
-    Two.Padding Flag.padding
-        { top = y
-        , left = x
-        , bottom = y
-        , right = x
+    Two.Attribute
+        { flag = Flag.padding
+        , attr =
+            Two.Padding
+                { top = y
+                , left = x
+                , bottom = y
+                , right = x
+                }
         }
 
 
@@ -1308,55 +1409,82 @@ And then just do
 -}
 paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute msg
 paddingEach pad =
-    Two.Padding Flag.padding pad
+    Two.Attribute
+        { flag = Flag.padding
+        , attr = Two.Padding pad
+        }
 
 
 {-| -}
 centerX : Attribute msg
 centerX =
-    Two.Class Flag.xAlign Style.classes.alignCenterX
+    Two.Attribute
+        { flag = Flag.xAlign
+        , attr = Two.Class Style.classes.alignCenterX
+        }
 
 
 {-| -}
 centerY : Attribute msg
 centerY =
-    Two.Class Flag.yAlign Style.classes.alignCenterY
+    Two.Attribute
+        { flag = Flag.yAlign
+        , attr = Two.Class Style.classes.alignCenterY
+        }
 
 
 {-| -}
 alignTop : Attribute msg
 alignTop =
-    Two.Class Flag.yAlign Style.classes.alignTop
+    Two.Attribute
+        { flag = Flag.yAlign
+        , attr = Two.Class Style.classes.alignTop
+        }
 
 
 {-| -}
 alignBottom : Attribute msg
 alignBottom =
-    Two.Class Flag.yAlign Style.classes.alignBottom
+    Two.Attribute
+        { flag = Flag.yAlign
+        , attr = Two.Class Style.classes.alignBottom
+        }
 
 
 {-| -}
 alignLeft : Attribute msg
 alignLeft =
-    Two.Class Flag.xAlign Style.classes.alignLeft
+    Two.Attribute
+        { flag = Flag.xAlign
+        , attr = Two.Class Style.classes.alignLeft
+        }
 
 
 {-| -}
 alignRight : Attribute msg
 alignRight =
-    Two.Class Flag.xAlign Style.classes.alignRight
+    Two.Attribute
+        { flag = Flag.xAlign
+        , attr = Two.Class Style.classes.alignRight
+        }
 
 
 {-| -}
 spaceEvenly : Attribute msg
 spaceEvenly =
-    Two.Class Flag.spacing Style.classes.spaceEvenly
+    Two.Attribute
+        { flag = Flag.spacing
+        , attr = Two.Class Style.classes.spaceEvenly
+        }
 
 
 {-| -}
 spacing : Int -> Attribute msg
 spacing x =
-    Two.Spacing Flag.spacing x x
+    Two.Attribute
+        { flag = Flag.spacing
+        , attr = Two.Spacing x x
+        }
 
 
 {-| In the majority of cases you'll just need to use `spacing`, which will work as intended.
@@ -1366,7 +1494,10 @@ However for some layouts, like `textColumn`, you may want to set a different spa
 -}
 spacingXY : Int -> Int -> Attribute msg
 spacingXY x y =
-    Two.Spacing Flag.spacing x y
+    Two.Attribute
+        { flag = Flag.spacing
+        , attr = Two.Spacing x y
+        }
 
 
 {-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.
@@ -1374,10 +1505,10 @@ spacingXY x y =
 transparent : Bool -> Attribute msg
 transparent on =
     if on then
-        Two.Attr (Attr.style "opacity" "1")
+        alpha 0
 
     else
-        Two.Attr (Attr.style "opacity" "0")
+        alpha 1
 
 
 {-| A capped value between 0.0 and 1.0, where 0.0 is transparent and 1.0 is fully opaque.
@@ -1387,7 +1518,10 @@ Semantically equivalent to html opacity.
 -}
 alpha : Float -> Attribute msg
 alpha o =
-    Two.Attr (Attr.style "opacity" (String.fromFloat (1 + (-1 * o))))
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Attr (Attr.style "opacity" (String.fromFloat (1 + (-1 * o))))
+        }
 
 
 {-| -}
@@ -1405,19 +1539,28 @@ viewport attrs child =
 {-| -}
 scrollbars : Attribute msg
 scrollbars =
-    Two.Class Flag.overflow Style.classes.scrollbars
+    Two.Attribute
+        { flag = Flag.overflow
+        , attr = Two.Class Style.classes.scrollbars
+        }
 
 
 {-| -}
 scrollbarY : Attribute msg
 scrollbarY =
-    Two.Class Flag.overflow Style.classes.scrollbarsY
+    Two.Attribute
+        { flag = Flag.overflow
+        , attr = Two.Class Style.classes.scrollbarsY
+        }
 
 
 {-| -}
 scrollbarX : Attribute msg
 scrollbarX =
-    Two.Class Flag.overflow Style.classes.scrollbarsX
+    Two.Attribute
+        { flag = Flag.overflow
+        , attr = Two.Class Style.classes.scrollbarsX
+        }
 
 
 {-| Clip the content if it overflows.
@@ -1441,38 +1584,56 @@ clipped attrs child =
 {-| -}
 clip : Attribute msg
 clip =
-    Two.Class Flag.overflow Style.classes.clip
+    Two.Attribute
+        { flag = Flag.overflow
+        , attr = Two.Class Style.classes.clip
+        }
 
 
 {-| -}
 clipY : Attribute msg
 clipY =
-    Two.Class Flag.overflow Style.classes.clipY
+    Two.Attribute
+        { flag = Flag.overflow
+        , attr = Two.Class Style.classes.clipY
+        }
 
 
 {-| -}
 clipX : Attribute msg
 clipX =
-    Two.Class Flag.overflow Style.classes.clipX
+    Two.Attribute
+        { flag = Flag.overflow
+        , attr = Two.Class Style.classes.clipX
+        }
 
 
 {-| Set the cursor to be a pointing hand when it's hovering over this Ui.
 -}
 pointer : Attribute msg
 pointer =
-    Two.Class Flag.cursor Style.classes.cursorPointer
+    Two.Attribute
+        { flag = Flag.cursor
+        , attr = Two.Class Style.classes.cursorPointer
+        }
 
 
 {-| -}
 grab : Attribute msg
 grab =
-    Two.Class Flag.cursor Style.classes.cursorGrab
+    Two.Attribute
+        { flag = Flag.cursor
+        , attr = Two.Class Style.classes.cursorGrab
+        }
 
 
 {-| -}
 grabbing : Attribute msg
 grabbing =
-    Two.Class Flag.cursor Style.classes.cursorGrabbing
+    Two.Attribute
+        { flag = Flag.cursor
+        , attr = Two.Class Style.classes.cursorGrabbing
+        }
 
 
 {-| -}

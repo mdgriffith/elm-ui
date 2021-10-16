@@ -27,14 +27,14 @@ module Ui.Background exposing
 import Html.Attributes as Attr
 import Internal.Model2 as Two
 import Internal.Style2 as Style
-import Ui exposing (Angle, Attribute, Color)
+import Ui exposing (Attribute, Color)
 import Ui.Gradient
 
 
 {-| -}
-color : Color -> Two.Attribute msg
+color : Color -> Attribute msg
 color clr =
-    Two.Attr
+    Two.attribute
         (Attr.style "background-color"
             (Style.color clr)
         )
@@ -44,7 +44,7 @@ color clr =
 -}
 image : String -> Attribute msg
 image src =
-    Two.Attr
+    Two.attribute
         (Attr.style "background"
             ("url(\"" ++ src ++ "\") center / cover no-repeat")
         )
@@ -54,7 +54,7 @@ image src =
 -}
 uncropped : String -> Attribute msg
 uncropped src =
-    Two.Attr
+    Two.attribute
         (Attr.style "background"
             ("url(\"" ++ src ++ "\") center / contain no-repeat")
         )
@@ -64,7 +64,7 @@ uncropped src =
 -}
 tiled : String -> Attribute msg
 tiled src =
-    Two.Attr
+    Two.attribute
         (Attr.style "background"
             ("url(\"" ++ src ++ "\") center / repeat")
         )
@@ -74,7 +74,7 @@ tiled src =
 -}
 tiledX : String -> Attribute msg
 tiledX src =
-    Two.Attr
+    Two.attribute
         (Attr.style "background"
             ("url(\"" ++ src ++ "\") center / repeat-x")
         )
@@ -84,7 +84,7 @@ tiledX src =
 -}
 tiledY : String -> Attribute msg
 tiledY src =
-    Two.Attr
+    Two.attribute
         (Attr.style "background"
             ("url(\"" ++ src ++ "\") center / repeat-y")
         )
@@ -103,7 +103,7 @@ gradient :
     Ui.Gradient.Gradient
     -> Attribute msg
 gradient grad =
-    Two.Attr
+    Two.attribute
         (Attr.style "background-image"
             (Style.toCssGradient grad)
         )
@@ -114,10 +114,10 @@ gradients : List Ui.Gradient.Gradient -> Attribute msg
 gradients grads =
     case grads of
         [] ->
-            Two.NoAttribute
+            Two.noAttr
 
         _ ->
-            Two.Attr
+            Two.attribute
                 (Attr.style "background-image"
                     (List.map Style.toCssGradient grads
                         |> String.join ", "

@@ -764,84 +764,88 @@ transitionToClass (Transition transition) =
 
 
 mapAttr : (Msg b -> b) -> (a -> b) -> Attribute a -> Attribute b
-mapAttr uiFn fn attr =
-    case attr of
-        NoAttribute ->
-            NoAttribute
+mapAttr uiFn fn (Attribute attr) =
+    Attribute
+        { flag = attr.flag
+        , attr =
+            case attr.attr of
+                NoAttribute ->
+                    NoAttribute
 
-        WidthFill i ->
-            WidthFill i
+                WidthFill i ->
+                    WidthFill i
 
-        HeightFill i ->
-            HeightFill i
+                HeightFill i ->
+                    HeightFill i
 
-        Font a ->
-            Font a
+                Font a ->
+                    Font a
 
-        FontSize i ->
-            FontSize i
+                FontSize i ->
+                    FontSize i
 
-        TransformPiece s t ->
-            TransformPiece s t
+                TransformPiece s t ->
+                    TransformPiece s t
 
-        OnPress msg ->
-            OnPress (fn msg)
+                OnPress msg ->
+                    OnPress (fn msg)
 
-        Spacing flag x y ->
-            Spacing flag x y
+                Spacing x y ->
+                    Spacing x y
 
-        Padding flag edges ->
-            Padding flag edges
+                Padding edges ->
+                    Padding edges
 
-        BorderWidth flag edges ->
-            BorderWidth flag edges
+                BorderWidth edges ->
+                    BorderWidth edges
 
-        Attr a ->
-            Attr (Attr.map fn a)
+                Attr a ->
+                    Attr (Attr.map fn a)
 
-        Link target url ->
-            Link target url
+                Link target url ->
+                    Link target url
 
-        Download url filename ->
-            Download url filename
+                Download url filename ->
+                    Download url filename
 
-        NodeName name ->
-            NodeName name
+                NodeName name ->
+                    NodeName name
 
-        -- invalidation key and literal class
-        Class flag cls ->
-            Class flag cls
+                -- invalidation key and literal class
+                Class cls ->
+                    Class cls
 
-        -- When using a css variable we want to attach the variable itself
-        -- and a class that implements the rule.
-        --               class  var       value
-        ClassAndStyle flag cls name val ->
-            ClassAndStyle flag cls name val
+                -- When using a css variable we want to attach the variable itself
+                -- and a class that implements the rule.
+                --               class  var       value
+                ClassAndStyle cls name val ->
+                    ClassAndStyle cls name val
 
-        ClassAndVar flag cls name val ->
-            ClassAndVar flag cls name val
+                ClassAndVar cls name val ->
+                    ClassAndVar cls name val
 
-        Nearby loc el ->
-            Nearby loc (map fn el)
+                Nearby loc el ->
+                    Nearby loc (map fn el)
 
-        When toMsg when ->
-            When uiFn
-                { phase = when.phase
-                , class = when.class
-                , transition = when.transition
-                , prop = when.prop
-                , val = when.val
-                }
+                When toMsg when ->
+                    When uiFn
+                        { phase = when.phase
+                        , class = when.class
+                        , transition = when.transition
+                        , prop = when.prop
+                        , val = when.val
+                        }
 
-        WhenAll toMsg trigger classStr props ->
-            WhenAll
-                uiFn
-                trigger
-                classStr
-                props
+                WhenAll toMsg trigger classStr props ->
+                    WhenAll
+                        uiFn
+                        trigger
+                        classStr
+                        props
 
-        Animated toMsg id ->
-            Animated uiFn id
+                Animated toMsg id ->
+                    Animated uiFn id
+        }
 
 
 type Layout
@@ -872,7 +876,18 @@ toCssId (Id one two) =
 
 class : String -> Attribute msg
 class cls =
-    Attr (Attr.class cls)
+    Attribute
+        { flag = Flag.skip
+        , attr = Attr (Attr.class cls)
+        }
+
+
+classWith : Flag -> String -> Attribute msg
+classWith flag cls =
+    Attribute
+        { flag = flag
+        , attr = Attr (Attr.class cls)
+        }
 
 
 type alias TransformSlot =
@@ -880,6 +895,13 @@ type alias TransformSlot =
 
 
 type Attribute msg
+    = Attribute
+        { flag : Flag
+        , attr : Attr msg
+        }
+
+
+type Attr msg
     = NoAttribute
     | OnPress msg
     | Attr (Html.Attribute msg)
@@ -899,22 +921,18 @@ type Attribute msg
         }
     | FontSize Int
     | NodeName String
-    | Spacing Flag Int Int
-    | Padding Flag Edges
-    | BorderWidth Flag Edges
-      -- | TranslateX Float
-      -- | TranslateY Float
-      -- | Rotate Float
-      -- | Scale Float
+    | Spacing Int Int
+    | Padding Edges
+    | BorderWidth Edges
     | TransformPiece TransformSlot Float
       -- invalidation key and literal class
-    | Class Flag String
+    | Class String
       -- When using a css variable we want to attach the variable itself
       -- and a class that implements the rule.
       --                 class  prop  value
-    | ClassAndStyle Flag String String String
+    | ClassAndStyle String String String
       --                 class  var    val
-    | ClassAndVar Flag String String String
+    | ClassAndVar String String String
     | Nearby Location (Element msg)
     | When (Msg msg -> msg) TransitionDetails
     | WhenAll (Msg msg -> msg) Trigger String (List Animated)
@@ -980,52 +998,27 @@ type alias TransitionDetails =
     }
 
 
-hasFlag flag attr =
-    case attr of
-        Spacing f _ _ ->
-            Flag.equal flag f
 
-        Padding f _ ->
-            Flag.equal flag f
-
-        BorderWidth f _ ->
-            Flag.equal flag f
-
-        Class f _ ->
-            Flag.equal flag f
-
-        ClassAndStyle f _ _ _ ->
-            Flag.equal flag f
-
-        ClassAndVar f _ _ _ ->
-            Flag.equal flag f
-
-        _ ->
-            False
+-- hasFlag flag attr =
+--     case attr of
+--         Spacing f _ _ ->
+--             Flag.equal flag f
+--         Padding f _ ->
+--             Flag.equal flag f
+--         BorderWidth f _ ->
+--             Flag.equal flag f
+--         Class f _ ->
+--             Flag.equal flag f
+--         ClassAndStyle f _ _ _ ->
+--             Flag.equal flag f
+--         ClassAndVar f _ _ _ ->
+--             Flag.equal flag f
+--         _ ->
+--             False
 
 
 hasFlags flags attr =
-    case attr of
-        Spacing f _ _ ->
-            List.any (Flag.equal f) flags
-
-        Padding f _ ->
-            List.any (Flag.equal f) flags
-
-        BorderWidth f _ ->
-            List.any (Flag.equal f) flags
-
-        Class f _ ->
-            List.any (Flag.equal f) flags
-
-        ClassAndStyle f _ _ _ ->
-            List.any (Flag.equal f) flags
-
-        ClassAndVar f _ _ _ ->
-            List.any (Flag.equal f) flags
-
-        _ ->
-            False
+    List.any (Flag.equal attr.flag) flags
 
 
 type Location
@@ -1254,12 +1247,32 @@ type Wrapped
     = InLink String
 
 
-wrappedRowAttributes attr =
-    case attr of
-        Spacing flag x y ->
+noAttr =
+    Attribute
+        { flag = Flag.skip
+        , attr = NoAttribute
+        }
+
+
+attribute a =
+    Attribute
+        { flag = Flag.skip
+        , attr = Attr a
+        }
+
+
+wrappedRowAttributes ((Attribute inner) as attr) =
+    case inner.attr of
+        Spacing x y ->
             [ attr
-            , Attr (Attr.style "margin-right" (Style.px (-1 * x)))
-            , Attr (Attr.style "margin-bottom" (Style.px (-1 * y)))
+            , Attribute
+                { flag = Flag.skip
+                , attr = Attr (Attr.style "margin-right" (Style.px (-1 * x)))
+                }
+            , Attribute
+                { flag = Flag.skip
+                , attr = Attr (Attr.style "margin-bottom" (Style.px (-1 * y)))
+                }
             ]
 
         _ ->
@@ -1757,704 +1770,648 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         finalAttributes
                         finalChildren
 
-        NoAttribute :: remain ->
-            renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
-
-        (FontSize size) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                { name = details.name
-                , node = details.node
-                , spacingX = details.spacingX
-                , spacingY = details.spacingY
-                , fontOffset = details.fontOffset
-                , fontHeight =
-                    details.fontHeight
-                , fontSize =
-                    size
-                , heightFill = details.heightFill
-                , widthFill = details.widthFill
-                , padding = details.padding
-                , borders = details.borders
-                , transform = details.transform
-                , animEvents = details.animEvents
-                , hover = details.hover
-                , focus = details.focus
-                , active = details.active
-                }
-                children
-                has
-                htmlAttrs
-                classes
-                nearby
-                vars
-                remain
-
-        (Font font) :: remain ->
+        (Attribute { flag, attr }) :: remain ->
             let
-                withSmallcaps =
-                    if font.smallCaps then
-                        Attr.style "font-variant-caps" "small-caps"
-                            :: htmlAttrs
-
-                    else
-                        htmlAttrs
-
-                withFeatures =
-                    if font.variants == "" then
-                        withSmallcaps
-
-                    else
-                        Attr.style "font-feature-settings" font.variants
-                            :: withSmallcaps
+                present =
+                    case flag of
+                        Flag.Flag f ->
+                            f - 0 == 0
             in
-            renderAttrs parentEncoded
-                layout
-                { name = details.name
-                , node = details.node
-                , spacingX = details.spacingX
-                , spacingY = details.spacingY
-                , fontOffset =
-                    case font.adjustments of
-                        Nothing ->
-                            details.fontOffset
-
-                        Just adj ->
-                            adj.offset
-                , fontHeight =
-                    case font.adjustments of
-                        Nothing ->
-                            details.fontHeight
-
-                        Just adj ->
-                            adj.height
-                , fontSize =
-                    details.fontSize
-                , heightFill = details.heightFill
-                , widthFill = details.widthFill
-                , padding = details.padding
-                , borders = details.borders
-                , transform = details.transform
-                , animEvents = details.animEvents
-                , hover = details.hover
-                , focus = details.focus
-                , active = details.active
-                }
-                children
-                (case font.adjustments of
-                    Nothing ->
-                        has
-
-                    Just _ ->
-                        Flag.add Flag.fontAdjustment has
-                )
-                (Attr.style "font-family" font.family
-                    :: withFeatures
-                )
-                classes
-                nearby
-                vars
-                remain
-
-        (TransformPiece slot val) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                { details | transform = Just (upsertTransform slot val details.transform) }
-                children
-                (Flag.add Flag.transform has)
-                htmlAttrs
-                classes
-                nearby
-                vars
-                remain
-
-        (Attr attr) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                details
-                children
-                has
-                (attr :: htmlAttrs)
-                classes
-                nearby
-                vars
-                remain
-
-        (OnPress press) :: remain ->
-            -- Make focusable
-            -- Attach keyboard handler
-            -- Attach click handler
-            renderAttrs parentEncoded
-                layout
-                details
-                children
-                has
-                (Attr.style "tabindex" "0"
-                    :: Events.onClick press
-                    :: onKey "Enter" press
-                    :: htmlAttrs
-                )
-                classes
-                nearby
-                vars
-                remain
-
-        (Link targetBlank url) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                { details | node = 1 }
-                children
-                has
-                (Attr.href url
-                    :: Attr.rel "noopener noreferrer"
-                    :: Attr.target
-                        (if targetBlank then
-                            "_blank"
-
-                         else
-                            "_self"
-                        )
-                    :: htmlAttrs
-                )
-                classes
-                nearby
-                vars
-                remain
-
-        (Download url downloadName) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                { details | node = 1 }
-                children
-                has
-                (Attr.href url
-                    :: Attr.download downloadName
-                    :: htmlAttrs
-                )
-                classes
-                nearby
-                vars
-                remain
-
-        (NodeName nodeName) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                { details | name = nodeName, node = 4 }
-                children
-                has
-                htmlAttrs
-                classes
-                nearby
-                vars
-                remain
-
-        (Class flag str) :: remain ->
-            if Flag.present flag has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
+            if not present || not (Flag.present flag has) then
+                renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
 
             else
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    (Flag.add flag has)
-                    htmlAttrs
-                    (str ++ " " ++ classes)
-                    nearby
-                    vars
-                    remain
+                case attr of
+                    NoAttribute ->
+                        renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
 
-        (ClassAndStyle flag cls styleName styleVal) :: remain ->
-            if Flag.present flag has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
+                    FontSize size ->
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , fontSize =
+                                size
+                            , heightFill = details.heightFill
+                            , widthFill = details.widthFill
+                            , padding = details.padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = details.animEvents
+                            , hover = details.hover
+                            , focus = details.focus
+                            , active = details.active
+                            }
+                            children
+                            has
+                            htmlAttrs
+                            classes
+                            nearby
+                            vars
+                            remain
 
-            else
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    (Flag.add flag has)
-                    (Attr.style styleName styleVal :: htmlAttrs)
-                    (cls ++ " " ++ classes)
-                    nearby
-                    vars
-                    remain
-
-        (ClassAndVar flag cls varName varVal) :: remain ->
-            if Flag.present flag has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-            else
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    (Flag.add flag has)
-                    htmlAttrs
-                    (cls ++ " " ++ classes)
-                    nearby
-                    (vars ++ "--" ++ varName ++ ":" ++ varVal ++ ";")
-                    remain
-
-        (Nearby location elem) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                details
-                children
-                has
-                htmlAttrs
-                classes
-                (addNearbyElement location elem nearby)
-                vars
-                remain
-
-        (Spacing flag x y) :: remain ->
-            if Flag.present flag has || layout == AsEl then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-            else
-                renderAttrs parentEncoded
-                    layout
-                    { details | spacingX = x, spacingY = y }
-                    children
-                    (Flag.add flag has)
-                    htmlAttrs
-                    (Style.classes.spacing ++ " " ++ classes)
-                    nearby
-                    vars
-                    remain
-
-        (Padding flag padding) :: remain ->
-            if Flag.present flag has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-            else
-                renderAttrs parentEncoded
-                    layout
-                    { name = details.name
-                    , node = details.node
-                    , spacingX = details.spacingX
-                    , spacingY = details.spacingY
-                    , fontSize = details.fontSize
-                    , fontOffset = details.fontOffset
-                    , fontHeight =
-                        details.fontHeight
-                    , heightFill = details.heightFill
-                    , widthFill = details.widthFill
-                    , padding = padding
-                    , borders = details.borders
-                    , transform = details.transform
-                    , animEvents = details.animEvents
-                    , hover = details.hover
-                    , focus = details.focus
-                    , active = details.active
-                    }
-                    children
-                    (Flag.add flag has)
-                    (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
-                        Attr.style "padding"
-                            (String.fromInt padding.top ++ "px")
-                            :: htmlAttrs
-
-                     else
-                        Attr.style "padding"
-                            ((String.fromInt padding.top ++ "px ")
-                                ++ (String.fromInt padding.right ++ "px ")
-                                ++ (String.fromInt padding.bottom ++ "px ")
-                                ++ (String.fromInt padding.left ++ "px")
-                            )
-                            :: htmlAttrs
-                    )
-                    classes
-                    nearby
-                    vars
-                    remain
-
-        (BorderWidth flag borders) :: remain ->
-            if Flag.present flag has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-            else
-                renderAttrs parentEncoded
-                    layout
-                    { name = details.name
-                    , node = details.node
-                    , spacingX = details.spacingX
-                    , spacingY = details.spacingY
-                    , fontOffset = details.fontOffset
-                    , fontHeight =
-                        details.fontHeight
-                    , fontSize =
-                        details.fontSize
-                    , heightFill = details.heightFill
-                    , widthFill = details.widthFill
-                    , padding = details.padding
-                    , borders = borders
-                    , transform = details.transform
-                    , animEvents = details.animEvents
-                    , hover = details.hover
-                    , focus = details.focus
-                    , active = details.active
-                    }
-                    children
-                    (Flag.add flag has)
-                    (if borders.top == borders.right && borders.top == borders.left && borders.top == borders.bottom then
-                        Attr.style "border-width"
-                            (String.fromInt borders.top ++ "px")
-                            :: htmlAttrs
-
-                     else
-                        Attr.style "border-width"
-                            ((String.fromInt borders.top ++ "px ")
-                                ++ (String.fromInt borders.right ++ "px  ")
-                                ++ (String.fromInt borders.bottom ++ "px ")
-                                ++ (String.fromInt borders.left ++ "px")
-                            )
-                            :: htmlAttrs
-                    )
-                    classes
-                    nearby
-                    vars
-                    remain
-
-        (HeightFill i) :: remain ->
-            if Flag.present Flag.height has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-            else
-                renderAttrs parentEncoded
-                    layout
-                    { name = details.name
-                    , node = details.node
-                    , spacingX = details.spacingX
-                    , spacingY = details.spacingY
-                    , fontOffset = details.fontOffset
-                    , fontHeight =
-                        details.fontHeight
-                    , fontSize =
-                        details.fontSize
-                    , heightFill = i
-                    , widthFill = details.widthFill
-                    , padding = details.padding
-                    , borders = details.borders
-                    , transform = details.transform
-                    , animEvents = details.animEvents
-                    , hover = details.hover
-                    , focus = details.focus
-                    , active = details.active
-                    }
-                    children
-                    (Flag.add Flag.height has)
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-        (WidthFill i) :: remain ->
-            if Flag.present Flag.width has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-            else
-                renderAttrs parentEncoded
-                    layout
-                    { name = details.name
-                    , node = details.node
-                    , spacingX = details.spacingX
-                    , spacingY = details.spacingY
-                    , fontOffset = details.fontOffset
-                    , fontHeight =
-                        details.fontHeight
-                    , fontSize =
-                        details.fontSize
-                    , heightFill = details.heightFill
-                    , widthFill = i
-                    , padding = details.padding
-                    , borders = details.borders
-                    , transform = details.transform
-                    , animEvents = details.animEvents
-                    , hover = details.hover
-                    , focus = details.focus
-                    , active = details.active
-                    }
-                    children
-                    (Flag.add Flag.width has)
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-        (When toMsg when) :: remain ->
-            renderAttrs parentEncoded
-                layout
-                { name = details.name
-                , node = details.node
-                , spacingX = details.spacingX
-                , spacingY = details.spacingY
-                , fontOffset = details.fontOffset
-                , fontHeight =
-                    details.fontHeight
-                , fontSize =
-                    details.fontSize
-                , heightFill = details.heightFill
-                , widthFill = details.widthFill
-                , padding = details.padding
-                , borders = details.borders
-                , transform = details.transform
-                , animEvents = details.animEvents
-                , hover =
-                    case when.phase of
-                        Hovered ->
-                            case details.hover of
-                                Nothing ->
-                                    Just
-                                        { toMsg = toMsg
-                                        , class = when.class
-                                        , transitions = [ when ]
-                                        }
-
-                                Just transition ->
-                                    Just
-                                        { toMsg = toMsg
-                                        , class = when.class ++ "-" ++ transition.class
-                                        , transitions = when :: transition.transitions
-                                        }
-
-                        _ ->
-                            details.hover
-                , focus =
-                    case when.phase of
-                        Focused ->
-                            case details.focus of
-                                Nothing ->
-                                    Just
-                                        { toMsg = toMsg
-                                        , class = when.class
-                                        , transitions = [ when ]
-                                        }
-
-                                Just transition ->
-                                    Just
-                                        { toMsg = toMsg
-                                        , class = when.class ++ "-" ++ transition.class
-                                        , transitions = when :: transition.transitions
-                                        }
-
-                        _ ->
-                            details.focus
-                , active =
-                    case when.phase of
-                        Pressed ->
-                            case details.active of
-                                Nothing ->
-                                    Just
-                                        { toMsg = toMsg
-                                        , class = when.class
-                                        , transitions = [ when ]
-                                        }
-
-                                Just transition ->
-                                    Just
-                                        { toMsg = toMsg
-                                        , class = when.class ++ "-" ++ transition.class
-                                        , transitions = when :: transition.transitions
-                                        }
-
-                        _ ->
-                            details.active
-                }
-                children
-                has
-                htmlAttrs
-                classes
-                nearby
-                vars
-                remain
-
-        (WhenAll toMsg trigger classStr props) :: remain ->
-            let
-                triggerClass =
-                    triggerName trigger
-
-                event =
-                    Json.field "animationName" Json.string
-                        |> Json.andThen
-                            (\name ->
-                                if name == triggerClass then
-                                    Json.succeed
-                                        (toMsg
-                                            (Animate Nothing trigger classStr props)
-                                        )
+                    Font font ->
+                        let
+                            withSmallcaps =
+                                if font.smallCaps then
+                                    Attr.style "font-variant-caps" "small-caps"
+                                        :: htmlAttrs
 
                                 else
-                                    Json.fail "Nonmatching animation"
+                                    htmlAttrs
+
+                            withFeatures =
+                                if font.variants == "" then
+                                    withSmallcaps
+
+                                else
+                                    Attr.style "font-feature-settings" font.variants
+                                        :: withSmallcaps
+                        in
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset =
+                                case font.adjustments of
+                                    Nothing ->
+                                        details.fontOffset
+
+                                    Just adj ->
+                                        adj.offset
+                            , fontHeight =
+                                case font.adjustments of
+                                    Nothing ->
+                                        details.fontHeight
+
+                                    Just adj ->
+                                        adj.height
+                            , fontSize =
+                                details.fontSize
+                            , heightFill = details.heightFill
+                            , widthFill = details.widthFill
+                            , padding = details.padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = details.animEvents
+                            , hover = details.hover
+                            , focus = details.focus
+                            , active = details.active
+                            }
+                            children
+                            (case font.adjustments of
+                                Nothing ->
+                                    has
+
+                                Just _ ->
+                                    Flag.add Flag.fontAdjustment has
                             )
-            in
-            renderAttrs parentEncoded
-                layout
-                { name = details.name
-                , node = details.node
-                , spacingX = details.spacingX
-                , spacingY = details.spacingY
-                , fontOffset = details.fontOffset
-                , fontHeight =
-                    details.fontHeight
-                , fontSize =
-                    details.fontSize
-                , heightFill = details.heightFill
-                , widthFill = details.widthFill
-                , padding = details.padding
-                , borders = details.borders
-                , transform = details.transform
-                , animEvents = event :: details.animEvents
-                , hover =
-                    details.focus
-                , focus =
-                    details.focus
-                , active =
-                    details.active
-                }
-                children
-                has
-                htmlAttrs
-                (classStr ++ " " ++ triggerClass ++ " " ++ classes)
-                nearby
-                vars
-                remain
-
-        (Animated toMsg id) :: remain ->
-            if Flag.present Flag.id has then
-                renderAttrs parentEncoded
-                    layout
-                    details
-                    children
-                    has
-                    htmlAttrs
-                    classes
-                    nearby
-                    vars
-                    remain
-
-            else
-                let
-                    event =
-                        Json.map2
-                            (\_ box ->
-                                toMsg (BoxNew id box)
+                            (Attr.style "font-family" font.family
+                                :: withFeatures
                             )
-                            (Json.field "animationName" Json.string
-                                |> Json.andThen
-                                    (\name ->
-                                        if name == "on-rendered" then
-                                            Json.succeed ()
+                            classes
+                            nearby
+                            vars
+                            remain
 
-                                        else
-                                            Json.fail "Nonmatching animation"
+                    TransformPiece slot val ->
+                        renderAttrs parentEncoded
+                            layout
+                            { details | transform = Just (upsertTransform slot val details.transform) }
+                            children
+                            (Flag.add Flag.transform has)
+                            htmlAttrs
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    Attr htmlAttr ->
+                        renderAttrs parentEncoded
+                            layout
+                            details
+                            children
+                            has
+                            (htmlAttr :: htmlAttrs)
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    OnPress press ->
+                        -- Make focusable
+                        -- Attach keyboard handler
+                        -- Attach click handler
+                        renderAttrs parentEncoded
+                            layout
+                            details
+                            children
+                            has
+                            (Attr.style "tabindex" "0"
+                                :: Events.onClick press
+                                :: onKey "Enter" press
+                                :: htmlAttrs
+                            )
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    Link targetBlank url ->
+                        renderAttrs parentEncoded
+                            layout
+                            { details | node = 1 }
+                            children
+                            has
+                            (Attr.href url
+                                :: Attr.rel "noopener noreferrer"
+                                :: Attr.target
+                                    (if targetBlank then
+                                        "_blank"
+
+                                     else
+                                        "_self"
                                     )
+                                :: htmlAttrs
                             )
-                            decodeBoundingBox
-                in
-                renderAttrs parentEncoded
-                    layout
-                    { name = details.name
-                    , node = details.node
-                    , spacingX = details.spacingX
-                    , spacingY = details.spacingY
-                    , fontOffset = details.fontOffset
-                    , fontHeight =
-                        details.fontHeight
-                    , fontSize =
-                        details.fontSize
-                    , heightFill = details.heightFill
-                    , widthFill = details.widthFill
-                    , padding = details.padding
-                    , borders = details.borders
-                    , transform = details.transform
-                    , animEvents = event :: details.animEvents
-                    , hover = details.hover
-                    , focus = details.focus
-                    , active = details.active
-                    }
-                    children
-                    (Flag.add Flag.id has)
-                    (Attr.id (toCssId id) :: htmlAttrs)
-                    ("on-rendered " ++ toCssClass id ++ " " ++ classes)
-                    nearby
-                    vars
-                    remain
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    Download url downloadName ->
+                        renderAttrs parentEncoded
+                            layout
+                            { details | node = 1 }
+                            children
+                            has
+                            (Attr.href url
+                                :: Attr.download downloadName
+                                :: htmlAttrs
+                            )
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    NodeName nodeName ->
+                        renderAttrs parentEncoded
+                            layout
+                            { details | name = nodeName, node = 4 }
+                            children
+                            has
+                            htmlAttrs
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    Class str ->
+                        renderAttrs parentEncoded
+                            layout
+                            details
+                            children
+                            (Flag.add flag has)
+                            htmlAttrs
+                            (str ++ " " ++ classes)
+                            nearby
+                            vars
+                            remain
+
+                    ClassAndStyle cls styleName styleVal ->
+                        renderAttrs parentEncoded
+                            layout
+                            details
+                            children
+                            (Flag.add flag has)
+                            (Attr.style styleName styleVal :: htmlAttrs)
+                            (cls ++ " " ++ classes)
+                            nearby
+                            vars
+                            remain
+
+                    ClassAndVar cls varName varVal ->
+                        renderAttrs parentEncoded
+                            layout
+                            details
+                            children
+                            (Flag.add flag has)
+                            htmlAttrs
+                            (cls ++ " " ++ classes)
+                            nearby
+                            (vars ++ "--" ++ varName ++ ":" ++ varVal ++ ";")
+                            remain
+
+                    Nearby location elem ->
+                        renderAttrs parentEncoded
+                            layout
+                            details
+                            children
+                            has
+                            htmlAttrs
+                            classes
+                            (addNearbyElement location elem nearby)
+                            vars
+                            remain
+
+                    Spacing x y ->
+                        if layout == AsEl then
+                            renderAttrs parentEncoded
+                                layout
+                                details
+                                children
+                                has
+                                htmlAttrs
+                                classes
+                                nearby
+                                vars
+                                remain
+
+                        else
+                            renderAttrs parentEncoded
+                                layout
+                                { details | spacingX = x, spacingY = y }
+                                children
+                                (Flag.add flag has)
+                                htmlAttrs
+                                (Style.classes.spacing ++ " " ++ classes)
+                                nearby
+                                vars
+                                remain
+
+                    Padding padding ->
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontSize = details.fontSize
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , heightFill = details.heightFill
+                            , widthFill = details.widthFill
+                            , padding = padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = details.animEvents
+                            , hover = details.hover
+                            , focus = details.focus
+                            , active = details.active
+                            }
+                            children
+                            (Flag.add flag has)
+                            (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
+                                Attr.style "padding"
+                                    (String.fromInt padding.top ++ "px")
+                                    :: htmlAttrs
+
+                             else
+                                Attr.style "padding"
+                                    ((String.fromInt padding.top ++ "px ")
+                                        ++ (String.fromInt padding.right ++ "px ")
+                                        ++ (String.fromInt padding.bottom ++ "px ")
+                                        ++ (String.fromInt padding.left ++ "px")
+                                    )
+                                    :: htmlAttrs
+                            )
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    BorderWidth borders ->
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , fontSize =
+                                details.fontSize
+                            , heightFill = details.heightFill
+                            , widthFill = details.widthFill
+                            , padding = details.padding
+                            , borders = borders
+                            , transform = details.transform
+                            , animEvents = details.animEvents
+                            , hover = details.hover
+                            , focus = details.focus
+                            , active = details.active
+                            }
+                            children
+                            (Flag.add flag has)
+                            (if borders.top == borders.right && borders.top == borders.left && borders.top == borders.bottom then
+                                Attr.style "border-width"
+                                    (String.fromInt borders.top ++ "px")
+                                    :: htmlAttrs
+
+                             else
+                                Attr.style "border-width"
+                                    ((String.fromInt borders.top ++ "px ")
+                                        ++ (String.fromInt borders.right ++ "px  ")
+                                        ++ (String.fromInt borders.bottom ++ "px ")
+                                        ++ (String.fromInt borders.left ++ "px")
+                                    )
+                                    :: htmlAttrs
+                            )
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    HeightFill i ->
+                        -- if Flag.present Flag.height has then
+                        --     renderAttrs parentEncoded
+                        --         layout
+                        --         details
+                        --         children
+                        --         has
+                        --         htmlAttrs
+                        --         classes
+                        --         nearby
+                        --         vars
+                        --         remain
+                        -- else
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , fontSize =
+                                details.fontSize
+                            , heightFill = i
+                            , widthFill = details.widthFill
+                            , padding = details.padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = details.animEvents
+                            , hover = details.hover
+                            , focus = details.focus
+                            , active = details.active
+                            }
+                            children
+                            (Flag.add Flag.height has)
+                            htmlAttrs
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    WidthFill i ->
+                        -- if Flag.present Flag.width has then
+                        --     renderAttrs parentEncoded
+                        --         layout
+                        --         details
+                        --         children
+                        --         has
+                        --         htmlAttrs
+                        --         classes
+                        --         nearby
+                        --         vars
+                        --         remain
+                        -- else
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , fontSize =
+                                details.fontSize
+                            , heightFill = details.heightFill
+                            , widthFill = i
+                            , padding = details.padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = details.animEvents
+                            , hover = details.hover
+                            , focus = details.focus
+                            , active = details.active
+                            }
+                            children
+                            (Flag.add Flag.width has)
+                            htmlAttrs
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    When toMsg when ->
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , fontSize =
+                                details.fontSize
+                            , heightFill = details.heightFill
+                            , widthFill = details.widthFill
+                            , padding = details.padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = details.animEvents
+                            , hover =
+                                case when.phase of
+                                    Hovered ->
+                                        case details.hover of
+                                            Nothing ->
+                                                Just
+                                                    { toMsg = toMsg
+                                                    , class = when.class
+                                                    , transitions = [ when ]
+                                                    }
+
+                                            Just transition ->
+                                                Just
+                                                    { toMsg = toMsg
+                                                    , class = when.class ++ "-" ++ transition.class
+                                                    , transitions = when :: transition.transitions
+                                                    }
+
+                                    _ ->
+                                        details.hover
+                            , focus =
+                                case when.phase of
+                                    Focused ->
+                                        case details.focus of
+                                            Nothing ->
+                                                Just
+                                                    { toMsg = toMsg
+                                                    , class = when.class
+                                                    , transitions = [ when ]
+                                                    }
+
+                                            Just transition ->
+                                                Just
+                                                    { toMsg = toMsg
+                                                    , class = when.class ++ "-" ++ transition.class
+                                                    , transitions = when :: transition.transitions
+                                                    }
+
+                                    _ ->
+                                        details.focus
+                            , active =
+                                case when.phase of
+                                    Pressed ->
+                                        case details.active of
+                                            Nothing ->
+                                                Just
+                                                    { toMsg = toMsg
+                                                    , class = when.class
+                                                    , transitions = [ when ]
+                                                    }
+
+                                            Just transition ->
+                                                Just
+                                                    { toMsg = toMsg
+                                                    , class = when.class ++ "-" ++ transition.class
+                                                    , transitions = when :: transition.transitions
+                                                    }
+
+                                    _ ->
+                                        details.active
+                            }
+                            children
+                            has
+                            htmlAttrs
+                            classes
+                            nearby
+                            vars
+                            remain
+
+                    WhenAll toMsg trigger classStr props ->
+                        let
+                            triggerClass =
+                                triggerName trigger
+
+                            event =
+                                Json.field "animationName" Json.string
+                                    |> Json.andThen
+                                        (\name ->
+                                            if name == triggerClass then
+                                                Json.succeed
+                                                    (toMsg
+                                                        (Animate Nothing trigger classStr props)
+                                                    )
+
+                                            else
+                                                Json.fail "Nonmatching animation"
+                                        )
+                        in
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , fontSize =
+                                details.fontSize
+                            , heightFill = details.heightFill
+                            , widthFill = details.widthFill
+                            , padding = details.padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = event :: details.animEvents
+                            , hover =
+                                details.focus
+                            , focus =
+                                details.focus
+                            , active =
+                                details.active
+                            }
+                            children
+                            has
+                            htmlAttrs
+                            (classStr ++ " " ++ triggerClass ++ " " ++ classes)
+                            nearby
+                            vars
+                            remain
+
+                    Animated toMsg id ->
+                        -- if Flag.present Flag.id has then
+                        --     renderAttrs parentEncoded
+                        --         layout
+                        --         details
+                        --         children
+                        --         has
+                        --         htmlAttrs
+                        --         classes
+                        --         nearby
+                        --         vars
+                        --         remain
+                        -- else
+                        let
+                            event =
+                                Json.map2
+                                    (\_ box ->
+                                        toMsg (BoxNew id box)
+                                    )
+                                    (Json.field "animationName" Json.string
+                                        |> Json.andThen
+                                            (\name ->
+                                                if name == "on-rendered" then
+                                                    Json.succeed ()
+
+                                                else
+                                                    Json.fail "Nonmatching animation"
+                                            )
+                                    )
+                                    decodeBoundingBox
+                        in
+                        renderAttrs parentEncoded
+                            layout
+                            { name = details.name
+                            , node = details.node
+                            , spacingX = details.spacingX
+                            , spacingY = details.spacingY
+                            , fontOffset = details.fontOffset
+                            , fontHeight =
+                                details.fontHeight
+                            , fontSize =
+                                details.fontSize
+                            , heightFill = details.heightFill
+                            , widthFill = details.widthFill
+                            , padding = details.padding
+                            , borders = details.borders
+                            , transform = details.transform
+                            , animEvents = event :: details.animEvents
+                            , hover = details.hover
+                            , focus = details.focus
+                            , active = details.active
+                            }
+                            children
+                            (Flag.add Flag.id has)
+                            (Attr.id (toCssId id) :: htmlAttrs)
+                            ("on-rendered " ++ toCssClass id ++ " " ++ classes)
+                            nearby
+                            vars
+                            remain
 
 
 triggerName : Trigger -> String

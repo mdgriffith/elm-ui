@@ -85,7 +85,7 @@ type Font
 {-| -}
 color : Color -> Two.Attribute msg
 color fontColor =
-    Two.Attr (Attr.style "color" (Style.color fontColor))
+    Two.attribute (Attr.style "color" (Style.color fontColor))
 
 
 {-| -}
@@ -93,11 +93,15 @@ gradient :
     Ui.Gradient.Gradient
     -> Attribute msg
 gradient grad =
-    Two.ClassAndVar Flag.fontColor
-        Style.classes.textGradient
-        "text-gradient"
-        -- "background-image"
-        (Style.toCssGradient grad)
+    Two.Attribute
+        { flag = Flag.fontColor
+        , attr =
+            Two.ClassAndVar
+                Style.classes.textGradient
+                "text-gradient"
+                -- "background-image"
+                (Style.toCssGradient grad)
+        }
 
 
 {-|
@@ -117,7 +121,7 @@ gradient grad =
 -}
 family : List Font -> Attribute msg
 family typefaces =
-    Two.Attr (Attr.style "font-family" (renderFont typefaces ""))
+    Two.attribute (Attr.style "font-family" (renderFont typefaces ""))
 
 
 renderFont : List Font -> String -> String
@@ -234,27 +238,35 @@ with :
 with details =
     case details.sizing of
         Full ->
-            Two.Font
-                { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
-                , adjustments = Nothing
-                , variants =
-                    renderVariants details.variants ""
-                , smallCaps =
-                    hasSmallCaps details.variants
+            Two.Attribute
+                { flag = Flag.fontAdjustment
+                , attr =
+                    Two.Font
+                        { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
+                        , adjustments = Nothing
+                        , variants =
+                            renderVariants details.variants ""
+                        , smallCaps =
+                            hasSmallCaps details.variants
+                        }
                 }
 
         ByCapital adjustment ->
-            Two.Font
-                { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
-                , adjustments =
-                    Just
-                        { offset = Bitwise.and Two.top5 (round (adjustment.offset * 31))
-                        , height = Bitwise.and Two.top6 (round (adjustment.height * 63))
+            Two.Attribute
+                { flag = Flag.fontAdjustment
+                , attr =
+                    Two.Font
+                        { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
+                        , adjustments =
+                            Just
+                                { offset = Bitwise.and Two.top5 (round (adjustment.offset * 31))
+                                , height = Bitwise.and Two.top6 (round (adjustment.height * 63))
+                                }
+                        , variants =
+                            renderVariants details.variants ""
+                        , smallCaps =
+                            hasSmallCaps details.variants
                         }
-                , variants =
-                    renderVariants details.variants ""
-                , smallCaps =
-                    hasSmallCaps details.variants
                 }
 
 
@@ -302,24 +314,27 @@ renderVariants variants str =
 
 {-| Font sizes are always given as `px`.
 -}
-size : Int -> Two.Attribute msg
+size : Int -> Attribute msg
 size i =
-    Two.FontSize i
+    Two.Attribute
+        { flag = Flag.fontSize
+        , attr = Two.FontSize i
+        }
 
 
 {-| In `px`.
 -}
 letterSpacing : Float -> Attribute msg
 letterSpacing offset =
-    Two.Attr
+    Two.attribute
         (Attr.style "letter-spacing" (String.fromFloat offset ++ "px"))
 
 
 {-| In `px`.
 -}
-wordSpacing : Float -> Two.Attribute msg
+wordSpacing : Float -> Attribute msg
 wordSpacing offset =
-    Two.Attr
+    Two.attribute
         (Attr.style "word-spacing" (String.fromFloat offset ++ "px"))
 
 
@@ -327,27 +342,27 @@ wordSpacing offset =
 -}
 alignLeft : Attribute msg
 alignLeft =
-    Two.Class Flag.fontAlignment Style.classes.textLeft
+    Two.classWith Flag.fontAlignment Style.classes.textLeft
 
 
 {-| Align the font to the right.
 -}
 alignRight : Attribute msg
 alignRight =
-    Two.Class Flag.fontAlignment Style.classes.textRight
+    Two.classWith Flag.fontAlignment Style.classes.textRight
 
 
 {-| Center align the font.
 -}
 center : Attribute msg
 center =
-    Two.Class Flag.fontAlignment Style.classes.textCenter
+    Two.classWith Flag.fontAlignment Style.classes.textCenter
 
 
 {-| -}
 justify : Attribute msg
 justify =
-    Two.Class Flag.fontAlignment Style.classes.textJustify
+    Two.classWith Flag.fontAlignment Style.classes.textJustify
 
 
 
@@ -378,62 +393,62 @@ italic =
 {-| -}
 bold : Attribute msg
 bold =
-    Two.Attr (Attr.style "font-weight" "700")
+    Two.attribute (Attr.style "font-weight" "700")
 
 
 {-| -}
 light : Attribute msg
 light =
-    Two.Attr (Attr.style "font-weight" "300")
+    Two.attribute (Attr.style "font-weight" "300")
 
 
 {-| -}
 hairline : Attribute msg
 hairline =
-    Two.Attr (Attr.style "font-weight" "100")
+    Two.attribute (Attr.style "font-weight" "100")
 
 
 {-| -}
 extraLight : Attribute msg
 extraLight =
-    Two.Attr (Attr.style "font-weight" "200")
+    Two.attribute (Attr.style "font-weight" "200")
 
 
 {-| -}
 regular : Attribute msg
 regular =
-    Two.Attr (Attr.style "font-weight" "400")
+    Two.attribute (Attr.style "font-weight" "400")
 
 
 {-| -}
 semiBold : Attribute msg
 semiBold =
-    Two.Attr (Attr.style "font-weight" "600")
+    Two.attribute (Attr.style "font-weight" "600")
 
 
 {-| -}
 medium : Attribute msg
 medium =
-    Two.Attr (Attr.style "font-weight" "500")
+    Two.attribute (Attr.style "font-weight" "500")
 
 
 {-| -}
 extraBold : Attribute msg
 extraBold =
-    Two.Attr (Attr.style "font-weight" "800")
+    Two.attribute (Attr.style "font-weight" "800")
 
 
 {-| -}
 heavy : Attribute msg
 heavy =
-    Two.Attr (Attr.style "font-weight" "900")
+    Two.attribute (Attr.style "font-weight" "900")
 
 
 {-| This will reset bold and italic.
 -}
 unitalicized : Attribute msg
 unitalicized =
-    Two.Attr (Attr.class Style.classes.textUnitalicized)
+    Two.attribute (Attr.class Style.classes.textUnitalicized)
 
 
 {-| -}
@@ -452,7 +467,7 @@ shadow shade =
     --         ++ Style.color shade.color
     --         ++ ";"
     --     )
-    Two.Attr
+    Two.attribute
         (Attr.style "text-shadow"
             ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
                 ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
@@ -473,7 +488,7 @@ glow clr i =
             , color = clr
             }
     in
-    Two.Attr
+    Two.attribute
         (Attr.style "text-shadow"
             ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
                 ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")

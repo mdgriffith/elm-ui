@@ -26,6 +26,7 @@ module Internal.Flag2 exposing
     , padding
     , present
     , shadows
+    , skip
     , spacing
     , transform
     , txtShadows
@@ -139,6 +140,10 @@ flag i =
     -- else
     Flag
         (Bitwise.shiftLeftBy i 1)
+
+
+skip =
+    flag 0
 
 
 
