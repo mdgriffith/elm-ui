@@ -10,7 +10,7 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed
 import Internal.BitMask as Bits
-import Internal.Flag2 as Flag exposing (Flag)
+import Internal.Flag as Flag exposing (Flag)
 import Internal.Style2 as Style
 import Json.Decode as Json
 import Json.Encode
@@ -996,25 +996,6 @@ type alias TransitionDetails =
     , prop : String
     , val : String
     }
-
-
-
--- hasFlag flag attr =
---     case attr of
---         Spacing f _ _ ->
---             Flag.equal flag f
---         Padding f _ ->
---             Flag.equal flag f
---         BorderWidth f _ ->
---             Flag.equal flag f
---         Class f _ ->
---             Flag.equal flag f
---         ClassAndStyle f _ _ _ ->
---             Flag.equal flag f
---         ClassAndVar f _ _ _ ->
---             Flag.equal flag f
---         _ ->
---             False
 
 
 hasFlags flags attr =

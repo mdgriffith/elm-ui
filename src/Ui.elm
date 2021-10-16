@@ -233,7 +233,7 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Keyed
 import Html.Lazy
-import Internal.Flag2 as Flag exposing (Flag)
+import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Set

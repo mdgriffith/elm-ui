@@ -30,12 +30,138 @@ ${copy}stylesheet : String
 stylesheet = """${output}"""
 `;
 
-  fs.writeFileSync("./src2/Internal/Style/Generated.elm", elm);
+  fs.writeFileSync("./src/Internal/Style/Generated.elm", elm);
 
   fs.writeFileSync("./stylesheets/generated/dev.min.css", output);
-  gzip("./stylesheets/generated/dev.min.css");
+  // gzip("./stylesheets/generated/dev.min.css");
+
+  fs.writeFileSync("./src/Internal/Flag.elm", build_flags(flags));
 
   console.log("  -> Files regenerated");
+}
+
+const flags = [
+  "skip",
+  "padding",
+  "spacing",
+  "fontSize",
+  "fontFamily",
+  "width",
+  "height",
+  "fontAlignment",
+  "fontWeight",
+  "fontColor",
+  "fontAdjustment",
+  "id",
+  "txtShadows",
+  "shadows",
+  "overflow",
+  "cursor",
+  "transform",
+  "borderWidth",
+  "yAlign",
+  "xAlign",
+  "focus",
+  "active",
+  "hover",
+  "gridTemplate",
+  "gridPosition",
+  "widthBetween",
+  "heightBetween",
+];
+
+const base = `import Bitwise
+
+
+viewBits : Int -> String
+viewBits i =
+    String.fromInt i ++ ":" ++ viewBitsHelper i 32
+
+
+viewBitsHelper : Int -> Int -> String
+viewBitsHelper field slot =
+    if slot <= 0 then
+        ""
+
+    else if Bitwise.and slot field - slot == 0 then
+        viewBitsHelper field (slot - 1) ++ "1"
+
+    else
+        viewBitsHelper field (slot - 1) ++ "0"
+
+
+type Field
+    = Field Int
+
+type Flag
+    = Flag Int
+
+none : Field
+none =
+    Field 0
+
+
+{-| If the query is in the truth, return True
+-}
+present : Flag -> Field -> Bool
+present (Flag first) (Field fieldOne) =
+    Bitwise.and first fieldOne - first == 0
+
+
+{-| Add a flag to a field.
+-}
+add : Flag -> Field -> Field
+add myFlag (Field one) =
+    case myFlag of
+        Flag first ->
+            Field (Bitwise.or first one)
+
+{-| Generally you want to use add, which keeps a distinction between Fields and Flags.
+
+Merging will combine two fields
+
+-}
+merge : Field -> Field -> Field
+merge (Field one) (Field three) =
+    Field (Bitwise.or one three)
+
+
+equal : Flag -> Flag -> Bool
+equal (Flag one) (Flag two) =
+    one - two == 0
+
+
+flag : Int -> Flag
+flag i =
+    Flag
+        (Bitwise.shiftLeftBy i 1)
+`;
+
+function build_flags(flags) {
+  let items = "";
+  let i = 0;
+  for (const flag of flags) {
+    items += `
+
+${flag} : Flag
+${flag} =
+    flag ${i}
+`;
+    i += 1;
+  }
+  if (i > 32) {
+    console.warn(`You have ${i} flags. The limit is 32!`);
+  }
+
+  return `module Internal.Flag exposing (..)
+{-| THIS FILE IS GENERATED, NOT TOUCHY -}
+
+
+${base}
+
+${items}
+
+`;
 }
 
 async function watch() {

@@ -181,7 +181,7 @@ Alternatively, see if it's reasonable to _not_ display an input if you'd normall
 import Html
 import Html.Attributes
 import Html.Events
-import Internal.Flag2 as Flag2
+import Internal.Flag as Flag2
 import Internal.Model2 as Two
 import Internal.Style.Generated exposing (classes)
 import Internal.Style2 as Style

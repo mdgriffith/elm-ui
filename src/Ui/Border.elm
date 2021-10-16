@@ -34,7 +34,7 @@ module Ui.Border exposing
 -}
 
 import Html.Attributes as Attr
-import Internal.Flag2 as Flag
+import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Color)
