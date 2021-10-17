@@ -25,7 +25,7 @@ module Ui exposing
     , updateWith, subscription
     , map, mapAttribute
     , html, htmlAttribute
-    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, init, scrollbarX, scrollbarY, transition
+    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, id, init, scrollbarX, scrollbarY, transition
     )
 
 {-|
@@ -480,7 +480,7 @@ layoutWith { options } (Two.State state) attrs content =
             ]
 
 
-viewBox ( id, box ) =
+viewBox ( boxId, box ) =
     Html.div
         [ Attr.style "position" "absolute"
         , Attr.style "left" (String.fromFloat box.x ++ "px")
@@ -654,6 +654,12 @@ wrappedRow attrs children =
             (List.concatMap Two.wrappedRowAttributes attrs)
             children
         ]
+
+
+{-| -}
+id : String -> Attribute msg
+id strId =
+    Two.attribute (Attr.id strId)
 
 
 {-| This is just an alias for `Debug.todo`
