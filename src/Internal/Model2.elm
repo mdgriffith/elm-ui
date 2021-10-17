@@ -1860,12 +1860,19 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
 
         (Attribute { flag, attr }) :: remain ->
             let
-                present =
+                alwaysRender =
                     case flag of
                         Flag.Flag f ->
                             f - 0 == 0
+
+                previouslyRendered =
+                    if alwaysRender then
+                        False
+
+                    else
+                        Flag.present flag has
             in
-            if not present || not (Flag.present flag has) then
+            if not (not previouslyRendered) then
                 renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars remain
 
             else
