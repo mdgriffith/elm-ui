@@ -41,6 +41,7 @@ import Animator
 import Animator.Timeline exposing (Timeline)
 import Bitwise
 import Internal.BitMask as Bits
+import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Element, Msg)
@@ -124,7 +125,10 @@ id : (Msg msg -> msg) -> String -> String -> Attribute msg
 id toMsg group instance =
     --  attach a class and a message handler for the animation message
     -- we could also need to gather up any animateable state as well
-    Two.Animated toMsg (Two.Id group instance)
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.Animated toMsg (Two.Id group instance)
+        }
 
 
 
@@ -141,41 +145,57 @@ id toMsg group instance =
 {-| -}
 animated : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
 animated toMsg dur attrs =
-    Two.WhenAll
-        toMsg
-        (Two.OnIf True)
-        (className attrs)
-        attrs
+    Two.Attribute
+        { flag = Flag.skip
+        , attr =
+            Two.WhenAll
+                toMsg
+                (Two.OnIf True)
+                (className attrs)
+                attrs
+        }
 
 
 {-| -}
 hovered : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
 hovered toMsg dur attrs =
-    Two.WhenAll
-        toMsg
-        Two.OnHovered
-        (className attrs)
-        attrs
+    Two.Attribute
+        { flag = Flag.skip
+        , attr =
+            Two.WhenAll
+                toMsg
+                Two.OnHovered
+                (className attrs)
+                attrs
+        }
 
 
 {-| -}
 focused : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
 focused toMsg dur attrs =
-    Two.WhenAll
-        toMsg
-        Two.OnFocused
-        (className attrs)
-        attrs
+    Two.Attribute
+        { flag = Flag.skip
+        , attr =
+            Two.WhenAll
+                toMsg
+                Two.OnFocused
+                (className attrs)
+                attrs
+        }
 
 
 {-| -}
 pressed : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
 pressed toMsg dur attrs =
-    Two.WhenAll
-        toMsg
-        Two.OnPressed
-        (className attrs)
-        attrs
+    Two.Attribute
+        { flag = Flag.skip
+        , attr =
+            Two.WhenAll
+                toMsg
+                Two.OnPressed
+                (className attrs)
+                attrs
+        }
 
 
 className : List Two.Animated -> String
