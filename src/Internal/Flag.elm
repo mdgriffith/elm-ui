@@ -69,145 +69,145 @@ flag i =
         (Bitwise.shiftLeftBy i 1)
 
 
-
-
-skip : Flag
+skip : Flag 
 skip =
-    flag 0
+    Flag 0
+
+
 
 
 padding : Flag
 padding =
-    flag 1
+    flag 0
 
 
 spacing : Flag
 spacing =
-    flag 2
+    flag 1
 
 
 fontSize : Flag
 fontSize =
-    flag 3
+    flag 2
 
 
 fontFamily : Flag
 fontFamily =
-    flag 4
+    flag 3
 
 
 width : Flag
 width =
-    flag 5
+    flag 4
 
 
 height : Flag
 height =
-    flag 6
+    flag 5
 
 
 fontAlignment : Flag
 fontAlignment =
-    flag 7
+    flag 6
 
 
 fontWeight : Flag
 fontWeight =
-    flag 8
+    flag 7
 
 
 fontColor : Flag
 fontColor =
-    flag 9
+    flag 8
 
 
 fontAdjustment : Flag
 fontAdjustment =
-    flag 10
+    flag 9
 
 
 id : Flag
 id =
-    flag 11
+    flag 10
 
 
 txtShadows : Flag
 txtShadows =
-    flag 12
+    flag 11
 
 
 shadows : Flag
 shadows =
-    flag 13
+    flag 12
 
 
 overflow : Flag
 overflow =
-    flag 14
+    flag 13
 
 
 cursor : Flag
 cursor =
-    flag 15
+    flag 14
 
 
 transform : Flag
 transform =
-    flag 16
+    flag 15
 
 
 borderWidth : Flag
 borderWidth =
-    flag 17
+    flag 16
 
 
 yAlign : Flag
 yAlign =
-    flag 18
+    flag 17
 
 
 xAlign : Flag
 xAlign =
-    flag 19
+    flag 18
 
 
 focus : Flag
 focus =
-    flag 20
+    flag 19
 
 
 active : Flag
 active =
-    flag 21
+    flag 20
 
 
 hover : Flag
 hover =
-    flag 22
+    flag 21
 
 
 gridTemplate : Flag
 gridTemplate =
-    flag 23
+    flag 22
 
 
 gridPosition : Flag
 gridPosition =
-    flag 24
+    flag 23
 
 
 widthBetween : Flag
 widthBetween =
-    flag 25
+    flag 24
 
 
 heightBetween : Flag
 heightBetween =
-    flag 26
+    flag 25
 
 
 isLink : Flag
 isLink =
-    flag 27
+    flag 26
 
 

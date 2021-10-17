@@ -41,7 +41,6 @@ stylesheet = """${output}"""
 }
 
 const flags = [
-  "skip",
   "padding",
   "spacing",
   "fontSize",
@@ -136,6 +135,11 @@ flag : Int -> Flag
 flag i =
     Flag
         (Bitwise.shiftLeftBy i 1)
+
+
+skip : Flag 
+skip =
+    Flag 0
 `;
 
 function build_flags(flags) {
