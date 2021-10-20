@@ -818,6 +818,9 @@ mapAttr uiFn fn (Attribute attr) =
                 ClassAndVar cls name val ->
                     ClassAndVar cls name val
 
+                ClassAndVarStyle cls style ->
+                    ClassAndVarStyle cls style
+
                 Nearby loc el ->
                     Nearby loc (map fn el)
 
@@ -929,6 +932,7 @@ type Attr msg
     | ClassAndStyle String String String
       --                 class  var    val
     | ClassAndVar String String String
+    | ClassAndVarStyle String String
     | Nearby Location (Element msg)
     | When (Msg msg -> msg) TransitionDetails
     | WhenAll (Msg msg -> msg) Trigger String (List Animated)
@@ -2069,6 +2073,19 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                             (cls ++ " " ++ classes)
                             nearby
                             vars
+                            remain
+
+                    ClassAndVarStyle cls var ->
+                        renderAttrs parentEncoded
+                            layout
+                            toNode
+                            details
+                            children
+                            (Flag.add flag has)
+                            htmlAttrs
+                            (cls ++ " " ++ classes)
+                            nearby
+                            (vars ++ var ++ ";")
                             remain
 
                     ClassAndVar cls varName varVal ->
