@@ -354,6 +354,18 @@ explainer =
     border: 4px dashed rgb(0, 151, 167) !important;
 }
 
+
+.explain * {
+    animation: show-redraw 0.4s ease;
+}
+
+
+@keyframes show-redraw {
+    0% {
+       background-color:red;
+    }
+}
+
 """
 
 {-
