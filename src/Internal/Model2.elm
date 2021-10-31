@@ -1464,11 +1464,12 @@ elementAs toNode layout attrs children =
 
 
 elementKeyed :
-    Layout
+    String
+    -> Layout
     -> List (Attribute msg)
     -> List ( String, Element msg )
     -> Element msg
-elementKeyed layout attrs children =
+elementKeyed name layout attrs children =
     Element
         (\parentEncoded ->
             let
@@ -1495,7 +1496,7 @@ elementKeyed layout attrs children =
                             "a"
 
                          else
-                            "div"
+                            name
                         )
                         renderedAttrs
                         finalChildren

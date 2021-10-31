@@ -28,16 +28,16 @@ import Ui exposing (Attribute, Element)
 {-| -}
 el : List (Attribute msg) -> ( String, Element msg ) -> Element msg
 el attrs child =
-    Two.elementKeyed Two.AsEl attrs [ child ]
+    Two.elementKeyed "div" Two.AsEl attrs [ child ]
 
 
 {-| -}
 row : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
 row =
-    Two.elementKeyed Two.AsRow
+    Two.elementKeyed "div" Two.AsRow
 
 
 {-| -}
 column : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
 column =
-    Two.elementKeyed Two.AsColumn
+    Two.elementKeyed "div" Two.AsColumn
