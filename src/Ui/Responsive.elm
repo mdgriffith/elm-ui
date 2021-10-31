@@ -6,7 +6,7 @@ module Ui.Responsive exposing
     , width, widthMin, widthMax
     , breakpoints, breakAt
     , orAbove, orBelow
-    , only, toMediaQuery
+    , toMediaQuery
     )
 
 {-|
@@ -87,7 +87,7 @@ module Ui.Responsive exposing
 import Html.Attributes as Attr
 import Internal.Flag as Flag
 import Internal.Model2 as Internal
-import Ui exposing (Attribute)
+import Ui exposing (Attribute, Element)
 
 
 type Breakpoints label
@@ -223,7 +223,7 @@ Otherwise, it'll render as a `column`.
         ]
 
 -}
-rowWhen : Breakpoints label -> List label -> List (Attribute msg) -> List (Element msg)
+rowWhen : Breakpoints label -> List label -> List (Attribute msg) -> List (Element msg) -> Element msg
 rowWhen breaks labels attrs children =
     Ui.row
         (Internal.class
