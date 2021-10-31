@@ -17,7 +17,6 @@ module Ui exposing
     , image
     , Color, rgb
     , above, below, onRight, onLeft, inFront, behindContent
-    , Device, DeviceClass(..), Orientation(..), classifyDevice
     , Angle, up, down, right, left
     , turns, radians
     , update
@@ -182,17 +181,6 @@ Where `"I'm Below"` doesn't change the size of `Ui.row`.
 This is very useful for things like dropdown menus or tooltips.
 
 @docs above, below, onRight, onLeft, inFront, behindContent
-
-
-# Responsiveness
-
-The main technique for responsiveness is to store window size information in your model.
-
-Install the `Browser` package, and set up a subscription for [`Browser.Events.onResize`](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Events#onResize).
-
-You'll also need to retrieve the initial window size. You can either use [`Browser.Dom.getViewport`](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Dom#getViewport) or pass in `window.innerWidth` and `window.innerHeight` as flags to your program, which is the preferred way. This requires minor setup on the JS side, but allows you to avoid the state where you don't have window info.
-
-@docs Device, DeviceClass, Orientation, classifyDevice
 
 
 # Angles
@@ -1436,61 +1424,3 @@ grabbing =
         { flag = Flag.cursor
         , attr = Two.Class Style.classes.cursorGrabbing
         }
-
-
-{-| -}
-type alias Device =
-    { class : DeviceClass
-    , orientation : Orientation
-    }
-
-
-{-| -}
-type DeviceClass
-    = Phone
-    | Tablet
-    | Desktop
-    | BigDesktop
-
-
-{-| -}
-type Orientation
-    = Portrait
-    | Landscape
-
-
-{-| Takes in a Window.Size and returns a device profile which can be used for responsiveness.
-
-If you have more detailed concerns around responsiveness, it probably makes sense to copy this function into your codebase and modify as needed.
-
--}
-classifyDevice : { window | height : Int, width : Int } -> Device
-classifyDevice window =
-    -- Tested in this ellie:
-    -- https://ellie-app.com/68QM7wLW8b9a1
-    { class =
-        let
-            longSide =
-                max window.width window.height
-
-            shortSide =
-                min window.width window.height
-        in
-        if shortSide < 600 then
-            Phone
-
-        else if longSide <= 1200 then
-            Tablet
-
-        else if longSide > 1200 && longSide <= 1920 then
-            Desktop
-
-        else
-            BigDesktop
-    , orientation =
-        if window.width < window.height then
-            Portrait
-
-        else
-            Landscape
-    }
