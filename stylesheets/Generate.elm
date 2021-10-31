@@ -144,6 +144,8 @@ classes =
     , link = "lnk"
     , fontAdjusted = "f-adj"
     , textGradient = "tgrd"
+    , stickyTop = "stick-top"
+    , stickyLeft = "stick-left"
     }
 
 
@@ -397,6 +399,7 @@ transitionPlaceholders = """
 
 
 
+
 {- Base Sheet -}
 
 
@@ -566,6 +569,7 @@ baseSheet =
     , Class (dot classes.any ++ ":focus")
         [ Prop "outline" "none"
         ]
+    
     , Class (dot classes.root)
         [ Prop "width" "100%"
         , Prop "height" "auto"
@@ -711,6 +715,7 @@ baseSheet =
                                     ]
                                 ]
         ]
+        
     , Class (dot classes.any)
         [ Prop "position" "relative"
         , Prop "border" "none"
@@ -740,6 +745,15 @@ baseSheet =
         , Prop "text-decoration" "none"
         , Prop "font-style" "inherit"
         , Batch animationTriggers
+        , Descriptor (dot classes.stickyTop) 
+            [ Prop "position" "sticky"
+            , Prop "top" "0"
+            ]
+        , Descriptor (dot classes.stickyLeft) 
+            [ Prop "position" "sticky"
+            , Prop "left" "0"
+
+            ]
         , Descriptor (dot classes.textGradient)
             [ AllChildren (dot classes.text)
                 [ Prop "background" "var(--text-gradient)"
@@ -822,6 +836,14 @@ baseSheet =
         , Descriptor (dot classes.scrollbars)
             [ Prop "overflow" "auto"
             , Prop "flex-shrink" "1"
+            , Descriptor (dot classes.column)
+                [ Prop "flex-shrink" "1"
+                , Prop "flex-basis" "auto"
+                ]
+            , Descriptor (dot classes.single)
+                [ Prop "flex-shrink" "1"
+                , Prop "flex-basis" "auto"
+                ]
             ]
         , Descriptor (dot classes.scrollbarsX)
             [ Prop "overflow-x" "auto"
@@ -833,9 +855,11 @@ baseSheet =
             [ Prop "overflow-y" "auto"
             , Descriptor (dot classes.column)
                 [ Prop "flex-shrink" "1"
+                , Prop "flex-basis" "auto"
                 ]
             , Descriptor (dot classes.single)
                 [ Prop "flex-shrink" "1"
+                , Prop "flex-basis" "auto"
                 ]
             ]
         , Descriptor (dot classes.clip)
@@ -1052,6 +1076,9 @@ baseSheet =
                     [ Prop "flex-basis" "auto"
                     ]
                 , Descriptor (dot classes.clip)
+                    [ Prop "flex-basis" "auto"
+                    ]
+                , Descriptor (dot classes.scrollbars)
                     [ Prop "flex-basis" "auto"
                     ]
                 ]

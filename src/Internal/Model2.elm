@@ -1216,6 +1216,12 @@ type Wrapped
     = InLink String
 
 
+attrIf bool attr =
+    if bool then 
+        attr
+    else
+        noAttr
+
 noAttr =
     Attribute
         { flag = Flag.skip

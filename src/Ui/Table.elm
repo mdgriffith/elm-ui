@@ -1,8 +1,8 @@
 module Ui.Table exposing
     ( Column, column, Cell, cell
-    , header, withWidth, withStickyColumn
+    , header, withWidth
     , view, Config, columns
-    , withRowKey, onRowClick, withStickyHeader, withStickyRow, withScrollable
+    , withRowKey, onRowClick, withScrollable
     , viewWithState
     , columnWithState, withVisibility, withOrder
     , withSort
@@ -38,14 +38,14 @@ module Ui.Table exposing
 
 @docs Column, column, Cell, cell
 
-@docs header, withWidth, withStickyColumn
+@docs header, withWidth
 
 
 ## Table Configuration
 
 @docs view, Config, columns
 
-@docs withRowKey, onRowClick, withStickyHeader, withStickyRow, withScrollable
+@docs withRowKey, onRowClick, withScrollable
 
 
 # Advanced Tables with State
@@ -60,8 +60,11 @@ module Ui.Table exposing
 
 import Html
 import Html.Attributes as Attr
+import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
+import Internal.Style2 as Style
 import Ui exposing (Attribute, Element)
+import Ui.Background
 import Ui.Border
 import Ui.Font
 import Ui.Lazy
@@ -73,8 +76,9 @@ type alias Config state data msg =
     , columns : List (Column state data msg)
     , sort : Maybe (state -> List data -> List data)
     , onRowClick : Maybe (data -> msg)
-    , headerStick : Bool
-    , rowStick : data -> Bool
+    , stickHeader : Bool
+    , stickRow : data -> Bool
+    , stickFirstColumn : Bool
     , scrollable : Bool
     }
 
@@ -87,8 +91,9 @@ columns cols =
     { toKey = \_ -> "keyed"
     , columns = cols
     , onRowClick = Nothing
-    , headerStick = False
-    , rowStick = \_ -> False
+    , stickHeader = False
+    , stickRow = \_ -> False
+    , stickFirstColumn = False
     , scrollable = False
     , sort = Nothing
     }
@@ -108,27 +113,23 @@ onRowClick onClick cfg =
 
 
 {-| -}
-withStickyHeader : Config state data msg -> Config state data msg
-withStickyHeader cfg =
-    { cfg | headerStick = True }
-
-
-{-| -}
 withSort : (state -> List data -> List data) -> Config state data msg -> Config state data msg
 withSort sort cfg =
     { cfg | sort = Just sort }
 
 
 {-| -}
-withStickyRow : (data -> Bool) -> Config state data msg -> Config state data msg
-withStickyRow rowStick cfg =
-    { cfg | rowStick = rowStick }
-
-
-{-| -}
-withScrollable : Config state data msg -> Config state data msg
-withScrollable cfg =
-    { cfg | scrollable = True }
+withScrollable :
+    { stickFirstColumn : Bool
+    }
+    -> Config state data msg
+    -> Config state data msg
+withScrollable input cfg =
+    { cfg
+        | scrollable = True
+        , stickHeader = True
+        , stickFirstColumn = input.stickFirstColumn
+    }
 
 
 {-| -}
@@ -144,7 +145,6 @@ type Column state data msg
         , view : Int -> state -> data -> Cell msg
         , visible : state -> Bool
         , order : state -> Int
-        , sticky : Bool
         }
 
 
@@ -217,7 +217,6 @@ column input =
         , width = Nothing
         , visible = \_ -> True
         , order = \_ -> 0
-        , sticky = False
         }
 
 
@@ -234,7 +233,6 @@ columnWithState input =
         , width = Nothing
         , visible = \_ -> True
         , order = \_ -> 0
-        , sticky = False
         }
 
 
@@ -248,12 +246,6 @@ withWidth :
     -> Column state data msg
 withWidth width (Column col) =
     Column { col | width = Just width }
-
-
-{-| -}
-withStickyColumn : Column state data msg -> Column state data msg
-withStickyColumn (Column col) =
-    Column { col | sticky = True }
 
 
 {-| -}
@@ -299,6 +291,12 @@ viewWithState attrs config state data =
     Two.elementAs Html.table
         Two.AsColumn
         (Two.attribute (Attr.style "display" "grid")
+            :: Two.attrIf config.scrollable
+                (Two.Attribute
+                    { flag = Flag.overflow
+                    , attr = Two.Class Style.classes.scrollbars
+                    }
+                )
             :: Two.attribute
                 (Attr.style "grid-template-columns"
                     (gridTemplate config.columns "")
@@ -310,6 +308,7 @@ viewWithState attrs config state data =
         ]
 
 
+gridTemplate : List (Column state data msg) -> String -> String
 gridTemplate cols str =
     case cols of
         [] ->
@@ -378,6 +377,7 @@ gridTemplate cols str =
                                         )
 
 
+renderHeader : state -> Config state data msg -> Element msg
 renderHeader state config =
     Two.elementAs Html.thead
         Two.AsRow
@@ -385,24 +385,59 @@ renderHeader state config =
         [ Two.elementAs Html.tr
             Two.AsRow
             [ Two.attribute (Attr.style "display" "contents") ]
-            (List.map
-                (renderColumnHeader state)
-                config.columns
+            (case config.columns of
+                [] ->
+                    []
+
+                first :: remaining ->
+                    renderColumnHeader config state True first
+                        :: List.map
+                            (renderColumnHeader config state False)
+                            remaining
             )
         ]
 
 
-renderColumnHeader state (Column col) =
+renderColumnHeader : Config state data msg -> state -> Bool -> Column state data msg -> Element msg
+renderColumnHeader cfg state isFirstColumn (Column col) =
     let
         { attrs, child } =
             col.header state
+
+        stickyColumn =
+            cfg.stickFirstColumn && isFirstColumn
     in
     Two.elementAs Html.th
         Two.AsRow
-        (default.padding :: default.fontAlignment :: attrs)
+        (default.padding
+            :: default.fontAlignment
+            :: Two.attrIf
+                cfg.stickHeader
+                (Two.class
+                    Style.classes.stickyTop
+                )
+            :: Two.attrIf
+                stickyColumn
+                (Two.class
+                    Style.classes.stickyLeft
+                )
+            :: Two.attrIf
+                (cfg.stickHeader || stickyColumn)
+                (Ui.Background.color (Ui.rgb 255 255 255))
+            :: Two.attrIf
+                (cfg.stickHeader || stickyColumn)
+                (if cfg.stickHeader && stickyColumn then
+                    Two.attribute (Attr.style "z-index" "2")
+
+                 else
+                    Two.attribute (Attr.style "z-index" "1")
+                )
+            :: attrs
+        )
         [ child ]
 
 
+renderRows : Config state data msg -> state -> List data -> Element msg
 renderRows config state data =
     Two.elementKeyed "tbody"
         Two.AsRow
@@ -413,23 +448,32 @@ renderRows config state data =
         )
 
 
+renderRowWithKey : Config state data msg -> state -> Int -> data -> ( String, Element msg )
 renderRowWithKey config state index row =
     ( config.toKey row
     , Ui.Lazy.lazy4 renderRow config state row index
     )
 
 
+renderRow : Config state data msg -> state -> data -> Int -> Element msg
 renderRow config state row rowIndex =
     Two.elementAs Html.tr
         Two.AsRow
         [ Two.attribute (Attr.style "display" "contents") ]
-        (List.map
-            (renderColumn config state rowIndex row)
-            config.columns
+        (case config.columns of
+            [] ->
+                []
+
+            first :: remaining ->
+                renderColumn config state rowIndex row True first
+                    :: List.map
+                        (renderColumn config state rowIndex row False)
+                        remaining
         )
 
 
-renderColumn config state rowIndex row (Column col) =
+renderColumn : Config state data msg -> state -> Int -> data -> Bool -> Column state data msg -> Element msg
+renderColumn config state rowIndex row isFirstColumn (Column col) =
     let
         { attrs, child } =
             col.view rowIndex state row
@@ -443,5 +487,18 @@ renderColumn config state rowIndex row (Column col) =
     in
     Two.elementAs Html.td
         Two.AsRow
-        (padding :: attrs)
+        (padding
+            :: Two.attrIf
+                (config.stickFirstColumn && isFirstColumn)
+                (Two.class
+                    Style.classes.stickyLeft
+                )
+            :: Two.attrIf
+                (config.stickFirstColumn && isFirstColumn)
+                (Ui.Background.color (Ui.rgb 255 255 255))
+            :: Two.attrIf
+                (config.stickFirstColumn && isFirstColumn)
+                (Two.attribute (Attr.style "z-index" "1"))
+            :: attrs
+        )
         [ child ]
