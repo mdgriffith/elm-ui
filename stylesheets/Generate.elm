@@ -146,6 +146,7 @@ classes =
     , textGradient = "tgrd"
     , stickyTop = "stick-top"
     , stickyLeft = "stick-left"
+    , stickyBottom = "stick-bottom"
     }
 
 
@@ -749,10 +750,15 @@ baseSheet =
             [ Prop "position" "sticky"
             , Prop "top" "0"
             ]
+        , Descriptor (dot classes.stickyBottom) 
+            [ Prop "position" "sticky"
+            -- there seems to be a weird issue where there is a 1px gap
+            -- This solves it, but makes everyone nervous.
+            , Prop "bottom" "-1px"
+            ]
         , Descriptor (dot classes.stickyLeft) 
             [ Prop "position" "sticky"
             , Prop "left" "0"
-
             ]
         , Descriptor (dot classes.textGradient)
             [ AllChildren (dot classes.text)

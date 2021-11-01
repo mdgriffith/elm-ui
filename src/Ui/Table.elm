@@ -4,7 +4,7 @@ module Ui.Table exposing
     , view, Config, columns
     , withRowKey, onRowClick, withScrollable
     , viewWithState
-    , columnWithState, withVisibility, withOrder
+    , columnWithState, withVisibility, withOrder, withSummary
     , withSort
     )
 
@@ -52,7 +52,7 @@ module Ui.Table exposing
 
 @docs viewWithState
 
-@docs columnWithState, withVisibility, withOrder
+@docs columnWithState, withVisibility, withOrder, withSummary
 
 @docs withSort
 
@@ -146,6 +146,7 @@ type Column state data msg
         , view : Int -> state -> data -> Cell msg
         , visible : state -> Bool
         , order : state -> Int
+        , summary : Maybe (state -> List data -> Cell msg)
         }
 
 
@@ -218,6 +219,7 @@ column input =
         , width = Nothing
         , visible = \_ -> True
         , order = \_ -> 0
+        , summary = Nothing
         }
 
 
@@ -234,6 +236,7 @@ columnWithState input =
         , width = Nothing
         , visible = \_ -> True
         , order = \_ -> 0
+        , summary = Nothing
         }
 
 
@@ -247,6 +250,15 @@ withWidth :
     -> Column state data msg
 withWidth width (Column col) =
     Column { col | width = Just width }
+
+
+{-| -}
+withSummary : (state -> List data -> Cell msg) -> Column state data msg -> Column state data msg
+withSummary toSummaryCell (Column col) =
+    Column
+        { col
+            | summary = Just toSummaryCell
+        }
 
 
 {-| -}
@@ -306,7 +318,21 @@ viewWithState attrs config state data =
         )
         [ headerRow
         , rows
+        , if List.any hasSummary config.columns then
+            Ui.Lazy.lazy3 renderSummary config state data
+
+          else
+            Ui.none
         ]
+
+
+hasSummary (Column col) =
+    case col.summary of
+        Nothing ->
+            False
+
+        Just _ ->
+            True
 
 
 gridTemplate : List (Column state data msg) -> String -> String
@@ -517,6 +543,67 @@ renderColumn config state rowIndex row isFirstColumn (Column col) =
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
                 (Two.attribute (Attr.style "z-index" "1"))
+            :: attrs
+        )
+        [ child ]
+
+
+renderSummary : Config state data msg -> state -> List data -> Element msg
+renderSummary config state rows =
+    Two.elementAs Html.tfoot
+        Two.AsRow
+        [ Two.attribute (Attr.style "display" "contents") ]
+        [ Two.elementAs Html.tr
+            Two.AsRow
+            [ Two.attribute (Attr.style "display" "contents")
+            ]
+            (case config.columns of
+                [] ->
+                    []
+
+                first :: remaining ->
+                    renderSummaryColumn config state rows True first
+                        :: List.map
+                            (renderSummaryColumn config state rows False)
+                            remaining
+            )
+        ]
+
+
+renderSummaryColumn : Config state data msg -> state -> List data -> Bool -> Column state data msg -> Element msg
+renderSummaryColumn config state rows isFirstColumn (Column col) =
+    let
+        { attrs, child } =
+            case col.summary of
+                Nothing ->
+                    cell [] Ui.none
+
+                Just sum ->
+                    sum state rows
+
+        padding =
+            default.padding
+    in
+    Two.elementAs Html.td
+        Two.AsRow
+        (padding
+            :: Two.attrIf
+                config.stickHeader
+                (Two.class
+                    Style.classes.stickyBottom
+                )
+            :: Two.attrIf
+                (config.stickFirstColumn && isFirstColumn)
+                (Two.class
+                    Style.classes.stickyLeft
+                )
+            :: Two.attrIf
+                config.stickHeader
+                (Ui.Background.color (Ui.rgb 255 255 255))
+            :: Two.attrIf
+                (config.stickFirstColumn && isFirstColumn)
+                (Two.attribute (Attr.style "z-index" "1"))
+            :: Ui.height Ui.fill
             :: attrs
         )
         [ child ]
