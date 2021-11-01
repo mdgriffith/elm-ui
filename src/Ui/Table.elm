@@ -66,6 +66,7 @@ import Internal.Style2 as Style
 import Ui exposing (Attribute, Element)
 import Ui.Background
 import Ui.Border
+import Ui.Events
 import Ui.Font
 import Ui.Lazy
 
@@ -286,7 +287,7 @@ viewWithState attrs config state data =
                 config
 
         rows =
-            renderRows config state data
+            Ui.Lazy.lazy3 renderRows config state data
     in
     Two.elementAs Html.table
         Two.AsColumn
@@ -384,7 +385,8 @@ renderHeader state config =
         [ Two.attribute (Attr.style "display" "contents") ]
         [ Two.elementAs Html.tr
             Two.AsRow
-            [ Two.attribute (Attr.style "display" "contents") ]
+            [ Two.attribute (Attr.style "display" "contents")
+            ]
             (case config.columns of
                 [] ->
                     []
@@ -439,12 +441,21 @@ renderColumnHeader cfg state isFirstColumn (Column col) =
 
 renderRows : Config state data msg -> state -> List data -> Element msg
 renderRows config state data =
+    let
+        sorted =
+            case config.sort of
+                Nothing ->
+                    data
+
+                Just sortFn ->
+                    sortFn state data
+    in
     Two.elementKeyed "tbody"
         Two.AsRow
         [ Two.attribute (Attr.style "display" "contents") ]
         (List.indexedMap
             (renderRowWithKey config state)
-            data
+            sorted
         )
 
 
@@ -459,7 +470,14 @@ renderRow : Config state data msg -> state -> data -> Int -> Element msg
 renderRow config state row rowIndex =
     Two.elementAs Html.tr
         Two.AsRow
-        [ Two.attribute (Attr.style "display" "contents") ]
+        [ Two.attribute (Attr.style "display" "contents")
+        , case config.onRowClick of
+            Nothing ->
+                Two.noAttr
+
+            Just onClick ->
+                Ui.Events.onClick (onClick row)
+        ]
         (case config.columns of
             [] ->
                 []
