@@ -312,7 +312,7 @@ viewWithState attrs config state data =
                 )
             :: Two.attribute
                 (Attr.style "grid-template-columns"
-                    (gridTemplate config.columns "")
+                    (gridTemplate state config.columns "")
                 )
             :: attrs
         )
@@ -335,73 +335,82 @@ hasSummary (Column col) =
             True
 
 
-gridTemplate : List (Column state data msg) -> String -> String
-gridTemplate cols str =
+gridTemplate : state -> List (Column state data msg) -> String -> String
+gridTemplate state cols str =
     case cols of
         [] ->
             str
 
         (Column col) :: remain ->
-            case col.width of
-                Nothing ->
-                    gridTemplate remain (str ++ " minmax(min-content, max-content)")
+            if not (col.visible state) then
+                gridTemplate state remain str
 
-                Just w ->
-                    case w.min of
-                        Nothing ->
-                            case w.max of
-                                Nothing ->
-                                    if w.fill then
-                                        gridTemplate remain (str ++ " 1fr")
+            else
+                case col.width of
+                    Nothing ->
+                        gridTemplate state remain (str ++ " minmax(min-content, max-content)")
 
-                                    else
-                                        gridTemplate remain (str ++ " min-content")
+                    Just w ->
+                        case w.min of
+                            Nothing ->
+                                case w.max of
+                                    Nothing ->
+                                        if w.fill then
+                                            gridTemplate state remain (str ++ " 1fr")
 
-                                Just max ->
-                                    if w.fill then
-                                        gridTemplate remain
-                                            (str
-                                                ++ " minmax(1fr, "
-                                                ++ String.fromInt max
-                                                ++ "px)"
-                                            )
+                                        else
+                                            gridTemplate state remain (str ++ " min-content")
 
-                                    else
-                                        gridTemplate remain
-                                            (str
-                                                ++ " minmax(min-content, "
-                                                ++ String.fromInt max
-                                                ++ "px)"
-                                            )
+                                    Just max ->
+                                        if w.fill then
+                                            gridTemplate state
+                                                remain
+                                                (str
+                                                    ++ " minmax(1fr, "
+                                                    ++ String.fromInt max
+                                                    ++ "px)"
+                                                )
 
-                        Just min ->
-                            case w.max of
-                                Nothing ->
-                                    if w.fill then
-                                        gridTemplate remain
+                                        else
+                                            gridTemplate state
+                                                remain
+                                                (str
+                                                    ++ " minmax(min-content, "
+                                                    ++ String.fromInt max
+                                                    ++ "px)"
+                                                )
+
+                            Just min ->
+                                case w.max of
+                                    Nothing ->
+                                        if w.fill then
+                                            gridTemplate state
+                                                remain
+                                                (str
+                                                    ++ " minmax("
+                                                    ++ String.fromInt min
+                                                    ++ "px , 1fr)"
+                                                )
+
+                                        else
+                                            gridTemplate state
+                                                remain
+                                                (str
+                                                    ++ " minmax("
+                                                    ++ String.fromInt min
+                                                    ++ "px , max-content)"
+                                                )
+
+                                    Just max ->
+                                        gridTemplate state
+                                            remain
                                             (str
                                                 ++ " minmax("
                                                 ++ String.fromInt min
-                                                ++ "px , 1fr)"
+                                                ++ "px , "
+                                                ++ String.fromInt max
+                                                ++ ")"
                                             )
-
-                                    else
-                                        gridTemplate remain
-                                            (str
-                                                ++ " minmax("
-                                                ++ String.fromInt min
-                                                ++ "px , max-content)"
-                                            )
-
-                                Just max ->
-                                    gridTemplate remain
-                                        (str
-                                            ++ " minmax("
-                                            ++ String.fromInt min
-                                            ++ "px , "
-                                            ++ String.fromInt max
-                                            ++ ")"
-                                        )
 
 
 renderHeader : state -> Config state data msg -> Element msg
@@ -413,7 +422,7 @@ renderHeader state config =
             Two.AsRow
             [ Two.attribute (Attr.style "display" "contents")
             ]
-            (case config.columns of
+            (case List.sortBy (\(Column col) -> col.order state) config.columns of
                 [] ->
                     []
 
@@ -443,6 +452,11 @@ renderColumnHeader cfg state isFirstColumn (Column col) =
                 cfg.stickHeader
                 (Two.class
                     Style.classes.stickyTop
+                )
+            :: Two.attrIf
+                (not (col.visible state))
+                (Two.attribute
+                    (Attr.style "display" "none")
                 )
             :: Two.attrIf
                 stickyColumn
@@ -504,7 +518,7 @@ renderRow config state row rowIndex =
             Just onClick ->
                 Ui.Events.onClick (onClick row)
         ]
-        (case config.columns of
+        (case List.sortBy (\(Column col) -> col.order state) config.columns of
             [] ->
                 []
 
@@ -538,6 +552,11 @@ renderColumn config state rowIndex row isFirstColumn (Column col) =
                     Style.classes.stickyLeft
                 )
             :: Two.attrIf
+                (not (col.visible state))
+                (Two.attribute
+                    (Attr.style "display" "none")
+                )
+            :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
                 (Ui.Background.color (Ui.rgb 255 255 255))
             :: Two.attrIf
@@ -557,7 +576,7 @@ renderSummary config state rows =
             Two.AsRow
             [ Two.attribute (Attr.style "display" "contents")
             ]
-            (case config.columns of
+            (case List.sortBy (\(Column col) -> col.order state) config.columns of
                 [] ->
                     []
 
@@ -591,6 +610,11 @@ renderSummaryColumn config state rows isFirstColumn (Column col) =
                 config.stickHeader
                 (Two.class
                     Style.classes.stickyBottom
+                )
+            :: Two.attrIf
+                (not (col.visible state))
+                (Two.attribute
+                    (Attr.style "display" "none")
                 )
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
