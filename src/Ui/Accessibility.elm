@@ -1,4 +1,4 @@
-module Ui.Region exposing
+module Ui.Accessibility exposing
     ( mainContent, info
     , navigation, heading, aside
     , description
@@ -14,10 +14,10 @@ All you have to do is add them to elements in your app where you see fit.
 Here's an example of annotating your navigation region:
 
     import Element exposing (row)
-    import Ui.Region as Region
+    import Ui.Accessibility
 
     myNavigation =
-        row [ Region.navigation ]
+        row [ Ui.Accessibility.navigation ]
             [-- ..your navigation links
             ]
 
