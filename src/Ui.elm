@@ -215,6 +215,8 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Keyed
 import Html.Lazy
+import Internal.BitEncodings as Bits
+import Internal.BitField as BitField
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -371,12 +373,16 @@ duration : Int -> Two.Transition
 duration dur =
     Two.Transition
         { arriving =
-            { durDelay = dur
-            , curve = 1
+            { durDelay =
+                BitField.init
+                    |> BitField.set Bits.duration dur
+            , curve = Bits.defaultCurve
             }
         , departing =
-            { durDelay = dur
-            , curve = 1
+            { durDelay =
+                BitField.init
+                    |> BitField.set Bits.duration dur
+            , curve = Bits.defaultCurve
             }
         }
 

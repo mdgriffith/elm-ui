@@ -1,13 +1,17 @@
 module Internal.BitField exposing
     ( init, Bits
-    , BitField, field, set, get, has
+    , BitField, field, set, get, has, equal
+    , getFloat, getPercentage
+    , setPercentage, toString
     )
 
 {-|
 
 @docs init, Bits
 
-@docs BitField, field, set, get, has
+@docs BitField, field, set, get, has, equal
+
+@docs getFloat, getPercentage
 
 -}
 
@@ -113,6 +117,26 @@ set (BitField { offset, top, inverted }) val (Bits bits) =
         |> Bits
 
 
+setPercentage : BitField -> Float -> Bits -> Bits
+setPercentage (BitField { offset, top, inverted, length }) percentage (Bits bits) =
+    let
+        total =
+            Bitwise.shiftLeftBy length 1 - 1
+
+        val =
+            round (percentage * toFloat total)
+    in
+    bits
+        -- clear the target section
+        |> Bitwise.and inverted
+        -- Add the new data
+        |> Bitwise.or
+            (Bitwise.shiftLeftBy offset
+                (Bitwise.and top val)
+            )
+        |> Bits
+
+
 get : BitField -> Bits -> Int
 get (BitField { offset, top }) (Bits bits) =
     bits
@@ -120,7 +144,38 @@ get (BitField { offset, top }) (Bits bits) =
         |> Bitwise.and top
 
 
+getFloat : BitField -> Bits -> Float
+getFloat (BitField { offset, top }) (Bits bits) =
+    bits
+        |> Bitwise.shiftRightZfBy offset
+        |> Bitwise.and top
+        |> toFloat
+
+
+getPercentage : BitField -> Bits -> Float
+getPercentage (BitField { offset, top, length }) (Bits bits) =
+    let
+        numerator =
+            bits
+                |> Bitwise.shiftRightZfBy offset
+                |> Bitwise.and top
+                |> toFloat
+    in
+    numerator / toFloat (Bitwise.shiftLeftBy length 1 - 1)
+
+
+toString : Bits -> String
+toString (Bits bits) =
+    String.fromInt bits
+
+
 {-| -}
-has : Int -> Bits -> Bool
-has target (Bits base) =
-    (Bitwise.and target base - 0) == 0
+has : BitField -> Bits -> Bool
+has (BitField bitField) (Bits base) =
+    Bitwise.and bitField.mask base
+        == bitField.mask
+
+
+equal : Bits -> Bits -> Bool
+equal (Bits one) (Bits two) =
+    one - two == 0

@@ -9,7 +9,8 @@ import Html
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed
-import Internal.BitMask as Bits
+import Internal.BitEncodings as Bits
+import Internal.BitField as BitField exposing (BitField)
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Style2 as Style
 import Json.Decode as Json
@@ -32,7 +33,7 @@ import VirtualDom
 
 -}
 type Element msg
-    = Element (Int -> Html.Html msg)
+    = Element (BitField.Bits -> Html.Html msg)
 
 
 map : (a -> b) -> Element a -> Element b
@@ -648,40 +649,24 @@ transitionFor toApproach transformRendered animated =
                         toApproach transition
 
                     duration =
-                        Bitwise.and Bits.duration approach.durDelay
+                        BitField.get Bits.duration approach.durDelay
 
                     delay =
-                        Bitwise.and Bits.delay approach.durDelay
+                        BitField.get Bits.delay approach.durDelay
 
                     curve =
                         "cubic-bezier("
-                            ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierOne approach.curve) / 255) ++ ", ")
+                            ++ (String.fromFloat (BitField.getPercentage Bits.bezOne approach.curve) ++ ", ")
                             ++ (String.fromFloat
-                                    (toFloat
-                                        (Bitwise.shiftRightZfBy Bits.bezierTwoOffset
-                                            (Bitwise.and Bits.bezierTwo approach.curve)
-                                        )
-                                        / 255
-                                    )
+                                    (BitField.getPercentage Bits.bezTwo approach.curve)
                                     ++ ", "
                                )
                             ++ (String.fromFloat
-                                    (toFloat
-                                        (Bitwise.shiftRightZfBy Bits.bezierThreeOffset
-                                            (Bitwise.and Bits.bezierThree approach.curve)
-                                        )
-                                        / 255
-                                    )
+                                    (BitField.getPercentage Bits.bezThree approach.curve)
                                     ++ ", "
                                )
                             ++ (String.fromFloat
-                                    (toFloat
-                                        (Bitwise.shiftRightZfBy
-                                            Bits.bezierFourOffset
-                                            (Bitwise.and Bits.bezierFour approach.curve)
-                                        )
-                                        / 255
-                                    )
+                                    (BitField.getPercentage Bits.bezFour approach.curve)
                                     ++ " "
                                )
                             ++ ")"
@@ -712,17 +697,17 @@ renderArrivingTransitionString transitions =
                             deets
 
                 duration =
-                    Bitwise.and Bits.duration transition.arriving.durDelay
+                    BitField.get Bits.duration transition.arriving.durDelay
 
                 delay =
-                    Bitwise.and Bits.delay transition.arriving.durDelay
+                    BitField.get Bits.delay transition.arriving.durDelay
 
                 curve =
                     "cubic-bezier("
-                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierOne transition.arriving.curve) / 255) ++ ", ")
-                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierTwo transition.arriving.curve) / 255) ++ ", ")
-                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierThree transition.arriving.curve) / 255) ++ ", ")
-                        ++ (String.fromFloat (toFloat (Bitwise.and Bits.bezierFour transition.arriving.curve) / 255) ++ " ")
+                        ++ (String.fromFloat (BitField.getPercentage Bits.bezOne transition.arriving.curve) ++ ", ")
+                        ++ (String.fromFloat (BitField.getPercentage Bits.bezTwo transition.arriving.curve) ++ ", ")
+                        ++ (String.fromFloat (BitField.getPercentage Bits.bezThree transition.arriving.curve) ++ ", ")
+                        ++ (String.fromFloat (BitField.getPercentage Bits.bezFour transition.arriving.curve) ++ " ")
                         ++ ") "
 
                 transitionStr =
@@ -754,13 +739,13 @@ transitionDetailsToClass details =
 
 transitionToClass : Transition -> String
 transitionToClass (Transition transition) =
-    String.fromInt transition.arriving.durDelay
+    BitField.toString transition.arriving.durDelay
         ++ "-"
-        ++ String.fromInt transition.arriving.curve
+        ++ BitField.toString transition.arriving.curve
         ++ "-"
-        ++ String.fromInt transition.departing.durDelay
+        ++ BitField.toString transition.departing.durDelay
         ++ "-"
-        ++ String.fromInt transition.departing.curve
+        ++ BitField.toString transition.departing.curve
 
 
 mapAttr : (Msg b -> b) -> (a -> b) -> Attribute a -> Attribute b
@@ -912,10 +897,7 @@ type Attr msg
     | Font
         { family : String
         , adjustments :
-            Maybe
-                { offset : Int
-                , height : Int
-                }
+            Maybe BitField.Bits
         , variants : String
         , smallCaps : Bool
         }
@@ -974,11 +956,11 @@ type AnimValue
 type alias Approach =
     -- durDelay is duration and delay in one int
     -- likewise bitwise encoded
-    { durDelay : Int
+    { durDelay : BitField.Bits
 
     -- this is a cubic bezier curve
     -- bitwise encoded as a single int
-    , curve : Int
+    , curve : BitField.Bits
     }
 
 
@@ -1020,20 +1002,20 @@ type Transition
         { arriving :
             -- durDelay is duration and delay in one int
             -- likewise bitwise encoded
-            { durDelay : Int
+            { durDelay : BitField.Bits
 
             -- this is a cubic bezier curve
             -- bitwise encoded as a single int
-            , curve : Int
+            , curve : BitField.Bits
             }
         , departing :
             -- durDelay is duration and delay in one int
             -- likewise bitwise encoded
-            { durDelay : Int
+            { durDelay : BitField.Bits
 
             -- this is a cubic bezier curve
             -- bitwise encoded as a single int
-            , curve : Int
+            , curve : BitField.Bits
             }
         }
 
@@ -1099,8 +1081,7 @@ emptyDetails =
     , spacingY = 0
     , padding = emptyEdges
     , borders = emptyEdges
-    , fontOffset = 0
-    , fontHeight = 63
+    , fontAdjustment = BitField.init
     , fontSize = -1
     , transform = Nothing
     , animEvents = []
@@ -1110,14 +1091,14 @@ emptyDetails =
     }
 
 
-unwrap : Int -> Element msg -> Html.Html msg
+unwrap : BitField.Bits -> Element msg -> Html.Html msg
 unwrap s el =
     case el of
         Element html ->
             html s
 
 
-unwrapKeyed : Int -> ( String, Element msg ) -> ( String, Html.Html msg )
+unwrapKeyed : BitField.Bits -> ( String, Element msg ) -> ( String, Html.Html msg )
 unwrapKeyed s el =
     case el of
         ( key, Element html ) ->
@@ -1134,32 +1115,28 @@ text : String -> Element msg
 text str =
     Element
         (\encoded ->
-            if encoded - defaultRowBits == 0 || encoded - defaultColBits == 0 then
+            if BitField.equal encoded Bits.row || BitField.equal encoded Bits.column then
                 Html.span [ Attr.class textElementClasses ] [ Html.text str ]
 
             else
                 let
                     height =
                         encoded
-                            |> Bitwise.shiftRightZfBy 20
-                            |> Bitwise.and bitsFontHeight
+                            |> BitField.get Bits.fontHeight
                             |> toFloat
 
                     offset =
                         encoded
-                            |> Bitwise.shiftRightZfBy 26
-                            |> Bitwise.and bitsFontOffset
+                            |> BitField.get Bits.fontOffset
                             |> toFloat
 
                     spacingY =
                         encoded
-                            |> Bitwise.shiftRightZfBy 10
-                            |> Bitwise.and bitsSpacingY
+                            |> BitField.get Bits.spacingY
 
                     spacingX =
-                        ones
-                            |> Bitwise.shiftRightZfBy 22
-                            |> Bitwise.and encoded
+                        encoded
+                            |> BitField.get Bits.spacingX
 
                     attrs =
                         [ Attr.class textElementClasses
@@ -1217,10 +1194,12 @@ type Wrapped
 
 
 attrIf bool attr =
-    if bool then 
+    if bool then
         attr
+
     else
         noAttr
+
 
 noAttr =
     Attribute
@@ -1269,8 +1248,7 @@ type alias Details msg =
     , spacingY : Int
     , padding : Edges
     , borders : Edges
-    , fontOffset : Int
-    , fontHeight : Int
+    , fontAdjustment : BitField.Bits
     , fontSize : Int
     , transform : Maybe Transform
     , animEvents : List (Json.Decoder msg)
@@ -1311,87 +1289,6 @@ spacerBottom space =
         []
 
 
-
-{- Useful bitmasks -}
-
-
-ones : Int
-ones =
-    Bitwise.complement 0
-
-
-top10 : Int
-top10 =
-    Bitwise.shiftRightZfBy (32 - 10) ones
-
-
-top6 : Int
-top6 =
-    Bitwise.shiftRightZfBy (32 - 6) ones
-
-
-top5 : Int
-top5 =
-    Bitwise.shiftRightZfBy (32 - 5) ones
-
-
-bitsSpacingY : Int
-bitsSpacingY =
-    Bitwise.shiftRightZfBy (32 - 10) ones
-
-
-bitsFontHeight : Int
-bitsFontHeight =
-    Bitwise.shiftRightZfBy (32 - 6) ones
-
-
-bitsFontOffset : Int
-bitsFontOffset =
-    Bitwise.shiftRightZfBy (32 - 5) ones
-
-
-bitsFontAdjustments : Int
-bitsFontAdjustments =
-    Bitwise.shiftRightZfBy (32 - 11) ones
-        |> Bitwise.shiftLeftBy 20
-
-
-defaultRowBits : Int
-defaultRowBits =
-    Bitwise.and top10 emptyDetails.spacingX
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 10 (Bitwise.and top10 emptyDetails.spacingY))
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 20 (Bitwise.and top6 emptyDetails.fontHeight))
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 26 (Bitwise.and top5 emptyDetails.fontOffset))
-        |> Bitwise.or
-            rowBits
-
-
-defaultColBits : Int
-defaultColBits =
-    Bitwise.and top10 emptyDetails.spacingX
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 10 (Bitwise.and top10 emptyDetails.spacingY))
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 20 (Bitwise.and top6 emptyDetails.fontHeight))
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 26 (Bitwise.and top5 emptyDetails.fontOffset))
-        |> Bitwise.or
-            nonRowBits
-
-
-rowBits : Int
-rowBits =
-    Bitwise.shiftLeftBy 31 1
-
-
-nonRowBits : Int
-nonRowBits =
-    Bitwise.shiftLeftBy 31 0
-
-
 element :
     Layout
     -> List (Attribute msg)
@@ -1405,7 +1302,6 @@ element layout attrs children =
                     renderAttrs
                         parentEncoded
                         layout
-                        Html.div
                         emptyDetails
                         (ElemChildren children)
                         Flag.none
@@ -1444,7 +1340,6 @@ elementAs toNode layout attrs children =
                     renderAttrs
                         parentEncoded
                         layout
-                        toNode
                         emptyDetails
                         (ElemChildren children)
                         Flag.none
@@ -1483,7 +1378,6 @@ elementKeyed name layout attrs children =
                     renderAttrs
                         parentEncoded
                         layout
-                        Html.div
                         emptyDetails
                         (ElemKeyed children)
                         Flag.none
@@ -1523,9 +1417,8 @@ type Children msg
 
 
 renderAttrs :
-    Int
+    BitField.Bits
     -> Layout
-    -> (List (Html.Attribute msg) -> List (Html.Html msg) -> Html.Html msg)
     -> Details msg
     -> ElemChildren msg
     -> Flag.Field
@@ -1535,59 +1428,37 @@ renderAttrs :
     -> String
     -> List (Attribute msg)
     -> ( Bool, List (Html.Attribute msg), Children msg )
-renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars attrs =
+renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars attrs =
     case attrs of
         [] ->
             let
                 encoded =
-                    if
-                        (details.spacingX == 0)
-                            && (details.spacingY == 0)
-                            && (details.fontOffset == 0)
-                            && (details.fontHeight == 63)
-                    then
-                        case layout of
-                            AsRow ->
-                                Bitwise.and bitsFontAdjustments parentEncoded
-                                    |> Bitwise.or rowBits
-
-                            _ ->
-                                Bitwise.and bitsFontAdjustments parentEncoded
-                                    |> Bitwise.or nonRowBits
-
-                    else if Flag.present Flag.fontAdjustment has then
+                    if Flag.present Flag.fontAdjustment has then
                         -- font adjustment is present on this element, encode it
-                        Bitwise.and top10 details.spacingX
-                            |> Bitwise.or
-                                (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
-                            |> Bitwise.or
-                                (Bitwise.shiftLeftBy 20 (Bitwise.and top6 details.fontHeight))
-                            |> Bitwise.or
-                                (Bitwise.shiftLeftBy 26 (Bitwise.and top5 details.fontOffset))
-                            |> Bitwise.or
+                        details.fontAdjustment
+                            |> BitField.set Bits.spacingX details.spacingX
+                            |> BitField.set Bits.spacingY details.spacingY
+                            |> BitField.set Bits.isRow
                                 (case layout of
                                     AsRow ->
-                                        rowBits
+                                        1
 
                                     _ ->
-                                        nonRowBits
+                                        0
                                 )
 
                     else
                         -- font adjustment is NOT present on this element
-                        -- propagate existing font adjustments
-                        Bitwise.and bitsFontAdjustments parentEncoded
-                            |> Bitwise.or
-                                (Bitwise.and top10 details.spacingX)
-                            |> Bitwise.or
-                                (Bitwise.shiftLeftBy 10 (Bitwise.and top10 details.spacingY))
-                            |> Bitwise.or
+                        parentEncoded
+                            |> BitField.set Bits.spacingX details.spacingX
+                            |> BitField.set Bits.spacingY details.spacingY
+                            |> BitField.set Bits.isRow
                                 (case layout of
                                     AsRow ->
-                                        rowBits
+                                        1
 
                                     _ ->
-                                        nonRowBits
+                                        0
                                 )
 
                 renderedChildren =
@@ -1655,25 +1526,23 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                                                 inFront
 
                 attrsWithParentSpacing =
-                    if parentEncoded == 0 then
-                        htmlAttrs
-
-                    else
+                    if BitField.has Bits.spacing parentEncoded then
                         Attr.style "margin"
                             ((parentEncoded
-                                |> Bitwise.shiftRightZfBy 10
-                                |> Bitwise.and bitsSpacingY
+                                |> BitField.get Bits.spacingY
                                 |> String.fromInt
                              )
                                 ++ "px "
-                                ++ String.fromInt
-                                    (ones
-                                        |> Bitwise.shiftRightZfBy 22
-                                        |> Bitwise.and parentEncoded
-                                    )
+                                ++ (parentEncoded
+                                        |> BitField.get Bits.spacingX
+                                        |> String.fromInt
+                                   )
                                 ++ "px"
                             )
                             :: htmlAttrs
+
+                    else
+                        htmlAttrs
 
                 attrsWithTransform =
                     if Flag.present Flag.transform has then
@@ -1690,7 +1559,7 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         attrsWithParentSpacing
 
                 adjustmentNotSet =
-                    details.fontOffset == 0 && details.fontHeight == 63
+                    BitField.has Bits.fontAdjustment details.fontAdjustment
 
                 {-
                    no fontsize or adjustment -> skip
@@ -1715,8 +1584,7 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         let
                             height =
                                 parentEncoded
-                                    |> Bitwise.shiftRightZfBy 20
-                                    |> Bitwise.and bitsFontHeight
+                                    |> BitField.get Bits.fontHeight
                         in
                         Attr.style "font-size"
                             (String.fromFloat
@@ -1728,9 +1596,14 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     else if details.fontSize /= -1 then
                         -- a font size is set as well as an adjustment
                         -- set font size from details
+                        let
+                            fontHeight =
+                                parentEncoded
+                                    |> BitField.getPercentage Bits.fontHeight
+                        in
                         Attr.style "font-size"
                             (String.fromFloat
-                                (toFloat details.fontSize * (1 / (toFloat details.fontHeight / 63)))
+                                (toFloat details.fontSize * (1 / fontHeight))
                                 ++ "px"
                             )
                             :: attrsWithTransform
@@ -1738,9 +1611,14 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     else
                         -- a font size is NOT set, but we have an adjustment
                         -- operate on `em`
+                        let
+                            fontHeight =
+                                parentEncoded
+                                    |> BitField.getPercentage Bits.fontHeight
+                        in
                         Attr.style "font-size"
                             (String.fromFloat
-                                (1 / (toFloat details.fontHeight / 63))
+                                (1 / fontHeight)
                                 ++ "em"
                             )
                             :: attrsWithTransform
@@ -1884,22 +1762,19 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         Flag.present flag has
             in
             if not (not previouslyRendered) then
-                renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars remain
+                renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
 
             else
                 case attr of
                     NoAttribute ->
-                        renderAttrs parentEncoded layout toNode details children has htmlAttrs classes nearby vars remain
+                        renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
 
                     FontSize size ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 size
                             , padding = details.padding
@@ -1938,23 +1813,15 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         in
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset =
+                            , fontAdjustment =
                                 case font.adjustments of
                                     Nothing ->
-                                        details.fontOffset
+                                        details.fontAdjustment
 
                                     Just adj ->
-                                        adj.offset
-                            , fontHeight =
-                                case font.adjustments of
-                                    Nothing ->
-                                        details.fontHeight
-
-                                    Just adj ->
-                                        adj.height
+                                        adj
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -1984,7 +1851,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     TransformPiece slot val ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { details | transform = Just (upsertTransform slot val details.transform) }
                             children
                             (Flag.add flag has)
@@ -1997,7 +1863,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     Attr htmlAttr ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             has
@@ -2013,7 +1878,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         -- Attach click handler
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -2030,7 +1894,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     Link link ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -2059,7 +1922,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     Class str ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -2072,7 +1934,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     ClassAndStyle cls styleName styleVal ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -2085,7 +1946,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     ClassAndVarStyle cls var ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -2098,7 +1958,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     ClassAndVar cls varName varVal ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             (Flag.add flag has)
@@ -2111,7 +1970,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     Nearby location elem ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             details
                             children
                             has
@@ -2125,7 +1983,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         if layout == AsEl then
                             renderAttrs parentEncoded
                                 layout
-                                toNode
                                 details
                                 children
                                 has
@@ -2138,7 +1995,6 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         else
                             renderAttrs parentEncoded
                                 layout
-                                toNode
                                 { details | spacingX = x, spacingY = y }
                                 children
                                 (Flag.add flag has)
@@ -2158,13 +2014,10 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     Padding padding ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
                             , fontSize = details.fontSize
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , padding = padding
                             , borders = details.borders
                             , transform = details.transform
@@ -2197,12 +2050,9 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     BorderWidth borders ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2237,12 +2087,9 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     HeightFill i ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2262,7 +2109,7 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                                 Attr.class Style.classes.heightFill
                                     :: htmlAttrs
 
-                             else if Bitwise.and rowBits parentEncoded == 0 then
+                             else if BitField.has Bits.isRow parentEncoded then
                                 -- we're within a column, our flex-grow can be set safely
                                 Attr.class Style.classes.heightFill
                                     :: Attr.style "flex-grow" (String.fromInt (i * 100000))
@@ -2280,12 +2127,9 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     WidthFill i ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2301,7 +2145,7 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                             (if i == 0 then
                                 htmlAttrs
 
-                             else if Bitwise.and rowBits parentEncoded /= 0 then
+                             else if not (BitField.has Bits.isRow parentEncoded) then
                                 -- we're within a row, our flex-grow can be set
                                 Attr.class Style.classes.widthFill
                                     :: Attr.style "flex-grow" (String.fromInt (i * 100000))
@@ -2319,12 +2163,9 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                     When toMsg when ->
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2421,12 +2262,9 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         in
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2481,12 +2319,9 @@ renderAttrs parentEncoded layout toNode details children has htmlAttrs classes n
                         in
                         renderAttrs parentEncoded
                             layout
-                            toNode
                             { spacingX = details.spacingX
                             , spacingY = details.spacingY
-                            , fontOffset = details.fontOffset
-                            , fontHeight =
-                                details.fontHeight
+                            , fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2868,7 +2703,7 @@ nearbyElement location elem =
 
 
 zero =
-    0
+    BitField.init
 
 
 textElementClasses : String

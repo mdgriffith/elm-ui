@@ -188,11 +188,11 @@ import Internal.Style2 as Style
 import Json.Decode as Json
 import Json.Encode as Encode
 import Ui exposing (Attribute, Element)
+import Ui.Accessibility as Region2
 import Ui.Background as Background2
 import Ui.Border as Border2
 import Ui.Events as Events2
 import Ui.Font as Font2
-import Ui.Region as Region2
 
 
 {-| -}

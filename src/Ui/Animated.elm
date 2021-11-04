@@ -40,7 +40,8 @@ module Ui.Animated exposing
 import Animator
 import Animator.Timeline exposing (Timeline)
 import Bitwise
-import Internal.BitMask as Bits
+import Internal.BitEncodings as Bits
+import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -84,16 +85,14 @@ delay dly (Two.Anim cls personality name val) =
     Two.Anim cls
         { arriving =
             { durDelay =
-                Bitwise.or
-                    (Bitwise.shiftLeftBy 16 (Bitwise.and dly Bits.top16))
-                    (Bitwise.and Bits.duration personality.arriving.durDelay)
+                personality.arriving.durDelay
+                    |> BitField.set Bits.delay dly
             , curve = personality.arriving.curve
             }
         , departing =
             { durDelay =
-                Bitwise.or
-                    (Bitwise.shiftLeftBy 16 (Bitwise.and dly Bits.top16))
-                    (Bitwise.and Bits.duration personality.arriving.durDelay)
+                personality.departing.durDelay
+                    |> BitField.set Bits.delay dly
             , curve = personality.departing.curve
             }
         , wobble = personality.wobble
@@ -226,7 +225,7 @@ created toMsg attrs =
 
 
 {-| -}
-linearCurve : Int
+linearCurve : BitField.Bits
 linearCurve =
     encodeBezier 0 0 1 1
 
@@ -234,20 +233,18 @@ linearCurve =
 {-| cubic-bezier(0.4, 0.0, 0.2, 1);
 Standard curve as given here: <https://material.io/design/motion/speed.html#easing>
 -}
-standardCurve : Int
+standardCurve : BitField.Bits
 standardCurve =
     encodeBezier 0.4 0 0.2 1
 
 
-encodeBezier : Float -> Float -> Float -> Float -> Int
+encodeBezier : Float -> Float -> Float -> Float -> BitField.Bits
 encodeBezier one two three four =
-    Bitwise.and Bits.top8 (round (one * 255))
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 8 (Bitwise.and Bits.top8 (round (two * 255))))
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 16 (Bitwise.and Bits.top8 (round (three * 255))))
-        |> Bitwise.or
-            (Bitwise.shiftLeftBy 24 (Bitwise.and Bits.top8 (round (four * 255))))
+    BitField.init
+        |> BitField.setPercentage Bits.bezOne one
+        |> BitField.setPercentage Bits.bezTwo two
+        |> BitField.setPercentage Bits.bezThree three
+        |> BitField.setPercentage Bits.bezFour four
 
 
 {-| 250ms, linear, no delay, no wobble
@@ -256,12 +253,14 @@ linear : Personality
 linear =
     { arriving =
         { durDelay =
-            250
+            BitField.init
+                |> BitField.set Bits.duration 250
         , curve = linearCurve
         }
     , departing =
         { durDelay =
-            200
+            BitField.init
+                |> BitField.set Bits.duration 200
         , curve = linearCurve
         }
     , wobble = 0
@@ -274,12 +273,14 @@ default : Personality
 default =
     { arriving =
         { durDelay =
-            250
+            BitField.init
+                |> BitField.set Bits.duration 250
         , curve = standardCurve
         }
     , departing =
         { durDelay =
-            200
+            BitField.init
+                |> BitField.set Bits.duration 200
         , curve = standardCurve
         }
     , wobble = 0

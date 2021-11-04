@@ -67,6 +67,8 @@ module Ui.Font exposing
 
 import Bitwise
 import Html.Attributes as Attr
+import Internal.BitEncodings as Bits
+import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -259,9 +261,10 @@ with details =
                         { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
                         , adjustments =
                             Just
-                                { offset = Bitwise.and Two.top5 (round (adjustment.offset * 31))
-                                , height = Bitwise.and Two.top6 (round (adjustment.height * 63))
-                                }
+                                (BitField.init
+                                    |> BitField.set Bits.fontHeight (round adjustment.height)
+                                    |> BitField.set Bits.fontOffset (round adjustment.offset)
+                                )
                         , variants =
                             renderVariants details.variants ""
                         , smallCaps =
