@@ -1077,9 +1077,7 @@ emptyEdges =
 
 emptyDetails : Details msg
 emptyDetails =
-    { spacingX = 0
-    , spacingY = 0
-    , padding = emptyEdges
+    { padding = emptyEdges
     , borders = emptyEdges
     , fontAdjustment = BitField.init
     , fontSize = -1
@@ -1242,11 +1240,7 @@ type alias Edges =
 
 
 type alias Details msg =
-    -- Node reprsents html node like `div` or `a`.
-    -- right now `0: div` and `1:
-    { spacingX : Int
-    , spacingY : Int
-    , padding : Edges
+    { padding : Edges
     , borders : Edges
     , fontAdjustment : BitField.Bits
     , fontSize : Int
@@ -1296,11 +1290,19 @@ element :
     -> Element msg
 element layout attrs children =
     Element
-        (\parentEncoded ->
+        (\parentBits ->
             let
                 ( asLink, renderedAttrs, renderedChildren ) =
                     renderAttrs
-                        parentEncoded
+                        parentBits
+                        (BitField.clear Bits.spacing parentBits
+                            |> (if layout == AsRow then
+                                    BitField.set Bits.isRow 1
+
+                                else
+                                    BitField.set Bits.isRow 0
+                               )
+                        )
                         layout
                         emptyDetails
                         (ElemChildren children)
@@ -1334,11 +1336,19 @@ elementAs :
     -> Element msg
 elementAs toNode layout attrs children =
     Element
-        (\parentEncoded ->
+        (\parentBits ->
             let
                 ( asLink, renderedAttrs, renderedChildren ) =
                     renderAttrs
-                        parentEncoded
+                        parentBits
+                        (BitField.clear Bits.spacing parentBits
+                            |> (if layout == AsRow then
+                                    BitField.set Bits.isRow 1
+
+                                else
+                                    BitField.set Bits.isRow 0
+                               )
+                        )
                         layout
                         emptyDetails
                         (ElemChildren children)
@@ -1372,11 +1382,19 @@ elementKeyed :
     -> Element msg
 elementKeyed name layout attrs children =
     Element
-        (\parentEncoded ->
+        (\parentBits ->
             let
                 ( asLink, renderedAttrs, renderedChildren ) =
                     renderAttrs
-                        parentEncoded
+                        parentBits
+                        (BitField.clear Bits.spacing parentBits
+                            |> (if layout == AsRow then
+                                    BitField.set Bits.isRow 1
+
+                                else
+                                    BitField.set Bits.isRow 0
+                               )
+                        )
                         layout
                         emptyDetails
                         (ElemKeyed children)
@@ -1418,6 +1436,7 @@ type Children msg
 
 renderAttrs :
     BitField.Bits
+    -> BitField.Bits
     -> Layout
     -> Details msg
     -> ElemChildren msg
@@ -1428,38 +1447,12 @@ renderAttrs :
     -> String
     -> List (Attribute msg)
     -> ( Bool, List (Html.Attribute msg), Children msg )
-renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars attrs =
+renderAttrs parentBits myBits layout details children has htmlAttrs classes nearby vars attrs =
     case attrs of
         [] ->
             let
                 encoded =
-                    if Flag.present Flag.fontAdjustment has then
-                        -- font adjustment is present on this element, encode it
-                        details.fontAdjustment
-                            |> BitField.set Bits.spacingX details.spacingX
-                            |> BitField.set Bits.spacingY details.spacingY
-                            |> BitField.set Bits.isRow
-                                (case layout of
-                                    AsRow ->
-                                        1
-
-                                    _ ->
-                                        0
-                                )
-
-                    else
-                        -- font adjustment is NOT present on this element
-                        parentEncoded
-                            |> BitField.set Bits.spacingX details.spacingX
-                            |> BitField.set Bits.spacingY details.spacingY
-                            |> BitField.set Bits.isRow
-                                (case layout of
-                                    AsRow ->
-                                        1
-
-                                    _ ->
-                                        0
-                                )
+                    myBits
 
                 renderedChildren =
                     case children of
@@ -1526,14 +1519,14 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                                 inFront
 
                 attrsWithParentSpacing =
-                    if BitField.has Bits.spacing parentEncoded then
+                    if BitField.has Bits.spacing parentBits then
                         Attr.style "margin"
-                            ((parentEncoded
+                            ((parentBits
                                 |> BitField.get Bits.spacingY
                                 |> String.fromInt
                              )
                                 ++ "px "
-                                ++ (parentEncoded
+                                ++ (parentBits
                                         |> BitField.get Bits.spacingX
                                         |> String.fromInt
                                    )
@@ -1583,7 +1576,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         -- set font size, adjust via inherited value
                         let
                             height =
-                                parentEncoded
+                                parentBits
                                     |> BitField.get Bits.fontHeight
                         in
                         Attr.style "font-size"
@@ -1598,7 +1591,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         -- set font size from details
                         let
                             fontHeight =
-                                parentEncoded
+                                parentBits
                                     |> BitField.getPercentage Bits.fontHeight
                         in
                         Attr.style "font-size"
@@ -1613,7 +1606,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         -- operate on `em`
                         let
                             fontHeight =
-                                parentEncoded
+                                parentBits
                                     |> BitField.getPercentage Bits.fontHeight
                         in
                         Attr.style "font-size"
@@ -1683,6 +1676,9 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                 :: Attr.class classes
                                 :: attrsWithAnimations
 
+                spacingY =
+                    BitField.get Bits.spacingY myBits
+
                 finalChildren =
                     case renderedChildren of
                         Keyed keyedChilds ->
@@ -1691,14 +1687,14 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                     Keyed <|
                                         if Flag.present Flag.id has then
                                             ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: attributes) keyedChilds )
-                                                :: ( "top-spacer", spacerTop (toFloat details.spacingY / -2) )
+                                                :: ( "top-spacer", spacerTop (toFloat spacingY / -2) )
                                                 :: keyedChilds
-                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat details.spacingY / -2) ) ]
+                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
 
                                         else
-                                            ( "top-spacer", spacerTop (toFloat details.spacingY / -2) )
+                                            ( "top-spacer", spacerTop (toFloat spacingY / -2) )
                                                 :: keyedChilds
-                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat details.spacingY / -2) ) ]
+                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
 
                                 _ ->
                                     if Flag.present Flag.id has then
@@ -1716,14 +1712,14 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                     Children <|
                                         if Flag.present Flag.id has then
                                             Html.div (Attr.class "ui-movable" :: attributes) childs
-                                                :: spacerTop (toFloat details.spacingY / -2)
+                                                :: spacerTop (toFloat spacingY / -2)
                                                 :: childs
-                                                ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+                                                ++ [ spacerBottom (toFloat spacingY / -2) ]
 
                                         else
-                                            spacerTop (toFloat details.spacingY / -2)
+                                            spacerTop (toFloat spacingY / -2)
                                                 :: childs
-                                                ++ [ spacerBottom (toFloat details.spacingY / -2) ]
+                                                ++ [ spacerBottom (toFloat spacingY / -2) ]
 
                                 _ ->
                                     if Flag.present Flag.id has then
@@ -1762,19 +1758,18 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         Flag.present flag has
             in
             if not (not previouslyRendered) then
-                renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
+                renderAttrs parentBits myBits layout details children has htmlAttrs classes nearby vars remain
 
             else
                 case attr of
                     NoAttribute ->
-                        renderAttrs parentEncoded layout details children has htmlAttrs classes nearby vars remain
+                        renderAttrs parentBits myBits layout details children has htmlAttrs classes nearby vars remain
 
                     FontSize size ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment = details.fontAdjustment
+                            { fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 size
                             , padding = details.padding
@@ -1811,11 +1806,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                     Attr.style "font-feature-settings" font.variants
                                         :: withSmallcaps
                         in
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment =
+                            { fontAdjustment =
                                 case font.adjustments of
                                     Nothing ->
                                         details.fontAdjustment
@@ -1849,7 +1843,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     TransformPiece slot val ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             { details | transform = Just (upsertTransform slot val details.transform) }
                             children
@@ -1861,7 +1856,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     Attr htmlAttr ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1876,7 +1872,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                         -- Make focusable
                         -- Attach keyboard handler
                         -- Attach click handler
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1892,7 +1889,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     Link link ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1920,7 +1918,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     Class str ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1932,7 +1931,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     ClassAndStyle cls styleName styleVal ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1944,7 +1944,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     ClassAndVarStyle cls var ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1956,7 +1957,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     ClassAndVar cls varName varVal ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1968,7 +1970,8 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     Nearby location elem ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
                             details
                             children
@@ -1980,43 +1983,33 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     Spacing x y ->
-                        if layout == AsEl then
-                            renderAttrs parentEncoded
-                                layout
-                                details
-                                children
-                                has
+                        renderAttrs parentBits
+                            (myBits
+                                |> BitField.set Bits.spacingX x
+                                |> BitField.set Bits.spacingY y
+                            )
+                            layout
+                            details
+                            children
+                            (Flag.add flag has)
+                            (if layout == AsParagraph then
+                                Attr.style "line-height"
+                                    ("calc(1em + " ++ String.fromInt y ++ "px")
+                                    :: htmlAttrs
+
+                             else
                                 htmlAttrs
-                                classes
-                                nearby
-                                vars
-                                remain
-
-                        else
-                            renderAttrs parentEncoded
-                                layout
-                                { details | spacingX = x, spacingY = y }
-                                children
-                                (Flag.add flag has)
-                                (if layout == AsParagraph then
-                                    Attr.style "line-height"
-                                        ("calc(1em + " ++ String.fromInt details.spacingY ++ "px")
-                                        :: htmlAttrs
-
-                                 else
-                                    htmlAttrs
-                                )
-                                (Style.classes.spacing ++ " " ++ classes)
-                                nearby
-                                vars
-                                remain
+                            )
+                            (Style.classes.spacing ++ " " ++ classes)
+                            nearby
+                            vars
+                            remain
 
                     Padding padding ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontSize = details.fontSize
+                            { fontSize = details.fontSize
                             , fontAdjustment = details.fontAdjustment
                             , padding = padding
                             , borders = details.borders
@@ -2048,11 +2041,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     BorderWidth borders ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment = details.fontAdjustment
+                            { fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2085,11 +2077,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     HeightFill i ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment = details.fontAdjustment
+                            { fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2109,7 +2100,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                 Attr.class Style.classes.heightFill
                                     :: htmlAttrs
 
-                             else if BitField.has Bits.isRow parentEncoded then
+                             else if BitField.has Bits.isRow parentBits then
                                 -- we're within a column, our flex-grow can be set safely
                                 Attr.class Style.classes.heightFill
                                     :: Attr.style "flex-grow" (String.fromInt (i * 100000))
@@ -2125,11 +2116,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     WidthFill i ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment = details.fontAdjustment
+                            { fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2145,7 +2135,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             (if i == 0 then
                                 htmlAttrs
 
-                             else if not (BitField.has Bits.isRow parentEncoded) then
+                             else if not (BitField.has Bits.isRow parentBits) then
                                 -- we're within a row, our flex-grow can be set
                                 Attr.class Style.classes.widthFill
                                     :: Attr.style "flex-grow" (String.fromInt (i * 100000))
@@ -2161,11 +2151,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                             remain
 
                     When toMsg when ->
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment = details.fontAdjustment
+                            { fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2260,11 +2249,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                                 Json.fail "Nonmatching animation"
                                         )
                         in
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment = details.fontAdjustment
+                            { fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2288,7 +2276,7 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
 
                     Animated toMsg id ->
                         -- if Flag.present Flag.id has then
-                        --     renderAttrs parentEncoded
+                        --     renderAttrs parentBits
                         --         layout
                         --         details
                         --         children
@@ -2317,11 +2305,10 @@ renderAttrs parentEncoded layout details children has htmlAttrs classes nearby v
                                     )
                                     decodeBoundingBox
                         in
-                        renderAttrs parentEncoded
+                        renderAttrs parentBits
+                            myBits
                             layout
-                            { spacingX = details.spacingX
-                            , spacingY = details.spacingY
-                            , fontAdjustment = details.fontAdjustment
+                            { fontAdjustment = details.fontAdjustment
                             , fontSize =
                                 details.fontSize
                             , padding = details.padding
@@ -2408,207 +2395,6 @@ upsertTransform slot val maybeTransform =
         else
             t.rotation
     }
-
-
-
--- renderKeyed :
---     Layout
---     -> Int
---     -> List ( String, Element msg )
---     -> String
---     -> Flag.Field
---     -> String
---     -> List (VirtualDom.Attribute msg)
---     -> String
---     -> NearbyChildren msg
---     -> List (Attribute msg)
---     -> Element msg
--- renderKeyed layout spacing children name has styles htmlAttrs classes nearby attrs =
---     case attrs of
---         [] ->
---             let
---                 finalSpacing =
---                     toFloat spacing
---                 renderedChildren =
---                     case nearby of
---                         NoNearbyChildren ->
---                             List.map (Tuple.mapSecond (unwrap finalSpacing)) children
---                         ChildrenBehind behind ->
---                             List.map (Tuple.pair "keyed") behind ++ List.map (Tuple.mapSecond (unwrap finalSpacing)) children
---                         ChildrenInFront inFront ->
---                             List.map (Tuple.mapSecond (unwrap finalSpacing)) children ++ List.map (Tuple.pair "keyed") inFront
---                         ChildrenBehindAndInFront behind inFront ->
---                             List.map (Tuple.pair "keyed") behind
---                                 ++ List.map (Tuple.mapSecond (unwrap finalSpacing)) children
---                                 ++ List.map (Tuple.pair "keyed") inFront
---             in
---             Element
---                 (\space ->
---                     let
---                         finalStyles =
---                             if space == 0 then
---                                 styles
---                             else
---                                 styles ++ Style.prop "margin" (Style.spacingAsMargin space)
---                     in
---                     Html.Keyed.node
---                         name
---                         (Attr.class classes
---                             :: Attr.property "style" (Json.Encode.string finalStyles)
---                             :: htmlAttrs
---                         )
---                         renderedChildren
---                 )
---         NoAttribute :: remain ->
---             renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
---         (Attr attr) :: remain ->
---             renderKeyed layout spacing children name has styles (attr :: htmlAttrs) classes nearby remain
---         (Link targetBlank url) :: remain ->
---             renderKeyed layout
---                 spacing
---                 children
---                 "a"
---                 has
---                 styles
---                 (Attr.href url
---                     :: Attr.rel "noopener noreferrer"
---                     :: (if targetBlank then
---                             Attr.target "_blank"
---                         else
---                             Attr.target "_self"
---                        )
---                     :: htmlAttrs
---                 )
---                 classes
---                 nearby
---                 remain
---         (Download url downloadName) :: remain ->
---             renderKeyed layout
---                 spacing
---                 children
---                 "a"
---                 has
---                 styles
---                 (Attr.href url
---                     :: Attr.download downloadName
---                     :: htmlAttrs
---                 )
---                 classes
---                 nearby
---                 remain
---         (NodeName nodeName) :: remain ->
---             renderKeyed layout spacing children nodeName has styles htmlAttrs classes nearby remain
---         (Class flag str) :: remain ->
---             if Flag.present flag has then
---                 renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
---             else
---                 renderKeyed layout spacing children name (Flag.add flag has) styles htmlAttrs (str ++ " " ++ classes) nearby remain
---         (Style flag str) :: remain ->
---             if Flag.present flag has then
---                 renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
---             else
---                 renderKeyed layout spacing children name (Flag.add flag has) (str ++ styles) htmlAttrs classes nearby remain
---         (ClassAndStyle flag cls sty) :: remain ->
---             if Flag.present flag has then
---                 renderKeyed layout spacing children name has styles htmlAttrs classes nearby remain
---             else
---                 renderKeyed layout
---                     spacing
---                     children
---                     name
---                     (Flag.add flag has)
---                     (sty ++ styles)
---                     htmlAttrs
---                     (cls ++ " " ++ classes)
---                     nearby
---                     remain
---         (Nearby location elem) :: remain ->
---             renderKeyed
---                 layout
---                 spacing
---                 children
---                 name
---                 has
---                 styles
---                 htmlAttrs
---                 classes
---                 (addNearbyElement location elem nearby)
---                 remain
---         (Spacing flag s) :: remain ->
---             if Flag.present flag has then
---                 renderKeyed
---                     layout
---                     spacing
---                     children
---                     name
---                     has
---                     styles
---                     htmlAttrs
---                     classes
---                     nearby
---                     remain
---             else
---                 renderKeyed
---                     layout
---                     s
---                     children
---                     name
---                     (Flag.add flag has)
---                     styles
---                     htmlAttrs
---                     classes
---                     nearby
---                     remain
---         (Padding flag x y) :: remain ->
---             if Flag.present flag has then
---                 renderKeyed
---                     layout
---                     spacing
---                     children
---                     name
---                     has
---                     styles
---                     htmlAttrs
---                     classes
---                     nearby
---                     remain
---             else
---                 renderKeyed
---                     layout
---                     spacing
---                     children
---                     name
---                     (Flag.add flag has)
---                     styles
---                     htmlAttrs
---                     classes
---                     nearby
---                     remain
---         (BorderWidth flag x y) :: remain ->
---             if Flag.present flag has then
---                 renderKeyed
---                     layout
---                     spacing
---                     children
---                     name
---                     has
---                     styles
---                     htmlAttrs
---                     classes
---                     nearby
---                     remain
---             else
---                 renderKeyed
---                     layout
---                     spacing
---                     children
---                     name
---                     (Flag.add flag has)
---                     styles
---                     htmlAttrs
---                     classes
---                     nearby
---                     remain
 
 
 addNearbyElement : Location -> Element msg -> NearbyChildren msg -> NearbyChildren msg
