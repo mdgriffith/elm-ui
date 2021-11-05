@@ -3,7 +3,6 @@ module Internal.Model2 exposing (..)
 import Animator
 import Animator.Timeline
 import Animator.Watcher
-import Bitwise
 import Browser.Dom
 import Html
 import Html.Attributes as Attr
@@ -954,12 +953,7 @@ type AnimValue
 
 
 type alias Approach =
-    -- durDelay is duration and delay in one int
-    -- likewise bitwise encoded
     { durDelay : BitField.Bits
-
-    -- this is a cubic bezier curve
-    -- bitwise encoded as a single int
     , curve : BitField.Bits
     }
 
@@ -1000,21 +994,11 @@ type Option
 type Transition
     = Transition
         { arriving :
-            -- durDelay is duration and delay in one int
-            -- likewise bitwise encoded
             { durDelay : BitField.Bits
-
-            -- this is a cubic bezier curve
-            -- bitwise encoded as a single int
             , curve : BitField.Bits
             }
         , departing :
-            -- durDelay is duration and delay in one int
-            -- likewise bitwise encoded
             { durDelay : BitField.Bits
-
-            -- this is a cubic bezier curve
-            -- bitwise encoded as a single int
             , curve : BitField.Bits
             }
         }
@@ -1079,7 +1063,6 @@ emptyDetails : Details msg
 emptyDetails =
     { padding = emptyEdges
     , borders = emptyEdges
-    , fontAdjustment = BitField.init
     , fontSize = -1
     , transform = Nothing
     , animEvents = []
@@ -1120,13 +1103,11 @@ text str =
                 let
                     height =
                         encoded
-                            |> BitField.get Bits.fontHeight
-                            |> toFloat
+                            |> BitField.getPercentage Bits.fontHeight
 
                     offset =
                         encoded
-                            |> BitField.get Bits.fontOffset
-                            |> toFloat
+                            |> BitField.getPercentage Bits.fontOffset
 
                     spacingY =
                         encoded
@@ -1141,7 +1122,7 @@ text str =
                         ]
 
                     attrsWithParentSpacing =
-                        if height == 63 && offset == 0 then
+                        if height == 1 && offset == 0 then
                             Attr.style "margin"
                                 (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
                                 :: attrs
@@ -1152,10 +1133,10 @@ text str =
                                 -- I thought that the top margin should have a smaller negative margin than the bottom
                                 -- however it seems evenly distributing the empty space works out.
                                 topVal =
-                                    offset / 31
+                                    offset
 
                                 bottomVal =
-                                    (1 - (height / 63)) - (offset / 31)
+                                    (1 - height) - offset
 
                                 even =
                                     (topVal + bottomVal) / 2
@@ -1242,7 +1223,6 @@ type alias Edges =
 type alias Details msg =
     { padding : Edges
     , borders : Edges
-    , fontAdjustment : BitField.Bits
     , fontSize : Int
     , transform : Maybe Transform
     , animEvents : List (Json.Decoder msg)
@@ -1270,7 +1250,11 @@ type alias Details msg =
 spacerTop : Float -> Html.Html msg
 spacerTop space =
     Html.div
-        [ Attr.style "margin-top" ("calc(var(--vacuum-top) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
+        [ Attr.style "margin-top"
+            ("calc(var(--vacuum-top) * (1em/var(--font-size-factor)) + "
+                ++ String.fromFloat space
+                ++ "px)"
+            )
         ]
         []
 
@@ -1278,7 +1262,11 @@ spacerTop space =
 spacerBottom : Float -> Html.Html msg
 spacerBottom space =
     Html.div
-        [ Attr.style "margin-top" ("calc(var(--vacuum-bottom) * (1em/var(--font-size-factor)) + " ++ String.fromFloat space ++ "px)")
+        [ Attr.style "margin-top"
+            ("calc(var(--vacuum-bottom) * (1em/var(--font-size-factor)) + "
+                ++ String.fromFloat space
+                ++ "px)"
+            )
         ]
         []
 
@@ -1292,7 +1280,7 @@ element layout attrs children =
     Element
         (\parentBits ->
             let
-                ( asLink, renderedAttrs, renderedChildren ) =
+                rendered =
                     renderAttrs
                         parentBits
                         (BitField.clear Bits.spacing parentBits
@@ -1305,26 +1293,25 @@ element layout attrs children =
                         )
                         layout
                         emptyDetails
-                        (ElemChildren children)
+                        (ElemChildren children emptyNearbys)
                         Flag.none
                         []
                         -- the "" below is the starting class
                         -- though we want some defaults based on the layout
                         (contextClasses layout)
-                        NoNearbyChildren
                         ""
                         (List.reverse attrs)
             in
-            case renderedChildren of
+            case rendered.children of
                 Children finalChildren ->
-                    if asLink then
-                        Html.a renderedAttrs finalChildren
+                    if rendered.asLink then
+                        Html.a rendered.attrs finalChildren
 
                     else
-                        Html.div renderedAttrs finalChildren
+                        Html.div rendered.attrs finalChildren
 
                 _ ->
-                    Html.div renderedAttrs []
+                    Html.div rendered.attrs []
         )
 
 
@@ -1338,7 +1325,7 @@ elementAs toNode layout attrs children =
     Element
         (\parentBits ->
             let
-                ( asLink, renderedAttrs, renderedChildren ) =
+                rendered =
                     renderAttrs
                         parentBits
                         (BitField.clear Bits.spacing parentBits
@@ -1351,27 +1338,32 @@ elementAs toNode layout attrs children =
                         )
                         layout
                         emptyDetails
-                        (ElemChildren children)
+                        (ElemChildren children emptyNearbys)
                         Flag.none
                         []
                         -- the "" below is the starting class
                         -- though we want some defaults based on the layout
                         (contextClasses layout)
-                        NoNearbyChildren
                         ""
                         (List.reverse attrs)
             in
-            case renderedChildren of
+            case rendered.children of
                 Children finalChildren ->
-                    if asLink then
-                        Html.a renderedAttrs finalChildren
+                    if rendered.asLink then
+                        Html.a rendered.attrs finalChildren
 
                     else
-                        toNode renderedAttrs finalChildren
+                        toNode rendered.attrs finalChildren
 
                 _ ->
-                    toNode renderedAttrs []
+                    toNode rendered.attrs []
         )
+
+
+emptyNearbys =
+    { behind = []
+    , inFront = []
+    }
 
 
 elementKeyed :
@@ -1384,7 +1376,7 @@ elementKeyed name layout attrs children =
     Element
         (\parentBits ->
             let
-                ( asLink, renderedAttrs, renderedChildren ) =
+                rendered =
                     renderAttrs
                         parentBits
                         (BitField.clear Bits.spacing parentBits
@@ -1397,36 +1389,49 @@ elementKeyed name layout attrs children =
                         )
                         layout
                         emptyDetails
-                        (ElemKeyed children)
+                        (ElemKeyed children emptyKeyedNearbys)
                         Flag.none
                         []
                         -- the "" below is the starting class
                         -- though we want some defaults based on the layout
                         (contextClasses layout)
-                        NoNearbyChildren
                         ""
                         (List.reverse attrs)
             in
-            case renderedChildren of
+            case rendered.children of
                 Keyed finalChildren ->
                     Html.Keyed.node
-                        (if asLink then
+                        (if rendered.asLink then
                             "a"
 
                          else
                             name
                         )
-                        renderedAttrs
+                        rendered.attrs
                         finalChildren
 
                 _ ->
-                    Html.div renderedAttrs []
+                    Html.div rendered.attrs []
         )
 
 
+emptyKeyedNearbys =
+    { behind = []
+    , inFront = []
+    }
+
+
 type ElemChildren msg
-    = ElemChildren (List (Element msg))
-    | ElemKeyed (List ( String, Element msg ))
+    = ElemChildren
+        (List (Element msg))
+        { behind : List (Element msg)
+        , inFront : List (Element msg)
+        }
+    | ElemKeyed
+        (List ( String, Element msg ))
+        { behind : List ( String, Element msg )
+        , inFront : List ( String, Element msg )
+        }
 
 
 type Children msg
@@ -1443,11 +1448,14 @@ renderAttrs :
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
     -> String
-    -> NearbyChildren msg
     -> String
     -> List (Attribute msg)
-    -> ( Bool, List (Html.Attribute msg), Children msg )
-renderAttrs parentBits myBits layout details children has htmlAttrs classes nearby vars attrs =
+    ->
+        { asLink : Bool
+        , attrs : List (Html.Attribute msg)
+        , children : Children msg
+        }
+renderAttrs parentBits myBits layout details children has htmlAttrs classes vars attrs =
     case attrs of
         [] ->
             let
@@ -1456,67 +1464,22 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
 
                 renderedChildren =
                     case children of
-                        ElemChildren elems ->
+                        ElemChildren elems nearby ->
                             Children <|
-                                case nearby of
-                                    NoNearbyChildren ->
-                                        List.map (unwrap encoded) elems
+                                (List.map (unwrap encoded) nearby.behind
+                                    ++ List.map (unwrap encoded) elems
+                                    ++ List.map (unwrap encoded) nearby.inFront
+                                )
 
-                                    ChildrenBehind behind ->
-                                        behind ++ List.map (unwrap encoded) elems
-
-                                    ChildrenInFront inFront ->
-                                        List.map (unwrap encoded) elems ++ inFront
-
-                                    ChildrenBehindAndInFront behind inFront ->
-                                        behind ++ List.map (unwrap encoded) elems ++ inFront
-
-                        ElemKeyed keyedElems ->
+                        ElemKeyed keyedElems nearby ->
                             Keyed <|
-                                case nearby of
-                                    NoNearbyChildren ->
-                                        List.map (unwrapKeyed encoded) keyedElems
-
-                                    ChildrenBehind behind ->
-                                        List.indexedMap
-                                            (\b elem ->
-                                                ( "behind-"
-                                                    ++ String.fromInt b
-                                                , elem
-                                                )
-                                            )
-                                            behind
-                                            ++ List.map (unwrapKeyed encoded) keyedElems
-
-                                    ChildrenInFront inFront ->
-                                        List.map (unwrapKeyed encoded) keyedElems
-                                            ++ List.indexedMap
-                                                (\b elem ->
-                                                    ( "infront-"
-                                                        ++ String.fromInt b
-                                                    , elem
-                                                    )
-                                                )
-                                                inFront
-
-                                    ChildrenBehindAndInFront behind inFront ->
-                                        List.indexedMap
-                                            (\b elem ->
-                                                ( "behind-"
-                                                    ++ String.fromInt b
-                                                , elem
-                                                )
-                                            )
-                                            behind
-                                            ++ List.map (unwrapKeyed encoded) keyedElems
-                                            ++ List.indexedMap
-                                                (\b elem ->
-                                                    ( "infront-"
-                                                        ++ String.fromInt b
-                                                    , elem
-                                                    )
-                                                )
-                                                inFront
+                                List.map
+                                    (unwrapKeyed encoded)
+                                    nearby.behind
+                                    ++ List.map (unwrapKeyed encoded) keyedElems
+                                    ++ List.map
+                                        (unwrapKeyed encoded)
+                                        nearby.inFront
 
                 attrsWithParentSpacing =
                     if BitField.has Bits.spacing parentBits then
@@ -1552,7 +1515,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         attrsWithParentSpacing
 
                 adjustmentNotSet =
-                    BitField.has Bits.fontAdjustment details.fontAdjustment
+                    not (BitField.has Bits.fontAdjustment myBits)
 
                 {-
                    no fontsize or adjustment -> skip
@@ -1577,11 +1540,11 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         let
                             height =
                                 parentBits
-                                    |> BitField.get Bits.fontHeight
+                                    |> BitField.getPercentage Bits.fontHeight
                         in
                         Attr.style "font-size"
                             (String.fromFloat
-                                (toFloat details.fontSize * (1 / (toFloat height / 63)))
+                                (toFloat details.fontSize * (1 / height))
                                 ++ "px"
                             )
                             :: attrsWithTransform
@@ -1738,10 +1701,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                     else
                         attributes
             in
-            ( Flag.present Flag.isLink has
-            , finalAttributes
-            , finalChildren
-            )
+            { asLink = Flag.present Flag.isLink has
+            , attrs = finalAttributes
+            , children = finalChildren
+            }
 
         (Attribute { flag, attr }) :: remain ->
             let
@@ -1758,19 +1721,18 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         Flag.present flag has
             in
             if not (not previouslyRendered) then
-                renderAttrs parentBits myBits layout details children has htmlAttrs classes nearby vars remain
+                renderAttrs parentBits myBits layout details children has htmlAttrs classes vars remain
 
             else
                 case attr of
                     NoAttribute ->
-                        renderAttrs parentBits myBits layout details children has htmlAttrs classes nearby vars remain
+                        renderAttrs parentBits myBits layout details children has htmlAttrs classes vars remain
 
                     FontSize size ->
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontAdjustment = details.fontAdjustment
-                            , fontSize =
+                            { fontSize =
                                 size
                             , padding = details.padding
                             , borders = details.borders
@@ -1784,7 +1746,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             has
                             htmlAttrs
                             classes
-                            nearby
                             vars
                             remain
 
@@ -1807,16 +1768,16 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                         :: withSmallcaps
                         in
                         renderAttrs parentBits
-                            myBits
-                            layout
-                            { fontAdjustment =
-                                case font.adjustments of
-                                    Nothing ->
-                                        details.fontAdjustment
+                            (case font.adjustments of
+                                Nothing ->
+                                    myBits
 
-                                    Just adj ->
-                                        adj
-                            , fontSize =
+                                Just adj ->
+                                    myBits
+                                        |> BitField.merge adj
+                            )
+                            layout
+                            { fontSize =
                                 details.fontSize
                             , padding = details.padding
                             , borders = details.borders
@@ -1838,7 +1799,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                 :: withFeatures
                             )
                             classes
-                            nearby
                             vars
                             remain
 
@@ -1851,7 +1811,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             (Flag.add flag has)
                             htmlAttrs
                             classes
-                            nearby
                             vars
                             remain
 
@@ -1864,7 +1823,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             has
                             (htmlAttr :: htmlAttrs)
                             classes
-                            nearby
                             vars
                             remain
 
@@ -1884,7 +1842,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                 :: htmlAttrs
                             )
                             classes
-                            nearby
                             vars
                             remain
 
@@ -1913,7 +1870,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                 :: htmlAttrs
                             )
                             classes
-                            nearby
                             vars
                             remain
 
@@ -1926,7 +1882,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             (Flag.add flag has)
                             htmlAttrs
                             (str ++ " " ++ classes)
-                            nearby
                             vars
                             remain
 
@@ -1939,7 +1894,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             (Flag.add flag has)
                             (Attr.style styleName styleVal :: htmlAttrs)
                             (cls ++ " " ++ classes)
-                            nearby
                             vars
                             remain
 
@@ -1952,7 +1906,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             (Flag.add flag has)
                             htmlAttrs
                             (cls ++ " " ++ classes)
-                            nearby
                             (vars ++ var ++ ";")
                             remain
 
@@ -1965,7 +1918,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             (Flag.add flag has)
                             htmlAttrs
                             (cls ++ " " ++ classes)
-                            nearby
                             (vars ++ "--" ++ varName ++ ":" ++ varVal ++ ";")
                             remain
 
@@ -1974,11 +1926,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             myBits
                             layout
                             details
-                            children
+                            (addNearbyElement location elem children)
                             has
                             htmlAttrs
                             classes
-                            (addNearbyElement location elem nearby)
                             vars
                             remain
 
@@ -2001,7 +1952,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                 htmlAttrs
                             )
                             (Style.classes.spacing ++ " " ++ classes)
-                            nearby
                             vars
                             remain
 
@@ -2010,7 +1960,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             myBits
                             layout
                             { fontSize = details.fontSize
-                            , fontAdjustment = details.fontAdjustment
                             , padding = padding
                             , borders = details.borders
                             , transform = details.transform
@@ -2036,7 +1985,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                     :: htmlAttrs
                             )
                             classes
-                            nearby
                             vars
                             remain
 
@@ -2044,8 +1992,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontAdjustment = details.fontAdjustment
-                            , fontSize =
+                            { fontSize =
                                 details.fontSize
                             , padding = details.padding
                             , borders = borders
@@ -2072,7 +2019,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                     :: htmlAttrs
                             )
                             classes
-                            nearby
                             vars
                             remain
 
@@ -2080,8 +2026,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontAdjustment = details.fontAdjustment
-                            , fontSize =
+                            { fontSize =
                                 details.fontSize
                             , padding = details.padding
                             , borders = details.borders
@@ -2111,7 +2056,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                     :: htmlAttrs
                             )
                             classes
-                            nearby
                             vars
                             remain
 
@@ -2119,8 +2063,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontAdjustment = details.fontAdjustment
-                            , fontSize =
+                            { fontSize =
                                 details.fontSize
                             , padding = details.padding
                             , borders = details.borders
@@ -2146,7 +2089,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                                     :: htmlAttrs
                             )
                             classes
-                            nearby
                             vars
                             remain
 
@@ -2154,8 +2096,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontAdjustment = details.fontAdjustment
-                            , fontSize =
+                            { fontSize =
                                 details.fontSize
                             , padding = details.padding
                             , borders = details.borders
@@ -2226,7 +2167,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             has
                             htmlAttrs
                             classes
-                            nearby
                             vars
                             remain
 
@@ -2252,8 +2192,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontAdjustment = details.fontAdjustment
-                            , fontSize =
+                            { fontSize =
                                 details.fontSize
                             , padding = details.padding
                             , borders = details.borders
@@ -2270,7 +2209,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             has
                             htmlAttrs
                             (classStr ++ " " ++ triggerClass ++ " " ++ classes)
-                            nearby
                             vars
                             remain
 
@@ -2308,8 +2246,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontAdjustment = details.fontAdjustment
-                            , fontSize =
+                            { fontSize =
                                 details.fontSize
                             , padding = details.padding
                             , borders = details.borders
@@ -2323,7 +2260,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes near
                             (Flag.add Flag.id has)
                             (Attr.id (toCssId id) :: htmlAttrs)
                             ("on-rendered " ++ toCssClass id ++ " " ++ classes)
-                            nearby
                             vars
                             remain
 
@@ -2397,95 +2333,94 @@ upsertTransform slot val maybeTransform =
     }
 
 
-addNearbyElement : Location -> Element msg -> NearbyChildren msg -> NearbyChildren msg
+addNearbyElement : Location -> Element msg -> ElemChildren msg -> ElemChildren msg
 addNearbyElement location elem existing =
     let
         nearby =
             nearbyElement location elem
     in
     case existing of
-        NoNearbyChildren ->
+        ElemChildren children near ->
             case location of
                 Behind ->
-                    ChildrenBehind [ nearby ]
+                    ElemChildren children
+                        { behind = nearby :: near.behind
+                        , inFront = near.inFront
+                        }
 
                 _ ->
-                    ChildrenInFront [ nearby ]
+                    ElemChildren children
+                        { behind = near.behind
+                        , inFront = nearby :: near.inFront
+                        }
 
-        ChildrenBehind existingBehind ->
+        ElemKeyed children near ->
             case location of
                 Behind ->
-                    ChildrenBehind (nearby :: existingBehind)
+                    ElemKeyed children
+                        { behind = ( "bh", nearby ) :: near.behind
+                        , inFront = near.inFront
+                        }
 
                 _ ->
-                    ChildrenBehindAndInFront existingBehind [ nearby ]
-
-        ChildrenInFront existingInFront ->
-            case location of
-                Behind ->
-                    ChildrenBehindAndInFront [ nearby ] existingInFront
-
-                _ ->
-                    ChildrenInFront (nearby :: existingInFront)
-
-        ChildrenBehindAndInFront existingBehind existingInFront ->
-            case location of
-                Behind ->
-                    ChildrenBehindAndInFront (nearby :: existingBehind) existingInFront
-
-                _ ->
-                    ChildrenBehindAndInFront existingBehind (nearby :: existingInFront)
+                    ElemKeyed children
+                        { behind = near.behind
+                        , inFront = ( "if", nearby ) :: near.inFront
+                        }
 
 
-nearbyElement : Location -> Element msg -> Html.Html msg
-nearbyElement location elem =
-    Html.div
-        [ Attr.class <|
-            case location of
-                Above ->
-                    String.join " "
-                        [ Style.classes.nearby
-                        , Style.classes.single
-                        , Style.classes.above
-                        ]
+nearbyElement : Location -> Element msg -> Element msg
+nearbyElement location (Element elem) =
+    Element
+        (\parent ->
+            Html.div
+                [ Attr.class <|
+                    case location of
+                        Above ->
+                            String.join " "
+                                [ Style.classes.nearby
+                                , Style.classes.single
+                                , Style.classes.above
+                                ]
 
-                Below ->
-                    String.join " "
-                        [ Style.classes.nearby
-                        , Style.classes.single
-                        , Style.classes.below
-                        ]
+                        Below ->
+                            String.join " "
+                                [ Style.classes.nearby
+                                , Style.classes.single
+                                , Style.classes.below
+                                ]
 
-                OnRight ->
-                    String.join " "
-                        [ Style.classes.nearby
-                        , Style.classes.single
-                        , Style.classes.onRight
-                        ]
+                        OnRight ->
+                            String.join " "
+                                [ Style.classes.nearby
+                                , Style.classes.single
+                                , Style.classes.onRight
+                                ]
 
-                OnLeft ->
-                    String.join " "
-                        [ Style.classes.nearby
-                        , Style.classes.single
-                        , Style.classes.onLeft
-                        ]
+                        OnLeft ->
+                            String.join " "
+                                [ Style.classes.nearby
+                                , Style.classes.single
+                                , Style.classes.onLeft
+                                ]
 
-                InFront ->
-                    String.join " "
-                        [ Style.classes.nearby
-                        , Style.classes.single
-                        , Style.classes.inFront
-                        ]
+                        InFront ->
+                            String.join " "
+                                [ Style.classes.nearby
+                                , Style.classes.single
+                                , Style.classes.inFront
+                                ]
 
-                Behind ->
-                    String.join " "
-                        [ Style.classes.nearby
-                        , Style.classes.single
-                        , Style.classes.behind
-                        ]
-        ]
-        [ unwrap zero elem
-        ]
+                        Behind ->
+                            String.join " "
+                                [ Style.classes.nearby
+                                , Style.classes.single
+                                , Style.classes.behind
+                                ]
+                ]
+                [ elem parent
+                ]
+        )
 
 
 zero =

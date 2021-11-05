@@ -2,7 +2,7 @@ module Internal.BitField exposing
     ( init, Bits
     , BitField, field, set, get, has, equal
     , getFloat, getPercentage
-    , clear, setPercentage, toString
+    , clear, merge, setPercentage, toString
     )
 
 {-|
@@ -110,6 +110,11 @@ clear (BitField { offset, top, inverted }) (Bits bits) =
         -- clear the target section
         |> Bitwise.and inverted
         |> Bits
+
+
+merge : Bits -> Bits -> Bits
+merge (Bits one) (Bits two) =
+    Bits (Bitwise.or one two)
 
 
 set : BitField -> Int -> Bits -> Bits
