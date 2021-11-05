@@ -65,7 +65,6 @@ module Ui.Font exposing
 
 -}
 
-import Bitwise
 import Html.Attributes as Attr
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
@@ -262,8 +261,8 @@ with details =
                         , adjustments =
                             Just
                                 (BitField.init
-                                    |> BitField.set Bits.fontHeight (round adjustment.height)
-                                    |> BitField.set Bits.fontOffset (round adjustment.offset)
+                                    |> BitField.setPercentage Bits.fontHeight adjustment.height
+                                    |> BitField.setPercentage Bits.fontOffset adjustment.offset
                                 )
                         , variants =
                             renderVariants details.variants ""
