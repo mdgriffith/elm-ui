@@ -774,6 +774,9 @@ mapAttr uiFn fn (Attribute attr) =
                 OnPress msg ->
                     OnPress (fn msg)
 
+                OnKey event ->
+                    OnKey (Attr.map fn event)
+
                 Spacing x y ->
                     Spacing x y
 
@@ -882,6 +885,7 @@ type Attribute msg
 type Attr msg
     = NoAttribute
     | OnPress msg
+    | OnKey (Html.Attribute msg)
     | Attr (Html.Attribute msg)
     | Link
         { newTab : Bool
@@ -1881,6 +1885,21 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             vars
                             remain
 
+                    OnKey handler ->
+                        renderAttrs parentBits
+                            myBits
+                            layout
+                            details
+                            children
+                            (Flag.add flag has)
+                            (Attr.style "tabindex" "0"
+                                :: handler
+                                :: htmlAttrs
+                            )
+                            classes
+                            vars
+                            remain
+
                     Link link ->
                         renderAttrs parentBits
                             myBits
@@ -2554,7 +2573,7 @@ contextClasses context =
 
 
 decodeBoundingBox2 =
-    Json.field "target"
+    Json.field "currentTarget"
         (Json.map4
             Box
             (Json.field "clientLeft" Json.float)

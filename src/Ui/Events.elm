@@ -1,29 +1,47 @@
 module Ui.Events exposing
     ( onPress
-    , onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
+    , onClick
+    , onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
     , onFocus, onLoseFocus
+    , onKey, onKeyWith
+    , Key, enter, space, up, down, left, right, backspace, key
+    , on, stopPropagationOn, preventDefaultOn, custom
     )
 
 {-|
 
 
-## Mouse Events
+# Mouse
 
 @docs onPress
 
-@docs onClick, onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
+@docs onClick
+
+@docs onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
 
 
-## Focus Events
+# Focus
 
 @docs onFocus, onLoseFocus
+
+
+# Keyboard
+
+@docs onKey, onKeyWith
+
+@docs Key, enter, space, up, down, left, right, backspace, key
+
+
+# Custom
+
+@docs on, stopPropagationOn, preventDefaultOn, custom
 
 -}
 
 import Html.Events
 import Internal.Flag as Flag
 import Internal.Model2 as Two
-import Json.Decode as Json
+import Json.Decode as Json exposing (Decoder)
 import Ui exposing (Attribute)
 
 
@@ -32,21 +50,12 @@ import Ui exposing (Attribute)
 
 
 {-| -}
-onMouseDown : msg -> Attribute msg
-onMouseDown =
-    Two.attribute << Html.Events.onMouseDown
-
-
-{-| -}
-onMouseUp : msg -> Attribute msg
-onMouseUp =
-    Two.attribute << Html.Events.onMouseUp
-
-
-{-| -}
 onClick : msg -> Attribute msg
-onClick =
-    Two.attribute << Html.Events.onClick
+onClick msg =
+    Two.attribute
+        (Html.Events.stopPropagationOn "click"
+            (Json.succeed ( msg, True ))
+        )
 
 
 {-| -}
@@ -80,6 +89,18 @@ onMouseLeave =
 onMouseMove : msg -> Attribute msg
 onMouseMove msg =
     on "mousemove" (Json.succeed msg)
+
+
+{-| -}
+onMouseDown : msg -> Attribute msg
+onMouseDown =
+    Two.attribute << Html.Events.onMouseDown
+
+
+{-| -}
+onMouseUp : msg -> Attribute msg
+onMouseUp =
+    Two.attribute << Html.Events.onMouseUp
 
 
 
@@ -180,37 +201,6 @@ onFocus =
 
 
 
--- CUSTOM EVENTS
-
-
-{-| Create a custom event listener. Normally this will not be necessary, but
-you have the power! Here is how `onClick` is defined for example:
-
-    import Json.Decode as Json
-
-    onClick : msg -> Attribute msg
-    onClick message =
-        on "click" (Json.succeed message)
-
-The first argument is the event name in the same format as with JavaScript's
-[`addEventListener`][aEL] function.
-The second argument is a JSON decoder. Read more about these [here][decoder].
-When an event occurs, the decoder tries to turn the event object into an Elm
-value. If successful, the value is routed to your `update` function. In the
-case of `onClick` we always just succeed with the given `message`.
-If this is confusing, work through the [Elm Architecture Tutorial][tutorial].
-It really does help!
-[aEL]: <https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener>
-[decoder]: <http://package.elm-lang.org/packages/elm-lang/core/latest/Json-Decode>
-[tutorial]: <https://github.com/evancz/elm-architecture-tutorial/>
-
--}
-on : String -> Json.Decoder msg -> Attribute msg
-on event decode =
-    Two.attribute <| Html.Events.on event decode
-
-
-
 -- {-| Same as `on` but you can set a few options.
 -- -}
 -- onWithOptions : String -> Html.Events.Options -> Json.Decoder msg -> Attribute msg
@@ -269,3 +259,267 @@ helpers here for `onKeyUp`, `onKeyDown`, `onKeyPress`, etc.
 keyCode : Json.Decoder Int
 keyCode =
     Json.field "keyCode" Json.int
+
+
+
+{- Keyboard -}
+
+
+{-| -}
+onKey : Key -> msg -> Attribute msg
+onKey desiredKey msg =
+    let
+        decode code =
+            if code == toCodeString desiredKey then
+                Json.succeed msg
+
+            else
+                Json.fail "Not the enter key"
+
+        isKey =
+            Json.field "key" Json.string
+                |> Json.andThen decode
+    in
+    Two.Attribute
+        { flag = Flag.event
+        , attr =
+            Two.OnKey
+                (Html.Events.preventDefaultOn "keyup"
+                    (Json.map
+                        (\fired ->
+                            ( fired
+                            , True
+                            )
+                        )
+                        isKey
+                    )
+                )
+        }
+
+
+{-| -}
+onKeyWith :
+    ({ key : Key
+     , ctrl : Bool
+     , alt : Bool
+     , shift : Bool
+     , meta : Bool
+     }
+     -> Maybe msg
+    )
+    -> Attribute msg
+onKeyWith toMsg =
+    Two.Attribute
+        { flag = Flag.event
+        , attr =
+            Two.OnKey
+                (Html.Events.preventDefaultOn "keyup"
+                    (decodeKeyboardEvent
+                        |> Json.map2 Tuple.pair decodeIMEComposition
+                        |> Json.andThen
+                            (\( isComposing, keyDetails ) ->
+                                case toMsg keyDetails of
+                                    Nothing ->
+                                        Json.fail "Ignored"
+
+                                    Just msg ->
+                                        if isComposing then
+                                            Json.fail "IME composing is ignored"
+
+                                        else
+                                            Json.succeed ( msg, True )
+                            )
+                    )
+                )
+        }
+
+
+decodeKeyboardEvent :
+    Json.Decoder
+        { key : Key
+        , ctrl : Bool
+        , alt : Bool
+        , shift : Bool
+        , meta : Bool
+        }
+decodeKeyboardEvent =
+    Json.map5
+        (\keyStr ctrl alt shift meta ->
+            { key = toKey keyStr
+            , ctrl = ctrl
+            , alt = alt
+            , shift = shift
+            , meta = meta
+            }
+        )
+        (Json.field "key" Json.string)
+        (Json.field "ctrlKey" Json.bool)
+        (Json.field "altKey" Json.bool)
+        (Json.field "shiftKey" Json.bool)
+        (Json.field "metaKey" Json.bool)
+
+
+{-| This property is true if the user is using IME to craft something like a Korean character.
+
+I _think_ for this usecase that means we want to ignore the character.
+
+But am not totally sure :/ If you run into a case where this is not true, please let me know!
+
+<https://developer.mozilla.org/en-US/docs/Web/API/Document/keyup_event#ignoring_keyup_during_ime_composition>
+
+-}
+decodeIMEComposition : Json.Decoder Bool
+decodeIMEComposition =
+    Json.field "isComposing" Json.bool
+
+
+{-| -}
+type Key
+    = Enter
+    | Space
+    | Up
+    | Down
+    | Left
+    | Right
+    | Backspace
+    | Key String
+
+
+{-| -}
+enter : Key
+enter =
+    Enter
+
+
+{-| -}
+space : Key
+space =
+    Space
+
+
+{-| -}
+up : Key
+up =
+    Up
+
+
+{-| -}
+down : Key
+down =
+    Down
+
+
+{-| -}
+left : Key
+left =
+    Left
+
+
+{-| -}
+right : Key
+right =
+    Right
+
+
+{-| -}
+backspace : Key
+backspace =
+    Backspace
+
+
+{-| -}
+key : String -> Key
+key =
+    Key
+
+
+toKey : String -> Key
+toKey str =
+    case str of
+        "Enter" ->
+            Enter
+
+        "Space" ->
+            Space
+
+        "ArrowUp" ->
+            Up
+
+        "ArrowDown" ->
+            Down
+
+        "ArrowLeft" ->
+            Left
+
+        "ArrowRight" ->
+            Right
+
+        "Backspace" ->
+            Backspace
+
+        _ ->
+            Key str
+
+
+toCodeString : Key -> String
+toCodeString myKey =
+    case myKey of
+        Enter ->
+            "Enter"
+
+        Space ->
+            "Space"
+
+        Up ->
+            "ArrowUp"
+
+        Down ->
+            "ArrowDown"
+
+        Left ->
+            "ArrowLeft"
+
+        Right ->
+            "ArrowRight"
+
+        Backspace ->
+            "Backspace"
+
+        Key str ->
+            str
+
+
+
+{- Custom -}
+
+
+{-| -}
+on : String -> Decoder msg -> Attribute msg
+on name decoder =
+    Two.attribute (Html.Events.on name decoder)
+
+
+{-| -}
+stopPropagationOn : String -> Decoder ( msg, Bool ) -> Attribute msg
+stopPropagationOn name decoder =
+    Two.attribute (Html.Events.stopPropagationOn name decoder)
+
+
+{-| -}
+preventDefaultOn : String -> Decoder ( msg, Bool ) -> Attribute msg
+preventDefaultOn name decoder =
+    Two.attribute (Html.Events.preventDefaultOn name decoder)
+
+
+{-| -}
+custom :
+    String
+    ->
+        Decoder
+            { message : msg
+            , stopPropagation : Bool
+            , preventDefault : Bool
+            }
+    -> Attribute msg
+custom name decoder =
+    Two.attribute (Html.Events.custom name decoder)

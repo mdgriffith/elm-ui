@@ -1110,6 +1110,9 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
         Two.OnPress _ ->
             { els | input = attr :: els.input }
 
+        Two.OnKey _ ->
+            { els | input = attr :: els.input }
+
         Two.Attr a ->
             { els
                 | input = attr :: els.input
