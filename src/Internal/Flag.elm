@@ -1,5 +1,5 @@
 module Internal.Flag exposing (..)
-{-| THIS FILE IS GENERATED, NOT TOUCHY -}
+{-| THIS FILE IS GENERATED, NO TOUCHY -}
 
 
 import Bitwise
@@ -209,5 +209,15 @@ heightBetween =
 isLink : Flag
 isLink =
     flag 26
+
+
+background : Flag
+background =
+    flag 27
+
+
+event : Flag
+event =
+    flag 28
 
 
