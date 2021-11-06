@@ -1,6 +1,5 @@
 module Ui.Events exposing
-    ( onPress
-    , onClick
+    ( onClick
     , onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
     , onFocus, onLoseFocus
     , onKey, onKeyWith
@@ -12,8 +11,6 @@ module Ui.Events exposing
 
 
 # Mouse
-
-@docs onPress
 
 @docs onClick
 
@@ -52,25 +49,16 @@ import Ui exposing (Attribute)
 {-| -}
 onClick : msg -> Attribute msg
 onClick msg =
-    Two.attribute
-        (Html.Events.stopPropagationOn "click"
-            (Json.succeed ( msg, True ))
-        )
+    Two.Attribute
+        { flag = Flag.skip
+        , attr = Two.OnPress msg
+        }
 
 
 {-| -}
 onDoubleClick : msg -> Attribute msg
 onDoubleClick =
     Two.attribute << Html.Events.onDoubleClick
-
-
-{-| -}
-onPress : msg -> Attribute msg
-onPress msg =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.OnPress msg
-        }
 
 
 {-| -}

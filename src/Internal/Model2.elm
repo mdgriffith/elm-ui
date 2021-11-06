@@ -1866,7 +1866,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             vars
                             remain
 
-                    OnPress press ->
+                    OnPress msg ->
                         -- Make focusable
                         -- Attach keyboard handler
                         -- Attach click handler
@@ -1877,8 +1877,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             children
                             (Flag.add flag has)
                             (Attr.style "tabindex" "0"
-                                :: Events.onClick press
-                                :: onKey "Enter" press
+                                :: Events.stopPropagationOn "click"
+                                    (Json.succeed ( msg, True ))
+                                :: onKey "Enter" msg
                                 :: htmlAttrs
                             )
                             classes
