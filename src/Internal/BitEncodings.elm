@@ -92,22 +92,6 @@ isRow =
             }
 
 
-widthFill : BitField
-widthFill =
-    isRow
-        |> BitField.after
-            { length = 1
-            }
-
-
-heightFill : BitField
-heightFill =
-    widthFill
-        |> BitField.after
-            { length = 1
-            }
-
-
 
 {- Transition Duration/Delay -}
 
