@@ -97,11 +97,11 @@ gradient grad =
     Two.Attribute
         { flag = Flag.fontColor
         , attr =
-            Two.ClassAndVar
+            Two.ClassAndVarStyle
                 Style.classes.textGradient
-                "text-gradient"
-                -- "background-image"
-                (Style.toCssGradient grad)
+                ("--text-gradient:"
+                    ++ Style.toCssGradient grad
+                )
         }
 
 
