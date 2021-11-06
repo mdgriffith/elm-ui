@@ -1,17 +1,61 @@
 module Internal.BitField exposing
-    ( init, Bits
-    , BitField, field, set, get, has, equal
-    , getFloat, getPercentage
-    , clear, merge, setPercentage, toString
+    ( init, Bits, toString
+    , BitField, field, after
+    , set, setPercentage
+    , get, getFloat, getPercentage
+    , has, equal
+    , clear, merge, range
     )
 
 {-|
 
-@docs init, Bits
+    myColor =
+        BitField.init
+            |> BitField.set red 255
+            |> BitField.set green 255
+            |> BitField.set blue 100
+            |> BitField.setPercentage alpha 1
 
-@docs BitField, field, set, get, has, equal
+    red =
+        BitField.field
+            { offset = 0
+            , length = 8
+            }
 
-@docs getFloat, getPercentage
+    green =
+        BitField.field
+            { offset = 8
+            , length = 8
+            }
+
+    blue =
+        BitField.field
+            { offset = 16
+            , length = 8
+            }
+
+    alpha =
+        BitField.field
+            { offset = 24
+            , length = 8
+            }
+
+
+    myRed =
+        myColor
+            |> BitField.get red
+
+@docs init, Bits, toString
+
+@docs BitField, field, after
+
+@docs set, setPercentage
+
+@docs get, getFloat, getPercentage
+
+@docs has, equal
+
+@docs clear, merge, range
 
 -}
 
@@ -101,6 +145,23 @@ field details =
             mask
         , inverted =
             Bitwise.complement mask
+        }
+
+
+range : BitField -> BitField -> BitField
+range (BitField one) (BitField two) =
+    field
+        { length =
+            (two.offset + two.length) - one.offset
+        , offset = one.offset
+        }
+
+
+after : { length : Int } -> BitField -> BitField
+after { length } (BitField f) =
+    field
+        { length = length
+        , offset = f.offset + f.length
         }
 
 
