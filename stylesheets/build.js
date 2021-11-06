@@ -68,6 +68,8 @@ const flags = [
   "widthBetween",
   "heightBetween",
   "isLink",
+  "background",
+  "event",
 ];
 
 const base = `import Bitwise
@@ -159,7 +161,7 @@ ${flag} =
   }
 
   return `module Internal.Flag exposing (..)
-{-| THIS FILE IS GENERATED, NOT TOUCHY -}
+{-| THIS FILE IS GENERATED, NO TOUCHY -}
 
 
 ${base}
