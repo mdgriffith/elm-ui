@@ -923,6 +923,7 @@ baseSheet =
                 , Descriptor (dot classes.widthFill)
                     [ Prop "flex-basis" "0px"
                     , Prop "flex-shrink" "0"
+                    , Prop "flex-grow" "100000"
                     ]
                 , Descriptor (dot classes.clip)
                     [ Descriptor (dot classes.widthFill)
