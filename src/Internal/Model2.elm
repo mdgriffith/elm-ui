@@ -799,9 +799,6 @@ mapAttr uiFn fn (Attribute attr) =
                 ClassAndStyle cls name val ->
                     ClassAndStyle cls name val
 
-                ClassAndVar cls name val ->
-                    ClassAndVar cls name val
-
                 ClassAndVarStyle cls style ->
                     ClassAndVarStyle cls style
 
@@ -911,8 +908,6 @@ type Attr msg
       -- and a class that implements the rule.
       --                 class  prop  value
     | ClassAndStyle String String String
-      --                 class  var    val
-    | ClassAndVar String String String
     | ClassAndVarStyle String String
     | Nearby Location (Element msg)
     | When (Msg msg -> msg) TransitionDetails
@@ -1142,7 +1137,10 @@ text str =
                                     (topVal + bottomVal) / 2
 
                                 margin =
-                                    "-" ++ String.fromFloat (even + 0.25) ++ "em " ++ (String.fromInt spacingX ++ "px ")
+                                    "-"
+                                        ++ String.fromFloat (even + 0.25)
+                                        ++ "em "
+                                        ++ (String.fromInt spacingX ++ "0px ")
                             in
                             Attr.style "margin"
                                 margin
@@ -1190,6 +1188,13 @@ noAttr =
 attribute a =
     Attribute
         { flag = Flag.skip
+        , attr = Attr a
+        }
+
+
+attributeWith flag a =
+    Attribute
+        { flag = flag
         , attr = Attr a
         }
 
@@ -1482,7 +1487,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                         nearby.inFront
 
                 attrsWithParentSpacing =
-                    if BitField.has Bits.spacing parentBits then
+                    if BitField.has Bits.spacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
                         Attr.style "margin"
                             ((parentBits
                                 |> BitField.get Bits.spacingY
@@ -1694,15 +1699,46 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                     else
                                         renderedChildren
 
-                finalAttributes =
+                attrsWithPlaceholder =
                     if Flag.present Flag.id has then
                         Attr.class "ui-placeholder" :: attributes
 
                     else
                         attributes
+
+                attrsWithWidthFill =
+                    if
+                        not
+                            (Flag.present Flag.borderWidth has
+                                || Flag.present Flag.background has
+                                || Flag.present Flag.event has
+                            )
+                            && not (BitField.has Bits.isRow parentBits)
+                    then
+                        Attr.class Style.classes.widthFill
+                            :: attrsWithPlaceholder
+
+                    else
+                        attrsWithPlaceholder
+
+                finalAttrs =
+                    if
+                        not
+                            (Flag.present Flag.borderWidth has
+                                || Flag.present Flag.background has
+                                || Flag.present Flag.event has
+                            )
+                            && BitField.has Bits.isRow parentBits
+                    then
+                        Attr.class Style.classes.heightFill
+                            :: attrsWithWidthFill
+
+                    else
+                        attrsWithWidthFill
             in
             { asLink = Flag.present Flag.isLink has
-            , attrs = finalAttributes
+            , attrs =
+                finalAttrs
             , children = finalChildren
             }
 
@@ -1820,7 +1856,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             layout
                             details
                             children
-                            has
+                            (Flag.add flag has)
                             (htmlAttr :: htmlAttrs)
                             classes
                             vars
@@ -1909,18 +1945,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             (vars ++ var ++ ";")
                             remain
 
-                    ClassAndVar cls varName varVal ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            htmlAttrs
-                            (cls ++ " " ++ classes)
-                            (vars ++ "--" ++ varName ++ ":" ++ varVal ++ ";")
-                            remain
-
                     Nearby location elem ->
                         renderAttrs parentBits
                             myBits
@@ -1935,9 +1959,13 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                     Spacing x y ->
                         renderAttrs parentBits
-                            (myBits
-                                |> BitField.set Bits.spacingX x
-                                |> BitField.set Bits.spacingY y
+                            (if layout == AsTextColumn || layout == AsParagraph then
+                                myBits
+                                    |> BitField.set Bits.spacingX x
+                                    |> BitField.set Bits.spacingY y
+
+                             else
+                                myBits
                             )
                             layout
                             details
@@ -1949,7 +1977,13 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                     :: htmlAttrs
 
                              else
-                                htmlAttrs
+                                Attr.style "gap"
+                                    (String.fromInt y
+                                        ++ "px "
+                                        ++ String.fromInt x
+                                        ++ "px"
+                                    )
+                                    :: htmlAttrs
                             )
                             (Style.classes.spacing ++ " " ++ classes)
                             vars
@@ -2045,7 +2079,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 Attr.class Style.classes.heightFill
                                     :: htmlAttrs
 
-                             else if BitField.has Bits.isRow parentBits then
+                             else if not (BitField.has Bits.isRow parentBits) then
                                 -- we're within a column, our flex-grow can be set safely
                                 Attr.class Style.classes.heightFill
                                     :: Attr.style "flex-grow" (String.fromInt (i * 100000))
@@ -2078,7 +2112,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             (if i == 0 then
                                 htmlAttrs
 
-                             else if not (BitField.has Bits.isRow parentBits) then
+                             else if BitField.has Bits.isRow parentBits then
                                 -- we're within a row, our flex-grow can be set
                                 Attr.class Style.classes.widthFill
                                     :: Attr.style "flex-grow" (String.fromInt (i * 100000))
