@@ -975,7 +975,7 @@ width len =
 
         Fill f ->
             Two.Attribute
-                { flag = Flag.skip
+                { flag = Flag.width
                 , attr = Two.WidthFill f
                 }
 
