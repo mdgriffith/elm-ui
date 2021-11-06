@@ -22,7 +22,6 @@ benchmark to be sure!
 
 -}
 
-import Html
 import Html.Lazy
 import Internal.Model2 as Two
 import Ui exposing (Element)

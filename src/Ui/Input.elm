@@ -1152,12 +1152,6 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
                 , inputParent = attr :: els.inputParent
             }
 
-        Two.ClassAndVar _ _ _ ->
-            { els
-                | parent = attr :: els.parent
-                , inputParent = attr :: els.inputParent
-            }
-
         Two.When _ _ ->
             { els | parent = attr :: els.parent }
 
