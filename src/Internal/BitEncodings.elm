@@ -22,66 +22,90 @@ column =
 
 
 -- fields
+{-
+   - spacing           12bits
+   - spacingRatio       6bits
+   - fontHeight         6bits
+   - fontAdjustment     5bits
+   - isRow              1bit
+   - widthFill          1bit
+   - heightFill         1bit
+
+-}
 
 
 {-| Compound field
 -}
 spacing : BitField
 spacing =
-    BitField.field
-        { offset = 0
-        , length = 20
-        }
+    BitField.range
+        spacingX
+        spacingY
 
 
 spacingX : BitField
 spacingX =
     BitField.field
         { offset = 0
-        , length = 10
+        , length = 12
         }
 
 
 spacingY : BitField
 spacingY =
-    BitField.field
-        { offset = 10
-        , length = 10
-        }
+    spacingX
+        |> BitField.after
+            { length = 6
+            }
 
 
 {-| The compound font adjustment
 -}
 fontAdjustment : BitField
 fontAdjustment =
-    BitField.field
-        { offset = 20
-        , length = 11
-        }
+    BitField.range
+        fontHeight
+        fontOffset
 
 
 fontHeight : BitField
 fontHeight =
-    BitField.field
-        { offset = 20
-        , length = 6
-        }
+    spacingY
+        |> BitField.after
+            { length = 6
+            }
 
 
 fontOffset : BitField
 fontOffset =
-    BitField.field
-        { offset = 26
-        , length = 5
-        }
+    fontHeight
+        |> BitField.after
+            { length = 5
+            }
 
 
 isRow : BitField
 isRow =
-    BitField.field
-        { offset = 31
-        , length = 1
-        }
+    fontOffset
+        |> BitField.after
+            { length = 1
+            }
+
+
+widthFill : BitField
+widthFill =
+    isRow
+        |> BitField.after
+            { length = 1
+            }
+
+
+heightFill : BitField
+heightFill =
+    widthFill
+        |> BitField.after
+            { length = 1
+            }
 
 
 
@@ -100,7 +124,7 @@ delay : BitField
 delay =
     BitField.field
         { offset = 16
-        , length = 32
+        , length = 16
         }
 
 
