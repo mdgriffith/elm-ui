@@ -1877,6 +1877,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             children
                             (Flag.add flag has)
                             (Attr.style "tabindex" "0"
+                                :: Attr.style "pointer" "cursor"
                                 :: Events.stopPropagationOn "click"
                                     (Json.succeed ( msg, True ))
                                 :: onKey "Enter" msg
