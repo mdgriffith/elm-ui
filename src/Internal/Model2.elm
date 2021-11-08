@@ -1711,7 +1711,11 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         attributes
 
                 attrsWithWidthFill =
-                    if
+                    if Flag.present Flag.width then
+                        -- we know we've set the width to fill
+                        attrsWithPlaceholder
+
+                    else if
                         not
                             (Flag.present Flag.borderWidth has
                                 || Flag.present Flag.background has
@@ -1723,10 +1727,16 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             :: attrsWithPlaceholder
 
                     else
-                        attrsWithPlaceholder
+                        -- we are not widthFill, we set it to widthContent
+                        Style.classes.widthContent
+                            :: attrsWithPlaceholder
 
                 finalAttrs =
-                    if
+                    if Flag.present Flag.height then
+                        -- we know we've set the width to fill
+                        attrsWithPlaceholder
+
+                    else if
                         not
                             (Flag.present Flag.borderWidth has
                                 || Flag.present Flag.background has
@@ -1738,7 +1748,8 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             :: attrsWithWidthFill
 
                     else
-                        attrsWithWidthFill
+                        Style.classes.heightContent
+                            :: attrsWithWidthFill
             in
             { asLink = Flag.present Flag.isLink has
             , attrs =
@@ -1878,7 +1889,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             (Flag.add flag has)
                             (Attr.style "tabindex" "0"
                                 :: Attr.style "pointer" "cursor"
-                                :: Events.stopPropagationOn "click"
+                                :: Events.stopPropagationOn "pointerdown"
                                     (Json.succeed ( msg, True ))
                                 :: onKey "Enter" msg
                                 :: htmlAttrs
