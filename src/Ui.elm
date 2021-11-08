@@ -13,7 +13,7 @@ module Ui exposing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
     , viewport, clipped
     , layout, layoutWith, Option, focusStyle, FocusStyle
-    , link, linkNewTab, download, downloadAs
+    , link, linkNewTab, download
     , image
     , Color, rgb
     , above, below, onRight, onLeft, inFront, behindContent
@@ -144,7 +144,7 @@ Essentially a `viewport` is the window that you're looking through. If the conte
 
 # Links
 
-@docs link, linkNewTab, download, downloadAs
+@docs link, linkNewTab, download
 
 
 # Images
@@ -213,6 +213,7 @@ import Animator.Timeline
 import Animator.Watcher
 import Html exposing (Html)
 import Html.Attributes as Attr
+import Html.Events as Event
 import Html.Keyed
 import Html.Lazy
 import Internal.BitEncodings as Bits
@@ -220,6 +221,7 @@ import Internal.BitField as BitField
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
+import Json.Decode as Decode
 import Set
 
 
@@ -777,8 +779,14 @@ Leaving the description blank will cause the image to be ignored by assistive te
 So, take a moment to describe your image as you would to someone who has a harder time seeing.
 
 -}
-image : List (Attribute msg) -> { src : String, description : String } -> Two.Element msg
-image attrs { src, description } =
+image :
+    List (Attribute msg)
+    ->
+        { source : String
+        , description : String
+        }
+    -> Element msg
+image attrs img =
     -- let
     --     imageAttributes =
     --         attrs
@@ -816,8 +824,8 @@ image attrs { src, description } =
         [ Two.Element
             (\s ->
                 Html.img
-                    [ Attr.src src
-                    , Attr.alt description
+                    [ Attr.src img.source
+                    , Attr.alt img.description
                     ]
                     []
             )
@@ -859,33 +867,31 @@ linkNewTab uri =
 
 
 {-| A link to download a file.
+
+You can optionally supply a filename you would like the file downloaded as.
+
+If no filename is provided, whatever the server says the filename should be will be used.
+
 -}
-download : String -> Attribute msg
-download uri =
+download :
+    { url : String
+    , filename : Maybe String
+    }
+    -> Attribute msg
+download opts =
     Two.Attribute
         { flag = Flag.isLink
         , attr =
             Two.Link
                 { newTab = False
-                , url = uri
+                , url = opts.url
                 , download =
-                    Just ""
-                }
-        }
+                    case opts.filename of
+                        Nothing ->
+                            Just ""
 
-
-{-| A link to download a file, but you can specify the filename.
--}
-downloadAs : { url : String, filename : String } -> Attribute msg
-downloadAs { url, filename } =
-    Two.Attribute
-        { flag = Flag.isLink
-        , attr =
-            Two.Link
-                { newTab = False
-                , url = url
-                , download =
-                    Just filename
+                        _ ->
+                            opts.filename
                 }
         }
 
