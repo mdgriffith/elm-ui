@@ -287,7 +287,6 @@ mapAttribute =
 {-| -}
 type Length
     = Px Int
-    | Content
     | Fill Int
 
 
@@ -601,10 +600,7 @@ If you want multiple children, you'll need to use something like `row` or `colum
 el : List (Attribute msg) -> Two.Element msg -> Two.Element msg
 el attrs child =
     Two.element Two.AsEl
-        (width Content
-            :: height Content
-            :: attrs
-        )
+        attrs
         [ child ]
 
 
@@ -612,10 +608,7 @@ el attrs child =
 row : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 row attrs children =
     Two.element Two.AsRow
-        (width Content
-            :: height Content
-            :: attrs
-        )
+        attrs
         children
 
 
@@ -623,10 +616,7 @@ row attrs children =
 column : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 column attrs children =
     Two.element Two.AsColumn
-        (width Content
-            :: height Content
-            :: attrs
-        )
+        attrs
         children
 
 
@@ -723,10 +713,7 @@ paragraph attrs children =
     --     )
     --     (Internal.Unkeyed children)
     Two.element Two.AsParagraph
-        (width Content
-            :: height Content
-            :: attrs
-        )
+        attrs
         children
 
 
@@ -763,10 +750,7 @@ textColumn attrs children =
     --     )
     --     (Internal.Unkeyed children)
     Two.element Two.AsTextColumn
-        (width Content
-            :: height Content
-            :: attrs
-        )
+        attrs
         children
 
 
@@ -973,12 +957,6 @@ width len =
                         (Style.px x)
                 }
 
-        Content ->
-            Two.Attribute
-                { flag = Flag.width
-                , attr = Two.Class Style.classes.widthContent
-                }
-
         Fill f ->
             Two.Attribute
                 { flag = Flag.width
@@ -1050,12 +1028,6 @@ height len =
                         Style.classes.heightExact
                         "height"
                         (String.fromInt x ++ "px")
-                }
-
-        Content ->
-            Two.Attribute
-                { flag = Flag.height
-                , attr = Two.Class Style.classes.heightContent
                 }
 
         Fill f ->

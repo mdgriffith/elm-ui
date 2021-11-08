@@ -1711,7 +1711,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         attributes
 
                 attrsWithWidthFill =
-                    if Flag.present Flag.width then
+                    if Flag.present Flag.width has then
                         -- we know we've set the width to fill
                         attrsWithPlaceholder
 
@@ -1728,11 +1728,11 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                     else
                         -- we are not widthFill, we set it to widthContent
-                        Style.classes.widthContent
+                        Attr.class Style.classes.widthContent
                             :: attrsWithPlaceholder
 
                 finalAttrs =
-                    if Flag.present Flag.height then
+                    if Flag.present Flag.height has then
                         -- we know we've set the width to fill
                         attrsWithPlaceholder
 
@@ -1748,7 +1748,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             :: attrsWithWidthFill
 
                     else
-                        Style.classes.heightContent
+                        Attr.class Style.classes.heightContent
                             :: attrsWithWidthFill
             in
             { asLink = Flag.present Flag.isLink has
