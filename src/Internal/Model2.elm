@@ -988,6 +988,7 @@ type Location
 
 type Option
     = FocusStyleOption FocusStyle
+    | ResponsiveBreakpoints String
 
 
 type Transition
@@ -1014,12 +1015,7 @@ type alias FocusStyle =
     { borderColor : Maybe Style.Color
     , backgroundColor : Maybe Style.Color
     , shadow :
-        Maybe
-            { color : Style.Color
-            , offset : ( Int, Int )
-            , blur : Int
-            , size : Int
-            }
+        Maybe Style.Shadow
     }
 
 
@@ -1029,9 +1025,10 @@ focusDefaultStyle =
     , borderColor = Nothing
     , shadow =
         Just
-            { color =
+            { x = 0
+            , y = 0
+            , color =
                 Style.Rgb 155 203 255
-            , offset = ( 0, 0 )
             , blur = 0
             , size = 3
             }
@@ -2747,4 +2744,244 @@ decodeScrollPosition =
             (Json.field "clientHeight" Json.int)
             (Json.field "scrollWidth" Json.int)
             (Json.field "scrollHeight" Json.int)
+        )
+
+
+
+{- Breakpoints -}
+
+
+type Breakpoints label
+    = Responsive
+        { transition : Maybe Transition
+        , default : label
+        , breaks : List (Breakpoint label)
+        , total : Int
+        }
+
+
+type Breakpoint label
+    = Breakpoint Int label
+
+
+type alias ResponsiveTransition =
+    { duration : Int
+    }
+
+
+
+{- Rendering -}
+
+
+toMediaQuery : Breakpoints label -> String
+toMediaQuery (Responsive details) =
+    case details.breaks of
+        [] ->
+            ""
+
+        (Breakpoint lowerBound _) :: remain ->
+            ":root {"
+                ++ toRoot details.breaks
+                    1
+                    (upperRootItem lowerBound)
+                ++ " }"
+                ++ toBoundedMediaQuery details.breaks
+                    1
+                    (renderUpper lowerBound)
+
+
+renderRoot : Int -> String
+renderRoot breakpointCounts =
+    ":root {" ++ renderRootItem breakpointCounts "" ++ "}"
+
+
+renderRootItem : Int -> String -> String
+renderRootItem count rendered =
+    if count <= 0 then
+        rendered
+
+    else
+        renderRootItem (count - 1)
+            (rendered ++ "--ui-bp-" ++ String.fromInt (count - 1) ++ ": 0;")
+
+
+rootItem i upper lower =
+    ("--ui-bp-" ++ String.fromInt i ++ ": 0;")
+        ++ ("--ui-bp-" ++ String.fromInt i ++ "-upper: " ++ String.fromInt upper ++ "px;")
+        ++ ("--ui-bp-" ++ String.fromInt i ++ "-lower: " ++ String.fromInt lower ++ "px;")
+        ++ ("--ui-bp-"
+                ++ String.fromInt i
+                ++ "-progress: calc(calc(100vw - "
+                ++ String.fromInt lower
+                ++ "px) / "
+                ++ String.fromInt (upper - lower)
+                ++ ");"
+           )
+
+
+upperRootItem : Int -> String
+upperRootItem lower =
+    rootItem 0 (lower + 1000) lower
+
+
+lowerRootItem : Int -> Int -> String
+lowerRootItem i upper =
+    rootItem i upper 0
+
+
+toRoot : List (Breakpoint label) -> Int -> String -> String
+toRoot breaks i rendered =
+    case breaks of
+        [] ->
+            rendered
+
+        [ Breakpoint upper _ ] ->
+            rendered ++ lowerRootItem i upper
+
+        (Breakpoint upper _) :: (((Breakpoint lower _) :: _) as tail) ->
+            toRoot tail
+                (i + 1)
+                (rendered ++ rootItem i upper lower)
+
+
+toBoundedMediaQuery : List (Breakpoint label) -> Int -> String -> String
+toBoundedMediaQuery breaks i rendered =
+    case breaks of
+        [] ->
+            rendered
+
+        [ Breakpoint upper _ ] ->
+            rendered ++ renderLower upper i
+
+        (Breakpoint upper _) :: (((Breakpoint lower _) :: _) as tail) ->
+            toBoundedMediaQuery tail
+                (i + 1)
+                (rendered ++ renderBounded upper lower i)
+
+
+renderUpper : Int -> String
+renderUpper lowerBound =
+    "@media" ++ minWidth lowerBound ++ " { " ++ renderMediaProps 0 ++ " }"
+
+
+renderLower : Int -> Int -> String
+renderLower upperBound i =
+    "@media " ++ maxWidth upperBound ++ " { " ++ renderMediaProps i ++ " }"
+
+
+renderBounded : Int -> Int -> Int -> String
+renderBounded upper lower i =
+    "@media " ++ minWidth lower ++ " and " ++ maxWidth upper ++ " { " ++ renderMediaProps i ++ " }"
+
+
+maxWidth : Int -> String
+maxWidth int =
+    "(max-width:" ++ String.fromInt int ++ "px)"
+
+
+minWidth : Int -> String
+minWidth int =
+    "(min-width:" ++ String.fromInt (int + 1) ++ "px)"
+
+
+renderMediaProps : Int -> String
+renderMediaProps i =
+    (":root {--ui-bp-" ++ String.fromInt i ++ ": 1;}")
+        ++ (".ui-bp-" ++ String.fromInt i ++ "-hidden {display:none !important;}")
+        ++ (".ui-bp-" ++ String.fromInt i ++ "-as-col: flex-direction: column;")
+
+
+{-| -}
+renderOptions : List Option -> Html.Html msg
+renderOptions opts =
+    Html.node "style"
+        []
+        [ Html.text (renderOptionItem { breakpoints = False, focus = False } "" opts) ]
+
+
+renderOptionItem alreadyRendered renderedStr opts =
+    case opts of
+        [] ->
+            renderedStr
+
+        (FocusStyleOption focus) :: remain ->
+            if alreadyRendered.focus then
+                renderOptionItem alreadyRendered
+                    renderedStr
+                    remain
+
+            else
+                renderOptionItem { alreadyRendered | focus = True }
+                    (renderedStr ++ renderFocusStyle focus)
+                    remain
+
+        (ResponsiveBreakpoints mediaQueryStr) :: remain ->
+            if alreadyRendered.breakpoints then
+                renderOptionItem alreadyRendered
+                    renderedStr
+                    remain
+
+            else
+                renderOptionItem { alreadyRendered | breakpoints = True }
+                    (renderedStr ++ mediaQueryStr)
+                    remain
+
+
+maybeString fn maybeStr =
+    case maybeStr of
+        Nothing ->
+            ""
+
+        Just str ->
+            fn str
+
+
+andAdd one two =
+    two ++ one
+
+
+dot str =
+    "." ++ str
+
+
+renderFocusStyle :
+    FocusStyle
+    -> String
+renderFocusStyle focus =
+    let
+        focusProps =
+            "outline: none;"
+                |> andAdd (maybeString (\color -> "border-color: " ++ Style.color color ++ ";") focus.borderColor)
+                |> andAdd
+                    (maybeString (\color -> "background-color: " ++ Style.color color ++ ";") focus.backgroundColor)
+                |> andAdd
+                    (maybeString
+                        (\shadow ->
+                            "box-shadow: "
+                                ++ (Style.singleShadow shadow
+                                    -- { color = shadow.color
+                                    -- , offset =
+                                    --     shadow.offset
+                                    --         |> Tuple.mapFirst toFloat
+                                    --         |> Tuple.mapSecond toFloat
+                                    -- , inset = False
+                                    -- , blur =
+                                    --     toFloat shadow.blur
+                                    -- , size =
+                                    --     toFloat shadow.size
+                                    -- }
+                                   )
+                                ++ ";"
+                        )
+                        focus.shadow
+                    )
+    in
+    String.append
+        (String.append
+            (dot Style.classes.focusedWithin ++ ":focus-within")
+            focusProps
+        )
+        (String.append
+            (dot Style.classes.any ++ ":focus .focusable, " ++ dot Style.classes.any ++ ".focusable:focus")
+            focusProps
         )

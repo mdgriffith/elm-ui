@@ -4,9 +4,8 @@ module Ui.Responsive exposing
     , rowWhen, fontSize, padding
     , height, heightMin, heightMax
     , width, widthMin, widthMax
-    , breakpoints, breakAt
+    , Breakpoints, breakpoints, Breakpoint, breakAt
     , orAbove, orBelow
-    , toMediaQuery
     )
 
 {-|
@@ -21,7 +20,7 @@ module Ui.Responsive exposing
 
 @docs width, widthMin, widthMax
 
-@docs breakpoints, breakAt
+@docs Breakpoints, breakpoints, Breakpoint, breakAt
 
     breakpoints : Ui.Responsive.Breakpoints Breakpoints
     breakpoints =
@@ -87,25 +86,21 @@ module Ui.Responsive exposing
 import Html.Attributes as Attr
 import Internal.Flag as Flag
 import Internal.Model2 as Internal
-import Ui exposing (Attribute, Element)
+    exposing
+        ( Attribute
+        , Element
+        , ResponsiveTransition
+        )
 
 
-type Breakpoints label
-    = Responsive
-        { transition : Maybe Transition
-        , default : label
-        , breaks : List (Breakpoint label)
-        , total : Int
-        }
+{-| -}
+type alias Breakpoints label =
+    Internal.Breakpoints label
 
 
-type Breakpoint label
-    = Breakpoint Int label
-
-
-type alias Transition =
-    { duration : Int
-    }
+{-| -}
+type alias Breakpoint label =
+    Internal.Breakpoint label
 
 
 {-| -}
@@ -169,7 +164,7 @@ orBelow label resp =
 {-| -}
 breakpoints : label -> List (Breakpoint label) -> Breakpoints label
 breakpoints def breaks =
-    Responsive
+    Internal.Responsive
         { transition = Nothing
         , default = def
         , breaks = List.sortBy ((*) -1 << breakWidth) breaks
@@ -178,14 +173,14 @@ breakpoints def breaks =
 
 
 breakWidth : Breakpoint label -> Int
-breakWidth (Breakpoint at _) =
+breakWidth (Internal.Breakpoint at _) =
     at
 
 
 {-| -}
 breakAt : Int -> label -> Breakpoint label
 breakAt =
-    Breakpoint
+    Internal.Breakpoint
 
 
 {-| -}
@@ -225,7 +220,7 @@ Otherwise, it'll render as a `column`.
 -}
 rowWhen : Breakpoints label -> List label -> List (Attribute msg) -> List (Element msg) -> Element msg
 rowWhen breaks labels attrs children =
-    Ui.row
+    Internal.element Internal.AsRow
         (Internal.class
             (fold
                 (\i lab str ->
@@ -391,7 +386,7 @@ renderValue i v =
 
 
 fold : (Int -> label -> result -> result) -> result -> Breakpoints label -> result
-fold fn initial (Responsive resp) =
+fold fn initial (Internal.Responsive resp) =
     foldHelper fn (fn 0 resp.default initial) 1 resp.breaks
 
 
@@ -400,7 +395,7 @@ foldHelper fn cursor i breaks =
         [] ->
             cursor
 
-        (Breakpoint _ label) :: remain ->
+        (Internal.Breakpoint _ label) :: remain ->
             foldHelper fn
                 (fn i label cursor)
                 (i + 1)
@@ -426,7 +421,7 @@ so for the following
 
 -}
 getIndex : label -> Breakpoints label -> Int
-getIndex target (Responsive details) =
+getIndex target (Internal.Responsive details) =
     if target == details.default then
         0
 
@@ -439,131 +434,9 @@ getIndexHelper i target breaks =
         [] ->
             i
 
-        (Breakpoint _ top) :: remain ->
+        (Internal.Breakpoint _ top) :: remain ->
             if top == target then
                 i
 
             else
                 getIndexHelper (i + 1) target remain
-
-
-
-{- Rendering -}
-
-
-toMediaQuery : Breakpoints label -> String
-toMediaQuery (Responsive details) =
-    case details.breaks of
-        [] ->
-            ""
-
-        (Breakpoint lowerBound _) :: remain ->
-            ":root {"
-                ++ toRoot details.breaks
-                    1
-                    (upperRootItem lowerBound)
-                ++ " }"
-                ++ toBoundedMediaQuery details.breaks
-                    1
-                    (renderUpper lowerBound)
-
-
-renderRoot : Int -> String
-renderRoot breakpointCounts =
-    ":root {" ++ renderRootItem breakpointCounts "" ++ "}"
-
-
-renderRootItem : Int -> String -> String
-renderRootItem count rendered =
-    if count <= 0 then
-        rendered
-
-    else
-        renderRootItem (count - 1)
-            (rendered ++ "--ui-bp-" ++ String.fromInt (count - 1) ++ ": 0;")
-
-
-rootItem i upper lower =
-    ("--ui-bp-" ++ String.fromInt i ++ ": 0;")
-        ++ ("--ui-bp-" ++ String.fromInt i ++ "-upper: " ++ String.fromInt upper ++ "px;")
-        ++ ("--ui-bp-" ++ String.fromInt i ++ "-lower: " ++ String.fromInt lower ++ "px;")
-        ++ ("--ui-bp-"
-                ++ String.fromInt i
-                ++ "-progress: calc(calc(100vw - "
-                ++ String.fromInt lower
-                ++ "px) / "
-                ++ String.fromInt (upper - lower)
-                ++ ");"
-           )
-
-
-upperRootItem : Int -> String
-upperRootItem lower =
-    rootItem 0 (lower + 1000) lower
-
-
-lowerRootItem : Int -> Int -> String
-lowerRootItem i upper =
-    rootItem i upper 0
-
-
-toRoot : List (Breakpoint label) -> Int -> String -> String
-toRoot breaks i rendered =
-    case breaks of
-        [] ->
-            rendered
-
-        [ Breakpoint upper _ ] ->
-            rendered ++ lowerRootItem i upper
-
-        (Breakpoint upper _) :: (((Breakpoint lower _) :: _) as tail) ->
-            toRoot tail
-                (i + 1)
-                (rendered ++ rootItem i upper lower)
-
-
-toBoundedMediaQuery : List (Breakpoint label) -> Int -> String -> String
-toBoundedMediaQuery breaks i rendered =
-    case breaks of
-        [] ->
-            rendered
-
-        [ Breakpoint upper _ ] ->
-            rendered ++ renderLower upper i
-
-        (Breakpoint upper _) :: (((Breakpoint lower _) :: _) as tail) ->
-            toBoundedMediaQuery tail
-                (i + 1)
-                (rendered ++ renderBounded upper lower i)
-
-
-renderUpper : Int -> String
-renderUpper lowerBound =
-    "@media" ++ minWidth lowerBound ++ " { " ++ renderMediaProps 0 ++ " }"
-
-
-renderLower : Int -> Int -> String
-renderLower upperBound i =
-    "@media " ++ maxWidth upperBound ++ " { " ++ renderMediaProps i ++ " }"
-
-
-renderBounded : Int -> Int -> Int -> String
-renderBounded upper lower i =
-    "@media " ++ minWidth lower ++ " and " ++ maxWidth upper ++ " { " ++ renderMediaProps i ++ " }"
-
-
-maxWidth : Int -> String
-maxWidth int =
-    "(max-width:" ++ String.fromInt int ++ "px)"
-
-
-minWidth : Int -> String
-minWidth int =
-    "(min-width:" ++ String.fromInt (int + 1) ++ "px)"
-
-
-renderMediaProps : Int -> String
-renderMediaProps i =
-    (":root {--ui-bp-" ++ String.fromInt i ++ ": 1;}")
-        ++ (".ui-bp-" ++ String.fromInt i ++ "-hidden {display:none !important;}")
-        ++ (".ui-bp-" ++ String.fromInt i ++ "-as-col: flex-direction: column;")

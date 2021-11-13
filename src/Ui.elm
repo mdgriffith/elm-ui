@@ -23,7 +23,7 @@ module Ui exposing
     , updateWith, subscription
     , map, mapAttribute
     , html, htmlAttribute
-    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, id, init, scrollbarX, scrollbarY, transition
+    , Msg, Phase, State, Transition, breakpoints, clip, clipX, clipY, duration, embed, id, init, scrollbarX, scrollbarY, transition
     )
 
 {-|
@@ -223,6 +223,7 @@ import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Json.Decode as Decode
 import Set
+import Ui.Responsive
 
 
 {-| -}
@@ -458,7 +459,8 @@ layoutWith { options } (Two.State state) attrs content =
                 (\_ ->
                     Html.Keyed.node "div"
                         []
-                        [ ( "static", Html.Lazy.lazy style Style.rules )
+                        [ ( "options", Html.Lazy.lazy Two.renderOptions options )
+                        , ( "static", Html.Lazy.lazy style Style.rules )
                         , ( "animations", Html.Lazy.lazy styleRules state.rules )
                         , ( "boxes"
                           , Html.div [] (List.map viewBox state.boxes)
@@ -467,6 +469,12 @@ layoutWith { options } (Two.State state) attrs content =
                 )
             , content
             ]
+
+
+breakpoints : Ui.Responsive.Breakpoints label -> Option
+breakpoints resp =
+    Two.ResponsiveBreakpoints
+        (Two.toMediaQuery resp)
 
 
 viewBox ( boxId, box ) =
@@ -529,10 +537,11 @@ defaultFocus :
     , backgroundColor : Maybe Color
     , shadow :
         Maybe
-            { color : Color
-            , offset : ( Int, Int )
-            , blur : Int
-            , size : Int
+            { x : Float
+            , y : Float
+            , size : Float
+            , blur : Float
+            , color : Color
             }
     }
 defaultFocus =
@@ -545,10 +554,11 @@ type alias FocusStyle =
     , backgroundColor : Maybe Color
     , shadow :
         Maybe
-            { color : Color
-            , offset : ( Int, Int )
-            , blur : Int
-            , size : Int
+            { x : Float
+            , y : Float
+            , size : Float
+            , blur : Float
+            , color : Color
             }
     }
 
@@ -738,17 +748,6 @@ Which will result in something like:
 -}
 textColumn : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
 textColumn attrs children =
-    -- Internal.element
-    --     Internal.asTextColumn
-    --     Internal.div
-    --     (width
-    --         (fill
-    --             |> minimum 500
-    --             |> maximum 750
-    --         )
-    --         :: attrs
-    --     )
-    --     (Internal.Unkeyed children)
     Two.element Two.AsTextColumn
         attrs
         children
