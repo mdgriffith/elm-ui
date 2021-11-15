@@ -63,6 +63,9 @@ mapUIMsg fn msg =
         RefreshBoxesAndThen externalMsg ->
             RefreshBoxesAndThen (fn externalMsg)
 
+        AnimationAdd trigger css ->
+            AnimationAdd trigger css
+
         Animate maybeBox trigger classString props ->
             Animate maybeBox trigger classString props
 
@@ -77,6 +80,7 @@ type Msg msg
     | BoxNew Id Box
     | RefreshBoxesAndThen msg
     | BoxesNew msg (List ( Id, Box ))
+    | AnimationAdd Trigger Animator.Css
     | Animate
         (Maybe
             { id : Id
@@ -300,6 +304,26 @@ update toAppMsg msg ((State details) as unchanged) =
                     , Cmd.none
                     )
 
+        AnimationAdd trigger css ->
+            if Set.member css.hash details.added then
+                ( unchanged, Cmd.none )
+
+            else
+                let
+                    newClass =
+                        ("." ++ css.hash ++ phaseName trigger ++ phasePseudoClass trigger ++ " {")
+                            ++ ("animation:" ++ css.animation ++ ";")
+                            ++ renderProps css.props ""
+                            ++ "}"
+                in
+                ( State
+                    { rules = css.keyframes :: newClass :: details.rules
+                    , added = Set.insert css.hash details.added
+                    , boxes = details.boxes
+                    }
+                , Cmd.none
+                )
+
         Animate maybeId trigger classString props ->
             if Set.member classString details.added then
                 ( unchanged, Cmd.none )
@@ -315,22 +339,8 @@ update toAppMsg msg ((State details) as unchanged) =
                     stylesStr =
                         renderTargetAnimatedStyle Nothing props
 
-                    phaseStr =
-                        case trigger of
-                            OnFocused ->
-                                ":focus"
-
-                            OnHovered ->
-                                ":hover"
-
-                            OnPressed ->
-                                ":active"
-
-                            OnIf on ->
-                                ""
-
                     new =
-                        ("." ++ classString ++ phaseStr ++ " {")
+                        ("." ++ classString ++ phasePseudoClass trigger ++ " {")
                             ++ ("transition:" ++ arrivingTransitionStr ++ ";\n")
                             ++ stylesStr
                             ++ "}"
@@ -363,7 +373,7 @@ update toAppMsg msg ((State details) as unchanged) =
                     stylesStr =
                         renderStylesString transition
 
-                    phaseStr =
+                    phasePseudoClassStr =
                         case phase of
                             Focused ->
                                 ":focus"
@@ -375,7 +385,7 @@ update toAppMsg msg ((State details) as unchanged) =
                                 ":active"
 
                     new =
-                        ("." ++ classStr ++ phaseStr ++ " {")
+                        ("." ++ classStr ++ phasePseudoClassStr ++ " {")
                             ++ ("transition:" ++ arrivingTransitionStr ++ ";\n")
                             ++ stylesStr
                             ++ "}"
@@ -455,6 +465,49 @@ emptyTransform =
     , y = 0
     , rotation = 0
     }
+
+
+renderProps : List ( String, String ) -> String -> String
+renderProps props str =
+    case props of
+        [] ->
+            str
+
+        ( name, val ) :: remain ->
+            renderProps remain
+                (str ++ name ++ ":" ++ val ++ ";")
+
+
+phaseName : Trigger -> String
+phaseName trigger =
+    case trigger of
+        OnFocused ->
+            "-focus"
+
+        OnHovered ->
+            "-hover"
+
+        OnPressed ->
+            "-active"
+
+        OnIf on ->
+            ""
+
+
+phasePseudoClass : Trigger -> String
+phasePseudoClass trigger =
+    case trigger of
+        OnFocused ->
+            ":focus"
+
+        OnHovered ->
+            ":hover"
+
+        OnPressed ->
+            ":active"
+
+        OnIf on ->
+            ""
 
 
 transformToString : Transform -> String
@@ -808,13 +861,11 @@ mapAttr uiFn fn (Attribute attr) =
                 Nearby loc el ->
                     Nearby loc (map fn el)
 
-                When toMsg when ->
-                    When uiFn
-                        { phase = when.phase
-                        , class = when.class
-                        , transition = when.transition
-                        , prop = when.prop
-                        , val = when.val
+                Transition2 t ->
+                    Transition2
+                        { toMsg = uiFn
+                        , trigger = t.trigger
+                        , css = t.css
                         }
 
                 WhenAll toMsg trigger classStr props ->
@@ -914,8 +965,12 @@ type Attr msg
     | ClassAndStyle String String String
     | ClassAndVarStyle String String
     | Nearby Location (Element msg)
-    | When (Msg msg -> msg) TransitionDetails
     | WhenAll (Msg msg -> msg) Trigger String (List Animated)
+    | Transition2
+        { toMsg : Msg msg -> msg
+        , trigger : Trigger
+        , css : Animator.Css
+        }
     | Animated (Msg msg -> msg) Id
 
 
@@ -2155,81 +2210,38 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             vars
                             remain
 
-                    When toMsg when ->
+                    Transition2 { toMsg, trigger, css } ->
+                        let
+                            triggerClass =
+                                triggerName trigger
+
+                            styleClass =
+                                css.hash ++ phaseName trigger
+
+                            event =
+                                Json.field "animationName" Json.string
+                                    |> Json.andThen
+                                        (\name ->
+                                            if name == triggerClass then
+                                                Json.succeed
+                                                    (toMsg
+                                                        (AnimationAdd trigger css)
+                                                    )
+
+                                            else
+                                                Json.fail "Nonmatching animation"
+                                        )
+                        in
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontSize =
-                                details.fontSize
-                            , padding = details.padding
-                            , borders = details.borders
-                            , transform = details.transform
-                            , animEvents = details.animEvents
-                            , hover =
-                                case when.phase of
-                                    Hovered ->
-                                        case details.hover of
-                                            Nothing ->
-                                                Just
-                                                    { toMsg = toMsg
-                                                    , class = when.class
-                                                    , transitions = [ when ]
-                                                    }
-
-                                            Just transition ->
-                                                Just
-                                                    { toMsg = toMsg
-                                                    , class = when.class ++ "-" ++ transition.class
-                                                    , transitions = when :: transition.transitions
-                                                    }
-
-                                    _ ->
-                                        details.hover
-                            , focus =
-                                case when.phase of
-                                    Focused ->
-                                        case details.focus of
-                                            Nothing ->
-                                                Just
-                                                    { toMsg = toMsg
-                                                    , class = when.class
-                                                    , transitions = [ when ]
-                                                    }
-
-                                            Just transition ->
-                                                Just
-                                                    { toMsg = toMsg
-                                                    , class = when.class ++ "-" ++ transition.class
-                                                    , transitions = when :: transition.transitions
-                                                    }
-
-                                    _ ->
-                                        details.focus
-                            , active =
-                                case when.phase of
-                                    Pressed ->
-                                        case details.active of
-                                            Nothing ->
-                                                Just
-                                                    { toMsg = toMsg
-                                                    , class = when.class
-                                                    , transitions = [ when ]
-                                                    }
-
-                                            Just transition ->
-                                                Just
-                                                    { toMsg = toMsg
-                                                    , class = when.class ++ "-" ++ transition.class
-                                                    , transitions = when :: transition.transitions
-                                                    }
-
-                                    _ ->
-                                        details.active
-                            }
+                            details
                             children
                             has
-                            htmlAttrs
-                            classes
+                            (Events.on "animationstart" event
+                                :: htmlAttrs
+                            )
+                            (triggerClass ++ " " ++ styleClass ++ " " ++ classes)
                             vars
                             remain
 
