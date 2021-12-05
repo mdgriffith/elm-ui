@@ -5,16 +5,22 @@ module Internal.BitEncodings exposing (..)
 import Internal.BitField as BitField exposing (BitField, Bits)
 
 
+{-| These are bits that are passed from parent to child in the rendering pipeline
+-}
+type Inheritance
+    = Inheritance
+
+
 
 {- Node State -}
 
 
-row : Bits
+row : Bits Inheritance
 row =
     BitField.init
 
 
-column : Bits
+column : Bits Inheritance
 column =
     row
         |> BitField.set isRow 1
@@ -34,121 +40,103 @@ column =
 -}
 
 
-{-| Compound field
--}
-spacing : BitField
-spacing =
-    BitField.range
-        spacingX
-        spacingY
+clearSpacing : Bits Inheritance -> Bits Inheritance
+clearSpacing bits =
+    bits
+        |> BitField.clear spacingX
+        |> BitField.clear spacingY
 
 
-spacingX : BitField
+{-| -}
+hasSpacing : Bits Inheritance -> Bool
+hasSpacing bits =
+    (bits |> BitField.has spacingX)
+        || (bits |> BitField.has spacingY)
+
+
+spacingX : BitField Inheritance
 spacingX =
-    BitField.field
-        { offset = 0
-        , length = 12
-        }
+    BitField.first 12
 
 
-spacingY : BitField
+spacingY : BitField Inheritance
 spacingY =
     spacingX
-        |> BitField.after
-            { length = 6
-            }
+        |> BitField.next 6
 
 
-{-| The compound font adjustment
--}
-fontAdjustment : BitField
-fontAdjustment =
-    BitField.range
-        fontHeight
-        fontOffset
+{-| -}
+hasFontAdjustment : Bits Inheritance -> Bool
+hasFontAdjustment bits =
+    (bits |> BitField.has fontHeight)
+        || (bits |> BitField.has fontOffset)
 
 
-fontHeight : BitField
+fontHeight : BitField Inheritance
 fontHeight =
     spacingY
-        |> BitField.after
-            { length = 6
-            }
+        |> BitField.next 6
 
 
-fontOffset : BitField
+fontOffset : BitField Inheritance
 fontOffset =
     fontHeight
-        |> BitField.after
-            { length = 5
-            }
+        |> BitField.next 5
 
 
-isRow : BitField
+isRow : BitField Inheritance
 isRow =
     fontOffset
-        |> BitField.after
-            { length = 1
-            }
+        |> BitField.next 1
 
 
 
 {- Transition Duration/Delay -}
 
 
-duration : BitField
+type Transition
+    = Transition
+
+
+duration : BitField Transition
 duration =
-    BitField.field
-        { offset = 0
-        , length = 16
-        }
+    BitField.first 16
 
 
-delay : BitField
+delay : BitField Transition
 delay =
-    BitField.field
-        { offset = 16
-        , length = 16
-        }
+    duration |> BitField.next 16
 
 
 
 {- Bezier curves -}
 
 
-defaultCurve : Bits
+type Bezier
+    = Bezier
+
+
+defaultCurve : Bits Bezier
 defaultCurve =
     -- REPLACE THIS WITH THE REAL DEFAULT CURVE
     BitField.init
 
 
-bezOne : BitField
+bezOne : BitField Bezier
 bezOne =
-    BitField.field
-        { offset = 0
-        , length = 8
-        }
+    BitField.first 8
 
 
-bezTwo : BitField
+bezTwo : BitField Bezier
 bezTwo =
-    BitField.field
-        { offset = 8
-        , length = 16
-        }
+    bezOne |> BitField.next 8
 
 
-bezThree : BitField
+bezThree : BitField Bezier
 bezThree =
-    BitField.field
-        { offset = 16
-        , length = 24
-        }
+    bezTwo |> BitField.next 8
 
 
-bezFour : BitField
+bezFour : BitField Bezier
 bezFour =
-    BitField.field
-        { offset = 24
-        , length = 32
-        }
+    bezThree |> BitField.next 8

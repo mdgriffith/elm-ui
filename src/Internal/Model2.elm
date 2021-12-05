@@ -32,7 +32,7 @@ import VirtualDom
 
 -}
 type Element msg
-    = Element (BitField.Bits -> Html.Html msg)
+    = Element (BitField.Bits Bits.Inheritance -> Html.Html msg)
 
 
 map : (a -> b) -> Element a -> Element b
@@ -305,6 +305,10 @@ update toAppMsg msg ((State details) as unchanged) =
                     )
 
         AnimationAdd trigger css ->
+            let
+                _ =
+                    Debug.log "CSS " css
+            in
             if Set.member css.hash details.added then
                 ( unchanged, Cmd.none )
 
@@ -312,7 +316,6 @@ update toAppMsg msg ((State details) as unchanged) =
                 let
                     newClass =
                         ("." ++ css.hash ++ phaseName trigger ++ phasePseudoClass trigger ++ " {")
-                            ++ ("animation:" ++ css.animation ++ ";")
                             ++ renderProps css.props ""
                             ++ "}"
                 in
@@ -948,7 +951,7 @@ type Attr msg
     | Font
         { family : String
         , adjustments :
-            Maybe BitField.Bits
+            Maybe (BitField.Bits Bits.Inheritance)
         , variants : String
         , smallCaps : Bool
         }
@@ -1007,8 +1010,8 @@ type AnimValue
 
 
 type alias Approach =
-    { durDelay : BitField.Bits
-    , curve : BitField.Bits
+    { durDelay : BitField.Bits Bits.Transition
+    , curve : BitField.Bits Bits.Bezier
     }
 
 
@@ -1049,13 +1052,9 @@ type Option
 type Transition
     = Transition
         { arriving :
-            { durDelay : BitField.Bits
-            , curve : BitField.Bits
-            }
+            Approach
         , departing :
-            { durDelay : BitField.Bits
-            , curve : BitField.Bits
-            }
+            Approach
         }
 
 
@@ -1123,14 +1122,14 @@ emptyDetails =
     }
 
 
-unwrap : BitField.Bits -> Element msg -> Html.Html msg
+unwrap : BitField.Bits Bits.Inheritance -> Element msg -> Html.Html msg
 unwrap s el =
     case el of
         Element html ->
             html s
 
 
-unwrapKeyed : BitField.Bits -> ( String, Element msg ) -> ( String, Html.Html msg )
+unwrapKeyed : BitField.Bits Bits.Inheritance -> ( String, Element msg ) -> ( String, Html.Html msg )
 unwrapKeyed s el =
     case el of
         ( key, Element html ) ->
@@ -1344,7 +1343,7 @@ element layout attrs children =
                 rendered =
                     renderAttrs
                         parentBits
-                        (BitField.clear Bits.spacing parentBits
+                        (Bits.clearSpacing parentBits
                             |> (if layout == AsRow then
                                     BitField.set Bits.isRow 1
 
@@ -1389,7 +1388,7 @@ elementAs toNode layout attrs children =
                 rendered =
                     renderAttrs
                         parentBits
-                        (BitField.clear Bits.spacing parentBits
+                        (Bits.clearSpacing parentBits
                             |> (if layout == AsRow then
                                     BitField.set Bits.isRow 1
 
@@ -1440,7 +1439,7 @@ elementKeyed name layout attrs children =
                 rendered =
                     renderAttrs
                         parentBits
-                        (BitField.clear Bits.spacing parentBits
+                        (Bits.clearSpacing parentBits
                             |> (if layout == AsRow then
                                     BitField.set Bits.isRow 1
 
@@ -1501,8 +1500,8 @@ type Children msg
 
 
 renderAttrs :
-    BitField.Bits
-    -> BitField.Bits
+    BitField.Bits Bits.Inheritance
+    -> BitField.Bits Bits.Inheritance
     -> Layout
     -> Details msg
     -> ElemChildren msg
@@ -1543,7 +1542,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                         nearby.inFront
 
                 attrsWithParentSpacing =
-                    if BitField.has Bits.spacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
+                    if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
                         Attr.style "margin"
                             ((parentBits
                                 |> BitField.get Bits.spacingY
@@ -1576,7 +1575,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         attrsWithParentSpacing
 
                 adjustmentNotSet =
-                    not (BitField.has Bits.fontAdjustment myBits)
+                    not (Flag.present Flag.fontAdjustment has)
 
                 {-
                    no fontsize or adjustment -> skip
@@ -1617,6 +1616,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             fontHeight =
                                 parentBits
                                     |> BitField.getPercentage Bits.fontHeight
+                                    |> Debug.log "get font height2"
                         in
                         Attr.style "font-size"
                             (String.fromFloat
@@ -1877,7 +1877,8 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                                 Just adj ->
                                     myBits
-                                        |> BitField.merge adj
+                                        |> BitField.copy Bits.fontHeight adj
+                                        |> BitField.copy Bits.fontOffset adj
                             )
                             layout
                             { fontSize =
@@ -2212,6 +2213,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                     Transition2 { toMsg, trigger, css } ->
                         let
+                            _ =
+                                Debug.log "TRANSITION2" css
+
                             triggerClass =
                                 triggerName trigger
 

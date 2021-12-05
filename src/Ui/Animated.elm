@@ -20,7 +20,7 @@ module Ui.Animated exposing
 @docs wobble, delay
 
 
-## Persistent Eleents
+# Persistent Eleents
 
 @docs id
 
@@ -29,7 +29,7 @@ module Ui.Animated exposing
 ---
 
 
-### Properties
+# Properties
 
 @docs opacity, position, rotation, scale
 
@@ -39,7 +39,6 @@ module Ui.Animated exposing
 
 import Animator
 import Animator.Timeline exposing (Timeline)
-import Bitwise
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
 import Internal.Flag as Flag
@@ -225,7 +224,7 @@ created toMsg attrs =
 
 
 {-| -}
-linearCurve : BitField.Bits
+linearCurve : BitField.Bits Bits.Bezier
 linearCurve =
     encodeBezier 0 0 1 1
 
@@ -233,12 +232,12 @@ linearCurve =
 {-| cubic-bezier(0.4, 0.0, 0.2, 1);
 Standard curve as given here: <https://material.io/design/motion/speed.html#easing>
 -}
-standardCurve : BitField.Bits
+standardCurve : BitField.Bits Bits.Bezier
 standardCurve =
     encodeBezier 0.4 0 0.2 1
 
 
-encodeBezier : Float -> Float -> Float -> Float -> BitField.Bits
+encodeBezier : Float -> Float -> Float -> Float -> BitField.Bits Bits.Bezier
 encodeBezier one two three four =
     BitField.init
         |> BitField.setPercentage Bits.bezOne one
