@@ -261,8 +261,8 @@ with details =
                         , adjustments =
                             Just
                                 (BitField.init
-                                    |> BitField.setPercentage Bits.fontHeight adjustment.height
-                                    |> BitField.setPercentage Bits.fontOffset adjustment.offset
+                                    |> BitField.setPercentage Bits.fontHeight (adjustment.height |> Two.fontHeightToInheritedValue)
+                                    |> BitField.setPercentage Bits.fontOffset (adjustment.offset |> Two.fontOffsetToInheritedValue)
                                 )
                         , variants =
                             renderVariants details.variants ""
