@@ -1142,6 +1142,26 @@ wrapText s el =
             html s
 
 
+fontHeightFromInheritedValue : Float -> Float
+fontHeightFromInheritedValue v =
+    v / 2 + 0.5
+
+
+fontOffsetFromInheritedValue : Float -> Float
+fontOffsetFromInheritedValue v =
+    v / 4
+
+
+fontHeightToInheritedValue : Float -> Float
+fontHeightToInheritedValue v =
+    (v - 0.5) * 2
+
+
+fontOffsetToInheritedValue : Float -> Float
+fontOffsetToInheritedValue v =
+    v * 4
+
+
 text : String -> Element msg
 text str =
     Element
@@ -1154,10 +1174,12 @@ text str =
                     height =
                         encoded
                             |> BitField.getPercentage Bits.fontHeight
+                            |> fontHeightFromInheritedValue
 
                     offset =
                         encoded
                             |> BitField.getPercentage Bits.fontOffset
+                            |> fontOffsetFromInheritedValue
 
                     spacingY =
                         encoded
@@ -1179,23 +1201,20 @@ text str =
 
                         else
                             let
-                                -- This doesn't totally make sense to me, but it works :/
-                                -- I thought that the top margin should have a smaller negative margin than the bottom
-                                -- however it seems evenly distributing the empty space works out.
                                 topVal =
                                     offset
 
                                 bottomVal =
-                                    (1 - height) - offset
-
-                                even =
-                                    (topVal + bottomVal) / 2
+                                    (1 - offset) - height
 
                                 margin =
                                     "-"
-                                        ++ String.fromFloat (even + 0.25)
+                                        ++ String.fromFloat (topVal + 0.25)
                                         ++ "em "
                                         ++ (String.fromInt spacingX ++ "0px ")
+                                        ++ "-"
+                                        ++ String.fromFloat (bottomVal + 0.25)
+                                        ++ "em"
                             in
                             Attr.style "margin"
                                 margin
@@ -1599,8 +1618,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         -- set font size, adjust via inherited value
                         let
                             height =
-                                parentBits
+                                myBits
                                     |> BitField.getPercentage Bits.fontHeight
+                                    |> fontHeightFromInheritedValue
                         in
                         Attr.style "font-size"
                             (String.fromFloat
@@ -1614,9 +1634,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         -- set font size from details
                         let
                             fontHeight =
-                                parentBits
+                                myBits
                                     |> BitField.getPercentage Bits.fontHeight
-                                    |> Debug.log "get font height2"
+                                    |> fontHeightFromInheritedValue
                         in
                         Attr.style "font-size"
                             (String.fromFloat
@@ -1630,8 +1650,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         -- operate on `em`
                         let
                             fontHeight =
-                                parentBits
+                                myBits
                                     |> BitField.getPercentage Bits.fontHeight
+                                    |> fontHeightFromInheritedValue
                         in
                         Attr.style "font-size"
                             (String.fromFloat
