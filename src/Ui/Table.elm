@@ -301,7 +301,7 @@ viewWithState attrs config state data =
         rows =
             Ui.Lazy.lazy3 renderRows config state data
     in
-    Two.elementAs Html.table
+    Two.elementAs Html.div
         Two.AsColumn
         (Two.attribute (Attr.style "display" "grid")
             :: Two.attrIf config.scrollable
@@ -316,13 +316,17 @@ viewWithState attrs config state data =
                 )
             :: attrs
         )
-        [ headerRow
-        , rows
-        , if List.any hasSummary config.columns then
-            Ui.Lazy.lazy3 renderSummary config state data
+        [ Two.elementAs Html.table
+            Two.AsColumn
+            [ Two.attribute (Attr.style "display" "contents") ]
+            [ headerRow
+            , rows
+            , if List.any hasSummary config.columns then
+                Ui.Lazy.lazy3 renderSummary config state data
 
-          else
-            Ui.none
+              else
+                Ui.none
+            ]
         ]
 
 
