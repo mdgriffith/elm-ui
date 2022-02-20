@@ -1,6 +1,6 @@
 module Ui.Font exposing
     ( size, color, gradient
-    , family, with, Font, typeface, serif, sansSerif, monospace
+    , family, custom, Font, typeface, serif, sansSerif, monospace
     , Sizing, full, byCapital, Adjustment
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
     , underline, strike, italic
@@ -34,7 +34,7 @@ module Ui.Font exposing
 
 ## Typefaces
 
-@docs family, with, Font, typeface, serif, sansSerif, monospace
+@docs family, custom, Font, typeface, serif, sansSerif, monospace
 
 @docs Sizing, full, byCapital, Adjustment
 
@@ -218,25 +218,24 @@ byCapital =
 
 {-|
 
-    Font.with
-        { name = "ED Garamond"
+    Ui.Font.custom
+        { name = "EB Garamond"
         , fallback = [ Font.serif ]
         , sizing =
-            Font.byCapital
-                {}
+            Ui.Font.full
         , variants =
             []
         }
 
 -}
-with :
+custom :
     { name : String
     , fallback : List Font
     , sizing : Sizing
     , variants : List Variant
     }
     -> Attribute msg
-with details =
+custom details =
     case details.sizing of
         Full ->
             Two.Attribute
