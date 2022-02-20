@@ -50,32 +50,16 @@ color clr =
 {-| -}
 width : Int -> Attribute msg
 width x =
-    Two.Attribute
-        { flag = Flag.borderWidth
-        , attr =
-            Two.BorderWidth
-                { top = x
-                , left = x
-                , bottom = x
-                , right = x
-                }
-        }
+    Two.attributeWith Flag.borderWidth
+        (Attr.style "border-width" (String.fromInt x ++ "px"))
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Two.Attribute
-        { flag = Flag.borderWidth
-        , attr =
-            Two.BorderWidth
-                { top = y
-                , left = x
-                , bottom = y
-                , right = x
-                }
-        }
+    Two.attributeWith Flag.borderWidth
+        (Attr.style "border-width" (String.fromInt y ++ "px " ++ String.fromInt x ++ "px"))
 
 
 {-| -}
@@ -87,10 +71,13 @@ widthEach :
     }
     -> Attribute msg
 widthEach border =
-    Two.Attribute
-        { flag = Flag.borderWidth
-        , attr = Two.BorderWidth border
-        }
+    Two.attributeWith Flag.borderWidth <|
+        Attr.style "border-width"
+            ((String.fromInt border.top ++ "px ")
+                ++ (String.fromInt border.right ++ "px ")
+                ++ (String.fromInt border.bottom ++ "px ")
+                ++ (String.fromInt border.left ++ "px")
+            )
 
 
 {-| -}

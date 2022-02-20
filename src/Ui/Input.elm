@@ -1079,11 +1079,6 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
                                 :: els.input
                     }
 
-        Two.BorderWidth _ ->
-            { els
-                | inputParent = attr :: els.inputParent
-            }
-
         Two.Nearby _ _ ->
             { els | inputParent = attr :: els.inputParent }
 

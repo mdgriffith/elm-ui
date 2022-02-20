@@ -839,9 +839,8 @@ mapAttr uiFn fn (Attribute attr) =
                 Padding edges ->
                     Padding edges
 
-                BorderWidth edges ->
-                    BorderWidth edges
-
+                -- BorderWidth edges ->
+                --     BorderWidth edges
                 Attr a ->
                     Attr (Attr.map fn a)
 
@@ -951,7 +950,6 @@ type Attr msg
     | FontSize Int
     | Spacing Int Int
     | Padding Edges
-    | BorderWidth Edges
     | TransformPiece TransformSlot Float
       -- invalidation key and literal class
     | Class String
@@ -1470,6 +1468,16 @@ type Children msg
     | Keyed (List ( String, Html.Html msg ))
 
 
+{-| We track a number of things in the function and it can be difficult to remember exactly why.
+
+A lot of these questions essentially fall to, "do we do the work or do we count on the browser to do it."
+
+So, let's try to give an overview of all the systems:
+
+  - In order to render Font.gradient, (possibly) TextColumn spacing, and Responsive.value/fluid, we need to maintain css variables
+    This means detecting if we need to render a css variable, and at the end, rerender styles as a `Property` instead of `style`.
+
+-}
 renderAttrs :
     BitField.Bits Bits.Inheritance
     -> BitField.Bits Bits.Inheritance
@@ -1492,25 +1500,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
             let
                 encoded =
                     myBits
-
-                renderedChildren =
-                    case children of
-                        ElemChildren elems nearby ->
-                            Children <|
-                                (List.map (unwrap encoded) nearby.behind
-                                    ++ List.map (unwrap encoded) elems
-                                    ++ List.map (unwrap encoded) nearby.inFront
-                                )
-
-                        ElemKeyed keyedElems nearby ->
-                            Keyed <|
-                                List.map
-                                    (unwrapKeyed encoded)
-                                    nearby.behind
-                                    ++ List.map (unwrapKeyed encoded) keyedElems
-                                    ++ List.map
-                                        (unwrapKeyed encoded)
-                                        nearby.inFront
 
                 attrsWithParentSpacing =
                     if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
@@ -1633,6 +1622,67 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                 spacingY =
                     BitField.get Bits.spacingY myBits
 
+                attrsWithWidthFill =
+                    if Flag.present Flag.width has then
+                        -- we know we've set the width to fill
+                        attributes
+
+                    else if
+                        not
+                            (Flag.present Flag.borderWidth has
+                                || Flag.present Flag.background has
+                                || Flag.present Flag.event has
+                            )
+                            && not (BitField.has Bits.isRow parentBits)
+                    then
+                        Attr.class Style.classes.widthFill
+                            :: attributes
+
+                    else
+                        -- we are not widthFill, we set it to widthContent
+                        Attr.class Style.classes.widthContent
+                            :: attributes
+
+                finalAttrs =
+                    if Flag.present Flag.height has then
+                        -- we know we've set the width to fill
+                        attrsWithWidthFill
+
+                    else if
+                        not
+                            (Flag.present Flag.borderWidth has
+                                || Flag.present Flag.background has
+                                || Flag.present Flag.event has
+                            )
+                            && BitField.has Bits.isRow parentBits
+                    then
+                        Attr.class Style.classes.heightFill
+                            :: attrsWithWidthFill
+
+                    else
+                        Attr.class Style.classes.heightContent
+                            :: attrsWithWidthFill
+
+                {- RENDER NEARBY CHILDREN -}
+                renderedChildren =
+                    case children of
+                        ElemChildren elems nearby ->
+                            Children <|
+                                (List.map (unwrap encoded) nearby.behind
+                                    ++ List.map (unwrap encoded) elems
+                                    ++ List.map (unwrap encoded) nearby.inFront
+                                )
+
+                        ElemKeyed keyedElems nearby ->
+                            Keyed <|
+                                List.map
+                                    (unwrapKeyed encoded)
+                                    nearby.behind
+                                    ++ List.map (unwrapKeyed encoded) keyedElems
+                                    ++ List.map
+                                        (unwrapKeyed encoded)
+                                        nearby.inFront
+
                 finalChildren =
                     case renderedChildren of
                         Keyed keyedChilds ->
@@ -1684,54 +1734,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                                     else
                                         renderedChildren
-
-                attrsWithPlaceholder =
-                    if Flag.present Flag.id has then
-                        Attr.class "ui-placeholder" :: attributes
-
-                    else
-                        attributes
-
-                attrsWithWidthFill =
-                    if Flag.present Flag.width has then
-                        -- we know we've set the width to fill
-                        attrsWithPlaceholder
-
-                    else if
-                        not
-                            (Flag.present Flag.borderWidth has
-                                || Flag.present Flag.background has
-                                || Flag.present Flag.event has
-                            )
-                            && not (BitField.has Bits.isRow parentBits)
-                    then
-                        Attr.class Style.classes.widthFill
-                            :: attrsWithPlaceholder
-
-                    else
-                        -- we are not widthFill, we set it to widthContent
-                        Attr.class Style.classes.widthContent
-                            :: attrsWithPlaceholder
-
-                finalAttrs =
-                    if Flag.present Flag.height has then
-                        -- we know we've set the width to fill
-                        attrsWithPlaceholder
-
-                    else if
-                        not
-                            (Flag.present Flag.borderWidth has
-                                || Flag.present Flag.background has
-                                || Flag.present Flag.event has
-                            )
-                            && BitField.has Bits.isRow parentBits
-                    then
-                        Attr.class Style.classes.heightFill
-                            :: attrsWithWidthFill
-
-                    else
-                        Attr.class Style.classes.heightContent
-                            :: attrsWithWidthFill
             in
             { asLink = Flag.present Flag.isLink has
             , attrs =
@@ -1999,15 +2001,12 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             remain
 
                     Padding padding ->
+                        -- This is tracked because we're doing something weird with Input rendering.
+                        -- Myabe it's not necessary if we get smarter about how the Text input is rendered?
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontSize = details.fontSize
-                            , padding = padding
-                            , borders = details.borders
-                            , transform = details.transform
-                            , animEvents = details.animEvents
-                            }
+                            details
                             children
                             (Flag.add flag has)
                             (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
@@ -2021,37 +2020,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                         ++ (String.fromInt padding.right ++ "px ")
                                         ++ (String.fromInt padding.bottom ++ "px ")
                                         ++ (String.fromInt padding.left ++ "px")
-                                    )
-                                    :: htmlAttrs
-                            )
-                            classes
-                            vars
-                            remain
-
-                    BorderWidth borders ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            { fontSize =
-                                details.fontSize
-                            , padding = details.padding
-                            , borders = borders
-                            , transform = details.transform
-                            , animEvents = details.animEvents
-                            }
-                            children
-                            (Flag.add flag has)
-                            (if borders.top == borders.right && borders.top == borders.left && borders.top == borders.bottom then
-                                Attr.style "border-width"
-                                    (String.fromInt borders.top ++ "px")
-                                    :: htmlAttrs
-
-                             else
-                                Attr.style "border-width"
-                                    ((String.fromInt borders.top ++ "px ")
-                                        ++ (String.fromInt borders.right ++ "px  ")
-                                        ++ (String.fromInt borders.bottom ++ "px ")
-                                        ++ (String.fromInt borders.left ++ "px")
                                     )
                                     :: htmlAttrs
                             )
@@ -2125,9 +2093,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                     Transition2 { toMsg, trigger, css } ->
                         let
-                            _ =
-                                Debug.log "TRANSITION2" css
-
                             triggerClass =
                                 triggerName trigger
 
@@ -2205,7 +2170,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             children
                             (Flag.add Flag.id has)
                             (Attr.id (toCssId id) :: htmlAttrs)
-                            ("on-rendered " ++ toCssClass id ++ " " ++ classes)
+                            ("on-rendered ui-placeholder " ++ toCssClass id ++ " " ++ classes)
                             vars
                             remain
 
