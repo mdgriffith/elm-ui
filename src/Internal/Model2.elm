@@ -1108,9 +1108,6 @@ emptyDetails =
     , fontSize = -1
     , transform = Nothing
     , animEvents = []
-    , hover = Nothing
-    , focus = Nothing
-    , active = Nothing
     }
 
 
@@ -1278,24 +1275,6 @@ type alias Details msg =
     , fontSize : Int
     , transform : Maybe Transform
     , animEvents : List (Json.Decoder msg)
-    , hover :
-        Maybe
-            { toMsg : Msg msg -> msg
-            , class : String
-            , transitions : List TransitionDetails
-            }
-    , focus :
-        Maybe
-            { toMsg : Msg msg -> msg
-            , class : String
-            , transitions : List TransitionDetails
-            }
-    , active :
-        Maybe
-            { toMsg : Msg msg -> msg
-            , class : String
-            , transitions : List TransitionDetails
-            }
     }
 
 
@@ -1553,18 +1532,14 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         htmlAttrs
 
                 attrsWithTransform =
-                    if Flag.present Flag.transform has then
-                        case details.transform of
-                            Nothing ->
-                                attrsWithParentSpacing
+                    case details.transform of
+                        Nothing ->
+                            attrsWithParentSpacing
 
-                            Just trans ->
-                                Attr.style "transform"
-                                    (transformToString trans)
-                                    :: attrsWithParentSpacing
-
-                    else
-                        attrsWithParentSpacing
+                        Just trans ->
+                            Attr.style "transform"
+                                (transformToString trans)
+                                :: attrsWithParentSpacing
 
                 adjustmentNotSet =
                     not (Flag.present Flag.fontAdjustment has)
@@ -1631,54 +1606,15 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             )
                             :: attrsWithTransform
 
-                attrsWithHover =
-                    case details.hover of
-                        Nothing ->
-                            attrsWithFontSize
-
-                        Just transition ->
-                            Events.onMouseEnter
-                                (transition.toMsg
-                                    (Trans Hovered transition.class transition.transitions)
-                                )
-                                :: Attr.class transition.class
-                                :: attrsWithFontSize
-
-                attrsWithFocus =
-                    case details.focus of
-                        Nothing ->
-                            attrsWithHover
-
-                        Just transition ->
-                            Events.onFocus
-                                (transition.toMsg
-                                    (Trans Focused transition.class transition.transitions)
-                                )
-                                :: Attr.class transition.class
-                                :: attrsWithHover
-
-                attrsWithActive =
-                    case details.active of
-                        Nothing ->
-                            attrsWithFocus
-
-                        Just transition ->
-                            Events.onMouseDown
-                                (transition.toMsg
-                                    (Trans Pressed transition.class transition.transitions)
-                                )
-                                :: Attr.class transition.class
-                                :: attrsWithFocus
-
                 attrsWithAnimations =
                     case details.animEvents of
                         [] ->
-                            attrsWithActive
+                            attrsWithFontSize
 
                         animEvents ->
                             Events.on "animationstart"
                                 (Json.oneOf details.animEvents)
-                                :: attrsWithActive
+                                :: attrsWithFontSize
 
                 attributes =
                     case vars of
@@ -1835,9 +1771,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             , borders = details.borders
                             , transform = details.transform
                             , animEvents = details.animEvents
-                            , hover = details.hover
-                            , focus = details.focus
-                            , active = details.active
                             }
                             children
                             has
@@ -1881,9 +1814,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             , borders = details.borders
                             , transform = details.transform
                             , animEvents = details.animEvents
-                            , hover = details.hover
-                            , focus = details.focus
-                            , active = details.active
                             }
                             children
                             (case font.adjustments of
@@ -2077,9 +2007,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             , borders = details.borders
                             , transform = details.transform
                             , animEvents = details.animEvents
-                            , hover = details.hover
-                            , focus = details.focus
-                            , active = details.active
                             }
                             children
                             (Flag.add flag has)
@@ -2111,9 +2038,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             , borders = borders
                             , transform = details.transform
                             , animEvents = details.animEvents
-                            , hover = details.hover
-                            , focus = details.focus
-                            , active = details.active
                             }
                             children
                             (Flag.add flag has)
@@ -2145,9 +2069,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             , borders = details.borders
                             , transform = details.transform
                             , animEvents = details.animEvents
-                            , hover = details.hover
-                            , focus = details.focus
-                            , active = details.active
                             }
                             children
                             (Flag.add flag has)
@@ -2182,9 +2103,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             , borders = details.borders
                             , transform = details.transform
                             , animEvents = details.animEvents
-                            , hover = details.hover
-                            , focus = details.focus
-                            , active = details.active
                             }
                             children
                             (Flag.add flag has)
@@ -2283,9 +2201,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             , borders = details.borders
                             , transform = details.transform
                             , animEvents = event :: details.animEvents
-                            , hover = details.hover
-                            , focus = details.focus
-                            , active = details.active
                             }
                             children
                             (Flag.add Flag.id has)
