@@ -391,23 +391,6 @@ Input.slider
 , Ui.centerY
 , Background.color grey
 , Border.rounded 2
-][ Ui.width Ui.fill
-, Ui.height (Ui.px 2)
-, Ui.centerY
-, Background.color grey
-, Border.rounded 2
-]
-Ui.none
-)
-][ Ui.height (Ui.px 30)
--- Here is where we're creating/styling the "track"
-, Ui.behindContent
-(Ui.el
-[ Ui.width Ui.fill
-, Ui.height (Ui.px 2)
-, Ui.centerY
-, Background.color grey
-, Border.rounded 2
 ]
 Ui.none
 )
@@ -1159,9 +1142,6 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
             { els
                 | parent = attr :: els.parent
             }
-
-        Two.WhenAll _ _ _ _ ->
-            { els | parent = attr :: els.parent }
 
         Two.Animated _ _ ->
             { els | parent = attr :: els.parent }

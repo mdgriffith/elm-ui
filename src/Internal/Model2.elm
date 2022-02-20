@@ -871,13 +871,6 @@ mapAttr uiFn fn (Attribute attr) =
                         , css = t.css
                         }
 
-                WhenAll toMsg trigger classStr props ->
-                    WhenAll
-                        uiFn
-                        trigger
-                        classStr
-                        props
-
                 Animated toMsg id ->
                     Animated uiFn id
         }
@@ -968,7 +961,6 @@ type Attr msg
     | ClassAndStyle String String String
     | ClassAndVarStyle String String
     | Nearby Location (Element msg)
-    | WhenAll (Msg msg -> msg) Trigger String (List Animated)
     | Transition2
         { toMsg : Msg msg -> msg
         , trigger : Trigger
@@ -1616,7 +1608,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             fontHeight =
                                 parentBits
                                     |> BitField.getPercentage Bits.fontHeight
-                                    |> Debug.log "get font height2"
                         in
                         Attr.style "font-size"
                             (String.fromFloat
@@ -1696,7 +1687,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 :: attrsWithAnimations
 
                         _ ->
-                            Attr.property "style" (Json.Encode.string vars)
+                            Attr.property "style"
+                                (Json.Encode.string
+                                    vars
+                                )
                                 :: Attr.class classes
                                 :: attrsWithAnimations
 
@@ -1814,7 +1808,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                 alwaysRender =
                     case flag of
                         Flag.Flag f ->
-                            f - 0 == 0
+                            f == 0
 
                 previouslyRendered =
                     if alwaysRender then
@@ -1823,7 +1817,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                     else
                         Flag.present flag has
             in
-            if not (not previouslyRendered) then
+            if previouslyRendered then
                 renderAttrs parentBits myBits layout details children has htmlAttrs classes vars remain
 
             else
@@ -2246,48 +2240,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 :: htmlAttrs
                             )
                             (triggerClass ++ " " ++ styleClass ++ " " ++ classes)
-                            vars
-                            remain
-
-                    WhenAll toMsg trigger classStr props ->
-                        let
-                            triggerClass =
-                                triggerName trigger
-
-                            event =
-                                Json.field "animationName" Json.string
-                                    |> Json.andThen
-                                        (\name ->
-                                            if name == triggerClass then
-                                                Json.succeed
-                                                    (toMsg
-                                                        (Animate Nothing trigger classStr props)
-                                                    )
-
-                                            else
-                                                Json.fail "Nonmatching animation"
-                                        )
-                        in
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            { fontSize =
-                                details.fontSize
-                            , padding = details.padding
-                            , borders = details.borders
-                            , transform = details.transform
-                            , animEvents = event :: details.animEvents
-                            , hover =
-                                details.focus
-                            , focus =
-                                details.focus
-                            , active =
-                                details.active
-                            }
-                            children
-                            has
-                            htmlAttrs
-                            (classStr ++ " " ++ triggerClass ++ " " ++ classes)
                             vars
                             remain
 
