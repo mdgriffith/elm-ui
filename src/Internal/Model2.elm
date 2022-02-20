@@ -1101,9 +1101,7 @@ emptyEdges =
 
 emptyDetails : Details msg
 emptyDetails =
-    { padding = emptyEdges
-    , borders = emptyEdges
-    , fontSize = -1
+    { fontSize = -1
     , transform = Nothing
     , animEvents = []
     }
@@ -1268,9 +1266,7 @@ type alias Edges =
 
 
 type alias Details msg =
-    { padding : Edges
-    , borders : Edges
-    , fontSize : Int
+    { fontSize : Int
     , transform : Maybe Transform
     , animEvents : List (Json.Decoder msg)
     }
@@ -1619,9 +1615,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 :: Attr.class classes
                                 :: attrsWithAnimations
 
-                spacingY =
-                    BitField.get Bits.spacingY myBits
-
                 attrsWithWidthFill =
                     if Flag.present Flag.width has then
                         -- we know we've set the width to fill
@@ -1682,6 +1675,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                     ++ List.map
                                         (unwrapKeyed encoded)
                                         nearby.inFront
+
+                spacingY =
+                    BitField.get Bits.spacingY myBits
 
                 finalChildren =
                     case renderedChildren of
@@ -1769,8 +1765,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             layout
                             { fontSize =
                                 size
-                            , padding = details.padding
-                            , borders = details.borders
                             , transform = details.transform
                             , animEvents = details.animEvents
                             }
@@ -1812,8 +1806,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             layout
                             { fontSize =
                                 details.fontSize
-                            , padding = details.padding
-                            , borders = details.borders
                             , transform = details.transform
                             , animEvents = details.animEvents
                             }
@@ -2031,13 +2023,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontSize =
-                                details.fontSize
-                            , padding = details.padding
-                            , borders = details.borders
-                            , transform = details.transform
-                            , animEvents = details.animEvents
-                            }
+                            details
                             children
                             (Flag.add flag has)
                             (if i == 0 then
@@ -2065,13 +2051,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontSize =
-                                details.fontSize
-                            , padding = details.padding
-                            , borders = details.borders
-                            , transform = details.transform
-                            , animEvents = details.animEvents
-                            }
+                            details
                             children
                             (Flag.add flag has)
                             (if i == 0 then
@@ -2162,8 +2142,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             layout
                             { fontSize =
                                 details.fontSize
-                            , padding = details.padding
-                            , borders = details.borders
                             , transform = details.transform
                             , animEvents = event :: details.animEvents
                             }
