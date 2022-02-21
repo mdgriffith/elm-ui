@@ -104,6 +104,7 @@ classes =
     , focus = "fcs"
     , focusedWithin = "focus-within"
     , active = "atv"
+    , focusable = "tb0"
 
     --scrollbars
     , scrollbars = "sb"
@@ -371,10 +372,15 @@ explainer =
 
 """
 
+
+
 {-
 
 -}
-transitionPlaceholders = """
+
+
+transitionPlaceholders =
+    """
 .ui-placeholder {
     visibility: hidden;
     border: 0px !important;
@@ -397,7 +403,6 @@ transitionPlaceholders = """
 
 
 """
-
 
 
 
@@ -570,19 +575,20 @@ baseSheet =
     , Class (dot classes.any ++ ":focus")
         [ Prop "outline" "none"
         ]
-    
+    , Class (dot classes.focusable)
+        [ Prop "tabindex" "0"
+        ]
     , Class (dot classes.root)
         [ Prop "width" "100%"
         , Prop "height" "auto"
         , Prop "min-height" "100%"
         , Prop "z-index" "0"
         , Prop "line-height" "1"
-        
+
         -- defaults
         , Prop "font-size" "16px"
         , Prop "font-family" "\"Open Sans\", sans-serif"
         , Prop "color" "#000"
-      
 
         -- basics for EB Garamond
         --font-size-factor: 1.4184397163120566;
@@ -590,7 +596,6 @@ baseSheet =
         --vacuum-bottom: -0.24851250000000005;
         --visible-top: 0;
         --visible-bottom: 0.29000000000000004;
-        
         , Descriptor
             (dot classes.any
                 -- ++ dot classes.single
@@ -607,7 +612,6 @@ baseSheet =
                 , Prop "z-index" "20"
                 ]
             ]
-        
         ]
     , Class (dot classes.nearby)
         [ Prop "position" "relative"
@@ -716,7 +720,6 @@ baseSheet =
                                     ]
                                 ]
         ]
-        
     , Class (dot classes.any)
         [ Prop "position" "relative"
         , Prop "border" "none"
@@ -746,17 +749,18 @@ baseSheet =
         , Prop "text-decoration" "none"
         , Prop "font-style" "inherit"
         , Batch animationTriggers
-        , Descriptor (dot classes.stickyTop) 
+        , Descriptor (dot classes.stickyTop)
             [ Prop "position" "sticky"
             , Prop "top" "0"
             ]
-        , Descriptor (dot classes.stickyBottom) 
+        , Descriptor (dot classes.stickyBottom)
             [ Prop "position" "sticky"
+
             -- there seems to be a weird issue where there is a 1px gap
             -- This solves it, but makes everyone nervous.
             , Prop "bottom" "-1px"
             ]
-        , Descriptor (dot classes.stickyLeft) 
+        , Descriptor (dot classes.stickyLeft)
             [ Prop "position" "sticky"
             , Prop "left" "0"
             ]
@@ -902,10 +906,11 @@ baseSheet =
             ]
         , Descriptor (dot classes.text)
             [ --Prop "white-space" "pre"
-            -- , 
-            Prop "display" "inline-block"
+              -- ,
+              Prop "display" "inline-block"
             , Prop "width" "100%"
             , Prop "overflow" "hidden"
+
             -- , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
             -- , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-bottom) - var(--visible-bottom)) ))"
             -- , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
@@ -1450,12 +1455,13 @@ baseSheet =
         ]
     ]
 
+
 animationTriggers =
     [ Descriptor ".on-hovered:hover"
-        [ Prop "animation" "on-hovered 0ms" 
+        [ Prop "animation" "on-hovered 0ms"
         ]
     , Descriptor ".on-focused:focus"
-        [ Prop "animation" "on-focused 0ms" 
+        [ Prop "animation" "on-focused 0ms"
         ]
     , Descriptor ".on-pressed:active"
         [ Prop "animation" "on-pressed 0ms"
@@ -1469,6 +1475,7 @@ animationTriggers =
 elDescription =
     [ Prop "display" "flex"
     , Prop "flex-direction" "column"
+
     -- , Prop "white-space" "pre"
     , Descriptor (dot classes.hasBehind)
         [ Prop "z-index" "0"

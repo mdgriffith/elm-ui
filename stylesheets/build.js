@@ -75,6 +75,11 @@ const flags = [
 const base = `import Bitwise
 
 
+value : Field -> Int
+value (Field int) =
+    int
+
+
 viewBits : Int -> String
 viewBits i =
     String.fromInt i ++ ":" ++ viewBitsHelper i 32
