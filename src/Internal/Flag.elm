@@ -226,3 +226,8 @@ event =
     flag 28
 
 
+hasCssVars : Flag
+hasCssVars =
+    flag 29
+
+

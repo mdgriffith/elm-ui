@@ -1357,19 +1357,39 @@ element layout attrs children =
                         -- the "" below is the starting class
                         -- though we want some defaults based on the layout
                         (contextClasses layout)
-                        ""
                         (List.reverse attrs)
+
+                finalAttrs =
+                    if Flag.present Flag.hasCssVars rendered.fields then
+                        let
+                            styleStr =
+                                renderInlineStylesToString
+                                    parentBits
+                                    layout
+                                    rendered.details
+                                    rendered.fields
+                                    ""
+                                    (List.reverse attrs)
+                        in
+                        Attr.property "style"
+                            (Json.Encode.string
+                                styleStr
+                            )
+                            :: rendered.attrs
+
+                    else
+                        rendered.attrs
             in
             case rendered.children of
                 Children finalChildren ->
-                    if rendered.asLink then
-                        Html.a rendered.attrs finalChildren
+                    if Flag.present Flag.isLink rendered.fields then
+                        Html.a finalAttrs finalChildren
 
                     else
-                        Html.div rendered.attrs finalChildren
+                        Html.div finalAttrs finalChildren
 
                 _ ->
-                    Html.div rendered.attrs []
+                    Html.div finalAttrs []
         )
 
 
@@ -1402,19 +1422,39 @@ elementAs toNode layout attrs children =
                         -- the "" below is the starting class
                         -- though we want some defaults based on the layout
                         (contextClasses layout)
-                        ""
                         (List.reverse attrs)
+
+                finalAttrs =
+                    if Flag.present Flag.hasCssVars rendered.fields then
+                        let
+                            styleStr =
+                                renderInlineStylesToString
+                                    parentBits
+                                    layout
+                                    rendered.details
+                                    rendered.fields
+                                    ""
+                                    (List.reverse attrs)
+                        in
+                        Attr.property "style"
+                            (Json.Encode.string
+                                styleStr
+                            )
+                            :: rendered.attrs
+
+                    else
+                        rendered.attrs
             in
             case rendered.children of
                 Children finalChildren ->
-                    if rendered.asLink then
-                        Html.a rendered.attrs finalChildren
+                    if Flag.present Flag.isLink rendered.fields then
+                        Html.a finalAttrs finalChildren
 
                     else
-                        toNode rendered.attrs finalChildren
+                        toNode finalAttrs finalChildren
 
                 _ ->
-                    toNode rendered.attrs []
+                    toNode finalAttrs []
         )
 
 
@@ -1453,23 +1493,43 @@ elementKeyed name layout attrs children =
                         -- the "" below is the starting class
                         -- though we want some defaults based on the layout
                         (contextClasses layout)
-                        ""
                         (List.reverse attrs)
+
+                finalAttrs =
+                    if Flag.present Flag.hasCssVars rendered.fields then
+                        let
+                            styleStr =
+                                renderInlineStylesToString
+                                    parentBits
+                                    layout
+                                    rendered.details
+                                    rendered.fields
+                                    ""
+                                    (List.reverse attrs)
+                        in
+                        Attr.property "style"
+                            (Json.Encode.string
+                                styleStr
+                            )
+                            :: rendered.attrs
+
+                    else
+                        rendered.attrs
             in
             case rendered.children of
                 Keyed finalChildren ->
                     Html.Keyed.node
-                        (if rendered.asLink then
+                        (if Flag.present Flag.isLink rendered.fields then
                             "a"
 
                          else
                             name
                         )
-                        rendered.attrs
+                        finalAttrs
                         finalChildren
 
                 _ ->
-                    Html.div rendered.attrs []
+                    Html.div finalAttrs []
         )
 
 
@@ -1516,20 +1576,17 @@ renderAttrs :
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
     -> String
-    -> String
     -> List (Attribute msg)
     ->
-        { asLink : Bool
+        { fields : Flag.Field
+        , details : Details msg
         , attrs : List (Html.Attribute msg)
         , children : Children msg
         }
-renderAttrs parentBits myBits layout details children has htmlAttrs classes vars attrs =
+renderAttrs parentBits myBits layout details children has htmlAttrs classes attrs =
     case attrs of
         [] ->
             let
-                encoded =
-                    myBits
-
                 attrsWithParentSpacing =
                     if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
                         Attr.style "margin"
@@ -1634,24 +1691,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 (Json.oneOf details.animEvents)
                                 :: attrsWithFontSize
 
-                attributes =
-                    case vars of
-                        "" ->
-                            Attr.class classes
-                                :: attrsWithAnimations
-
-                        _ ->
-                            Attr.property "style"
-                                (Json.Encode.string
-                                    vars
-                                )
-                                :: Attr.class classes
-                                :: attrsWithAnimations
-
                 attrsWithWidthFill =
                     if Flag.present Flag.width has then
                         -- we know we've set the width to fill
-                        attributes
+                        attrsWithAnimations
 
                     else if
                         not
@@ -1662,17 +1705,18 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             && not (BitField.has Bits.isRow parentBits)
                     then
                         Attr.class Style.classes.widthFill
-                            :: attributes
+                            :: attrsWithAnimations
 
                     else
                         -- we are not widthFill, we set it to widthContent
                         Attr.class Style.classes.widthContent
-                            :: attributes
+                            :: attrsWithAnimations
 
                 finalAttrs =
                     if Flag.present Flag.height has then
                         -- we know we've set the width to fill
-                        attrsWithWidthFill
+                        Attr.class classes
+                            :: attrsWithWidthFill
 
                     else if
                         not
@@ -1682,11 +1726,11 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             )
                             && BitField.has Bits.isRow parentBits
                     then
-                        Attr.class Style.classes.heightFill
+                        Attr.class (classes ++ " " ++ Style.classes.heightFill)
                             :: attrsWithWidthFill
 
                     else
-                        Attr.class Style.classes.heightContent
+                        Attr.class (classes ++ " " ++ Style.classes.heightContent)
                             :: attrsWithWidthFill
 
                 {- RENDER NEARBY CHILDREN -}
@@ -1694,19 +1738,19 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                     case children of
                         ElemChildren elems nearby ->
                             Children <|
-                                (List.map (unwrap encoded) nearby.behind
-                                    ++ List.map (unwrap encoded) elems
-                                    ++ List.map (unwrap encoded) nearby.inFront
+                                (List.map (unwrap myBits) nearby.behind
+                                    ++ List.map (unwrap myBits) elems
+                                    ++ List.map (unwrap myBits) nearby.inFront
                                 )
 
                         ElemKeyed keyedElems nearby ->
                             Keyed <|
                                 List.map
-                                    (unwrapKeyed encoded)
+                                    (unwrapKeyed myBits)
                                     nearby.behind
-                                    ++ List.map (unwrapKeyed encoded) keyedElems
+                                    ++ List.map (unwrapKeyed myBits) keyedElems
                                     ++ List.map
-                                        (unwrapKeyed encoded)
+                                        (unwrapKeyed myBits)
                                         nearby.inFront
 
                 spacingY =
@@ -1719,7 +1763,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 AsParagraph ->
                                     Keyed <|
                                         if Flag.present Flag.id has then
-                                            ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: attributes) keyedChilds )
+                                            ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
                                                 :: ( "top-spacer", spacerTop (toFloat spacingY / -2) )
                                                 :: keyedChilds
                                                 ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
@@ -1731,7 +1775,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                                 _ ->
                                     if Flag.present Flag.id has then
-                                        (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: attributes) keyedChilds )
+                                        (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
                                             :: keyedChilds
                                         )
                                             |> Keyed
@@ -1744,7 +1788,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 AsParagraph ->
                                     Children <|
                                         if Flag.present Flag.id has then
-                                            Html.div (Attr.class "ui-movable" :: attributes) childs
+                                            Html.div (Attr.class "ui-movable" :: finalAttrs) childs
                                                 :: spacerTop (toFloat spacingY / -2)
                                                 :: childs
                                                 ++ [ spacerBottom (toFloat spacingY / -2) ]
@@ -1756,7 +1800,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
 
                                 _ ->
                                     if Flag.present Flag.id has then
-                                        (Html.div (Attr.class "ui-movable" :: attributes) childs
+                                        (Html.div (Attr.class "ui-movable" :: finalAttrs) childs
                                             :: childs
                                         )
                                             |> Children
@@ -1764,10 +1808,11 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                     else
                                         renderedChildren
             in
-            { asLink = Flag.present Flag.isLink has
+            { fields = has
             , attrs =
                 finalAttrs
             , children = finalChildren
+            , details = details
             }
 
         (Attribute { flag, attr }) :: remain ->
@@ -1785,12 +1830,12 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                         Flag.present flag has
             in
             if previouslyRendered then
-                renderAttrs parentBits myBits layout details children has htmlAttrs classes vars remain
+                renderAttrs parentBits myBits layout details children has htmlAttrs classes remain
 
             else
                 case attr of
                     NoAttribute ->
-                        renderAttrs parentBits myBits layout details children has htmlAttrs classes vars remain
+                        renderAttrs parentBits myBits layout details children has htmlAttrs classes remain
 
                     FontSize size ->
                         renderAttrs parentBits
@@ -1805,7 +1850,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             has
                             htmlAttrs
                             classes
-                            vars
                             remain
 
                     Font font ->
@@ -1854,7 +1898,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 :: withFeatures
                             )
                             classes
-                            vars
                             remain
 
                     TransformPiece slot val ->
@@ -1866,7 +1909,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             (Flag.add flag has)
                             htmlAttrs
                             classes
-                            vars
                             remain
 
                     Attr htmlAttr ->
@@ -1878,7 +1920,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             (Flag.add flag has)
                             (htmlAttr :: htmlAttrs)
                             classes
-                            vars
                             remain
 
                     OnPress msg ->
@@ -1902,7 +1943,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 ++ " "
                                 ++ classes
                             )
-                            vars
                             remain
 
                     OnKey handler ->
@@ -1916,7 +1956,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 :: htmlAttrs
                             )
                             (Style.classes.focusable ++ " " ++ classes)
-                            vars
                             remain
 
                     Link link ->
@@ -1944,7 +1983,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 :: htmlAttrs
                             )
                             classes
-                            vars
                             remain
 
                     Style styleDetails ->
@@ -1957,7 +1995,14 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             layout
                             details
                             children
-                            (Flag.add flag has)
+                            (if isVar then
+                                has
+                                    |> Flag.add flag
+                                    |> Flag.add Flag.hasCssVars
+
+                             else
+                                Flag.add flag has
+                            )
                             (if isVar then
                                 htmlAttrs
 
@@ -1971,12 +2016,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 newClass ->
                                     newClass ++ " " ++ classes
                             )
-                            (if isVar then
-                                vars ++ styleDetails.styleName ++ ":" ++ styleDetails.styleVal ++ ";"
-
-                             else
-                                vars
-                            )
                             remain
 
                     Class str ->
@@ -1988,7 +2027,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             (Flag.add flag has)
                             htmlAttrs
                             (str ++ " " ++ classes)
-                            vars
                             remain
 
                     Nearby location elem ->
@@ -2000,7 +2038,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             has
                             htmlAttrs
                             classes
-                            vars
                             remain
 
                     Spacing x y ->
@@ -2032,7 +2069,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                     :: htmlAttrs
                             )
                             (Style.classes.spacing ++ " " ++ classes)
-                            vars
                             remain
 
                     Padding padding ->
@@ -2059,7 +2095,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                     :: htmlAttrs
                             )
                             classes
-                            vars
                             remain
 
                     HeightFill i ->
@@ -2069,25 +2104,22 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             details
                             children
                             (Flag.add flag has)
-                            (if i == 0 then
-                                htmlAttrs
-
-                             else if i == 1 then
-                                Attr.class Style.classes.heightFill
-                                    :: htmlAttrs
-
-                             else if not (BitField.has Bits.isRow parentBits) then
-                                -- we're within a column, our flex-grow can be set safely
-                                Attr.class Style.classes.heightFill
-                                    :: Attr.style "flex-grow" (String.fromInt (i * 100000))
+                            -- we're in a column
+                            (if i > 1 && not (BitField.has Bits.isRow parentBits) then
+                                Attr.style "flex-grow" (String.fromInt (i * 100000))
                                     :: htmlAttrs
 
                              else
-                                Attr.class Style.classes.heightFill
-                                    :: htmlAttrs
+                                htmlAttrs
                             )
-                            classes
-                            vars
+                            (if i <= 0 then
+                                classes
+
+                             else
+                                Style.classes.heightFill
+                                    ++ " "
+                                    ++ classes
+                            )
                             remain
 
                     WidthFill i ->
@@ -2097,21 +2129,21 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             details
                             children
                             (Flag.add flag has)
-                            (if i == 0 then
-                                htmlAttrs
-
-                             else if BitField.has Bits.isRow parentBits then
-                                -- we're within a row, our flex-grow can be set
-                                Attr.class Style.classes.widthFill
-                                    :: Attr.style "flex-grow" (String.fromInt (i * 100000))
+                            (if i > 1 && BitField.has Bits.isRow parentBits then
+                                Attr.style "flex-grow" (String.fromInt (i * 100000))
                                     :: htmlAttrs
 
                              else
-                                Attr.class Style.classes.widthFill
-                                    :: htmlAttrs
+                                htmlAttrs
                             )
-                            classes
-                            vars
+                            (if i <= 0 then
+                                classes
+
+                             else
+                                Style.classes.widthFill
+                                    ++ " "
+                                    ++ classes
+                            )
                             remain
 
                     Transition2 { toMsg, trigger, css } ->
@@ -2146,22 +2178,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                                 :: htmlAttrs
                             )
                             (triggerClass ++ " " ++ styleClass ++ " " ++ classes)
-                            vars
                             remain
 
                     Animated toMsg id ->
-                        -- if Flag.present Flag.id has then
-                        --     renderAttrs parentBits
-                        --         layout
-                        --         details
-                        --         children
-                        --         has
-                        --         htmlAttrs
-                        --         classes
-                        --         nearby
-                        --         vars
-                        --         remain
-                        -- else
                         let
                             event =
                                 Json.map2
@@ -2192,6 +2211,232 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             (Flag.add Flag.id has)
                             (Attr.id (toCssId id) :: htmlAttrs)
                             ("on-rendered ui-placeholder " ++ toCssClass id ++ " " ++ classes)
+                            remain
+
+
+{-| In order to make css variables work, we need to gather all styles into a `Attribute.property "style"`
+
+However, that method is slower than calling `Html.Attributes.style` directly,
+because it requires the browser to parse the string instead of setting styles directly via style.setProperty or whatever.
+
+This does mean we only want to use css variables sparingly.
+
+-}
+renderInlineStylesToString :
+    BitField.Bits Bits.Inheritance
+    -> Layout
+    -> Details msg
+    -> Flag.Field
+    -> String
+    -> List (Attribute msg)
+    -> String
+renderInlineStylesToString parentBits layout details has vars attrs =
+    case attrs of
+        [] ->
+            let
+                varsWithParentSpacing =
+                    if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
+                        "margin: "
+                            ++ ((parentBits
+                                    |> BitField.get Bits.spacingY
+                                    |> String.fromInt
+                                )
+                                    ++ "px "
+                                    ++ (parentBits
+                                            |> BitField.get Bits.spacingX
+                                            |> String.fromInt
+                                       )
+                                    ++ "px;"
+                               )
+                            ++ vars
+
+                    else
+                        vars
+
+                varsWithTransform =
+                    case details.transform of
+                        Nothing ->
+                            varsWithParentSpacing
+
+                        Just trans ->
+                            "transform: "
+                                ++ transformToString trans
+                                ++ ";"
+                                ++ varsWithParentSpacing
+
+                adjustmentNotSet =
+                    not (Flag.present Flag.fontAdjustment has)
+
+                {-
+                   no fontsize or adjustment -> skip
+                   if fontsize is set, not adjustment:
+                       -> set fontsize px
+
+                   adjsutment, not fontsize
+                       -> set font size (em
+                   if both are set
+                       -> fontsize px
+
+
+                -}
+                varsWithFontSize =
+                    if details.fontSize == -1 && adjustmentNotSet then
+                        -- no fontsize or adjustment set
+                        varsWithTransform
+
+                    else if adjustmentNotSet then
+                        -- font size is set, not adjustment
+                        -- set font size, adjust via inherited value
+                        let
+                            height =
+                                parentBits
+                                    |> BitField.getPercentage Bits.fontHeight
+                        in
+                        "font-size: "
+                            ++ (String.fromFloat
+                                    (toFloat details.fontSize * (1 / height))
+                                    ++ "px;"
+                               )
+                            ++ varsWithTransform
+
+                    else if details.fontSize /= -1 then
+                        -- a font size is set as well as an adjustment
+                        -- set font size from details
+                        let
+                            fontHeight =
+                                parentBits
+                                    |> BitField.getPercentage Bits.fontHeight
+                        in
+                        "font-size"
+                            ++ (String.fromFloat
+                                    (toFloat details.fontSize * (1 / fontHeight))
+                                    ++ "px;"
+                               )
+                            ++ varsWithTransform
+
+                    else
+                        -- a font size is NOT set, but we have an adjustment
+                        -- operate on `em`
+                        let
+                            fontHeight =
+                                parentBits
+                                    |> BitField.getPercentage Bits.fontHeight
+                        in
+                        "font-size: "
+                            ++ (String.fromFloat
+                                    (1 / fontHeight)
+                                    ++ "em;"
+                               )
+                            ++ varsWithTransform
+            in
+            varsWithFontSize
+
+        (Attribute { flag, attr }) :: remain ->
+            let
+                alwaysRender =
+                    case flag of
+                        Flag.Flag f ->
+                            f == 0
+
+                previouslyRendered =
+                    if alwaysRender then
+                        False
+
+                    else
+                        Flag.present flag has
+            in
+            if previouslyRendered then
+                renderInlineStylesToString parentBits layout details has vars remain
+
+            else
+                case attr of
+                    Style styleDetails ->
+                        renderInlineStylesToString parentBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (vars ++ styleDetails.styleName ++ ":" ++ styleDetails.styleVal ++ ";")
+                            remain
+
+                    Spacing x y ->
+                        renderInlineStylesToString parentBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (if layout == AsParagraph then
+                                vars
+                                    ++ "line-height:"
+                                    ++ ("calc(1em + " ++ String.fromInt y ++ "px;")
+
+                             else
+                                vars
+                                    ++ "gap:"
+                                    ++ (String.fromInt y
+                                            ++ "px "
+                                            ++ String.fromInt x
+                                            ++ "px;"
+                                       )
+                            )
+                            remain
+
+                    Padding padding ->
+                        renderInlineStylesToString parentBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
+                                vars
+                                    ++ "padding: "
+                                    ++ (String.fromInt padding.top ++ "px;")
+
+                             else
+                                vars
+                                    ++ "padding: "
+                                    ++ ((String.fromInt padding.top ++ "px ")
+                                            ++ (String.fromInt padding.right ++ "px ")
+                                            ++ (String.fromInt padding.bottom ++ "px ")
+                                            ++ (String.fromInt padding.left ++ "px;")
+                                       )
+                            )
+                            remain
+
+                    HeightFill i ->
+                        renderInlineStylesToString parentBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (if i > 1 && not (BitField.has Bits.isRow parentBits) then
+                                vars
+                                    ++ "flex-grow: "
+                                    ++ String.fromInt (i * 100000)
+                                    ++ ";"
+
+                             else
+                                vars
+                            )
+                            remain
+
+                    WidthFill i ->
+                        renderInlineStylesToString parentBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (if i > 1 && BitField.has Bits.isRow parentBits then
+                                vars
+                                    ++ "flex-grow: "
+                                    ++ String.fromInt (i * 100000)
+                                    ++ ";"
+
+                             else
+                                vars
+                            )
+                            remain
+
+                    _ ->
+                        renderInlineStylesToString parentBits
+                            layout
+                            details
+                            (Flag.add flag has)
                             vars
                             remain
 

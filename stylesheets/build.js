@@ -70,6 +70,7 @@ const flags = [
   "isLink",
   "background",
   "event",
+  "hasCssVars",
 ];
 
 const base = `import Bitwise
