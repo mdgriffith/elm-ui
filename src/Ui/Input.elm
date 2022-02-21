@@ -325,7 +325,7 @@ checkbox attrs { label, icon, checked, onChange } =
 
                     else
                         Nothing
-            , Two.attribute (Html.Attributes.tabindex 0)
+            , Two.class Style.classes.focusable
             , Ui.pointer
             , Ui.alignLeft
             , Ui.width Ui.fill
@@ -626,11 +626,9 @@ viewThumb factor thumbAttributes =
         , Ui.centerY
         ]
         [ Ui.el
-            [ Ui.htmlAttribute
-                (Html.Attributes.style
-                    "flex-grow"
-                    (String.fromInt (round (factor * 5000)))
-                )
+            [ Two.style
+                "flex-grow"
+                (String.fromInt (round (factor * 5000)))
             ]
             Ui.none
         , Ui.el
@@ -639,11 +637,9 @@ viewThumb factor thumbAttributes =
             )
             Ui.none
         , Ui.el
-            [ Ui.htmlAttribute
-                (Html.Attributes.style
-                    "flex-grow"
-                    (String.fromInt (round ((1 - factor) * 5000)))
-                )
+            [ Two.style
+                "flex-grow"
+                (String.fromInt (round ((1 - factor) * 5000)))
             ]
             Ui.none
         ]
@@ -656,11 +652,9 @@ viewVerticalThumb factor thumbAttributes =
         , Ui.centerX
         ]
         [ Ui.el
-            [ Ui.htmlAttribute
-                (Html.Attributes.style
-                    "flex-grow"
-                    (String.fromInt (round ((1 - factor) * 5000)))
-                )
+            [ Two.style
+                "flex-grow"
+                (String.fromInt (round ((1 - factor) * 5000)))
             ]
             Ui.none
         , Ui.el
@@ -669,11 +663,9 @@ viewVerticalThumb factor thumbAttributes =
             )
             Ui.none
         , Ui.el
-            [ Ui.htmlAttribute
-                (Html.Attributes.style
-                    "flex-grow"
-                    (String.fromInt (round (factor * 5000)))
-                )
+            [ Two.style
+                "flex-grow"
+                (String.fromInt (round (factor * 5000)))
             ]
             Ui.none
         ]
@@ -753,7 +745,7 @@ textHelper2 textInput attrs textOptions =
                         -- The only reason we do this padding trick is so that when the user clicks in the padding,
                         -- that the cursor will reset correctly.
                         -- This could probably be combined with the above `calcMoveToCompensateForPadding`
-                        , Two.attribute (Html.Attributes.style "box-sizing" "content-box")
+                        , Two.style "box-sizing" "content-box"
                         ]
                  )
                     ++ [ Two.attribute (Html.Attributes.value textOptions.text)
@@ -1021,22 +1013,22 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
                 TextArea ->
                     let
                         height =
-                            Html.Attributes.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
+                            Two.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
 
                         lineHeight =
-                            Html.Attributes.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
+                            Two.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
                     in
                     { els
                         | parent = attr :: els.parent
                         , textAreaFiller =
-                            lineHeight
-                                :: height
+                            Html.Attributes.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
+                                :: Html.Attributes.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
                                 :: els.textAreaFiller
                         , input =
                             Ui.moveUp
                                 (toFloat (floor (toFloat ySpace / 2)))
-                                :: Two.attribute lineHeight
-                                :: Two.attribute height
+                                :: lineHeight
+                                :: height
                                 :: els.input
                         , textAreaWrapper = attr :: els.textAreaWrapper
                     }
@@ -1061,19 +1053,15 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
                                 :: els.inputParent
                         , placeholder = attr :: els.placeholder
                         , input =
-                            Two.attribute
-                                (Html.Attributes.style "height"
+                            Two.style "height"
+                                ("calc(1em + "
+                                    ++ String.fromInt (pad.top + pad.bottom)
+                                    ++ "px)"
+                                )
+                                :: Two.style "line-height"
                                     ("calc(1em + "
                                         ++ String.fromInt (pad.top + pad.bottom)
                                         ++ "px)"
-                                    )
-                                )
-                                :: Two.attribute
-                                    (Html.Attributes.style "line-height"
-                                        ("calc(1em + "
-                                            ++ String.fromInt (pad.top + pad.bottom)
-                                            ++ "px)"
-                                        )
                                     )
                                 :: attr
                                 :: els.input
@@ -1121,13 +1109,7 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
         Two.TransformPiece _ _ ->
             { els | parent = attr :: els.parent }
 
-        Two.ClassAndStyle _ _ _ ->
-            { els
-                | parent = attr :: els.parent
-                , inputParent = attr :: els.inputParent
-            }
-
-        Two.ClassAndVarStyle _ _ ->
+        Two.Style _ ->
             { els
                 | parent = attr :: els.parent
                 , inputParent = attr :: els.inputParent
@@ -1582,7 +1564,7 @@ radioHelper2 orientation attrs input =
     in
     applyLabel
         ([ Ui.alignLeft
-         , Two.attribute (Html.Attributes.tabindex 0)
+         , Two.class Style.classes.focusable
          , Two.class "focus"
          , Region2.announce
          , Two.attribute <|

@@ -5,6 +5,11 @@ module Internal.Flag exposing (..)
 import Bitwise
 
 
+value : Field -> Int
+value (Field int) =
+    int
+
+
 viewBits : Int -> String
 viewBits i =
     String.fromInt i ++ ":" ++ viewBitsHelper i 32

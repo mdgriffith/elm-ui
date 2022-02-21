@@ -86,7 +86,7 @@ type Font
 {-| -}
 color : Color -> Two.Attribute msg
 color fontColor =
-    Two.attribute (Attr.style "color" (Style.color fontColor))
+    Two.style "color" (Style.color fontColor)
 
 
 {-| -}
@@ -94,14 +94,10 @@ gradient :
     Ui.Gradient.Gradient
     -> Attribute msg
 gradient grad =
-    Two.Attribute
-        { flag = Flag.fontColor
-        , attr =
-            Two.ClassAndVarStyle
-                Style.classes.textGradient
-                ("--text-gradient:"
-                    ++ Style.toCssGradient grad
-                )
+    Two.styleAndClass Flag.fontColor
+        { class = Style.classes.textGradient
+        , styleName = "--text-gradient"
+        , styleVal = Style.toCssGradient grad
         }
 
 
@@ -122,7 +118,7 @@ gradient grad =
 -}
 family : List Font -> Attribute msg
 family typefaces =
-    Two.attribute (Attr.style "font-family" (renderFont typefaces ""))
+    Two.style "font-family" (renderFont typefaces "")
 
 
 renderFont : List Font -> String -> String
@@ -327,16 +323,14 @@ size i =
 -}
 letterSpacing : Float -> Attribute msg
 letterSpacing offset =
-    Two.attribute
-        (Attr.style "letter-spacing" (String.fromFloat offset ++ "px"))
+    Two.style "letter-spacing" (String.fromFloat offset ++ "px")
 
 
 {-| In `px`.
 -}
 wordSpacing : Float -> Attribute msg
 wordSpacing offset =
-    Two.attribute
-        (Attr.style "word-spacing" (String.fromFloat offset ++ "px"))
+    Two.style "word-spacing" (String.fromFloat offset ++ "px")
 
 
 {-| Align the font to the left.
@@ -394,62 +388,62 @@ italic =
 {-| -}
 bold : Attribute msg
 bold =
-    Two.attribute (Attr.style "font-weight" "700")
+    Two.style "font-weight" "700"
 
 
 {-| -}
 light : Attribute msg
 light =
-    Two.attribute (Attr.style "font-weight" "300")
+    Two.style "font-weight" "300"
 
 
 {-| -}
 hairline : Attribute msg
 hairline =
-    Two.attribute (Attr.style "font-weight" "100")
+    Two.style "font-weight" "100"
 
 
 {-| -}
 extraLight : Attribute msg
 extraLight =
-    Two.attribute (Attr.style "font-weight" "200")
+    Two.style "font-weight" "200"
 
 
 {-| -}
 regular : Attribute msg
 regular =
-    Two.attribute (Attr.style "font-weight" "400")
+    Two.style "font-weight" "400"
 
 
 {-| -}
 semiBold : Attribute msg
 semiBold =
-    Two.attribute (Attr.style "font-weight" "600")
+    Two.style "font-weight" "600"
 
 
 {-| -}
 medium : Attribute msg
 medium =
-    Two.attribute (Attr.style "font-weight" "500")
+    Two.style "font-weight" "500"
 
 
 {-| -}
 extraBold : Attribute msg
 extraBold =
-    Two.attribute (Attr.style "font-weight" "800")
+    Two.style "font-weight" "800"
 
 
 {-| -}
 heavy : Attribute msg
 heavy =
-    Two.attribute (Attr.style "font-weight" "900")
+    Two.style "font-weight" "900"
 
 
 {-| This will reset bold and italic.
 -}
 unitalicized : Attribute msg
 unitalicized =
-    Two.attribute (Attr.class Style.classes.textUnitalicized)
+    Two.class Style.classes.textUnitalicized
 
 
 {-| -}
@@ -468,13 +462,11 @@ shadow shade =
     --         ++ Style.color shade.color
     --         ++ ";"
     --     )
-    Two.attribute
-        (Attr.style "text-shadow"
-            ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
-                ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
-                ++ (String.fromFloat shade.blur ++ "px ")
-                ++ Style.color shade.color
-            )
+    Two.style "text-shadow"
+        ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
+            ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
+            ++ (String.fromFloat shade.blur ++ "px ")
+            ++ Style.color shade.color
         )
 
 
@@ -489,13 +481,11 @@ glow clr i =
             , color = clr
             }
     in
-    Two.attribute
-        (Attr.style "text-shadow"
-            ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
-                ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
-                ++ (String.fromFloat shade.blur ++ "px ")
-                ++ Style.color shade.color
-            )
+    Two.style "text-shadow"
+        ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
+            ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
+            ++ (String.fromFloat shade.blur ++ "px ")
+            ++ Style.color shade.color
         )
 
 

@@ -21,10 +21,8 @@ import Ui exposing (Attribute, Element)
 grid : Int -> List (Attribute msg) -> List (Element msg) -> Element msg
 grid cols attrs children =
     Two.element Two.AsGrid
-        (Two.attribute
-            (Attr.style "grid-template-columns"
-                ("repeat(" ++ String.fromInt cols ++ ", minmax(0, 1fr))")
-            )
+        (Two.style "grid-template-columns"
+            ("repeat(" ++ String.fromInt cols ++ ", minmax(0, 1fr))")
             :: attrs
         )
         children
@@ -79,10 +77,8 @@ bounded =
 gridWith : List Width -> List (Attribute msg) -> List (Element msg) -> Element msg
 gridWith cols attrs children =
     Two.element Two.AsGrid
-        (Two.attribute
-            (Attr.style "grid-template-columns"
-                (gridTemplate cols "")
-            )
+        (Two.style "grid-template-columns"
+            (gridTemplate cols "")
             :: attrs
         )
         children

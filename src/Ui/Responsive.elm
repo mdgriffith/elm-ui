@@ -322,9 +322,10 @@ calc str =
 
 
 varStyle name val =
-    Internal.Attribute
-        { flag = Flag.skip
-        , attr = Internal.ClassAndVarStyle "ui-rs" (name ++ ":" ++ val)
+    Internal.styleAndClass Flag.skip
+        { class = "ui-rs"
+        , styleName = name
+        , styleVal = val
         }
 
 

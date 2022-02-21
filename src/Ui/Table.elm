@@ -20,7 +20,7 @@ module Ui.Table exposing
                             (Ui.text row.name)
                 }
             , Ui.Table.column
-                { header =  Ui.Table.header "Occupation"
+                { header = Ui.Table.header "Occupation"
                 , view =
                     \row ->
                         Ui.Table.cell []
@@ -28,10 +28,8 @@ module Ui.Table exposing
                 }
             ]
 
-
-
     viewTable model =
-         Ui.Table.view [] myTable model.data
+        Ui.Table.view [] myTable model.data
 
 
 ## Column Configuration
@@ -191,8 +189,7 @@ Feel free to make your own!
 This is the same as
 
     Ui.Table.cell
-        [ -- some minimal defaults
-
+        [-- some minimal defaults
         ]
         (Ui.text "Header text")
 
@@ -303,17 +300,15 @@ viewWithState attrs config state data =
     in
     Two.elementAs Html.table
         Two.AsColumn
-        (Two.attribute (Attr.style "display" "grid")
+        (Two.style "display" "grid"
             :: Two.attrIf config.scrollable
                 (Two.Attribute
                     { flag = Flag.overflow
                     , attr = Two.Class Style.classes.scrollbars
                     }
                 )
-            :: Two.attribute
-                (Attr.style "grid-template-columns"
-                    (gridTemplate state config.columns "")
-                )
+            :: Two.style "grid-template-columns"
+                (gridTemplate state config.columns "")
             :: attrs
         )
         [ headerRow
@@ -417,10 +412,10 @@ renderHeader : state -> Config state data msg -> Element msg
 renderHeader state config =
     Two.elementAs Html.thead
         Two.AsRow
-        [ Two.attribute (Attr.style "display" "contents") ]
+        [ Two.style "display" "contents" ]
         [ Two.elementAs Html.tr
             Two.AsRow
-            [ Two.attribute (Attr.style "display" "contents")
+            [ Two.style "display" "contents"
             ]
             (case List.sortBy (\(Column col) -> col.order state) config.columns of
                 [] ->
@@ -455,9 +450,7 @@ renderColumnHeader cfg state isFirstColumn (Column col) =
                 )
             :: Two.attrIf
                 (not (col.visible state))
-                (Two.attribute
-                    (Attr.style "display" "none")
-                )
+                (Two.style "display" "none")
             :: Two.attrIf
                 stickyColumn
                 (Two.class
@@ -469,10 +462,10 @@ renderColumnHeader cfg state isFirstColumn (Column col) =
             :: Two.attrIf
                 (cfg.stickHeader || stickyColumn)
                 (if cfg.stickHeader && stickyColumn then
-                    Two.attribute (Attr.style "z-index" "2")
+                    Two.style "z-index" "2"
 
                  else
-                    Two.attribute (Attr.style "z-index" "1")
+                    Two.style "z-index" "1"
                 )
             :: attrs
         )
@@ -492,7 +485,7 @@ renderRows config state data =
     in
     Two.elementKeyed "tbody"
         Two.AsRow
-        [ Two.attribute (Attr.style "display" "contents") ]
+        [ Two.style "display" "contents" ]
         (List.indexedMap
             (renderRowWithKey config state)
             sorted
@@ -510,7 +503,7 @@ renderRow : Config state data msg -> state -> data -> Int -> Element msg
 renderRow config state row rowIndex =
     Two.elementAs Html.tr
         Two.AsRow
-        [ Two.attribute (Attr.style "display" "contents")
+        [ Two.style "display" "contents"
         , case config.onRowClick of
             Nothing ->
                 Two.noAttr
@@ -553,15 +546,13 @@ renderColumn config state rowIndex row isFirstColumn (Column col) =
                 )
             :: Two.attrIf
                 (not (col.visible state))
-                (Two.attribute
-                    (Attr.style "display" "none")
-                )
+                (Two.style "display" "none")
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
                 (Ui.Background.color (Ui.rgb 255 255 255))
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
-                (Two.attribute (Attr.style "z-index" "1"))
+                (Two.style "z-index" "1")
             :: attrs
         )
         [ child ]
@@ -571,10 +562,10 @@ renderSummary : Config state data msg -> state -> List data -> Element msg
 renderSummary config state rows =
     Two.elementAs Html.tfoot
         Two.AsRow
-        [ Two.attribute (Attr.style "display" "contents") ]
+        [ Two.style "display" "contents" ]
         [ Two.elementAs Html.tr
             Two.AsRow
-            [ Two.attribute (Attr.style "display" "contents")
+            [ Two.style "display" "contents"
             ]
             (case List.sortBy (\(Column col) -> col.order state) config.columns of
                 [] ->
@@ -613,9 +604,7 @@ renderSummaryColumn config state rows isFirstColumn (Column col) =
                 )
             :: Two.attrIf
                 (not (col.visible state))
-                (Two.attribute
-                    (Attr.style "display" "none")
-                )
+                (Two.style "display" "none")
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
                 (Two.class
@@ -626,7 +615,7 @@ renderSummaryColumn config state rows isFirstColumn (Column col) =
                 (Ui.Background.color (Ui.rgb 255 255 255))
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
-                (Two.attribute (Attr.style "z-index" "1"))
+                (Two.style "z-index" "1")
             :: Ui.height Ui.fill
             :: attrs
         )

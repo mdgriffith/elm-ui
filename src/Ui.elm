@@ -309,7 +309,7 @@ ellip : Attribute msg
 ellip =
     Two.Attribute
         { flag = Flag.skip
-        , attr = Two.Attr (Attr.class Style.classes.ellipses)
+        , attr = Two.Class Style.classes.ellipses
         }
 
 
@@ -947,13 +947,10 @@ width : Length -> Attribute msg
 width len =
     case len of
         Px x ->
-            Two.Attribute
-                { flag = Flag.width
-                , attr =
-                    Two.ClassAndStyle
-                        Style.classes.widthExact
-                        "width"
-                        (Style.px x)
+            Two.styleAndClass Flag.width
+                { class = Style.classes.widthExact
+                , styleName = "width"
+                , styleVal = Style.px x
                 }
 
         Fill f ->
@@ -966,52 +963,40 @@ width len =
 {-| -}
 widthMin : Int -> Attribute msg
 widthMin x =
-    Two.Attribute
-        { flag = Flag.widthBetween
-        , attr =
-            Two.ClassAndStyle
-                Style.classes.widthBounded
-                "min-width"
-                (String.fromInt x ++ "px")
+    Two.styleAndClass (Debug.log "this means min and max can't be set" Flag.widthBetween)
+        { class = Style.classes.widthBounded
+        , styleName = "min-width"
+        , styleVal = Style.px x
         }
 
 
 {-| -}
 widthMax : Int -> Attribute msg
 widthMax x =
-    Two.Attribute
-        { flag = Flag.widthBetween
-        , attr =
-            Two.ClassAndStyle
-                Style.classes.widthBounded
-                "max-width"
-                (String.fromInt x ++ "px")
+    Two.styleAndClass Flag.widthBetween
+        { class = Style.classes.widthBounded
+        , styleName = "max-width"
+        , styleVal = Style.px x
         }
 
 
 {-| -}
 heightMin : Int -> Attribute msg
 heightMin x =
-    Two.Attribute
-        { flag = Flag.heightBetween
-        , attr =
-            Two.ClassAndStyle
-                Style.classes.heightBounded
-                "min-height"
-                (String.fromInt x ++ "px")
+    Two.styleAndClass (Debug.log "this fkag disallows min and max" Flag.heightBetween)
+        { class = Style.classes.heightBounded
+        , styleName = "min-height"
+        , styleVal = Style.px x
         }
 
 
 {-| -}
 heightMax : Int -> Attribute msg
 heightMax x =
-    Two.Attribute
-        { flag = Flag.heightBetween
-        , attr =
-            Two.ClassAndStyle
-                Style.classes.heightBounded
-                "max-height"
-                (String.fromInt x ++ "px")
+    Two.styleAndClass Flag.heightBetween
+        { class = Style.classes.heightBounded
+        , styleName = "max-height"
+        , styleVal = Style.px x
         }
 
 
@@ -1020,13 +1005,10 @@ height : Length -> Attribute msg
 height len =
     case len of
         Px x ->
-            Two.Attribute
-                { flag = Flag.height
-                , attr =
-                    Two.ClassAndStyle
-                        Style.classes.heightExact
-                        "height"
-                        (String.fromInt x ++ "px")
+            Two.styleAndClass Flag.height
+                { class = Style.classes.heightExact
+                , styleName = "height"
+                , styleVal = Style.px x
                 }
 
         Fill f ->
@@ -1291,10 +1273,7 @@ Semantically equivalent to html opacity.
 -}
 alpha : Float -> Attribute msg
 alpha o =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Attr (Attr.style "opacity" (String.fromFloat (1 + (-1 * o))))
-        }
+    Two.style "opacity" (String.fromFloat (1 + (-1 * o)))
 
 
 {-| -}

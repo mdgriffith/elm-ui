@@ -839,26 +839,17 @@ mapAttr uiFn fn (Attribute attr) =
                 Padding edges ->
                     Padding edges
 
-                -- BorderWidth edges ->
-                --     BorderWidth edges
                 Attr a ->
                     Attr (Attr.map fn a)
 
                 Link link ->
                     Link link
 
-                -- invalidation key and literal class
                 Class cls ->
                     Class cls
 
-                -- When using a css variable we want to attach the variable itself
-                -- and a class that implements the rule.
-                --               class  var       value
-                ClassAndStyle cls name val ->
-                    ClassAndStyle cls name val
-
-                ClassAndVarStyle cls style ->
-                    ClassAndVarStyle cls style
+                Style styleDetails ->
+                    Style styleDetails
 
                 Nearby loc el ->
                     Nearby loc (map fn el)
@@ -951,13 +942,12 @@ type Attr msg
     | Spacing Int Int
     | Padding Edges
     | TransformPiece TransformSlot Float
-      -- invalidation key and literal class
     | Class String
-      -- When using a css variable we want to attach the variable itself
-      -- and a class that implements the rule.
-      --                 class  prop  value
-    | ClassAndStyle String String String
-    | ClassAndVarStyle String String
+    | Style
+        { class : String
+        , styleName : String
+        , styleVal : String
+        }
     | Nearby Location (Element msg)
     | Transition2
         { toMsg : Msg msg -> msg
@@ -1236,6 +1226,49 @@ attributeWith flag a =
     Attribute
         { flag = flag
         , attr = Attr a
+        }
+
+
+style : String -> String -> Attribute msg
+style name val =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Style
+                { class = ""
+                , styleName = name
+                , styleVal = val
+                }
+        }
+
+
+styleWith : Flag -> String -> String -> Attribute msg
+styleWith flag name val =
+    Attribute
+        { flag = flag
+        , attr =
+            Style
+                { class = ""
+                , styleName = name
+                , styleVal = val
+                }
+        }
+
+
+styleAndClass :
+    Flag
+    ->
+        { class : String
+        , styleName : String
+        , styleVal : String
+        }
+    -> Attribute msg
+styleAndClass flag v =
+    Attribute
+        { flag = flag
+        , attr =
+            Style
+                v
         }
 
 
@@ -1858,14 +1891,17 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             details
                             children
                             (Flag.add flag has)
-                            (Attr.style "tabindex" "0"
-                                :: Attr.style "pointer" "cursor"
-                                :: Events.stopPropagationOn "pointerdown"
-                                    (Json.succeed ( msg, True ))
+                            (Events.stopPropagationOn "pointerdown"
+                                (Json.succeed ( msg, True ))
                                 :: onKey "Enter" msg
                                 :: htmlAttrs
                             )
-                            classes
+                            (Style.classes.cursorPointer
+                                ++ " "
+                                ++ Style.classes.focusable
+                                ++ " "
+                                ++ classes
+                            )
                             vars
                             remain
 
@@ -1876,11 +1912,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             details
                             children
                             (Flag.add flag has)
-                            (Attr.style "tabindex" "0"
-                                :: handler
+                            (handler
                                 :: htmlAttrs
                             )
-                            classes
+                            (Style.classes.focusable ++ " " ++ classes)
                             vars
                             remain
 
@@ -1912,6 +1947,38 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             vars
                             remain
 
+                    Style styleDetails ->
+                        let
+                            isVar =
+                                String.startsWith "--" styleDetails.styleName
+                        in
+                        renderAttrs parentBits
+                            myBits
+                            layout
+                            details
+                            children
+                            (Flag.add flag has)
+                            (if isVar then
+                                htmlAttrs
+
+                             else
+                                Attr.style styleDetails.styleName styleDetails.styleVal :: htmlAttrs
+                            )
+                            (case styleDetails.class of
+                                "" ->
+                                    classes
+
+                                newClass ->
+                                    newClass ++ " " ++ classes
+                            )
+                            (if isVar then
+                                vars ++ styleDetails.styleName ++ ":" ++ styleDetails.styleVal ++ ";"
+
+                             else
+                                vars
+                            )
+                            remain
+
                     Class str ->
                         renderAttrs parentBits
                             myBits
@@ -1922,30 +1989,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes vars
                             htmlAttrs
                             (str ++ " " ++ classes)
                             vars
-                            remain
-
-                    ClassAndStyle cls styleName styleVal ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (Attr.style styleName styleVal :: htmlAttrs)
-                            (cls ++ " " ++ classes)
-                            vars
-                            remain
-
-                    ClassAndVarStyle cls var ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            htmlAttrs
-                            (cls ++ " " ++ classes)
-                            (vars ++ var ++ ";")
                             remain
 
                     Nearby location elem ->

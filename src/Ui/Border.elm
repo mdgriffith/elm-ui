@@ -43,23 +43,24 @@ import Ui exposing (Attribute, Color)
 {-| -}
 color : Color -> Attribute msg
 color clr =
-    Two.attribute
-        (Attr.style "border-color" (Style.color clr))
+    Two.style "border-color" (Style.color clr)
 
 
 {-| -}
 width : Int -> Attribute msg
 width x =
-    Two.attributeWith Flag.borderWidth
-        (Attr.style "border-width" (String.fromInt x ++ "px"))
+    Two.styleWith Flag.borderWidth
+        "border-width"
+        (String.fromInt x ++ "px")
 
 
 {-| Set horizontal and vertical borders.
 -}
 widthXY : Int -> Int -> Attribute msg
 widthXY x y =
-    Two.attributeWith Flag.borderWidth
-        (Attr.style "border-width" (String.fromInt y ++ "px " ++ String.fromInt x ++ "px"))
+    Two.styleWith Flag.borderWidth
+        "border-width"
+        (String.fromInt y ++ "px " ++ String.fromInt x ++ "px")
 
 
 {-| -}
@@ -71,42 +72,38 @@ widthEach :
     }
     -> Attribute msg
 widthEach border =
-    Two.attributeWith Flag.borderWidth <|
-        Attr.style "border-width"
-            ((String.fromInt border.top ++ "px ")
-                ++ (String.fromInt border.right ++ "px ")
-                ++ (String.fromInt border.bottom ++ "px ")
-                ++ (String.fromInt border.left ++ "px")
-            )
+    Two.styleWith Flag.borderWidth
+        "border-width"
+        ((String.fromInt border.top ++ "px ")
+            ++ (String.fromInt border.right ++ "px ")
+            ++ (String.fromInt border.bottom ++ "px ")
+            ++ (String.fromInt border.left ++ "px")
+        )
 
 
 {-| -}
 solid : Attribute msg
 solid =
-    Two.attribute
-        (Attr.style "border-style" "solid")
+    Two.style "border-style" "solid"
 
 
 {-| -}
 dashed : Attribute msg
 dashed =
-    Two.attribute
-        (Attr.style "border-style" "dashed")
+    Two.style "border-style" "dashed"
 
 
 {-| -}
 dotted : Attribute msg
 dotted =
-    Two.attribute
-        (Attr.style "border-style" "dotted")
+    Two.style "border-style" "dotted"
 
 
 {-| Round all corners.
 -}
 rounded : Int -> Attribute msg
 rounded radius =
-    Two.attribute
-        (Attr.style "border-radius" (String.fromInt radius ++ "px"))
+    Two.style "border-radius" (String.fromInt radius ++ "px")
 
 
 {-| -}
@@ -118,13 +115,11 @@ roundEach :
     }
     -> Attribute msg
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
-    Two.attribute
-        (Attr.style "border-radius"
-            ((String.fromInt topLeft ++ "px ")
-                ++ (String.fromInt topRight ++ "px ")
-                ++ (String.fromInt bottomRight ++ "px ")
-                ++ (String.fromInt bottomLeft ++ "px")
-            )
+    Two.style "border-radius"
+        ((String.fromInt topLeft ++ "px ")
+            ++ (String.fromInt topRight ++ "px ")
+            ++ (String.fromInt bottomRight ++ "px ")
+            ++ (String.fromInt bottomLeft ++ "px")
         )
 
 
@@ -164,12 +159,10 @@ shadows :
         }
     -> Attribute msg
 shadows shades =
-    Two.attribute
-        (Attr.style
-            "box-shadow"
-            (List.map Style.singleShadow shades
-                |> String.join ", "
-            )
+    Two.style
+        "box-shadow"
+        (List.map Style.singleShadow shades
+            |> String.join ", "
         )
 
 
@@ -183,11 +176,9 @@ innerShadow :
     }
     -> Attribute msg
 innerShadow shade =
-    Two.attribute
-        (Attr.style
-            "box-shadow"
-            ("inset " ++ Style.singleShadow shade)
-        )
+    Two.style
+        "box-shadow"
+        ("inset " ++ Style.singleShadow shade)
 
 
 {-| direction: 0 is up, 0.5 is down
@@ -203,11 +194,9 @@ lights :
     }
     -> Attribute msg
 lights details =
-    Two.attribute
-        (Attr.style "box-shadow"
-            (List.map (renderLight details.elevation) details.lights
-                |> String.join ", "
-            )
+    Two.style "box-shadow"
+        (List.map (renderLight details.elevation) details.lights
+            |> String.join ", "
         )
 
 
