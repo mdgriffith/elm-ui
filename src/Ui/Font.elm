@@ -3,12 +3,12 @@ module Ui.Font exposing
     , Font
     , family, typeface, serif, sansSerif, monospace
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
-    , custom
+    , font
     , Sizing, full, byCapital, Adjustment
     , underline, strike, italic
-    , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
-    , Variant
-    , smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+    , weight
+    , Weight, heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
+    , Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
     )
 
@@ -47,9 +47,9 @@ module Ui.Font exposing
 @docs alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
 
 
-## Font Group
+## Font
 
-@docs custom
+@docs font
 
 @docs Sizing, full, byCapital, Adjustment
 
@@ -61,14 +61,14 @@ module Ui.Font exposing
 
 ## Font Weight
 
-@docs heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
+@docs weight
+
+@docs Weight, heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
 
 
 ## Variants
 
-@docs Variant
-
-@docs smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+@docs Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
 
 
 ## Shadows
@@ -85,6 +85,7 @@ import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Color)
 import Ui.Gradient
+import Ui.Responsive
 
 
 {-| -}
@@ -226,8 +227,6 @@ byCapital =
 
    type Size = Exact Int | ResponsiveExact | ResponsiveFluid
 
-   type Weight = ... the weights
-
    type FontColor Color = FontColor Color | FontGradient Gradient
 
 
@@ -238,62 +237,100 @@ byCapital =
 
 {-|
 
-    Ui.Font.custom
+    Ui.Font.font
         { name = "EB Garamond"
         , fallback = [ Font.serif ]
         , sizing =
             Ui.Font.full
         , variants =
             []
+        , weight = Ui.Font.bold
         }
 
 -}
-custom :
+font :
     { name : String
     , fallback : List Font
     , sizing : Sizing
     , variants : List Variant
+    , weight : Weight
+    , size : Int
 
     -- normal attrs
     -- , size : Size
-    -- , weight : Int
     -- , color : Coloring
     }
     -> Attribute msg
-custom details =
-    case details.sizing of
-        Full ->
-            Two.Attribute
-                { flag = Flag.fontAdjustment
-                , attr =
-                    Two.Font
-                        { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
-                        , adjustments = Nothing
-                        , variants =
-                            renderVariants details.variants ""
-                        , smallCaps =
-                            hasSmallCaps details.variants
-                        }
-                }
+font details =
+    Two.Attribute
+        { flag = Flag.fontAdjustment
+        , attr =
+            Two.Font
+                { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
+                , adjustments =
+                    case details.sizing of
+                        Full ->
+                            Nothing
 
-        ByCapital adjustment ->
-            Two.Attribute
-                { flag = Flag.fontAdjustment
-                , attr =
-                    Two.Font
-                        { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
-                        , adjustments =
+                        ByCapital adjustment ->
                             Just
                                 (BitField.init
                                     |> BitField.setPercentage Bits.fontHeight adjustment.height
                                     |> BitField.setPercentage Bits.fontOffset adjustment.offset
                                 )
-                        , variants =
-                            renderVariants details.variants ""
-                        , smallCaps =
-                            hasSmallCaps details.variants
-                        }
+                , variants =
+                    renderVariants details.variants ""
+                , smallCaps =
+                    hasSmallCaps details.variants
+                , weight =
+                    case details.weight of
+                        Weight wght ->
+                            wght
                 }
+        }
+
+
+{-| -}
+responsive :
+    { name : String
+    , fallback : List Font
+    , sizing : Sizing
+    , variants : List Variant
+    , breakpoints : Ui.Responsive.Breakpoints breakpoint
+    , size : breakpoint -> Ui.Responsive.Value
+    , weight : Weight -- breakpoint -> Ui.Responsive.Value
+
+    -- normal attrs
+    -- , color : Coloring
+    }
+    -> Attribute msg
+responsive details =
+    Two.Attribute
+        { flag = Flag.fontAdjustment
+        , attr =
+            Two.Font
+                { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
+                , adjustments =
+                    case details.sizing of
+                        Full ->
+                            Nothing
+
+                        ByCapital adjustment ->
+                            Just
+                                (BitField.init
+                                    |> BitField.setPercentage Bits.fontHeight adjustment.height
+                                    |> BitField.setPercentage Bits.fontOffset adjustment.offset
+                                )
+                , variants =
+                    renderVariants details.variants ""
+                , smallCaps =
+                    hasSmallCaps details.variants
+                , weight =
+                    case details.weight of
+                        Weight wght ->
+                            wght
+                }
+        }
 
 
 hasSmallCaps : List Variant -> Basics.Bool
@@ -415,57 +452,68 @@ italic =
 
 
 {-| -}
-bold : Attribute msg
+type Weight
+    = Weight Int
+
+
+{-| -}
+weight : Weight -> Attribute msg
+weight (Weight i) =
+    Two.style "font-weight" (String.fromInt i)
+
+
+{-| -}
+bold : Weight
 bold =
-    Two.style "font-weight" "700"
+    Weight 700
 
 
 {-| -}
-light : Attribute msg
+light : Weight
 light =
-    Two.style "font-weight" "300"
+    Weight 300
 
 
 {-| -}
-hairline : Attribute msg
+hairline : Weight
 hairline =
-    Two.style "font-weight" "100"
+    Weight 100
 
 
 {-| -}
-extraLight : Attribute msg
+extraLight : Weight
 extraLight =
-    Two.style "font-weight" "200"
+    Weight 200
 
 
 {-| -}
-regular : Attribute msg
+regular : Weight
 regular =
-    Two.style "font-weight" "400"
+    Weight 400
 
 
 {-| -}
-semiBold : Attribute msg
+semiBold : Weight
 semiBold =
-    Two.style "font-weight" "600"
+    Weight 600
 
 
 {-| -}
-medium : Attribute msg
+medium : Weight
 medium =
-    Two.style "font-weight" "500"
+    Weight 500
 
 
 {-| -}
-extraBold : Attribute msg
+extraBold : Weight
 extraBold =
-    Two.style "font-weight" "800"
+    Weight 800
 
 
 {-| -}
-heavy : Attribute msg
+heavy : Weight
 heavy =
-    Two.style "font-weight" "900"
+    Weight 900
 
 
 {-| This will reset bold and italic.
