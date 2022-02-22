@@ -325,7 +325,7 @@ checkbox attrs { label, icon, checked, onChange } =
 
                     else
                         Nothing
-            , Two.class Style.classes.focusable
+            , Two.attribute (Html.Attributes.tabindex 0)
             , Ui.pointer
             , Ui.alignLeft
             , Ui.width Ui.fill
@@ -1564,7 +1564,7 @@ radioHelper2 orientation attrs input =
     in
     applyLabel
         ([ Ui.alignLeft
-         , Two.class Style.classes.focusable
+         , Two.attribute (Html.Attributes.tabindex 0)
          , Two.class "focus"
          , Region2.announce
          , Two.attribute <|
