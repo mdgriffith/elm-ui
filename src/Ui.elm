@@ -8,7 +8,7 @@ module Ui exposing
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
-    , transparent, alpha
+    , transparent, alpha, opacity
     , pointer, grab, grabbing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
     , viewport, clipped
@@ -115,7 +115,7 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Transparency
 
-@docs transparent, alpha
+@docs transparent, alpha, opacity
 
 
 # Cursors
@@ -963,7 +963,7 @@ width len =
 {-| -}
 widthMin : Int -> Attribute msg
 widthMin x =
-    Two.styleAndClass (Debug.log "this means min and max can't be set" Flag.widthBetween)
+    Two.styleAndClass Flag.skip
         { class = Style.classes.widthBounded
         , styleName = "min-width"
         , styleVal = Style.px x
@@ -973,7 +973,7 @@ widthMin x =
 {-| -}
 widthMax : Int -> Attribute msg
 widthMax x =
-    Two.styleAndClass Flag.widthBetween
+    Two.styleAndClass Flag.skip
         { class = Style.classes.widthBounded
         , styleName = "max-width"
         , styleVal = Style.px x
@@ -983,7 +983,7 @@ widthMax x =
 {-| -}
 heightMin : Int -> Attribute msg
 heightMin x =
-    Two.styleAndClass (Debug.log "this fkag disallows min and max" Flag.heightBetween)
+    Two.styleAndClass Flag.skip
         { class = Style.classes.heightBounded
         , styleName = "min-height"
         , styleVal = Style.px x
@@ -993,7 +993,7 @@ heightMin x =
 {-| -}
 heightMax : Int -> Attribute msg
 heightMax x =
-    Two.styleAndClass Flag.heightBetween
+    Two.styleAndClass Flag.skip
         { class = Style.classes.heightBounded
         , styleName = "max-height"
         , styleVal = Style.px x
@@ -1274,6 +1274,12 @@ Semantically equivalent to html opacity.
 alpha : Float -> Attribute msg
 alpha o =
     Two.style "opacity" (String.fromFloat (1 + (-1 * o)))
+
+
+{-| -}
+opacity : Float -> Attribute msg
+opacity o =
+    Two.style "opacity" (String.fromFloat o)
 
 
 {-| -}
