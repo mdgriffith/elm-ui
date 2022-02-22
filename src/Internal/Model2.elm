@@ -937,6 +937,7 @@ type Attr msg
             Maybe (BitField.Bits Bits.Inheritance)
         , variants : String
         , smallCaps : Bool
+        , weight : Int
         }
     | FontSize Int
     | Spacing Int Int
@@ -955,6 +956,11 @@ type Attr msg
         , css : Animator.Css
         }
     | Animated (Msg msg -> msg) Id
+
+
+type ResponsiveInt
+    = StaticInt Int
+    | ResponsiveInt String
 
 
 type Trigger
@@ -1338,17 +1344,19 @@ element layout attrs children =
     Element
         (\parentBits ->
             let
+                myBits =
+                    Bits.clearSpacing parentBits
+                        |> (if layout == AsRow then
+                                BitField.set Bits.isRow 1
+
+                            else
+                                BitField.set Bits.isRow 0
+                           )
+
                 rendered =
                     renderAttrs
                         parentBits
-                        (Bits.clearSpacing parentBits
-                            |> (if layout == AsRow then
-                                    BitField.set Bits.isRow 1
-
-                                else
-                                    BitField.set Bits.isRow 0
-                               )
-                        )
+                        myBits
                         layout
                         emptyDetails
                         (ElemChildren children emptyNearbys)
@@ -1365,11 +1373,13 @@ element layout attrs children =
                             styleStr =
                                 renderInlineStylesToString
                                     parentBits
+                                    myBits
                                     layout
                                     rendered.details
                                     rendered.fields
                                     ""
                                     (List.reverse attrs)
+                                    |> Debug.log "STYLE"
                         in
                         Attr.property "style"
                             (Json.Encode.string
@@ -1403,17 +1413,19 @@ elementAs toNode layout attrs children =
     Element
         (\parentBits ->
             let
+                myBits =
+                    Bits.clearSpacing parentBits
+                        |> (if layout == AsRow then
+                                BitField.set Bits.isRow 1
+
+                            else
+                                BitField.set Bits.isRow 0
+                           )
+
                 rendered =
                     renderAttrs
                         parentBits
-                        (Bits.clearSpacing parentBits
-                            |> (if layout == AsRow then
-                                    BitField.set Bits.isRow 1
-
-                                else
-                                    BitField.set Bits.isRow 0
-                               )
-                        )
+                        myBits
                         layout
                         emptyDetails
                         (ElemChildren children emptyNearbys)
@@ -1430,6 +1442,7 @@ elementAs toNode layout attrs children =
                             styleStr =
                                 renderInlineStylesToString
                                     parentBits
+                                    myBits
                                     layout
                                     rendered.details
                                     rendered.fields
@@ -1501,6 +1514,7 @@ elementKeyed name layout attrs children =
                             styleStr =
                                 renderInlineStylesToString
                                     parentBits
+                                    rendered.myBits
                                     layout
                                     rendered.details
                                     rendered.fields
@@ -1579,6 +1593,7 @@ renderAttrs :
     -> List (Attribute msg)
     ->
         { fields : Flag.Field
+        , myBits : BitField.Bits Bits.Inheritance
         , details : Details msg
         , attrs : List (Html.Attribute msg)
         , children : Children msg
@@ -1656,7 +1671,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         -- set font size from details
                         let
                             fontHeight =
-                                parentBits
+                                myBits
                                     |> BitField.getPercentage Bits.fontHeight
                         in
                         Attr.style "font-size"
@@ -1671,7 +1686,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         -- operate on `em`
                         let
                             fontHeight =
-                                parentBits
+                                myBits
                                     |> BitField.getPercentage Bits.fontHeight
                         in
                         Attr.style "font-size"
@@ -1809,6 +1824,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                                         renderedChildren
             in
             { fields = has
+            , myBits = myBits
             , attrs =
                 finalAttrs
             , children = finalChildren
@@ -1935,11 +1951,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                             (Events.stopPropagationOn "pointerdown"
                                 (Json.succeed ( msg, True ))
                                 :: onKey "Enter" msg
+                                :: Attr.tabindex 0
                                 :: htmlAttrs
                             )
                             (Style.classes.cursorPointer
-                                ++ " "
-                                ++ Style.classes.focusable
                                 ++ " "
                                 ++ classes
                             )
@@ -1953,9 +1968,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                             children
                             (Flag.add flag has)
                             (handler
+                                :: Attr.tabindex 0
                                 :: htmlAttrs
                             )
-                            (Style.classes.focusable ++ " " ++ classes)
+                            classes
                             remain
 
                     Link link ->
@@ -1989,6 +2005,7 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         let
                             isVar =
                                 String.startsWith "--" styleDetails.styleName
+                                    |> Debug.log "IS VAR"
                         in
                         renderAttrs parentBits
                             myBits
@@ -2224,13 +2241,14 @@ This does mean we only want to use css variables sparingly.
 -}
 renderInlineStylesToString :
     BitField.Bits Bits.Inheritance
+    -> BitField.Bits Bits.Inheritance
     -> Layout
     -> Details msg
     -> Flag.Field
     -> String
     -> List (Attribute msg)
     -> String
-renderInlineStylesToString parentBits layout details has vars attrs =
+renderInlineStylesToString parentBits myBits layout details has vars attrs =
     case attrs of
         [] ->
             let
@@ -2304,10 +2322,10 @@ renderInlineStylesToString parentBits layout details has vars attrs =
                         -- set font size from details
                         let
                             fontHeight =
-                                parentBits
+                                myBits
                                     |> BitField.getPercentage Bits.fontHeight
                         in
-                        "font-size"
+                        "font-size: "
                             ++ (String.fromFloat
                                     (toFloat details.fontSize * (1 / fontHeight))
                                     ++ "px;"
@@ -2319,7 +2337,7 @@ renderInlineStylesToString parentBits layout details has vars attrs =
                         -- operate on `em`
                         let
                             fontHeight =
-                                parentBits
+                                myBits
                                     |> BitField.getPercentage Bits.fontHeight
                         in
                         "font-size: "
@@ -2329,7 +2347,7 @@ renderInlineStylesToString parentBits layout details has vars attrs =
                                )
                             ++ varsWithTransform
             in
-            varsWithFontSize
+            Debug.log "AS STRING" varsWithFontSize
 
         (Attribute { flag, attr }) :: remain ->
             let
@@ -2346,12 +2364,13 @@ renderInlineStylesToString parentBits layout details has vars attrs =
                         Flag.present flag has
             in
             if previouslyRendered then
-                renderInlineStylesToString parentBits layout details has vars remain
+                renderInlineStylesToString parentBits myBits layout details has vars remain
 
             else
                 case attr of
                     Style styleDetails ->
                         renderInlineStylesToString parentBits
+                            myBits
                             layout
                             details
                             (Flag.add flag has)
@@ -2360,6 +2379,7 @@ renderInlineStylesToString parentBits layout details has vars attrs =
 
                     Spacing x y ->
                         renderInlineStylesToString parentBits
+                            myBits
                             layout
                             details
                             (Flag.add flag has)
@@ -2381,6 +2401,7 @@ renderInlineStylesToString parentBits layout details has vars attrs =
 
                     Padding padding ->
                         renderInlineStylesToString parentBits
+                            myBits
                             layout
                             details
                             (Flag.add flag has)
@@ -2402,6 +2423,7 @@ renderInlineStylesToString parentBits layout details has vars attrs =
 
                     HeightFill i ->
                         renderInlineStylesToString parentBits
+                            myBits
                             layout
                             details
                             (Flag.add flag has)
@@ -2418,6 +2440,7 @@ renderInlineStylesToString parentBits layout details has vars attrs =
 
                     WidthFill i ->
                         renderInlineStylesToString parentBits
+                            myBits
                             layout
                             details
                             (Flag.add flag has)
@@ -2434,6 +2457,7 @@ renderInlineStylesToString parentBits layout details has vars attrs =
 
                     _ ->
                         renderInlineStylesToString parentBits
+                            myBits
                             layout
                             details
                             (Flag.add flag has)
@@ -2862,7 +2886,7 @@ decodeScrollPosition =
 
 
 
-{- Breakpoints -}
+{- Responsive: Breakpoints -}
 
 
 type Breakpoints label
@@ -2872,6 +2896,94 @@ type Breakpoints label
         , breaks : List ( Int, label )
         , total : Int
         }
+
+
+{-| -}
+type Value
+    = Between Int Int
+    | Exactly Int
+
+
+responsiveCssValue : Breakpoints label -> (label -> Value) -> String
+responsiveCssValue resp toValue =
+    calc <|
+        foldBreakpoints
+            (\i lab str ->
+                case str of
+                    "" ->
+                        calc <| renderResponsiveValue i (toValue lab)
+
+                    _ ->
+                        str ++ " + " ++ calc (renderResponsiveValue i (toValue lab))
+            )
+            ""
+            resp
+
+
+{-| Things to remember when using `calc`
+
+<https://developer.mozilla.org/en-US/docs/Web/CSS/calc()>
+
+1.  Multiplication needs one of the arguments to be a <number>, meaning a literal, with no units!
+
+2.  Division needs the _denominator_ to be a <number>, again literal with no units.
+
+-}
+renderResponsiveValue : Int -> Value -> String
+renderResponsiveValue i v =
+    ("var(" ++ breakpointString i ++ ") * ")
+        ++ (case v of
+                Exactly val ->
+                    String.fromInt val ++ "px"
+
+                Between bottom top ->
+                    let
+                        diff =
+                            top - bottom
+                    in
+                    calc
+                        (calc
+                            ("var("
+                                ++ breakpointString i
+                                ++ "-progress) * "
+                                ++ String.fromInt diff
+                            )
+                            ++ " + "
+                            ++ String.fromInt bottom
+                            ++ "px"
+                        )
+           )
+
+
+breakpointString : Int -> String
+breakpointString i =
+    "--ui-bp-" ++ String.fromInt i
+
+
+calc : String -> String
+calc str =
+    "calc(" ++ str ++ ")"
+
+
+foldBreakpoints :
+    (Int -> label -> result -> result)
+    -> result
+    -> Breakpoints label
+    -> result
+foldBreakpoints fn initial (Responsive resp) =
+    foldBreakpointsHelper fn (fn 0 resp.default initial) 1 resp.breaks
+
+
+foldBreakpointsHelper fn cursor i breaks =
+    case breaks of
+        [] ->
+            cursor
+
+        ( _, label ) :: remain ->
+            foldBreakpointsHelper fn
+                (fn i label cursor)
+                (i + 1)
+                remain
 
 
 type alias ResponsiveTransition =

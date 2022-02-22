@@ -101,7 +101,7 @@ type alias Breakpoints label =
 {-| -}
 orAbove : label -> Breakpoints label -> List label
 orAbove label resp =
-    fold
+    Internal.foldBreakpoints
         (\i lab ( capturing, selected ) ->
             if label == lab then
                 ( False
@@ -132,7 +132,7 @@ orBelow label resp =
     -- i.e. largest first
     -- This gets all indices *above* the current index
     -- which means all breakpoints below
-    fold
+    Internal.foldBreakpoints
         (\i lab ( capturing, selected ) ->
             if capturing then
                 ( capturing
@@ -171,7 +171,7 @@ breakpoints def breaks =
 visible : Breakpoints label -> List label -> Attribute msg
 visible breaks labels =
     Internal.class
-        (fold
+        (Internal.foldBreakpoints
             (\i lab str ->
                 if List.member lab labels then
                     str
@@ -206,7 +206,7 @@ rowWhen : Breakpoints label -> List label -> List (Attribute msg) -> List (Eleme
 rowWhen breaks labels attrs children =
     Internal.element Internal.AsRow
         (Internal.class
-            (fold
+            (Internal.foldBreakpoints
                 (\i lab str ->
                     if List.member lab labels then
                         str
@@ -228,82 +228,76 @@ rowWhen breaks labels attrs children =
 
 
 {-| -}
-type Value
-    = Between Int Int
-    | Exactly Int
+type alias Value =
+    Internal.Value
 
 
 {-| -}
 fluid : Int -> Int -> Value
 fluid low high =
-    Between (min low high) (max low high)
+    Internal.Between (min low high) (max low high)
 
 
 {-| -}
 value : Int -> Value
 value =
-    Exactly
+    Internal.Exactly
 
 
 {-| -}
 fontSize : Breakpoints label -> (label -> Value) -> Attribute msg
 fontSize resp toValue =
     varStyle "font-size"
-        (calc <| cssValue resp toValue)
+        (Internal.responsiveCssValue resp toValue)
 
 
 {-| -}
 padding : Breakpoints label -> (label -> Value) -> Attribute msg
 padding resp toValue =
     varStyle "padding"
-        (calc <| cssValue resp toValue)
+        (Internal.responsiveCssValue resp toValue)
 
 
 {-| -}
 height : Breakpoints label -> (label -> Value) -> Attribute msg
 height resp toValue =
     varStyle "height"
-        (calc <| cssValue resp toValue)
+        (Internal.responsiveCssValue resp toValue)
 
 
 {-| -}
 heightMin : Breakpoints label -> (label -> Value) -> Attribute msg
 heightMin resp toValue =
     varStyle "min-height"
-        (calc <| cssValue resp toValue)
+        (Internal.responsiveCssValue resp toValue)
 
 
 {-| -}
 heightMax : Breakpoints label -> (label -> Value) -> Attribute msg
 heightMax resp toValue =
     varStyle "max-height"
-        (calc <| cssValue resp toValue)
+        (Internal.responsiveCssValue resp toValue)
 
 
 {-| -}
 width : Breakpoints label -> (label -> Value) -> Attribute msg
 width resp toValue =
     varStyle "width"
-        (calc <| cssValue resp toValue)
+        (Internal.responsiveCssValue resp toValue)
 
 
 {-| -}
 widthMin : Breakpoints label -> (label -> Value) -> Attribute msg
 widthMin resp toValue =
     varStyle "min-width"
-        (calc <| cssValue resp toValue)
+        (Internal.responsiveCssValue resp toValue)
 
 
 {-| -}
 widthMax : Breakpoints label -> (label -> Value) -> Attribute msg
 widthMax resp toValue =
     varStyle "max-width"
-        (calc <| cssValue resp toValue)
-
-
-calc : String -> String
-calc str =
-    "calc(" ++ str ++ ")"
+        (Internal.responsiveCssValue resp toValue)
 
 
 varStyle name val =
@@ -312,82 +306,6 @@ varStyle name val =
         , styleName = name
         , styleVal = val
         }
-
-
-breakpointString : Int -> String
-breakpointString i =
-    "--ui-bp-" ++ String.fromInt i
-
-
-cssValue : Breakpoints label -> (label -> Value) -> String
-cssValue resp toValue =
-    fold
-        (\i lab str ->
-            case str of
-                "" ->
-                    calc <| renderValue i (toValue lab)
-
-                _ ->
-                    str ++ " + " ++ calc (renderValue i (toValue lab))
-        )
-        ""
-        resp
-
-
-{-| Things to remember when using `calc`
-
-<https://developer.mozilla.org/en-US/docs/Web/CSS/calc()>
-
-1.  Multiplication needs one of the arguments to be a <number>, meaning a literal, with no units!
-
-2.  Division needs the _denominator_ to be a <number>, again literal with no units.
-
--}
-renderValue : Int -> Value -> String
-renderValue i v =
-    ("var(" ++ breakpointString i ++ ") * ")
-        ++ (case v of
-                Exactly val ->
-                    String.fromInt val ++ "px"
-
-                Between bottom top ->
-                    let
-                        diff =
-                            top - bottom
-                    in
-                    calc
-                        (calc
-                            ("var("
-                                ++ breakpointString i
-                                ++ "-progress) * "
-                                ++ String.fromInt diff
-                            )
-                            ++ " + "
-                            ++ String.fromInt bottom
-                            ++ "px"
-                        )
-           )
-
-
-
-{- Helpers -}
-
-
-fold : (Int -> label -> result -> result) -> result -> Breakpoints label -> result
-fold fn initial (Internal.Responsive resp) =
-    foldHelper fn (fn 0 resp.default initial) 1 resp.breaks
-
-
-foldHelper fn cursor i breaks =
-    case breaks of
-        [] ->
-            cursor
-
-        ( _, label ) :: remain ->
-            foldHelper fn
-                (fn i label cursor)
-                (i + 1)
-                remain
 
 
 {-| Index of a label in the list of breakpoints
