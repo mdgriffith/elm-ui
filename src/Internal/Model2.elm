@@ -2869,13 +2869,9 @@ type Breakpoints label
     = Responsive
         { transition : Maybe Transition
         , default : label
-        , breaks : List (Breakpoint label)
+        , breaks : List ( Int, label )
         , total : Int
         }
-
-
-type Breakpoint label
-    = Breakpoint Int label
 
 
 type alias ResponsiveTransition =
@@ -2893,15 +2889,15 @@ toMediaQuery (Responsive details) =
         [] ->
             ""
 
-        (Breakpoint lowerBound _) :: remain ->
+        ( lowerBound, _ ) :: remain ->
             ":root {"
                 ++ toRoot details.breaks
                     1
-                    (upperRootItem lowerBound)
+                    (renderResponsiveCssVars 0 0 lowerBound)
                 ++ " }"
                 ++ toBoundedMediaQuery details.breaks
                     1
-                    (renderUpper lowerBound)
+                    (maxWidthMediaQuery 0 lowerBound)
 
 
 renderRoot : Int -> String
@@ -2919,10 +2915,11 @@ renderRootItem count rendered =
             (rendered ++ "--ui-bp-" ++ String.fromInt (count - 1) ++ ": 0;")
 
 
-rootItem i upper lower =
+renderResponsiveCssVars : Int -> Int -> Int -> String
+renderResponsiveCssVars i lower upper =
     ("--ui-bp-" ++ String.fromInt i ++ ": 0;")
-        ++ ("--ui-bp-" ++ String.fromInt i ++ "-upper: " ++ String.fromInt upper ++ "px;")
         ++ ("--ui-bp-" ++ String.fromInt i ++ "-lower: " ++ String.fromInt lower ++ "px;")
+        ++ ("--ui-bp-" ++ String.fromInt i ++ "-upper: " ++ String.fromInt upper ++ "px;")
         ++ ("--ui-bp-"
                 ++ String.fromInt i
                 ++ "-progress: calc(calc(100vw - "
@@ -2933,58 +2930,48 @@ rootItem i upper lower =
            )
 
 
-upperRootItem : Int -> String
-upperRootItem lower =
-    rootItem 0 (lower + 1000) lower
-
-
-lowerRootItem : Int -> Int -> String
-lowerRootItem i upper =
-    rootItem i upper 0
-
-
-toRoot : List (Breakpoint label) -> Int -> String -> String
+toRoot : List ( Int, label ) -> Int -> String -> String
 toRoot breaks i rendered =
     case breaks of
         [] ->
             rendered
 
-        [ Breakpoint upper _ ] ->
-            rendered ++ lowerRootItem i upper
+        [ ( upper, _ ) ] ->
+            rendered ++ renderResponsiveCssVars i upper (upper + 1000)
 
-        (Breakpoint upper _) :: (((Breakpoint lower _) :: _) as tail) ->
+        ( lower, _ ) :: ((( upper, _ ) :: _) as tail) ->
             toRoot tail
                 (i + 1)
-                (rendered ++ rootItem i upper lower)
+                (rendered ++ renderResponsiveCssVars i lower upper)
 
 
-toBoundedMediaQuery : List (Breakpoint label) -> Int -> String -> String
+toBoundedMediaQuery : List ( Int, label ) -> Int -> String -> String
 toBoundedMediaQuery breaks i rendered =
     case breaks of
         [] ->
             rendered
 
-        [ Breakpoint upper _ ] ->
-            rendered ++ renderLower upper i
+        [ ( upper, _ ) ] ->
+            rendered ++ minWidthMediaQuery i upper
 
-        (Breakpoint upper _) :: (((Breakpoint lower _) :: _) as tail) ->
+        ( lower, _ ) :: ((( upper, _ ) :: _) as tail) ->
             toBoundedMediaQuery tail
                 (i + 1)
-                (rendered ++ renderBounded upper lower i)
+                (rendered ++ renderBoundedMediaQuery upper lower i)
 
 
-renderUpper : Int -> String
-renderUpper lowerBound =
-    "@media" ++ minWidth lowerBound ++ " { " ++ renderMediaProps 0 ++ " }"
+minWidthMediaQuery : Int -> Int -> String
+minWidthMediaQuery i lowerBound =
+    "@media" ++ minWidth lowerBound ++ " { " ++ renderMediaProps i ++ " }"
 
 
-renderLower : Int -> Int -> String
-renderLower upperBound i =
+maxWidthMediaQuery : Int -> Int -> String
+maxWidthMediaQuery i upperBound =
     "@media " ++ maxWidth upperBound ++ " { " ++ renderMediaProps i ++ " }"
 
 
-renderBounded : Int -> Int -> Int -> String
-renderBounded upper lower i =
+renderBoundedMediaQuery : Int -> Int -> Int -> String
+renderBoundedMediaQuery upper lower i =
     "@media " ++ minWidth lower ++ " and " ++ maxWidth upper ++ " { " ++ renderMediaProps i ++ " }"
 
 
@@ -3002,7 +2989,7 @@ renderMediaProps : Int -> String
 renderMediaProps i =
     (":root {--ui-bp-" ++ String.fromInt i ++ ": 1;}")
         ++ (".ui-bp-" ++ String.fromInt i ++ "-hidden {display:none !important;}")
-        ++ (".ui-bp-" ++ String.fromInt i ++ "-as-col: flex-direction: column;")
+        ++ (".ui-bp-" ++ String.fromInt i ++ "-as-col {flex-direction: column;}")
 
 
 {-| -}

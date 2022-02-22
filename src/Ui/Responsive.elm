@@ -1,33 +1,23 @@
 module Ui.Responsive exposing
-    ( visible
+    ( Breakpoints, breakpoints
+    , visible
     , Value, value, fluid
     , rowWhen, fontSize, padding
     , height, heightMin, heightMax
     , width, widthMin, widthMax
-    , Breakpoints, breakpoints, Breakpoint, breakAt
     , orAbove, orBelow
     )
 
 {-|
 
-@docs visible
-
-@docs Value, value, fluid
-
-@docs rowWhen, fontSize, padding
-
-@docs height, heightMin, heightMax
-
-@docs width, widthMin, widthMax
-
-@docs Breakpoints, breakpoints, Breakpoint, breakAt
+@docs Breakpoints, breakpoints
 
     breakpoints : Ui.Responsive.Breakpoints Breakpoints
     breakpoints =
-        Ui.Responsive.breakpoints ExtraLarge
-            [ Ui.Responsive.breakAt 2400 Large
-            , Ui.Responsive.breakAt 1400 Medium
-            , Ui.Responsive.breakAt 800 Small
+        Ui.Responsive.breakpoints Small
+            [ (800, Medium)
+            , (1400, Large)
+            , (2400, ExtraLarge)
             ]
 
 
@@ -79,6 +69,16 @@ module Ui.Responsive exposing
         ]
         (text "Fluid typography")
 
+@docs visible
+
+@docs Value, value, fluid
+
+@docs rowWhen, fontSize, padding
+
+@docs height, heightMin, heightMax
+
+@docs width, widthMin, widthMax
+
 @docs orAbove, orBelow
 
 -}
@@ -96,11 +96,6 @@ import Internal.Model2 as Internal
 {-| -}
 type alias Breakpoints label =
     Internal.Breakpoints label
-
-
-{-| -}
-type alias Breakpoint label =
-    Internal.Breakpoint label
 
 
 {-| -}
@@ -162,25 +157,14 @@ orBelow label resp =
 
 
 {-| -}
-breakpoints : label -> List (Breakpoint label) -> Breakpoints label
+breakpoints : label -> List ( Int, label ) -> Breakpoints label
 breakpoints def breaks =
     Internal.Responsive
         { transition = Nothing
         , default = def
-        , breaks = List.sortBy ((*) -1 << breakWidth) breaks
+        , breaks = List.sortBy Tuple.first breaks
         , total = List.length breaks
         }
-
-
-breakWidth : Breakpoint label -> Int
-breakWidth (Internal.Breakpoint at _) =
-    at
-
-
-{-| -}
-breakAt : Int -> label -> Breakpoint label
-breakAt =
-    Internal.Breakpoint
 
 
 {-| -}
@@ -317,6 +301,7 @@ widthMax resp toValue =
         (calc <| cssValue resp toValue)
 
 
+calc : String -> String
 calc str =
     "calc(" ++ str ++ ")"
 
@@ -329,6 +314,7 @@ varStyle name val =
         }
 
 
+breakpointString : Int -> String
 breakpointString i =
     "--ui-bp-" ++ String.fromInt i
 
@@ -357,6 +343,7 @@ cssValue resp toValue =
 2.  Division needs the _denominator_ to be a <number>, again literal with no units.
 
 -}
+renderValue : Int -> Value -> String
 renderValue i v =
     ("var(" ++ breakpointString i ++ ") * ")
         ++ (case v of
@@ -396,7 +383,7 @@ foldHelper fn cursor i breaks =
         [] ->
             cursor
 
-        (Internal.Breakpoint _ label) :: remain ->
+        ( _, label ) :: remain ->
             foldHelper fn
                 (fn i label cursor)
                 (i + 1)
@@ -435,7 +422,7 @@ getIndexHelper i target breaks =
         [] ->
             i
 
-        (Internal.Breakpoint _ top) :: remain ->
+        ( _, top ) :: remain ->
             if top == target then
                 i
 

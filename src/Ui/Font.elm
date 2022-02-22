@@ -1,11 +1,14 @@
 module Ui.Font exposing
     ( size, color, gradient
-    , family, custom, Font, typeface, serif, sansSerif, monospace
-    , Sizing, full, byCapital, Adjustment
+    , Font
+    , family, typeface, serif, sansSerif, monospace
     , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
+    , custom
+    , Sizing, full, byCapital, Adjustment
     , underline, strike, italic
     , heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
-    , Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+    , Variant
+    , smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     , glow, shadow
     )
 
@@ -34,14 +37,21 @@ module Ui.Font exposing
 
 ## Typefaces
 
-@docs family, custom, Font, typeface, serif, sansSerif, monospace
+@docs Font
 
-@docs Sizing, full, byCapital, Adjustment
+@docs family, typeface, serif, sansSerif, monospace
 
 
 ## Alignment and Spacing
 
 @docs alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
+
+
+## Font Group
+
+@docs custom
+
+@docs Sizing, full, byCapital, Adjustment
 
 
 ## Font Styles
@@ -56,7 +66,9 @@ module Ui.Font exposing
 
 ## Variants
 
-@docs Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+@docs Variant
+
+@docs smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
 
 
 ## Shadows
@@ -210,6 +222,18 @@ byCapital =
 
 
 {- FONT ADJUSTMENTS -}
+{-
+
+   type Size = Exact Int | ResponsiveExact | ResponsiveFluid
+
+   type Weight = ... the weights
+
+   type FontColor Color = FontColor Color | FontGradient Gradient
+
+
+
+
+-}
 
 
 {-|
@@ -229,6 +253,11 @@ custom :
     , fallback : List Font
     , sizing : Sizing
     , variants : List Variant
+
+    -- normal attrs
+    -- , size : Size
+    -- , weight : Int
+    -- , color : Coloring
     }
     -> Attribute msg
 custom details =
