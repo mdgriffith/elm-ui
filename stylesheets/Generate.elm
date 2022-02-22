@@ -104,7 +104,6 @@ classes =
     , focus = "fcs"
     , focusedWithin = "focus-within"
     , active = "atv"
-    , focusable = "tb0"
 
     --scrollbars
     , scrollbars = "sb"
@@ -574,9 +573,6 @@ baseSheet =
         ]
     , Class (dot classes.any ++ ":focus")
         [ Prop "outline" "none"
-        ]
-    , Class (dot classes.focusable)
-        [ Prop "tabindex" "0"
         ]
     , Class (dot classes.root)
         [ Prop "width" "100%"
