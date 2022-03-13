@@ -2,7 +2,9 @@ module Ui exposing
     ( Element, none, text, el
     , row, wrappedRow, column
     , paragraph, textColumn
-    , Attribute, Length, px, fill, portion, width, widthMin, widthMax, height, heightMin, heightMax
+    , Attribute, Length, px, fill, portion
+    , width, widthMin, widthMax
+    , height, heightMin, heightMax
     , ellip
     , explain
     , padding, paddingXY, paddingEach
@@ -52,7 +54,11 @@ Text layout needs some specific considerations.
 
 # Size
 
-@docs Attribute, Length, px, fill, portion, width, widthMin, widthMax, height, heightMin, heightMax
+@docs Attribute, Length, px, fill, portion
+
+@docs width, widthMin, widthMax
+
+@docs height, heightMin, heightMax
 
 @docs ellip
 
@@ -71,9 +77,9 @@ Padding is the distance between the outer edge and the content, and spacing is t
 So, if we have the following row, with some padding and spacing.
 
     Ui.row [ padding 10, spacing 7 ]
-        [ Ui.el [] none
-        , Ui.el [] none
-        , Ui.el [] none
+        [ Ui.el [] Ui.none
+        , Ui.el [] Ui.none
+        , Ui.el [] Ui.none
         ]
 
 Here's what we can expect:
