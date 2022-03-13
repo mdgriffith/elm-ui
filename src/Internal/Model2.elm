@@ -8,6 +8,7 @@ import Html
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed
+import Html.Lazy
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField exposing (BitField)
 import Internal.Flag as Flag exposing (Flag)
@@ -937,7 +938,8 @@ type Attr msg
             Maybe (BitField.Bits Bits.Inheritance)
         , variants : String
         , smallCaps : Bool
-        , weight : Int
+        , weight : String
+        , size : String
         }
     | FontSize Int
     | Spacing Int Int
@@ -1335,6 +1337,67 @@ spacerBottom space =
         []
 
 
+renderLayout :
+    { options : List Option }
+    -> State
+    -> List (Attribute msg)
+    -> Element msg
+    -> Html.Html msg
+renderLayout { options } (State state) attrs content =
+    unwrap zero <|
+        element AsRoot
+            attrs
+            [ Element
+                (\_ ->
+                    Html.Keyed.node "div"
+                        []
+                        [ ( "options", Html.Lazy.lazy renderOptions options )
+                        , ( "static", staticStyles )
+                        , ( "animations", Html.Lazy.lazy styleRules state.rules )
+                        , ( "boxes"
+                          , Html.div [] (List.map viewBox state.boxes)
+                          )
+                        ]
+                )
+            , content
+            ]
+
+
+staticStyles : Html.Html msg
+staticStyles =
+    Html.div []
+        [ Html.node "style"
+            []
+            [ Html.text Style.rules ]
+        ]
+
+
+styleRules : List String -> Html.Html msg
+styleRules styleStr =
+    Html.div []
+        [ Html.node "style"
+            []
+            [ Html.text (String.join "\n" styleStr) ]
+        ]
+
+
+viewBox ( boxId, box ) =
+    Html.div
+        [ Attr.style "position" "absolute"
+        , Attr.style "left" (String.fromFloat box.x ++ "px")
+        , Attr.style "top" (String.fromFloat box.y ++ "px")
+        , Attr.style "width" (String.fromFloat box.width ++ "px")
+        , Attr.style "height" (String.fromFloat box.height ++ "px")
+        , Attr.style "z-index" "10"
+        , Attr.style "background-color" "rgba(255,0,0,0.1)"
+        , Attr.style "border-radius" "3px"
+        , Attr.style "border" "3px dashed rgba(255,0,0,0.2)"
+        , Attr.style "box-sizing" "border-box"
+        ]
+        [--Html.text (Debug.toString id)
+        ]
+
+
 element :
     Layout
     -> List (Attribute msg)
@@ -1571,6 +1634,11 @@ type Children msg
     | Keyed (List ( String, Html.Html msg ))
 
 
+fontSizeAdjusted : Int -> Float -> Float
+fontSizeAdjusted size height =
+    toFloat size * (1 / height)
+
+
 {-| We track a number of things in the function and it can be difficult to remember exactly why.
 
 A lot of these questions essentially fall to, "do we do the work or do we count on the browser to do it."
@@ -1634,77 +1702,70 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                 adjustmentNotSet =
                     not (Flag.present Flag.fontAdjustment has)
 
-                {-
-                   no fontsize or adjustment -> skip
-                   if fontsize is set, not adjustment:
-                       -> set fontsize px
-
-                   adjsutment, not fontsize
-                       -> set font size (em
-                   if both are set
-                       -> fontsize px
-
-
-                -}
-                attrsWithFontSize =
-                    if details.fontSize == -1 && adjustmentNotSet then
-                        -- no fontsize or adjustment set
-                        attrsWithTransform
-
-                    else if adjustmentNotSet then
-                        -- font size is set, not adjustment
-                        -- set font size, adjust via inherited value
-                        let
-                            height =
-                                parentBits
-                                    |> BitField.getPercentage Bits.fontHeight
-                        in
-                        Attr.style "font-size"
-                            (String.fromFloat
-                                (toFloat details.fontSize * (1 / height))
-                                ++ "px"
-                            )
-                            :: attrsWithTransform
-
-                    else if details.fontSize /= -1 then
-                        -- a font size is set as well as an adjustment
-                        -- set font size from details
-                        let
-                            fontHeight =
-                                myBits
-                                    |> BitField.getPercentage Bits.fontHeight
-                        in
-                        Attr.style "font-size"
-                            (String.fromFloat
-                                (toFloat details.fontSize * (1 / fontHeight))
-                                ++ "px"
-                            )
-                            :: attrsWithTransform
-
-                    else
-                        -- a font size is NOT set, but we have an adjustment
-                        -- operate on `em`
-                        let
-                            fontHeight =
-                                myBits
-                                    |> BitField.getPercentage Bits.fontHeight
-                        in
-                        Attr.style "font-size"
-                            (String.fromFloat
-                                (1 / fontHeight)
-                                ++ "em"
-                            )
-                            :: attrsWithTransform
-
+                -- {-
+                --    no fontsize or adjustment -> skip
+                --    if fontsize is set, not adjustment:
+                --        -> set fontsize px
+                --    adjsutment, not fontsize
+                --        -> set font size (em
+                --    if both are set
+                --        -> fontsize px
+                -- -}
+                -- attrsWithFontSize =
+                --     if details.fontSize == -1 && adjustmentNotSet then
+                --         -- no fontsize or adjustment set
+                --         attrsWithTransform
+                --     else if adjustmentNotSet then
+                --         -- font size is set, not adjustment
+                --         -- set font size, adjust via inherited value
+                --         let
+                --             height =
+                --                 parentBits
+                --                     |> BitField.getPercentage Bits.fontHeight
+                --         in
+                --         Attr.style "font-size"
+                --             (String.fromFloat
+                --                 (toFloat details.fontSize * (1 / height))
+                --                 ++ "px"
+                --             )
+                --             :: attrsWithTransform
+                --     else if details.fontSize /= -1 then
+                --         -- a font size is set as well as an adjustment
+                --         -- set font size from details
+                --         let
+                --             fontHeight =
+                --                 myBits
+                --                     |> BitField.getPercentage Bits.fontHeight
+                --         in
+                --         Attr.style "font-size"
+                --             (String.fromFloat
+                --                 (toFloat details.fontSize * (1 / fontHeight))
+                --                 ++ "px"
+                --             )
+                --             :: attrsWithTransform
+                --     else
+                --         -- a font size is NOT set, but we have an adjustment
+                --         -- operate on `em`
+                --         let
+                --             fontHeight =
+                --                 myBits
+                --                     |> BitField.getPercentage Bits.fontHeight
+                --         in
+                --         Attr.style "font-size"
+                --             (String.fromFloat
+                --                 (1 / fontHeight)
+                --                 ++ "em"
+                --             )
+                --             :: attrsWithTransform
                 attrsWithAnimations =
                     case details.animEvents of
                         [] ->
-                            attrsWithFontSize
+                            attrsWithTransform
 
                         animEvents ->
                             Events.on "animationstart"
                                 (Json.oneOf details.animEvents)
-                                :: attrsWithFontSize
+                                :: attrsWithTransform
 
                 attrsWithWidthFill =
                     if Flag.present Flag.width has then
@@ -1857,14 +1918,20 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         renderAttrs parentBits
                             myBits
                             layout
-                            { fontSize =
-                                size
-                            , transform = details.transform
-                            , animEvents = details.animEvents
-                            }
+                            details
                             children
-                            has
-                            htmlAttrs
+                            (Flag.add flag has)
+                            (Attr.style "font-size"
+                                (String.fromFloat
+                                    (fontSizeAdjusted size
+                                        (parentBits
+                                            |> BitField.getPercentage Bits.fontHeight
+                                        )
+                                    )
+                                    ++ "px"
+                                )
+                                :: htmlAttrs
+                            )
                             classes
                             remain
 
@@ -1911,6 +1978,8 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                                     Flag.add Flag.fontAdjustment has
                             )
                             (Attr.style "font-family" font.family
+                                :: Attr.style "font-size" font.size
+                                :: Attr.style "font-weight" font.weight
                                 :: withFeatures
                             )
                             classes
@@ -2005,7 +2074,6 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         let
                             isVar =
                                 String.startsWith "--" styleDetails.styleName
-                                    |> Debug.log "IS VAR"
                         in
                         renderAttrs parentBits
                             myBits
@@ -2368,6 +2436,53 @@ renderInlineStylesToString parentBits myBits layout details has vars attrs =
 
             else
                 case attr of
+                    FontSize size ->
+                        renderInlineStylesToString parentBits
+                            myBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (vars
+                                ++ ("font-size: "
+                                        ++ String.fromFloat
+                                            (fontSizeAdjusted size
+                                                (parentBits
+                                                    |> BitField.getPercentage Bits.fontHeight
+                                                )
+                                            )
+                                        ++ "px;"
+                                   )
+                            )
+                            remain
+
+                    Font font ->
+                        let
+                            withSmallcaps =
+                                if font.smallCaps then
+                                    vars ++ "font-variant-caps: small-caps;"
+
+                                else
+                                    vars
+
+                            withFeatures =
+                                if font.variants == "" then
+                                    vars
+
+                                else
+                                    vars ++ "font-feature-settings: " ++ font.variants ++ ";"
+                        in
+                        renderInlineStylesToString parentBits
+                            myBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (withFeatures
+                                ++ ("font-family:" ++ font.family ++ ";")
+                                ++ ("font-size:" ++ font.size ++ ";")
+                                ++ ("font-weight:" ++ font.weight ++ ";")
+                            )
+                            remain
+
                     Style styleDetails ->
                         renderInlineStylesToString parentBits
                             myBits
@@ -2902,6 +3017,16 @@ type Breakpoints label
 type Value
     = Between Int Int
     | Exactly Int
+
+
+mapResonsive : (Int -> Int) -> Value -> Value
+mapResonsive fn resp =
+    case resp of
+        Between low high ->
+            Between (fn low) (fn high)
+
+        Exactly exact ->
+            Exactly (fn exact)
 
 
 responsiveCssValue : Breakpoints label -> (label -> Value) -> String

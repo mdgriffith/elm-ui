@@ -49,7 +49,7 @@ module Ui.Font exposing
 
 ## Font
 
-@docs font
+@docs font, responsive
 
 @docs Sizing, full, byCapital, Adjustment
 
@@ -81,25 +81,22 @@ import Html.Attributes as Attr
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
 import Internal.Flag as Flag
-import Internal.Model2 as Two
+import Internal.Font
+import Internal.Model2 as Internal
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Color)
 import Ui.Gradient
-import Ui.Responsive
 
 
 {-| -}
-type Font
-    = Serif
-    | SansSerif
-    | Monospace
-    | Typeface String
+type alias Font =
+    Internal.Font.Font
 
 
 {-| -}
-color : Color -> Two.Attribute msg
+color : Color -> Attribute msg
 color fontColor =
-    Two.style "color" (Style.color fontColor)
+    Internal.style "color" (Style.color fontColor)
 
 
 {-| -}
@@ -107,7 +104,7 @@ gradient :
     Ui.Gradient.Gradient
     -> Attribute msg
 gradient grad =
-    Two.styleAndClass Flag.fontColor
+    Internal.styleAndClass Flag.fontColor
         { class = Style.classes.textGradient
         , styleName = "--text-gradient"
         , styleVal = Style.toCssGradient grad
@@ -131,70 +128,31 @@ gradient grad =
 -}
 family : List Font -> Attribute msg
 family typefaces =
-    Two.style "font-family" (renderFont typefaces "")
-
-
-renderFont : List Font -> String -> String
-renderFont faces str =
-    case faces of
-        [] ->
-            str
-
-        Serif :: remain ->
-            case str of
-                "" ->
-                    renderFont remain "serif"
-
-                _ ->
-                    renderFont remain (str ++ ", serif")
-
-        SansSerif :: remain ->
-            case str of
-                "" ->
-                    renderFont remain "sans-serif"
-
-                _ ->
-                    renderFont remain (str ++ ", sans-serif")
-
-        Monospace :: remain ->
-            case str of
-                "" ->
-                    renderFont remain "monospace"
-
-                _ ->
-                    renderFont remain (str ++ ", monospace")
-
-        (Typeface name) :: remain ->
-            case str of
-                "" ->
-                    renderFont remain ("\"" ++ name ++ "\"")
-
-                _ ->
-                    renderFont remain (str ++ ", \"" ++ name ++ "\"")
+    Internal.style "font-family" (Internal.Font.render typefaces "")
 
 
 {-| -}
 serif : Font
 serif =
-    Serif
+    Internal.Font.Serif
 
 
 {-| -}
 sansSerif : Font
 sansSerif =
-    SansSerif
+    Internal.Font.SansSerif
 
 
 {-| -}
 monospace : Font
 monospace =
-    Monospace
+    Internal.Font.Monospace
 
 
 {-| -}
 typeface : String -> Font
 typeface =
-    Typeface
+    Internal.Font.Typeface
 
 
 {-| -}
@@ -204,28 +162,27 @@ type alias Adjustment =
     }
 
 
-type Sizing
-    = Full
-    | ByCapital Adjustment
+type alias Sizing =
+    Internal.Font.Sizing
 
 
 {-| -}
 full : Sizing
 full =
-    Full
+    Internal.Font.Full
 
 
 {-| -}
 byCapital : Adjustment -> Sizing
 byCapital =
-    ByCapital
+    Internal.Font.ByCapital
 
 
 
 {- FONT ADJUSTMENTS -}
 {-
 
-   type Size = Exact Int | ResponsiveExact | ResponsiveFluid
+
 
    type FontColor Color = FontColor Color | FontGradient Gradient
 
@@ -239,12 +196,13 @@ byCapital =
 
     Ui.Font.font
         { name = "EB Garamond"
-        , fallback = [ Font.serif ]
+        , fallback = [ Ui.Font.serif ]
         , sizing =
             Ui.Font.full
         , variants =
             []
         , weight = Ui.Font.bold
+        , size = 16
         }
 
 -}
@@ -255,133 +213,55 @@ font :
     , variants : List Variant
     , weight : Weight
     , size : Int
-
-    -- normal attrs
-    -- , size : Size
-    -- , color : Coloring
     }
     -> Attribute msg
 font details =
-    Two.Attribute
+    Internal.Attribute
         { flag = Flag.fontAdjustment
         , attr =
-            Two.Font
-                { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
+            Internal.Font
+                { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
                 , adjustments =
                     case details.sizing of
-                        Full ->
+                        Internal.Font.Full ->
                             Nothing
 
-                        ByCapital adjustment ->
+                        Internal.Font.ByCapital adjustment ->
                             Just
                                 (BitField.init
                                     |> BitField.setPercentage Bits.fontHeight adjustment.height
                                     |> BitField.setPercentage Bits.fontOffset adjustment.offset
                                 )
                 , variants =
-                    renderVariants details.variants ""
+                    Internal.Font.renderVariants details.variants ""
                 , smallCaps =
-                    hasSmallCaps details.variants
+                    Internal.Font.hasSmallCaps details.variants
                 , weight =
                     case details.weight of
-                        Weight wght ->
-                            wght
-                }
-        }
-
-
-{-| -}
-responsive :
-    { name : String
-    , fallback : List Font
-    , sizing : Sizing
-    , variants : List Variant
-    , breakpoints : Ui.Responsive.Breakpoints breakpoint
-    , size : breakpoint -> Ui.Responsive.Value
-    , weight : Weight -- breakpoint -> Ui.Responsive.Value
-
-    -- normal attrs
-    -- , color : Coloring
-    }
-    -> Attribute msg
-responsive details =
-    Two.Attribute
-        { flag = Flag.fontAdjustment
-        , attr =
-            Two.Font
-                { family = renderFont details.fallback ("\"" ++ details.name ++ "\"")
-                , adjustments =
+                        Internal.Font.Weight wght ->
+                            String.fromInt wght
+                , size =
                     case details.sizing of
-                        Full ->
-                            Nothing
+                        Internal.Font.Full ->
+                            String.fromInt details.size ++ "px"
 
-                        ByCapital adjustment ->
-                            Just
-                                (BitField.init
-                                    |> BitField.setPercentage Bits.fontHeight adjustment.height
-                                    |> BitField.setPercentage Bits.fontOffset adjustment.offset
+                        Internal.Font.ByCapital adjustment ->
+                            String.fromFloat
+                                (Internal.fontSizeAdjusted details.size
+                                    adjustment.height
                                 )
-                , variants =
-                    renderVariants details.variants ""
-                , smallCaps =
-                    hasSmallCaps details.variants
-                , weight =
-                    case details.weight of
-                        Weight wght ->
-                            wght
+                                ++ "px"
                 }
         }
-
-
-hasSmallCaps : List Variant -> Basics.Bool
-hasSmallCaps variants =
-    case variants of
-        [] ->
-            False
-
-        (VariantActive "smcp") :: remain ->
-            True
-
-        _ :: remain ->
-            hasSmallCaps remain
-
-
-renderVariants : List Variant -> String -> String
-renderVariants variants str =
-    let
-        withComma =
-            case str of
-                "" ->
-                    ""
-
-                _ ->
-                    str ++ ", "
-    in
-    case variants of
-        [] ->
-            str
-
-        (VariantActive "smcp") :: remain ->
-            -- skip smallcaps, which is rendered by renderSmallCaps
-            renderVariants remain str
-
-        (VariantActive name) :: remain ->
-            renderVariants remain (withComma ++ "\"" ++ name ++ "\"")
-
-        (VariantOff name) :: remain ->
-            renderVariants remain (withComma ++ "\"" ++ name ++ "\" 0")
-
-        (VariantIndexed name index) :: remain ->
-            renderVariants remain (withComma ++ "\"" ++ name ++ "\" " ++ String.fromInt index)
 
 
 {-| Font sizes are always given as `px`.
 -}
 size : Int -> Attribute msg
 size i =
-    Two.Attribute
+    Internal.Attribute
         { flag = Flag.fontSize
-        , attr = Two.FontSize i
+        , attr = Internal.FontSize i
         }
 
 
@@ -389,41 +269,41 @@ size i =
 -}
 letterSpacing : Float -> Attribute msg
 letterSpacing offset =
-    Two.style "letter-spacing" (String.fromFloat offset ++ "px")
+    Internal.style "letter-spacing" (String.fromFloat offset ++ "px")
 
 
 {-| In `px`.
 -}
 wordSpacing : Float -> Attribute msg
 wordSpacing offset =
-    Two.style "word-spacing" (String.fromFloat offset ++ "px")
+    Internal.style "word-spacing" (String.fromFloat offset ++ "px")
 
 
 {-| Align the font to the left.
 -}
 alignLeft : Attribute msg
 alignLeft =
-    Two.classWith Flag.fontAlignment Style.classes.textLeft
+    Internal.classWith Flag.fontAlignment Style.classes.textLeft
 
 
 {-| Align the font to the right.
 -}
 alignRight : Attribute msg
 alignRight =
-    Two.classWith Flag.fontAlignment Style.classes.textRight
+    Internal.classWith Flag.fontAlignment Style.classes.textRight
 
 
 {-| Center align the font.
 -}
 center : Attribute msg
 center =
-    Two.classWith Flag.fontAlignment Style.classes.textCenter
+    Internal.classWith Flag.fontAlignment Style.classes.textCenter
 
 
 {-| -}
 justify : Attribute msg
 justify =
-    Two.classWith Flag.fontAlignment Style.classes.textJustify
+    Internal.classWith Flag.fontAlignment Style.classes.textJustify
 
 
 
@@ -436,91 +316,91 @@ justify =
 {-| -}
 underline : Attribute msg
 underline =
-    Two.class Style.classes.underline
+    Internal.class Style.classes.underline
 
 
 {-| -}
 strike : Attribute msg
 strike =
-    Two.class Style.classes.strike
+    Internal.class Style.classes.strike
 
 
 {-| -}
 italic : Attribute msg
 italic =
-    Two.class Style.classes.italic
+    Internal.class Style.classes.italic
 
 
 {-| -}
-type Weight
-    = Weight Int
+type alias Weight =
+    Internal.Font.Weight
 
 
 {-| -}
 weight : Weight -> Attribute msg
-weight (Weight i) =
-    Two.style "font-weight" (String.fromInt i)
+weight (Internal.Font.Weight i) =
+    Internal.style "font-weight" (String.fromInt i)
 
 
 {-| -}
 bold : Weight
 bold =
-    Weight 700
+    Internal.Font.Weight 700
 
 
 {-| -}
 light : Weight
 light =
-    Weight 300
+    Internal.Font.Weight 300
 
 
 {-| -}
 hairline : Weight
 hairline =
-    Weight 100
+    Internal.Font.Weight 100
 
 
 {-| -}
 extraLight : Weight
 extraLight =
-    Weight 200
+    Internal.Font.Weight 200
 
 
 {-| -}
 regular : Weight
 regular =
-    Weight 400
+    Internal.Font.Weight 400
 
 
 {-| -}
 semiBold : Weight
 semiBold =
-    Weight 600
+    Internal.Font.Weight 600
 
 
 {-| -}
 medium : Weight
 medium =
-    Weight 500
+    Internal.Font.Weight 500
 
 
 {-| -}
 extraBold : Weight
 extraBold =
-    Weight 800
+    Internal.Font.Weight 800
 
 
 {-| -}
 heavy : Weight
 heavy =
-    Weight 900
+    Internal.Font.Weight 900
 
 
 {-| This will reset bold and italic.
 -}
 unitalicized : Attribute msg
 unitalicized =
-    Two.class Style.classes.textUnitalicized
+    Internal.class Style.classes.textUnitalicized
 
 
 {-| -}
@@ -531,7 +411,7 @@ shadow :
     }
     -> Attribute msg
 shadow shade =
-    -- Two.Style Flag.txtShadows
+    -- Internal.Style Flag.txtShadows
     --     ("text-shadow:"
     --         ++ (String.fromFloat (Tuple.first shade.offset) ++ "px ")
     --         ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
@@ -539,7 +419,7 @@ shadow shade =
     --         ++ Style.color shade.color
     --         ++ ";"
     --     )
-    Two.style "text-shadow"
+    Internal.style "text-shadow"
         ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
             ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
             ++ (String.fromFloat shade.blur ++ "px ")
@@ -558,7 +438,7 @@ glow clr i =
             , color = clr
             }
     in
-    Two.style "text-shadow"
+    Internal.style "text-shadow"
         ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
             ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
             ++ (String.fromFloat shade.blur ++ "px ")
@@ -571,64 +451,62 @@ glow clr i =
 
 
 {-| -}
-type Variant
-    = VariantActive String
-    | VariantOff String
-    | VariantIndexed String Int
+type alias Variant =
+    Internal.Font.Variant
 
 
 {-| [Small caps](https://en.wikipedia.org/wiki/Small_caps) are rendered using uppercase glyphs, but at the size of lowercase glyphs.
 -}
 smallCaps : Variant
 smallCaps =
-    VariantActive "smcp"
+    Internal.Font.VariantActive "smcp"
 
 
 {-| Add a slash when rendering `0`
 -}
 slashedZero : Variant
 slashedZero =
-    VariantActive "zero"
+    Internal.Font.VariantActive "zero"
 
 
 {-| -}
 ligatures : Variant
 ligatures =
-    VariantActive "liga"
+    Internal.Font.VariantActive "liga"
 
 
 {-| Oridinal markers like `1st` and `2nd` will receive special glyphs.
 -}
 ordinal : Variant
 ordinal =
-    VariantActive "ordn"
+    Internal.Font.VariantActive "ordn"
 
 
 {-| Number figures will each take up the same space, allowing them to be easily aligned, such as in tables.
 -}
 tabularNumbers : Variant
 tabularNumbers =
-    VariantActive "tnum"
+    Internal.Font.VariantActive "tnum"
 
 
 {-| Render fractions with the numerator stacked on top of the denominator.
 -}
 stackedFractions : Variant
 stackedFractions =
-    VariantActive "afrc"
+    Internal.Font.VariantActive "afrc"
 
 
 {-| Render fractions
 -}
 diagonalFractions : Variant
 diagonalFractions =
-    VariantActive "frac"
+    Internal.Font.VariantActive "frac"
 
 
 {-| -}
 swash : Int -> Variant
 swash =
-    VariantIndexed "swsh"
+    Internal.Font.VariantIndexed "swsh"
 
 
 {-| Set a feature by name and whether it should be on or off.
@@ -639,10 +517,10 @@ Feature names are four-letter names as defined in the [OpenType specification](h
 feature : String -> Bool -> Variant
 feature name on =
     if on then
-        VariantIndexed name 1
+        Internal.Font.VariantIndexed name 1
 
     else
-        VariantIndexed name 0
+        Internal.Font.VariantIndexed name 0
 
 
 {-| A font variant might have multiple versions within the font.
@@ -652,4 +530,4 @@ In these cases we need to specify the index of the version we want.
 -}
 indexed : String -> Int -> Variant
 indexed name on =
-    VariantIndexed name on
+    Internal.Font.VariantIndexed name on

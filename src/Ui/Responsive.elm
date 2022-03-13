@@ -1,8 +1,10 @@
 module Ui.Responsive exposing
-    ( Breakpoints, breakpoints
+    ( layout
+    , Breakpoints, breakpoints
     , visible
     , Value, value, fluid
-    , rowWhen, fontSize
+    , rowWhen
+    , font
     , padding, paddingXY, paddingEach
     , height, heightMin, heightMax
     , width, widthMin, widthMax
@@ -10,6 +12,8 @@ module Ui.Responsive exposing
     )
 
 {-|
+
+@docs layout
 
 @docs Breakpoints, breakpoints
 
@@ -74,7 +78,9 @@ module Ui.Responsive exposing
 
 @docs Value, value, fluid
 
-@docs rowWhen, fontSize
+@docs rowWhen
+
+@docs font
 
 @docs padding, paddingXY, paddingEach
 
@@ -86,14 +92,20 @@ module Ui.Responsive exposing
 
 -}
 
+import Html
 import Html.Attributes as Attr
+import Internal.BitEncodings as Bits
+import Internal.BitField as BitField
 import Internal.Flag as Flag
+import Internal.Font
 import Internal.Model2 as Internal
     exposing
         ( Attribute
         , Element
         , ResponsiveTransition
         )
+import Ui
+import Ui.Font
 
 
 {-| -}
@@ -157,6 +169,38 @@ orBelow label resp =
         )
         resp
         |> Tuple.second
+
+
+{-| -}
+type alias LayoutOption =
+    Internal.Option
+
+
+{-| -}
+layout :
+    { options : List Ui.Option
+    , breakpoints : Breakpoints label
+    }
+    -> Ui.State
+    -> List (Ui.Attribute msg)
+    -> Ui.Element msg
+    -> Html.Html msg
+layout opts state attrs els =
+    Internal.renderLayout
+        { options =
+            Internal.ResponsiveBreakpoints
+                (Internal.toMediaQuery opts.breakpoints)
+                :: opts.options
+        }
+        state
+        attrs
+        els
+
+
+layoutBreakpoints : Breakpoints label -> LayoutOption
+layoutBreakpoints resp =
+    Internal.ResponsiveBreakpoints
+        (Internal.toMediaQuery resp)
 
 
 {-| -}
@@ -233,6 +277,66 @@ rowWhen breaks labels attrs children =
             :: attrs
         )
         children
+
+
+{-| -}
+font :
+    { name : String
+    , fallback : List Ui.Font.Font
+    , sizing : Ui.Font.Sizing
+    , variants : List Ui.Font.Variant
+    , breakpoints : Breakpoints breakpoint
+    , size : breakpoint -> Value
+    , weight : breakpoint -> Ui.Font.Weight
+    }
+    -> Attribute msg
+font details =
+    Internal.Attribute
+        { flag = Flag.fontAdjustment
+        , attr =
+            Internal.Font
+                { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
+                , adjustments =
+                    case details.sizing of
+                        Internal.Font.Full ->
+                            Nothing
+
+                        Internal.Font.ByCapital adjustment ->
+                            Just
+                                (BitField.init
+                                    |> BitField.setPercentage Bits.fontHeight adjustment.height
+                                    |> BitField.setPercentage Bits.fontOffset adjustment.offset
+                                )
+                , variants =
+                    Internal.Font.renderVariants details.variants ""
+                , smallCaps =
+                    Internal.Font.hasSmallCaps details.variants
+                , weight =
+                    Internal.responsiveCssValue
+                        details.breakpoints
+                        (\bp ->
+                            case details.weight bp of
+                                Internal.Font.Weight wght ->
+                                    Internal.Exactly wght
+                        )
+                , size =
+                    Internal.responsiveCssValue
+                        details.breakpoints
+                        (\bp ->
+                            case details.sizing of
+                                Internal.Font.Full ->
+                                    details.size bp
+
+                                Internal.Font.ByCapital adjustment ->
+                                    Internal.mapResonsive
+                                        (\s ->
+                                            Internal.fontSizeAdjusted s adjustment.height
+                                                |> round
+                                        )
+                                        (details.size bp)
+                        )
+                }
+        }
 
 
 {-| -}

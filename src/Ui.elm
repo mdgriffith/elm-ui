@@ -23,7 +23,7 @@ module Ui exposing
     , updateWith, subscription
     , map, mapAttribute
     , html, htmlAttribute
-    , Msg, Phase, State, Transition, breakpoints, clip, clipX, clipY, duration, embed, id, init, scrollbarX, scrollbarY, transition
+    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, id, init, scrollbarX, scrollbarY, transition
     )
 
 {-|
@@ -223,7 +223,6 @@ import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Json.Decode as Decode
 import Set
-import Ui.Responsive
 
 
 {-| -}
@@ -450,48 +449,14 @@ watching config anim =
 
 
 {-| -}
-layoutWith : { options : List Option } -> State -> List (Attribute msg) -> Two.Element msg -> Html msg
-layoutWith { options } (Two.State state) attrs content =
-    Two.unwrap Two.zero <|
-        Two.element Two.AsRoot
-            attrs
-            [ Two.Element
-                (\_ ->
-                    Html.Keyed.node "div"
-                        []
-                        [ ( "options", Html.Lazy.lazy Two.renderOptions options )
-                        , ( "static", Html.Lazy.lazy style Style.rules )
-                        , ( "animations", Html.Lazy.lazy styleRules state.rules )
-                        , ( "boxes"
-                          , Html.div [] (List.map viewBox state.boxes)
-                          )
-                        ]
-                )
-            , content
-            ]
-
-
-breakpoints : Ui.Responsive.Breakpoints label -> Option
-breakpoints resp =
-    Two.ResponsiveBreakpoints
-        (Two.toMediaQuery resp)
-
-
-viewBox ( boxId, box ) =
-    Html.div
-        [ Attr.style "position" "absolute"
-        , Attr.style "left" (String.fromFloat box.x ++ "px")
-        , Attr.style "top" (String.fromFloat box.y ++ "px")
-        , Attr.style "width" (String.fromFloat box.width ++ "px")
-        , Attr.style "height" (String.fromFloat box.height ++ "px")
-        , Attr.style "z-index" "10"
-        , Attr.style "background-color" "rgba(255,0,0,0.1)"
-        , Attr.style "border-radius" "3px"
-        , Attr.style "border" "3px dashed rgba(255,0,0,0.2)"
-        , Attr.style "box-sizing" "border-box"
-        ]
-        [--Html.text (Debug.toString id)
-        ]
+layoutWith :
+    { options : List Option }
+    -> State
+    -> List (Attribute msg)
+    -> Element msg
+    -> Html msg
+layoutWith =
+    Two.renderLayout
 
 
 {-| Converts an `Element msg` to an `Html msg` but does not include the stylesheet.
@@ -499,7 +464,7 @@ viewBox ( boxId, box ) =
 You'll need to include it manually yourself
 
 -}
-embed : List (Attribute msg) -> Two.Element msg -> Html msg
+embed : List (Attribute msg) -> Element msg -> Html msg
 embed attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
