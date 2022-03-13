@@ -2,7 +2,8 @@ module Ui.Responsive exposing
     ( Breakpoints, breakpoints
     , visible
     , Value, value, fluid
-    , rowWhen, fontSize, padding
+    , rowWhen, fontSize
+    , padding, paddingXY, paddingEach
     , height, heightMin, heightMax
     , width, widthMin, widthMax
     , orAbove, orBelow
@@ -73,7 +74,9 @@ module Ui.Responsive exposing
 
 @docs Value, value, fluid
 
-@docs rowWhen, fontSize, padding
+@docs rowWhen, fontSize
+
+@docs padding, paddingXY, paddingEach
 
 @docs height, heightMin, heightMax
 
@@ -202,7 +205,12 @@ Otherwise, it'll render as a `column`.
         ]
 
 -}
-rowWhen : Breakpoints label -> List label -> List (Attribute msg) -> List (Element msg) -> Element msg
+rowWhen :
+    Breakpoints label
+    -> List label
+    -> List (Attribute msg)
+    -> List (Element msg)
+    -> Element msg
 rowWhen breaks labels attrs children =
     Internal.element Internal.AsRow
         (Internal.class
@@ -256,6 +264,46 @@ padding : Breakpoints label -> (label -> Value) -> Attribute msg
 padding resp toValue =
     varStyle "padding"
         (Internal.responsiveCssValue resp toValue)
+
+
+{-| -}
+paddingXY :
+    Breakpoints label
+    ->
+        (label
+         ->
+            { x : Value
+            , y : Value
+            }
+        )
+    -> Attribute msg
+paddingXY resp toValue =
+    varStyle "padding"
+        (Internal.responsiveCssValue resp (toValue >> .y)
+            ++ (" " ++ Internal.responsiveCssValue resp (toValue >> .x))
+        )
+
+
+{-| -}
+paddingEach :
+    Breakpoints label
+    ->
+        (label
+         ->
+            { top : Value
+            , right : Value
+            , bottom : Value
+            , left : Value
+            }
+        )
+    -> Attribute msg
+paddingEach resp toValue =
+    varStyle "padding"
+        (Internal.responsiveCssValue resp (toValue >> .top)
+            ++ (" " ++ Internal.responsiveCssValue resp (toValue >> .right))
+            ++ (" " ++ Internal.responsiveCssValue resp (toValue >> .bottom))
+            ++ (" " ++ Internal.responsiveCssValue resp (toValue >> .left))
+        )
 
 
 {-| -}
