@@ -12,7 +12,7 @@ module Element exposing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
     , clip, clipX, clipY
     , scrollbars, scrollbarX, scrollbarY
-    , layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
+    , layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle, nonce
     , link, newTabLink, download, downloadAs
     , image
     , Color, rgba, rgb, rgb255, rgba255, fromRgb, fromRgb255, toRgb
@@ -137,7 +137,7 @@ Add a scrollbar if the content is larger than the element.
 
 # Rendering
 
-@docs layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
+@docs layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle, nonce
 
 
 # Links
@@ -477,6 +477,14 @@ If you're embedding multiple elm-ui `layout` elements, you need to guarantee tha
 noStaticStyleSheet : Option
 noStaticStyleSheet =
     Internal.RenderModeOption Internal.NoStaticStyleSheet
+
+
+{-| Adds a [nonce](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce)
+to the style tags so that they are compliant with the Content Security Policy of your website.
+-}
+nonce : String -> Option
+nonce nonce_ =
+    Internal.NonceOption (Internal.Nonce nonce_)
 
 
 {-| -}
