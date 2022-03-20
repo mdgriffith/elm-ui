@@ -534,6 +534,7 @@ finalizeNode has node attributes children embedMode parentContext =
             html
 
 
+embedWith : Bool -> OptionRecord -> List Style -> List (VirtualDom.Node msg) -> List (VirtualDom.Node msg)
 embedWith static opts styles children =
     let
         dynamicStyleSheet =
@@ -2089,6 +2090,7 @@ type Children x
     | Keyed (List ( String, x ))
 
 
+toHtml : (List Style -> EmbedStyle) -> Element msg -> VirtualDom.Node msg
 toHtml mode el =
     case el of
         Unstyled html ->
@@ -2108,9 +2110,11 @@ toHtml mode el =
 renderRoot : List Option -> List (Attribute aligned msg) -> Element msg -> VirtualDom.Node msg
 renderRoot optionList attributes child =
     let
+        options : OptionRecord
         options =
             optionsToRecord optionList
 
+        embedStyle : List Style -> EmbedStyle
         embedStyle =
             case options.mode of
                 NoStaticStyleSheet ->
@@ -2318,6 +2322,7 @@ optionsToRecord options =
                         _ ->
                             record
 
+        andFinally : { hover : Maybe HoverSetting, focus : Maybe FocusStyle, mode : Maybe RenderMode } -> OptionRecord
         andFinally record =
             { hover =
                 case record.hover of
