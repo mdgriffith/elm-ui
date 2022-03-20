@@ -93,6 +93,7 @@ embed x =
                         , backgroundColor = Nothing
                         }
                     , mode = Layout
+                    , nonce = Nothing
                     }
                     styled.styles
                 )

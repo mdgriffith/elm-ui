@@ -18,6 +18,7 @@ module Internal.Model exposing
     , Location(..)
     , NearbyChildren(..)
     , NodeName(..)
+    , Nonce(..)
     , Option(..)
     , OptionRecord
     , Padding(..)
@@ -534,6 +535,7 @@ finalizeNode has node attributes children embedMode parentContext =
             html
 
 
+embedWith : Bool -> OptionRecord -> List Style -> List (VirtualDom.Node msg) -> List (VirtualDom.Node msg)
 embedWith static opts styles children =
     let
         dynamicStyleSheet =
@@ -1824,7 +1826,10 @@ staticRoot opts =
             -- wrap the style node in a div to prevent `Dark Reader` from blowin up the dom.
             VirtualDom.node "div"
                 []
-                [ VirtualDom.node "style" [] [ VirtualDom.text Internal.Style.rules ] ]
+                [ VirtualDom.node "style"
+                    (nonceAttributes opts.nonce)
+                    [ VirtualDom.text Internal.Style.rules ]
+                ]
 
         NoStaticStyleSheet ->
             VirtualDom.text ""
@@ -2089,6 +2094,7 @@ type Children x
     | Keyed (List ( String, x ))
 
 
+toHtml : (List Style -> EmbedStyle) -> Element msg -> VirtualDom.Node msg
 toHtml mode el =
     case el of
         Unstyled html ->
@@ -2108,9 +2114,11 @@ toHtml mode el =
 renderRoot : List Option -> List (Attribute aligned msg) -> Element msg -> VirtualDom.Node msg
 renderRoot optionList attributes child =
     let
+        options : OptionRecord
         options =
             optionsToRecord optionList
 
+        embedStyle : List Style -> EmbedStyle
         embedStyle =
             case options.mode of
                 NoStaticStyleSheet ->
@@ -2133,7 +2141,12 @@ type alias OptionRecord =
     { hover : HoverSetting
     , focus : FocusStyle
     , mode : RenderMode
+    , nonce : Maybe Nonce
     }
+
+
+type Nonce
+    = Nonce String
 
 
 type HoverSetting
@@ -2146,6 +2159,7 @@ type Option
     = HoverOption HoverSetting
     | FocusStyleOption FocusStyle
     | RenderModeOption RenderMode
+    | NonceOption Nonce
 
 
 type alias FocusStyle =
@@ -2292,6 +2306,7 @@ focusDefaultStyle =
 optionsToRecord : List Option -> OptionRecord
 optionsToRecord options =
     let
+        combine : Option -> { hover : Maybe HoverSetting, focus : Maybe FocusStyle, mode : Maybe RenderMode, nonce : Maybe Nonce } -> { hover : Maybe HoverSetting, focus : Maybe FocusStyle, mode : Maybe RenderMode, nonce : Maybe Nonce }
         combine opt record =
             case opt of
                 HoverOption hoverable ->
@@ -2318,6 +2333,15 @@ optionsToRecord options =
                         _ ->
                             record
 
+                NonceOption nonce_ ->
+                    case record.nonce of
+                        Nothing ->
+                            { record | nonce = Just nonce_ }
+
+                        _ ->
+                            record
+
+        andFinally : { hover : Maybe HoverSetting, focus : Maybe FocusStyle, mode : Maybe RenderMode, nonce : Maybe Nonce } -> OptionRecord
         andFinally record =
             { hover =
                 case record.hover of
@@ -2340,6 +2364,7 @@ optionsToRecord options =
 
                     Just actualMode ->
                         actualMode
+            , nonce = record.nonce
             }
     in
     andFinally <|
@@ -2347,6 +2372,7 @@ optionsToRecord options =
             { hover = Nothing
             , focus = Nothing
             , mode = Nothing
+            , nonce = Nothing
             }
             options
 
@@ -2359,7 +2385,7 @@ toStyleSheet options styleSheet =
             VirtualDom.node "div"
                 []
                 [ VirtualDom.node "style"
-                    []
+                    (nonceAttributes options.nonce)
                     [ VirtualDom.text (toStyleSheetString options styleSheet) ]
                 ]
 
@@ -2368,7 +2394,7 @@ toStyleSheet options styleSheet =
             VirtualDom.node "div"
                 []
                 [ VirtualDom.node "style"
-                    []
+                    (nonceAttributes options.nonce)
                     [ VirtualDom.text (toStyleSheetString options styleSheet) ]
                 ]
 
@@ -2378,6 +2404,16 @@ toStyleSheet options styleSheet =
                     (encodeStyles options styleSheet)
                 ]
                 []
+
+
+nonceAttributes : Maybe Nonce -> List (VirtualDom.Attribute msg)
+nonceAttributes maybeNonce =
+    case maybeNonce of
+        Just (Nonce nonce) ->
+            [ VirtualDom.attribute "nonce" nonce ]
+
+        Nothing ->
+            []
 
 
 renderTopLevelValues rules =
