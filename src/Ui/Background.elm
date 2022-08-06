@@ -1,7 +1,6 @@
 module Ui.Background exposing
     ( color
-    , gradient
-    , gradients
+    , gradient, gradients
     , image, uncropped, tiled, tiledX, tiledY
     )
 
@@ -9,11 +8,7 @@ module Ui.Background exposing
 
 @docs color
 
-@docs gradient
-
-@docs gradients, Gradient, linear, conic, radial, circle, Step, px, percent
-
-@docs center, top, bottom, left, right, topLeft, topRight, bottomLeft, bottomRight, offset
+@docs gradient, gradients
 
 
 # Images
