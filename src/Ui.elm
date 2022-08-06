@@ -1,19 +1,19 @@
 module Ui exposing
     ( Element, none, text, el
-    , row, wrappedRow, column
-    , paragraph, textColumn
+    , row, column
+    , ellip, paragraph, textColumn
+    , id, noAttr
     , Attribute, Length, px, fill, portion
     , width, widthMin, widthMax
     , height, heightMin, heightMax
-    , ellip
     , explain
     , padding, paddingXY, paddingEach
     , spacing, spacingXY, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
-    , transparent, alpha, opacity
+    , opacity
     , pointer, grab, grabbing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
-    , viewport, clipped
+    , scrollable, clipped
     , layout, layoutWith, Option, focusStyle, FocusStyle
     , link, linkNewTab, download
     , image
@@ -21,11 +21,11 @@ module Ui exposing
     , above, below, onRight, onLeft, inFront, behindContent
     , Angle, up, down, right, left
     , turns, radians
-    , update
-    , updateWith, subscription
+    , init, Msg, update, State
+    , Animator, updateWith, subscription
     , map, mapAttribute
     , html, htmlAttribute
-    , Msg, Phase, State, Transition, clip, clipX, clipY, duration, embed, id, init, scrollbarX, scrollbarY, transition
+    , clip, clipX, clipY, embed, scrollbarX, scrollbarY, transition
     )
 
 {-|
@@ -42,14 +42,19 @@ When we want more than one child on an element, we want to be _specific_ about h
 
 So, the common ways to do that would be `row` and `column`.
 
-@docs row, wrappedRow, column
+@docs row, column
 
 
 # Text Layout
 
 Text layout needs some specific considerations.
 
-@docs paragraph, textColumn
+@docs ellip, paragraph, textColumn
+
+
+# Attributes
+
+@docs id, noAttr
 
 
 # Size
@@ -59,8 +64,6 @@ Text layout needs some specific considerations.
 @docs width, widthMin, widthMax
 
 @docs height, heightMin, heightMax
-
-@docs ellip
 
 
 # Debugging
@@ -121,7 +124,7 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Transparency
 
-@docs transparent, alpha, opacity
+@docs opacity
 
 
 # Cursors
@@ -138,14 +141,14 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 For scrolling element, we're going to borrow some terminology from 3D graphics just like the Elm [Browser](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Dom) package does.
 
-Essentially a `viewport` is the window that you're looking through. If the content is larger than the viewport, then scrollbars will appear.
+Essentially a `scrollable` is the window that you're looking through. If the content is larger than the scrollable, then scrollbars will appear.
 
-@docs viewport, clipped
+@docs scrollable, clipped
 
 
 # Rendering
 
-@docs layout, layoutWith, Option, noStaticStyleSheet, forceHover, noHover, focusStyle, FocusStyle
+@docs layout, layoutWith, Option, focusStyle, FocusStyle
 
 
 # Links
@@ -198,7 +201,7 @@ This is very useful for things like dropdown menus or tooltips.
 
 # Animation
 
-@docs update
+@docs init, Msg, update, State
 
 @docs Animator, updateWith, subscription, watching
 
@@ -238,7 +241,7 @@ type alias Color =
 
 {-| Provide the red, green, and blue channels for the color.
 
-Each channel takes a value between 0 and 1.
+Each channel takes a value between 0 and 255.
 
 -}
 rgb : Int -> Int -> Int -> Color
@@ -365,33 +368,6 @@ type alias State =
 {-| -}
 type alias Msg msg =
     Two.Msg msg
-
-
-{-| -}
-type alias Phase =
-    Two.Phase
-
-
-type alias Transition =
-    Two.Transition
-
-
-duration : Int -> Two.Transition
-duration dur =
-    Two.Transition
-        { arriving =
-            { durDelay =
-                BitField.init
-                    |> BitField.set Bits.duration dur
-            , curve = Bits.defaultCurve
-            }
-        , departing =
-            { durDelay =
-                BitField.init
-                    |> BitField.set Bits.duration dur
-            , curve = Bits.defaultCurve
-            }
-        }
 
 
 {-| -}
@@ -601,26 +577,19 @@ column attrs children =
         children
 
 
-{-| Same as `row`, but will wrap if it takes up too much horizontal space.
--}
-wrappedRow : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
-wrappedRow attrs children =
-    -- in order to make spacing work:
-    --      the margin is only applied to the right and bottom of child elements
-    --      We have an intermediate element which has a negative bottom and right margin to keep the sizing correct.
-    --      There is some overflow with the intermediate element, so we set pointer events none on it and reenable pointer events on children.
-    Two.element Two.AsEl
-        attrs
-        [ Two.element Two.AsWrappedRow
-            (List.concatMap Two.wrappedRowAttributes attrs)
-            children
-        ]
-
-
 {-| -}
 id : String -> Attribute msg
 id strId =
     Two.attribute (Attr.id strId)
+
+
+{-| -}
+noAttr : Attribute msg
+noAttr =
+    Attribute
+        { flag = Flag.skip
+        , attr = NoAttribute
+        }
 
 
 {-| This is just an alias for `Debug.todo`
@@ -892,7 +861,7 @@ onLeft element =
 
 {-| This will place an element in front of another.
 
-**Note:** If you use this on a `layout` element, it will place the element as fixed to the viewport which can be useful for modals and overlays.
+**Note:** If you use this on a `layout` element, it will place the element as fixed to the scrollable which can be useful for modals and overlays.
 
 -}
 inFront : Two.Element msg -> Attribute msg
@@ -1254,8 +1223,8 @@ opacity o =
 
 
 {-| -}
-viewport : List (Attribute msg) -> Two.Element msg -> Two.Element msg
-viewport attrs child =
+scrollable : List (Attribute msg) -> Two.Element msg -> Two.Element msg
+scrollable attrs child =
     Two.element Two.AsEl
         (scrollbarY
             :: width fill
@@ -1294,7 +1263,7 @@ scrollbarX =
 
 {-| Clip the content if it overflows.
 
-Similar to `viewport`, this element will fill the space it's given.
+Similar to `scrollable`, this element will fill the space it's given.
 
 If the content overflows this element, it will be clipped.
 

@@ -1,20 +1,169 @@
 module Ui.Layout exposing
     ( grid
     , gridWith, Width, byContent, px, fill, portion, bounded
+    , row, column
+    , AlignX, left, centerY, right
+    , AlignY, top, centerX, bottom
     )
 
 {-| The vast majority of layouts should be covered by `Ui.column` and `Ui.row`. Reach for those first before coming here!
 
 However, sometimes you might need a bit more nuance.
 
+
+# Grid
+
 @docs grid
 
 @docs gridWith, Width, byContent, px, fill, portion, bounded
+
+
+# Advanced Rows and Columns
+
+@docs row, column
+
+@docs AlignX, left, centerY, right
+
+@docs AlignY, top, centerX, bottom
 
 -}
 
 import Internal.Model2 as Two
 import Ui exposing (Attribute, Element)
+
+
+{-| -}
+type AlignX
+    = CenterX
+    | Left
+    | Right
+
+
+{-| -}
+type AlignY
+    = CenterY
+    | Top
+    | Bottom
+
+
+{-| -}
+centerX : AlignX
+centerX =
+    CenterX
+
+
+{-| -}
+left : AlignX
+left =
+    Left
+
+
+{-| -}
+right : AlignX
+right =
+    Right
+
+
+{-| -}
+centerY : AlignY
+centerY =
+    CenterY
+
+
+{-| -}
+top : AlignY
+top =
+    Top
+
+
+{-| -}
+bottom : AlignY
+bottom =
+    Bottom
+
+
+{-| -}
+row : { wrap : Bool, align : ( AlignX, AlignY ) } -> List (Attribute msg) -> List (Element msg) -> Element msg
+row options attrs children =
+    let
+        wrapped =
+            if options.wrap then
+                Two.style "flex-wrap" "wrap"
+
+            else
+                Ui.noAttr
+
+        alignmentX =
+            case Tuple.first options.align of
+                Left ->
+                    Two.style "justify-content" "flex-start"
+
+                CenterX ->
+                    Two.style "justify-content" "center"
+
+                Right ->
+                    Two.style "justify-content" "flex-end"
+
+        alignmentY =
+            case Tuple.second options.align of
+                Top ->
+                    Two.style "align-items" "flex-start"
+
+                Center ->
+                    Two.style "align-items" "center"
+
+                Bottom ->
+                    Two.style "align-items" "flex-end"
+    in
+    Two.element Two.AsRow
+        (wrapped
+            :: alignmentX
+            :: alignmentY
+            :: attrs
+        )
+        children
+
+
+{-| -}
+column : { wrap : Bool, align : ( AlignX, AlignY ) } -> List (Attribute msg) -> List (Element msg) -> Element msg
+column options attrs children =
+    let
+        wrapped =
+            if options.wrap then
+                Two.style "flex-wrap" "wrap"
+
+            else
+                Ui.noAttr
+
+        alignmentX =
+            case Tuple.first options.align of
+                Left ->
+                    Two.style "align-items" "flex-start"
+
+                CenterX ->
+                    Two.style "align-items" "center"
+
+                Right ->
+                    Two.style "align-items" "flex-end"
+
+        alignmentY =
+            case Tuple.second options.align of
+                Top ->
+                    Two.style "justify-content" "flex-start"
+
+                Center ->
+                    Two.style "justify-content" "center"
+
+                Bottom ->
+                    Two.style "justify-content" "flex-end"
+    in
+    Two.element Two.AsColumn
+        (wrapped
+            :: alignmentX
+            :: alignmentY
+            :: attrs
+        )
+        children
 
 
 {-| -}
