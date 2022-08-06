@@ -4,7 +4,7 @@ module Ui.Input exposing
     , text, multiline
     , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
-    , sliderX, sliderY, Thumb, thumb, defaultThumb
+    , sliderX, sliderY, Thumb, thumb
     , radio, radioRow, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
     )
@@ -188,10 +188,10 @@ import Internal.Style2 as Style
 import Json.Decode as Json
 import Json.Encode as Encode
 import Ui exposing (Attribute, Element)
-import Ui.Accessibility as Region2
-import Ui.Background as Background2
-import Ui.Border as Border2
-import Ui.Events as Events2
+import Ui.Accessibility
+import Ui.Background
+import Ui.Border
+import Ui.Events
 import Ui.Font as Font2
 
 
@@ -282,7 +282,7 @@ hiddenLabelAttribute2 : Label msg -> Ui.Attribute a
 hiddenLabelAttribute2 label =
     case label of
         HiddenLabel textLabel ->
-            Region2.description textLabel
+            Ui.Accessibility.description textLabel
 
         Label _ _ _ ->
             Two.noAttr
@@ -314,7 +314,7 @@ checkbox attrs { label, icon, checked, onChange } =
               else
                 Ui.spacing 6
             , Two.attribute (Html.Events.onClick (onChange (not checked)))
-            , Region2.announce
+            , Ui.Accessibility.announce
             , onKeyLookup2 <|
                 \code ->
                     if code == enter then
@@ -373,10 +373,10 @@ defaultThumb =
     Thumb
         [ Ui.width (Ui.px 16)
         , Ui.height (Ui.px 16)
-        , Border2.rounded 8
-        , Border2.width 1
-        , Border2.color (Ui.rgb 100 100 100)
-        , Background2.color (Ui.rgb 255 255 255)
+        , Ui.Border.rounded 8
+        , Ui.Border.width 1
+        , Ui.Border.color (Ui.rgb 100 100 100)
+        , Ui.Background.color (Ui.rgb 255 255 255)
         ]
 
 
@@ -426,21 +426,21 @@ sliderX :
         , min : Float
         , max : Float
         , value : Float
-        , thumb : Thumb msg
+        , thumb : Maybe (Thumb msg)
         , step : Maybe Float
         }
-    -> Two.Element msg
+    -> Element msg
 sliderX attributes input =
     let
         (Thumb thumbAttributes) =
-            input.thumb
+            Maybe.withDefault defaultThumb input.thumb
 
         factor =
             (input.value - input.min)
                 / (input.max - input.min)
     in
     applyLabel
-        ([ Region2.announce
+        ([ Ui.Accessibility.announce
          , Ui.width Ui.fill
          , Ui.height Ui.fill
          ]
@@ -523,10 +523,10 @@ sliderY :
         , min : Float
         , max : Float
         , value : Float
-        , thumb : Thumb msg
+        , thumb : Maybe (Thumb msg)
         , step : Maybe Float
         }
-    -> Two.Element msg
+    -> Element msg
 sliderY attrs input =
     let
         attributes =
@@ -535,14 +535,14 @@ sliderY attrs input =
                 :: attrs
 
         (Thumb thumbAttributes) =
-            input.thumb
+            Maybe.withDefault defaultThumb input.thumb
 
         factor =
             (input.value - input.min)
                 / (input.max - input.min)
     in
     applyLabel
-        ([ Region2.announce
+        ([ Ui.Accessibility.announce
          , Ui.width Ui.fill
          , Ui.height Ui.fill
          ]
@@ -693,7 +693,7 @@ type alias Text2 id msg =
 
 
 {-| -}
-textHelper2 : TextInput -> List (Ui.Attribute msg) -> Text2 id msg -> Two.Element msg
+textHelper2 : TextInput -> List (Ui.Attribute msg) -> Text2 id msg -> Element msg
 textHelper2 textInput attrs textOptions =
     {- General overview:
 
@@ -839,7 +839,7 @@ textHelper2 textInput attrs textOptions =
                     Ui.spacing
                         5
                )
-            :: Region2.announce
+            :: Ui.Accessibility.announce
             :: redistributed.parent
         )
         textOptions.label
@@ -849,7 +849,7 @@ textHelper2 textInput attrs textOptions =
 renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
     Ui.el
         (attrs
-            ++ [ Font2.color charcoal2
+            ++ [ Ui.Font.color charcoal2
                , Two.class
                     (Style.classes.noTextSelection
                         ++ " "
@@ -858,12 +858,12 @@ renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
                , Two.classWith Flag2.overflow Style.classes.clip
                , Ui.height Ui.fill
                , Ui.width Ui.fill
-               , Ui.alpha
+               , Ui.opacity
                     (if on then
-                        1
+                        0
 
                      else
-                        0
+                        1
                     )
                ]
             ++ placeholderAttrs
@@ -1133,7 +1133,7 @@ text :
         , placeholder : Maybe (Placeholder id msg)
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 text =
     textHelper2
         { type_ = TextInputNode "text"
@@ -1152,7 +1152,7 @@ spellChecked :
         , placeholder : Maybe (Placeholder id msg)
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 spellChecked =
     textHelper2
         { type_ = TextInputNode "text"
@@ -1170,7 +1170,7 @@ search :
         , placeholder : Maybe (Placeholder id msg)
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 search =
     textHelper2
         { type_ = TextInputNode "search"
@@ -1195,7 +1195,7 @@ newPassword :
         , label : Label msg
         , show : Bool
         }
-    -> Two.Element msg
+    -> Element msg
 newPassword attrs pass =
     textHelper2
         { type_ =
@@ -1226,7 +1226,7 @@ currentPassword :
         , label : Label msg
         , show : Bool
         }
-    -> Two.Element msg
+    -> Element msg
 currentPassword attrs pass =
     textHelper2
         { type_ =
@@ -1256,7 +1256,7 @@ username :
         , placeholder : Maybe (Placeholder id msg)
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 username =
     textHelper2
         { type_ = TextInputNode "text"
@@ -1274,7 +1274,7 @@ email :
         , placeholder : Maybe (Placeholder id msg)
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 email =
     textHelper2
         { type_ = TextInputNode "email"
@@ -1297,7 +1297,7 @@ multiline :
         , label : Label msg
         , spellcheck : Bool
         }
-    -> Two.Element msg
+    -> Element msg
 multiline attrs multi =
     textHelper2
         { type_ =
@@ -1322,7 +1322,7 @@ isHiddenLabel label =
             False
 
 
-applyLabel : List (Ui.Attribute msg) -> Label msg -> Two.Element msg -> Two.Element msg
+applyLabel : List (Ui.Attribute msg) -> Label msg -> Element msg -> Element msg
 applyLabel attrs label input =
     case label of
         HiddenLabel labelText ->
@@ -1369,7 +1369,7 @@ applyLabel attrs label input =
 
 {-| -}
 type Option value msg
-    = Option value (OptionState -> Two.Element msg)
+    = Option value (OptionState -> Element msg)
 
 
 {-| -}
@@ -1381,14 +1381,14 @@ type OptionState
 
 {-| Add a choice to your radio Ui. This will be rendered with the default radio icon.
 -}
-option : value -> Two.Element msg -> Option value msg
+option : value -> Element msg -> Option value msg
 option val txt =
     Option val (defaultRadioOption txt)
 
 
 {-| Customize exactly what your radio option should look like in different states.
 -}
-optionWith : value -> (OptionState -> Two.Element msg) -> Option value msg
+optionWith : value -> (OptionState -> Element msg) -> Option value msg
 optionWith val view =
     Option val view
 
@@ -1402,7 +1402,7 @@ radio :
         , selected : Maybe option
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 radio =
     radioHelper2 Column
 
@@ -1417,12 +1417,12 @@ radioRow :
         , selected : Maybe option
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 radioRow =
     radioHelper2 Row
 
 
-defaultRadioOption : Two.Element msg -> OptionState -> Two.Element msg
+defaultRadioOption : Element msg -> OptionState -> Element msg
 defaultRadioOption optionLabel status =
     Ui.row
         [ Ui.spacing 10
@@ -1431,8 +1431,8 @@ defaultRadioOption optionLabel status =
         [ Ui.el
             [ Ui.width (Ui.px 14)
             , Ui.height (Ui.px 14)
-            , Background2.color white2
-            , Border2.rounded 7
+            , Ui.Background.color white2
+            , Ui.Border.rounded 7
             , case status of
                 Selected ->
                     Two.class "focusable"
@@ -1460,7 +1460,7 @@ defaultRadioOption optionLabel status =
             --         1
             --     , color = Color.rgba 235 235 235 0
             --     }
-            , Border2.width <|
+            , Ui.Border.width <|
                 case status of
                     Idle ->
                         1
@@ -1470,7 +1470,7 @@ defaultRadioOption optionLabel status =
 
                     Selected ->
                         5
-            , Border2.color <|
+            , Ui.Border.color <|
                 case status of
                     Idle ->
                         Ui.rgb 208 208 208
@@ -1495,7 +1495,7 @@ radioHelper2 :
         , selected : Maybe option
         , label : Label msg
         }
-    -> Two.Element msg
+    -> Element msg
 radioHelper2 orientation attrs input =
     let
         optionArea =
@@ -1566,7 +1566,7 @@ radioHelper2 orientation attrs input =
         ([ Ui.alignLeft
          , Two.attribute (Html.Attributes.tabindex 0)
          , Two.class "focus"
-         , Region2.announce
+         , Ui.Accessibility.announce
          , Two.attribute <|
             Html.Attributes.attribute "role" "radiogroup"
          , case prevNext of
@@ -1623,7 +1623,7 @@ renderOption orientation input (Option val view) =
 
             Column ->
                 Ui.width Ui.fill
-        , Events2.onClick (input.onChange val)
+        , Ui.Events.onClick (input.onChange val)
         , case status of
             Selected ->
                 Two.attribute <|
@@ -1736,10 +1736,10 @@ focusedOnLoad =
 defaultTextBoxStyle2 : List (Ui.Attribute msg)
 defaultTextBoxStyle2 =
     [ Ui.paddingXY 12 12
-    , Border2.rounded 3
-    , Border2.color darkGrey2
-    , Background2.color white2
-    , Border2.width 1
+    , Ui.Border.rounded 3
+    , Ui.Border.color darkGrey2
+    , Ui.Background.color white2
+    , Ui.Border.width 1
     , Ui.spacing 5
     , Ui.width Ui.fill
 
@@ -1752,28 +1752,28 @@ defaultTextBoxStyle2 =
 You'll likely want to make your own checkbox at some point that fits your design.
 
 -}
-defaultCheckbox : Bool -> Two.Element msg
+defaultCheckbox : Bool -> Element msg
 defaultCheckbox checked =
     Ui.el
         [ Two.class "focusable"
         , Ui.width (Ui.px 14)
         , Ui.height (Ui.px 14)
-        , Font2.color white2
+        , Ui.Font.color white2
         , Ui.centerY
-        , Font2.size 9
-        , Font2.center
-        , Border2.rounded 3
-        , Border2.color <|
+        , Ui.Font.size 9
+        , Ui.Font.center
+        , Ui.Border.rounded 3
+        , Ui.Border.color <|
             if checked then
                 Ui.rgb 59 153 252
 
             else
                 Ui.rgb 211 211 211
         , if checked then
-            Ui.alpha 1
+            Ui.opacity 0
 
           else
-            Border2.shadows
+            Ui.Border.shadows
                 [ { x = 0
                   , y = 0
                   , blur = 1
@@ -1782,13 +1782,13 @@ defaultCheckbox checked =
                         Ui.rgb 238 238 238
                   }
                 ]
-        , Background2.color <|
+        , Ui.Background.color <|
             if checked then
                 Ui.rgb 59 153 252
 
             else
                 white2
-        , Border2.width <|
+        , Ui.Border.width <|
             if checked then
                 0
 
@@ -1797,14 +1797,14 @@ defaultCheckbox checked =
         ]
         (if checked then
             Ui.el
-                [ Border2.color white2
+                [ Ui.Border.color white2
                 , Ui.height (Ui.px 6)
                 , Ui.width (Ui.px 9)
                 , Ui.rotate (degrees -45)
                 , Ui.centerX
                 , Ui.centerY
                 , Ui.moveUp 1
-                , Border2.widthEach
+                , Ui.Border.widthEach
                     { top = 0
                     , left = 2
                     , bottom = 2
