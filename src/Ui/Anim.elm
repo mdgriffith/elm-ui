@@ -1,16 +1,28 @@
 module Ui.Anim exposing
-    ( Animated
+    ( layout
+    , init, Msg, update, State
+    , Animator, updateWith, subscription, watching
+    , Animated
     , Duration, ms
     , transition, hovered, focused, pressed
     , opacity, x, y, rotation, scale, scaleX, scaleY
-    , onTimeline, onTimelineWith
+    , keyframes, hoveredWith, focusedWith, pressedWith
     , set, wait, step
     , loop, loopFor
-    , keyframes, hoveredWith, focusedWith, pressedWith
-    , id
+    , onTimeline, onTimelineWith
+    , persistent, withTransition
     )
 
 {-|
+
+
+# Getting set up
+
+@docs layout
+
+@docs init, Msg, update, State
+
+@docs Animator, updateWith, subscription, watching
 
 
 # Animations
@@ -42,18 +54,21 @@ Check out how they're defined if you want to make your own.
 
 # Using Timelines
 
-@docs onTimeline, onTimelineWith
+@docs keyframes, hoveredWith, focusedWith, pressedWith
 
 @docs set, wait, step
 
 @docs loop, loopFor
 
-@docs keyframes, hoveredWith, focusedWith, pressedWith
+
+# Using Timelines
+
+@docs onTimeline, onTimelineWith
 
 
 # Persistent Elements
 
-@docs id
+@docs persistent, withTransition
 
 -}
 
@@ -76,8 +91,8 @@ type alias Personality =
 
 
 {-| -}
-id : (Msg msg -> msg) -> String -> String -> Attribute msg
-id toMsg group instance =
+persistent : (Msg msg -> msg) -> String -> String -> Attribute msg
+persistent toMsg group instance =
     --  attach a class and a message handler for the animation message
     -- we could also need to gather up any animateable state as well
     Two.Attribute
@@ -615,3 +630,97 @@ pressedWith toMsg steps =
                         )
                 }
         }
+
+
+
+{- SETUP -}
+
+
+{-| -}
+layout :
+    { options : List Ui.Option }
+    -> State
+    -> List (Attribute msg)
+    -> Element msg
+    -> Html msg
+layout =
+    Two.renderLayout
+
+
+init : State
+init =
+    Two.State
+        { added = Set.empty
+        , rules = []
+        , boxes = []
+        }
+
+
+{-| -}
+type alias State =
+    Two.State
+
+
+{-| -}
+type alias Msg msg =
+    Two.Msg msg
+
+
+{-| -}
+withTransition : (Msg msg -> msg) -> msg -> msg
+withTransition toMsg appMsg =
+    toMsg (Two.RefreshBoxesAndThen appMsg)
+
+
+{-| -}
+update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
+update =
+    Two.update
+
+
+{-| -}
+updateWith :
+    (Msg msg -> msg)
+    -> Msg msg
+    -> State
+    ->
+        { ui : State -> model
+        , timelines : Animator msg model
+        }
+    -> ( model, Cmd msg )
+updateWith =
+    Two.updateWith
+
+
+{-| -}
+type alias Animator msg model =
+    Two.Animator msg model
+
+
+subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
+subscription =
+    Two.subscription
+
+
+watching :
+    { get : model -> Animator.Timeline.Timeline state
+    , set : Animator.Timeline.Timeline state -> model -> model
+    , onStateChange : state -> Maybe msg
+    }
+    -> Animator msg model
+    -> Animator msg model
+watching config anim =
+    { animator = Animator.Watcher.watching config.get config.set anim.animator
+    , onStateChange =
+        -- config.onStateChange << config.get
+        \model ->
+            let
+                future =
+                    []
+
+                -- TODO: wire this up once elm-animator supports Animator.future
+                -- Animator.future (config.get model)
+                -- |> List.map (Tuple.mapSecond anim.onStateChange)
+            in
+            future ++ anim.onStateChange model
+    }

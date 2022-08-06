@@ -1,5 +1,6 @@
 module Ui exposing
-    ( Element, none, text, el
+    ( layout, Option, focusStyle, FocusStyle
+    , Element, none, text, el
     , row, column
     , ellip, paragraph, textColumn
     , id, noAttr
@@ -14,21 +15,23 @@ module Ui exposing
     , pointer, grab, grabbing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
     , scrollable, clipped
-    , layout, layoutWith, Option, focusStyle, FocusStyle
     , link, linkNewTab, download
     , image
     , Color, rgb
     , above, below, onRight, onLeft, inFront, behindContent
     , Angle, up, down, right, left
     , turns, radians
-    , init, Msg, update, State
-    , Animator, updateWith, subscription
     , map, mapAttribute
     , html, htmlAttribute
-    , clip, clipX, clipY, embed, scrollbarX, scrollbarY, transition
+    , embed, transition
     )
 
 {-|
+
+
+# Getting started
+
+@docs layout, Option, focusStyle, FocusStyle
 
 
 # Basic Elements
@@ -144,11 +147,6 @@ For scrolling element, we're going to borrow some terminology from 3D graphics j
 Essentially a `scrollable` is the window that you're looking through. If the content is larger than the scrollable, then scrollbars will appear.
 
 @docs scrollable, clipped
-
-
-# Rendering
-
-@docs layout, layoutWith, Option, focusStyle, FocusStyle
 
 
 # Links
@@ -335,7 +333,7 @@ portion =
 
 {-| This is your top level node where you can turn `Element` into `Html`.
 -}
-layout : List (Attribute msg) -> Two.Element msg -> Html msg
+layout : List (Attribute msg) -> Element msg -> Html msg
 layout attrs content =
     Two.unwrap Two.zero <|
         Two.element Two.AsRoot
@@ -349,96 +347,6 @@ layout attrs content =
                 )
             , content
             ]
-
-
-init : State
-init =
-    Two.State
-        { added = Set.empty
-        , rules = []
-        , boxes = []
-        }
-
-
-{-| -}
-type alias State =
-    Two.State
-
-
-{-| -}
-type alias Msg msg =
-    Two.Msg msg
-
-
-{-| -}
-transition : (Msg msg -> msg) -> msg -> msg
-transition toMsg appMsg =
-    toMsg (Two.RefreshBoxesAndThen appMsg)
-
-
-{-| -}
-type alias Animator msg model =
-    Two.Animator msg model
-
-
-{-| -}
-update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
-update =
-    Two.update
-
-
-{-| -}
-updateWith :
-    (Msg msg -> msg)
-    -> Msg msg
-    -> State
-    ->
-        { ui : State -> model
-        , timelines : Animator msg model
-        }
-    -> ( model, Cmd msg )
-updateWith =
-    Two.updateWith
-
-
-subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
-subscription =
-    Two.subscription
-
-
-watching :
-    { get : model -> Animator.Timeline.Timeline state
-    , set : Animator.Timeline.Timeline state -> model -> model
-    , onStateChange : state -> Maybe msg
-    }
-    -> Animator msg model
-    -> Animator msg model
-watching config anim =
-    { animator = Animator.Watcher.watching config.get config.set anim.animator
-    , onStateChange =
-        -- config.onStateChange << config.get
-        \model ->
-            let
-                future =
-                    []
-
-                -- TODO: wire this up once elm-animator supports Animator.future
-                -- Animator.future (config.get model)
-                -- |> List.map (Tuple.mapSecond anim.onStateChange)
-            in
-            future ++ anim.onStateChange model
-    }
-
-
-{-| -}
-layoutWith :
-    { options : List Option }
-    -> State
-    -> List (Attribute msg)
-    -> Element msg
-    -> Html msg
-layoutWith =
-    Two.renderLayout
 
 
 {-| Converts an `Element msg` to an `Html msg` but does not include the stylesheet.
@@ -1193,27 +1101,6 @@ spacingXY x y =
         { flag = Flag.spacing
         , attr = Two.Spacing x y
         }
-
-
-{-| Make an element transparent and have it ignore any mouse or touch events, though it will stil take up space.
--}
-transparent : Bool -> Attribute msg
-transparent on =
-    if on then
-        alpha 0
-
-    else
-        alpha 1
-
-
-{-| A capped value between 0.0 and 1.0, where 0.0 is transparent and 1.0 is fully opaque.
-
-Semantically equivalent to html opacity.
-
--}
-alpha : Float -> Attribute msg
-alpha o =
-    Two.style "opacity" (String.fromFloat (1 + (-1 * o)))
 
 
 {-| -}
