@@ -1,4 +1,4 @@
-module Ui.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy5)
+module Ui.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy5, lazy6)
 
 {-| Same as `Html.lazy`. In case you're unfamiliar, here's a note from the `Html` library!
 
@@ -18,7 +18,7 @@ benchmark to be sure!
 
 ---
 
-@docs lazy, lazy2, lazy3, lazy4, lazy5
+@docs lazy, lazy2, lazy3, lazy4, lazy5, lazy6
 
 -}
 
@@ -57,6 +57,12 @@ lazy5 fn a b c d e =
     Two.Element (\s -> Html.Lazy.lazy7 apply5 fn a b c d e s)
 
 
+{-| -}
+lazy6 : (a -> b -> c -> d -> e -> f -> Element msg) -> a -> b -> c -> d -> e -> f -> Element msg
+lazy6 fn a b c d e f =
+    Two.Element (\s -> Html.Lazy.lazy8 apply6 fn a b c d e f s)
+
+
 apply1 fn a s =
     Two.unwrap s (fn a)
 
@@ -75,3 +81,7 @@ apply4 fn a b c d s =
 
 apply5 fn a b c d e s =
     Two.unwrap s (fn a b c d e)
+
+
+apply6 fn a b c d e f s =
+    Two.unwrap s (fn a b c d e f)
