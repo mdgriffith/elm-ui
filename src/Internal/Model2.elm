@@ -1280,24 +1280,6 @@ styleAndClass flag v =
         }
 
 
-wrappedRowAttributes ((Attribute inner) as attr) =
-    case inner.attr of
-        Spacing x y ->
-            [ attr
-            , Attribute
-                { flag = Flag.skip
-                , attr = Attr (Attr.style "margin-right" (Style.px (-1 * x)))
-                }
-            , Attribute
-                { flag = Flag.skip
-                , attr = Attr (Attr.style "margin-bottom" (Style.px (-1 * y)))
-                }
-            ]
-
-        _ ->
-            []
-
-
 type alias Edges =
     { top : Int
     , right : Int
