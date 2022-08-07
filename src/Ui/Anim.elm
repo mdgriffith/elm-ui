@@ -11,6 +11,7 @@ module Ui.Anim exposing
     , loop, loopFor
     , onTimeline, onTimelineWith
     , persistent, withTransition
+    , mapAttribute
     )
 
 {-|
@@ -70,16 +71,24 @@ Check out how they're defined if you want to make your own.
 
 @docs persistent, withTransition
 
+
+# Mapping
+
+@docs mapAttribute
+
 -}
 
 import Animator
 import Animator.Timeline exposing (Timeline)
+import Animator.Watcher
+import Html
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Internal.Model2 as Two
+import Set
 import Time
-import Ui exposing (Attribute, Element, Msg)
+import Ui exposing (Attribute, Element)
 
 
 type alias Animated =
@@ -642,7 +651,7 @@ layout :
     -> State
     -> List (Attribute msg)
     -> Element msg
-    -> Html msg
+    -> Html.Html msg
 layout =
     Two.renderLayout
 
@@ -664,6 +673,12 @@ type alias State =
 {-| -}
 type alias Msg msg =
     Two.Msg msg
+
+
+{-| -}
+mapAttribute : (Msg msg2 -> msg2) -> (msg -> msg2) -> Attribute msg -> Attribute msg2
+mapAttribute =
+    Two.mapAttr
 
 
 {-| -}

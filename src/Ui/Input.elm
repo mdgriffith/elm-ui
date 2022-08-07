@@ -1,11 +1,11 @@
 module Ui.Input exposing
     ( focusedOnLoad
-    , checkbox, defaultCheckbox
+    , checkbox
     , text, multiline
     , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
     , sliderX, sliderY, Thumb, thumb
-    , radio, radioRow, Option, option, optionWith, OptionState(..)
+    , chooseOne, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
     )
 
@@ -46,14 +46,14 @@ This is also the first input element that has a [`required label`](#Label).
     view model =
         Ui.Input.checkbox []
             { onChange = GuacamoleChecked
-            , icon = Ui.Input.defaultCheckbox
+            , icon = Nothing -- We will get a default icon
             , checked = model.guacamole
             , label =
                 Ui.Input.labelRight []
                     (text "Do you want Guacamole?")
             }
 
-@docs checkbox, defaultCheckbox
+@docs checkbox
 
 
 # Text
@@ -79,18 +79,12 @@ A slider is great for choosing between a range of numerical values.
   - **thumb** - The icon that you click and drag to change the value.
   - **track** - The line behind the thumb denoting where you can slide to.
 
-@docs sliderX, sliderY, Thumb, thumb, defaultThumb
+@docs sliderX, sliderY, Thumb, thumb
 
 
-# Radio Selection
+# Choose One or a 'Radio' Selection
 
-The fact that we still call this a radio selection is fascinating. I can't remember the last time I actually used an honest-to-goodness button on a radio. Chalk it up along with the floppy disk save icon or the word [Dashboard](https://en.wikipedia.org/wiki/Dashboard).
-
-Perhaps a better name would be `Input.chooseOne`, because this allows you to select one of a set of options!
-
-Nevertheless, here we are. Here's how you put one together
-
-    Input.radio
+    Input.chooseOne Ui.row
         [ padding 10
         , spacing 20
         ]
@@ -104,9 +98,9 @@ Nevertheless, here we are. Here's how you put one together
             ]
         }
 
-**Note** we're using `Input.option`, which will render the default radio icon you're probably used to. If you want compeltely custom styling, use `Input.optionWith`!
+**Note** we're using `Input.option`, which will render a default icon you're probably used to. If you want compeltely custom styling, use `Input.optionWith`!
 
-@docs radio, radioRow, Option, option, optionWith, OptionState
+@docs chooseOne, Option, option, optionWith, OptionState
 
 
 # Labels
@@ -192,7 +186,7 @@ import Ui.Accessibility
 import Ui.Background
 import Ui.Border
 import Ui.Events
-import Ui.Font as Font2
+import Ui.Font
 
 
 {-| -}
@@ -288,19 +282,12 @@ hiddenLabelAttribute2 label =
             Two.noAttr
 
 
-{-|
-
-  - **onChange** - The `Msg` to send.
-  - **icon** - The checkbox icon to show. This can be whatever you'd like, but `Input.defaultCheckbox` is included to get you started.
-  - **checked** - The current checked state.
-  - **label** - The [`Label`](#Label) for this checkbox
-
--}
+{-| -}
 checkbox :
     List (Attribute msg)
     ->
         { onChange : Bool -> msg
-        , icon : Bool -> Element msg
+        , icon : Maybe (Bool -> Element msg)
         , checked : Bool
         , label : Label msg
         }
@@ -351,7 +338,11 @@ checkbox attrs { label, icon, checked, onChange } =
 
             -- TODO: SHOULD BE WIDTH SHRINK
             ]
-            [ icon checked
+            [ let
+                viewIcon =
+                    Maybe.withDefault defaultCheckbox icon
+              in
+              viewIcon checked
             ]
         )
 
@@ -1379,14 +1370,14 @@ type OptionState
     | Selected
 
 
-{-| Add a choice to your radio Ui. This will be rendered with the default radio icon.
+{-| Add a choice to your chooseOne Element. This will be rendered with a default icon.
 -}
 option : value -> Element msg -> Option value msg
 option val txt =
     Option val (defaultRadioOption txt)
 
 
-{-| Customize exactly what your radio option should look like in different states.
+{-| Customize exactly what your chooseOne option should look like in different states.
 -}
 optionWith : value -> (OptionState -> Element msg) -> Option value msg
 optionWith val view =
@@ -1394,8 +1385,9 @@ optionWith val view =
 
 
 {-| -}
-radio :
-    List (Ui.Attribute msg)
+chooseOne :
+    (List (Ui.Attribute msg) -> List (Ui.Element msg) -> Ui.Element msg)
+    -> List (Ui.Attribute msg)
     ->
         { onChange : option -> msg
         , options : List (Option option msg)
@@ -1403,23 +1395,106 @@ radio :
         , label : Label msg
         }
     -> Element msg
-radio =
-    radioHelper2 Column
+chooseOne layoutFn attrs input =
+    let
+        prevNext =
+            case input.options of
+                [] ->
+                    Nothing
 
+                (Option val _) :: _ ->
+                    List.foldl track ( NotFound, val, val ) input.options
+                        |> (\( found, b, a ) ->
+                                case found of
+                                    NotFound ->
+                                        Just ( b, val )
 
-{-| Same as radio, but displayed as a row
--}
-radioRow :
-    List (Ui.Attribute msg)
-    ->
-        { onChange : option -> msg
-        , options : List (Option option msg)
-        , selected : Maybe option
-        , label : Label msg
-        }
-    -> Element msg
-radioRow =
-    radioHelper2 Row
+                                    BeforeFound ->
+                                        Just ( b, val )
+
+                                    _ ->
+                                        Just ( b, a )
+                           )
+
+        track opt ( found, prev, nxt ) =
+            case opt of
+                Option val _ ->
+                    case found of
+                        NotFound ->
+                            if Just val == input.selected then
+                                ( BeforeFound, prev, nxt )
+
+                            else
+                                ( found, val, nxt )
+
+                        BeforeFound ->
+                            ( AfterFound, prev, val )
+
+                        AfterFound ->
+                            ( found, prev, nxt )
+
+        events =
+            -- List.
+            []
+
+        --         Internal.get
+        --             attrs
+        --         <|
+        --             \attr ->
+        --                 case attr of
+        --                     Internal.Width (Internal.Fill _) ->
+        --                         True
+        --                     Internal.Height (Internal.Fill _) ->
+        --                         True
+        --                     Internal.Attr _ ->
+        --                         True
+        --                     _ ->
+        --                         False
+    in
+    layoutFn
+        (hiddenLabelAttribute2 input.label :: attrs)
+        (List.map (renderOption input) input.options)
+        |> applyLabel
+            ([ Ui.alignLeft
+             , Two.attribute (Html.Attributes.tabindex 0)
+             , Two.class "focus"
+             , Ui.Accessibility.announce
+             , Two.attribute <|
+                Html.Attributes.attribute "role" "radiogroup"
+             , case prevNext of
+                Nothing ->
+                    Two.class ""
+
+                Just ( prev, next ) ->
+                    onKeyLookup2 <|
+                        \code ->
+                            if code == leftArrow then
+                                Just (input.onChange prev)
+
+                            else if code == upArrow then
+                                Just (input.onChange prev)
+
+                            else if code == rightArrow then
+                                Just (input.onChange next)
+
+                            else if code == downArrow then
+                                Just (input.onChange next)
+
+                            else if code == space then
+                                case input.selected of
+                                    Nothing ->
+                                        Just (input.onChange prev)
+
+                                    _ ->
+                                        Nothing
+
+                            else
+                                Nothing
+             ]
+                ++ events
+             -- ++ hideIfEverythingisInvisible
+            )
+            input.label
 
 
 defaultRadioOption : Element msg -> OptionState -> Element msg
@@ -1486,127 +1561,7 @@ defaultRadioOption optionLabel status =
         ]
 
 
-radioHelper2 :
-    Orientation
-    -> List (Ui.Attribute msg)
-    ->
-        { onChange : option -> msg
-        , options : List (Option option msg)
-        , selected : Maybe option
-        , label : Label msg
-        }
-    -> Element msg
-radioHelper2 orientation attrs input =
-    let
-        optionArea =
-            case orientation of
-                Row ->
-                    Ui.row (Ui.width Ui.fill :: hiddenLabelAttribute2 input.label :: attrs)
-                        (List.map (renderOption orientation input) input.options)
-
-                Column ->
-                    Ui.column (Ui.width Ui.fill :: hiddenLabelAttribute2 input.label :: attrs)
-                        (List.map (renderOption orientation input) input.options)
-
-        prevNext =
-            case input.options of
-                [] ->
-                    Nothing
-
-                (Option val _) :: _ ->
-                    List.foldl track ( NotFound, val, val ) input.options
-                        |> (\( found, b, a ) ->
-                                case found of
-                                    NotFound ->
-                                        Just ( b, val )
-
-                                    BeforeFound ->
-                                        Just ( b, val )
-
-                                    _ ->
-                                        Just ( b, a )
-                           )
-
-        track opt ( found, prev, nxt ) =
-            case opt of
-                Option val _ ->
-                    case found of
-                        NotFound ->
-                            if Just val == input.selected then
-                                ( BeforeFound, prev, nxt )
-
-                            else
-                                ( found, val, nxt )
-
-                        BeforeFound ->
-                            ( AfterFound, prev, val )
-
-                        AfterFound ->
-                            ( found, prev, nxt )
-
-        events =
-            -- List.
-            []
-
-        --         Internal.get
-        --             attrs
-        --         <|
-        --             \attr ->
-        --                 case attr of
-        --                     Internal.Width (Internal.Fill _) ->
-        --                         True
-        --                     Internal.Height (Internal.Fill _) ->
-        --                         True
-        --                     Internal.Attr _ ->
-        --                         True
-        --                     _ ->
-        --                         False
-    in
-    applyLabel
-        ([ Ui.alignLeft
-         , Two.attribute (Html.Attributes.tabindex 0)
-         , Two.class "focus"
-         , Ui.Accessibility.announce
-         , Two.attribute <|
-            Html.Attributes.attribute "role" "radiogroup"
-         , case prevNext of
-            Nothing ->
-                Two.class ""
-
-            Just ( prev, next ) ->
-                onKeyLookup2 <|
-                    \code ->
-                        if code == leftArrow then
-                            Just (input.onChange prev)
-
-                        else if code == upArrow then
-                            Just (input.onChange prev)
-
-                        else if code == rightArrow then
-                            Just (input.onChange next)
-
-                        else if code == downArrow then
-                            Just (input.onChange next)
-
-                        else if code == space then
-                            case input.selected of
-                                Nothing ->
-                                    Just (input.onChange prev)
-
-                                _ ->
-                                    Nothing
-
-                        else
-                            Nothing
-         ]
-            ++ events
-         -- ++ hideIfEverythingisInvisible
-        )
-        input.label
-        optionArea
-
-
-renderOption orientation input (Option val view) =
+renderOption input (Option val view) =
     let
         status =
             if Just val == input.selected then
@@ -1617,23 +1572,16 @@ renderOption orientation input (Option val view) =
     in
     Ui.el
         [ Ui.pointer
-        , case orientation of
-            Row ->
-                Two.noAttr
-
-            Column ->
-                Ui.width Ui.fill
         , Ui.Events.onClick (input.onChange val)
-        , case status of
-            Selected ->
-                Two.attribute <|
-                    Html.Attributes.attribute "aria-checked"
+        , Two.attribute <|
+            Html.Attributes.attribute "aria-checked"
+                (case status of
+                    Selected ->
                         "true"
 
-            _ ->
-                Two.attribute <|
-                    Html.Attributes.attribute "aria-checked"
+                    _ ->
                         "false"
+                )
         , Two.attribute <|
             Html.Attributes.attribute "role" "radio"
         ]

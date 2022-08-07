@@ -109,7 +109,7 @@ row options attrs children =
                 Top ->
                     Two.style "align-items" "flex-start"
 
-                Center ->
+                CenterY ->
                     Two.style "align-items" "center"
 
                 Bottom ->
@@ -151,7 +151,7 @@ column options attrs children =
                 Top ->
                     Two.style "justify-content" "flex-start"
 
-                Center ->
+                CenterY ->
                     Two.style "justify-content" "center"
 
                 Bottom ->
@@ -239,10 +239,10 @@ gridTemplate widths rendered =
         [] ->
             rendered
 
-        top :: remain ->
+        first :: remain ->
             let
                 col =
-                    case top of
+                    case first of
                         Px p ->
                             String.fromInt p ++ "px"
 

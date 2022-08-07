@@ -105,6 +105,7 @@ import Internal.Model2 as Internal
         , ResponsiveTransition
         )
 import Ui
+import Ui.Anim
 import Ui.Font
 
 
@@ -181,7 +182,7 @@ layout :
     { options : List Ui.Option
     , breakpoints : Breakpoints label
     }
-    -> Ui.State
+    -> Ui.Anim.State
     -> List (Ui.Attribute msg)
     -> Ui.Element msg
     -> Html.Html msg
@@ -241,7 +242,7 @@ visible breaks labels =
 Otherwise, it'll render as a `column`.
 
     Ui.Reponsive.rowWhen breakpoints
-        (Ui.Responsive.belowOr Medium)
+        (Ui.Responsive.orBelow Medium breakpoints)
         [ Ui.spacing 20
         ]
         [ text "Hello!"

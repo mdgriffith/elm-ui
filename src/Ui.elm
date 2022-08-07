@@ -21,9 +21,9 @@ module Ui exposing
     , above, below, onRight, onLeft, inFront, behindContent
     , Angle, up, down, right, left
     , turns, radians
-    , map, mapAttribute
+    , map
     , html, htmlAttribute
-    , embed, transition
+    , embed
     )
 
 {-|
@@ -197,16 +197,9 @@ This is very useful for things like dropdown menus or tooltips.
 @docs turns, radians
 
 
-# Animation
-
-@docs init, Msg, update, State
-
-@docs Animator, updateWith, subscription, watching
-
-
 # Mapping
 
-@docs map, mapAttribute
+@docs map
 
 
 # Compatibility
@@ -283,12 +276,6 @@ htmlAttribute a =
 map : (msg -> msg1) -> Element msg -> Element msg1
 map =
     Two.map
-
-
-{-| -}
-mapAttribute : (Msg msg2 -> msg2) -> (msg -> msg2) -> Attribute msg -> Attribute msg2
-mapAttribute =
-    Two.mapAttr
 
 
 {-| -}
@@ -494,9 +481,9 @@ id strId =
 {-| -}
 noAttr : Attribute msg
 noAttr =
-    Attribute
+    Two.Attribute
         { flag = Flag.skip
-        , attr = NoAttribute
+        , attr = Two.NoAttribute
         }
 
 
