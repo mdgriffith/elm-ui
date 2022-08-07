@@ -258,7 +258,7 @@ type alias Attribute msg =
 
 
 {-| -}
-html : Html msg -> Two.Element msg
+html : Html msg -> Element msg
 html x =
     Two.Element (\_ -> x)
 
@@ -413,7 +413,7 @@ focusStyle =
 
 {-| When you want to render exactly nothing.
 -}
-none : Two.Element msg
+none : Element msg
 none =
     Two.none
 
@@ -425,7 +425,7 @@ none =
 **Note** text does not wrap by default. In order to get text to wrap, check out `paragraph`!
 
 -}
-text : String -> Two.Element msg
+text : String -> Element msg
 text =
     Two.text
 
@@ -449,7 +449,7 @@ If you want multiple children, you'll need to use something like `row` or `colum
             (Ui.text "You've made a stylish element!")
 
 -}
-el : List (Attribute msg) -> Two.Element msg -> Two.Element msg
+el : List (Attribute msg) -> Element msg -> Element msg
 el attrs child =
     Two.element Two.AsEl
         attrs
@@ -457,7 +457,7 @@ el attrs child =
 
 
 {-| -}
-row : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
+row : List (Attribute msg) -> List (Element msg) -> Element msg
 row attrs children =
     Two.element Two.AsRow
         attrs
@@ -465,7 +465,7 @@ row attrs children =
 
 
 {-| -}
-column : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
+column : List (Attribute msg) -> List (Element msg) -> Element msg
 column attrs children =
     Two.element Two.AsColumn
         attrs
@@ -546,7 +546,7 @@ Which will look something like
 **Note** `spacing` on a paragraph will set the pixel spacing between lines.
 
 -}
-paragraph : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
+paragraph : List (Attribute msg) -> List (Element msg) -> Element msg
 paragraph attrs children =
     -- Internal.element
     --     Internal.asParagraph
@@ -581,7 +581,7 @@ Which will result in something like:
 ![A text layout where an image is on the left.](https://mdgriffith.gitbooks.io/style-elements/content/assets/Screen%20Shot%202017-08-25%20at%208.42.39%20PM.png)
 
 -}
-textColumn : List (Attribute msg) -> List (Two.Element msg) -> Two.Element msg
+textColumn : List (Attribute msg) -> List (Element msg) -> Element msg
 textColumn attrs children =
     Two.element Two.AsTextColumn
         attrs
@@ -719,7 +719,7 @@ download opts =
 
 
 {-| -}
-below : Two.Element msg -> Attribute msg
+below : Element msg -> Attribute msg
 below element =
     Two.Attribute
         { flag = Flag.skip
@@ -728,7 +728,7 @@ below element =
 
 
 {-| -}
-above : Two.Element msg -> Attribute msg
+above : Element msg -> Attribute msg
 above element =
     Two.Attribute
         { flag = Flag.skip
@@ -737,7 +737,7 @@ above element =
 
 
 {-| -}
-onRight : Two.Element msg -> Attribute msg
+onRight : Element msg -> Attribute msg
 onRight element =
     Two.Attribute
         { flag = Flag.skip
@@ -746,7 +746,7 @@ onRight element =
 
 
 {-| -}
-onLeft : Two.Element msg -> Attribute msg
+onLeft : Element msg -> Attribute msg
 onLeft element =
     Two.Attribute
         { flag = Flag.skip
@@ -759,7 +759,7 @@ onLeft element =
 **Note:** If you use this on a `layout` element, it will place the element as fixed to the scrollable which can be useful for modals and overlays.
 
 -}
-inFront : Two.Element msg -> Attribute msg
+inFront : Element msg -> Attribute msg
 inFront element =
     Two.Attribute
         { flag = Flag.skip
@@ -769,7 +769,7 @@ inFront element =
 
 {-| This will place an element between the background and the content of an Ui.
 -}
-behindContent : Two.Element msg -> Attribute msg
+behindContent : Element msg -> Attribute msg
 behindContent element =
     Two.Attribute
         { flag = Flag.skip
@@ -1097,7 +1097,7 @@ opacity o =
 
 
 {-| -}
-scrollable : List (Attribute msg) -> Two.Element msg -> Two.Element msg
+scrollable : List (Attribute msg) -> Element msg -> Element msg
 scrollable attrs child =
     Two.element Two.AsEl
         (scrollbarY
@@ -1142,7 +1142,7 @@ Similar to `scrollable`, this element will fill the space it's given.
 If the content overflows this element, it will be clipped.
 
 -}
-clipped : List (Attribute msg) -> Two.Element msg -> Two.Element msg
+clipped : List (Attribute msg) -> Element msg -> Element msg
 clipped attrs child =
     Two.element Two.AsEl
         (clip
