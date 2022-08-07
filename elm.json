@@ -6,16 +6,18 @@
   "version": "1.1.7",
   "exposed-modules": [
     "Ui",
-    "Ui.Input",
-    "Ui.Events",
     "Ui.Background",
     "Ui.Border",
     "Ui.Font",
-    "Ui.Lazy",
-    "Ui.Keyed",
+    "Ui.Anim",
+    "Ui.Input",
+    "Ui.Events",
     "Ui.Accessibility",
     "Ui.Responsive",
-    "Ui.Table"
+    "Ui.Layout",
+    "Ui.Table",
+    "Ui.Lazy",
+    "Ui.Keyed"
   ],
   "elm-version": "0.19.0 <= v < 0.20.0",
   "dependencies": {
