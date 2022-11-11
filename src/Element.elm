@@ -234,7 +234,11 @@ rgb r g b =
     Internal.Rgba r g b 1
 
 
-{-| -}
+{-| Provide the red, green, blue, and alpha (opacity) channels for the color.
+
+Each channel takes a value between 0 and 1.
+
+-}
 rgba : Float -> Float -> Float -> Float -> Color
 rgba =
     Internal.Rgba
@@ -254,7 +258,11 @@ rgb255 red green blue =
         1
 
 
-{-| -}
+{-| Provide the red, green, blue, and alpha (opacity) channels for the color.
+
+Each channel takes a value between 0 and 255.
+
+-}
 rgba255 : Int -> Int -> Int -> Float -> Color
 rgba255 red green blue a =
     Internal.Rgba
@@ -264,7 +272,7 @@ rgba255 red green blue a =
         a
 
 
-{-| Create a color from an RGB record.
+{-| Create a color from an RGB record where each channel is a value between 0 and 1.
 -}
 fromRgb :
     { red : Float
@@ -281,7 +289,8 @@ fromRgb clr =
         clr.alpha
 
 
-{-| -}
+{-| Create a color from an RGB record where each channel is a value between 0 and 255.
+-}
 fromRgb255 :
     { red : Int
     , green : Int
