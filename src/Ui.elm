@@ -50,8 +50,6 @@ So, the common ways to do that would be `row` and `column`.
 
 # Text Layout
 
-Text layout needs some specific considerations.
-
 @docs ellip, paragraph, textColumn
 
 

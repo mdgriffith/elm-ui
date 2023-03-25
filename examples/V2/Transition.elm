@@ -3,21 +3,23 @@ module Transition exposing (..)
 {-| -}
 
 import Browser
-import Ui exposing (..)
-import Ui.Animated as Animated
-import Ui.Background as Background
-import Ui.Border as Border
-import Ui.Events
-import Ui.Font as Font
-import Ui.Input as Input
-import Ui.Keyed
-import Ui.Lazy
-import Ui.Region
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
 import Json.Decode
+import Ui exposing (..)
+import Ui.Anim
+import Ui.Background as Background
+import Ui.Border as Border
+import Ui.Events
+import Ui.Font
 import Ui.Gradient
+import Ui.Input
+import Ui.Keyed
+import Ui.Layout
+import Ui.Lazy
+import Ui.Responsive
+
 
 on str decoder =
     htmlAttribute <| Events.on str decoder
@@ -38,7 +40,7 @@ main =
 
 init () =
     ( { focus = Detail
-      , ui = Ui.init
+      , ui = Ui.Anim.init
       }
     , Cmd.none
     )
@@ -51,11 +53,11 @@ type Id
 id val =
     case val of
         One i ->
-            Animated.id Ui "one" (String.fromInt i)
+            Ui.Anim.persistent Ui "one" (String.fromInt i)
 
 
 type Msg
-    = Ui (Ui.Msg Msg)
+    = Ui (Ui.Anim.Msg Msg)
     | Focus Focus
 
 
@@ -69,7 +71,7 @@ update msg model =
         Ui uiMsg ->
             let
                 ( newUI, cmd ) =
-                    Ui.update Ui uiMsg model.ui
+                    Ui.Anim.update Ui uiMsg model.ui
             in
             ( { model | ui = newUI }
             , cmd
@@ -81,33 +83,49 @@ update msg model =
             )
 
 
+type Breakpoints
+    = Small
+    | Medium
+    | Large
+
+
+breakpoints =
+    Ui.Responsive.breakpoints Small
+        [ ( 1200, Medium )
+        , ( 2400, Large )
+        ]
+
+
 view model =
-    layoutWith { options = [] }
+    Ui.Responsive.layout
+        { options = []
+        , breakpoints = breakpoints
+        }
         model.ui
-        [ Font.italic
-        , Font.size 32
-        , Font.gradient 
+        [ Ui.Font.italic
+        , Ui.Font.size 32
+        , Ui.Font.gradient
             (Ui.Gradient.linear Ui.right
-                [ Ui.Gradient.percent 0  (rgb 0 255 255)
-                , Ui.Gradient.percent 20  (rgb 255 255 255)
-                , Ui.Gradient.percent 100  (rgb 255 255 255)
-
+                [ Ui.Gradient.percent 0 (rgb 0 255 255)
+                , Ui.Gradient.percent 20 (rgb 255 255 255)
+                , Ui.Gradient.percent 100 (rgb 255 255 255)
                 ]
-
             )
-        , Font.with
+        , Ui.Font.font
             { name = "EB Garamond"
-            , fallback = [ Font.serif ]
+            , fallback = [ Ui.Font.serif ]
             , sizing =
-                Font.byCapital
+                Ui.Font.byCapital
                     { offset = 0.045
                     , height = 0.73
                     }
             , variants =
                 []
+            , weight = Ui.Font.regular
+            , size = 16
             }
         , Ui.Events.onClick
-            (Ui.transition Ui
+            (Ui.Anim.withTransition Ui
                 (Focus
                     (case model.focus of
                         Detail ->

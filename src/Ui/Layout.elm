@@ -1,9 +1,10 @@
 module Ui.Layout exposing
-    ( grid
-    , gridWith, Width, byContent, px, fill, portion, bounded
-    , row, column
+    ( row, column
+    , centered
     , AlignX, left, centerY, right
     , AlignY, top, centerX, bottom
+    , rowWithConstraints
+    , Width, byContent, px, fill, portion, bounded
     )
 
 {-| The vast majority of layouts should be covered by `Ui.column` and `Ui.row`. Reach for those first before coming here!
@@ -11,20 +12,22 @@ module Ui.Layout exposing
 However, sometimes you might need a bit more nuance.
 
 
-# Grid
-
-@docs grid
-
-@docs gridWith, Width, byContent, px, fill, portion, bounded
-
-
 # Advanced Rows and Columns
 
 @docs row, column
 
+@docs centered
+
 @docs AlignX, left, centerY, right
 
 @docs AlignY, top, centerX, bottom
+
+
+# Grid
+
+@docs rowWithConstraints
+
+@docs Width, byContent, px, fill, portion, bounded
 
 -}
 
@@ -44,6 +47,12 @@ type AlignY
     = CenterY
     | Top
     | Bottom
+
+
+{-| -}
+centered : ( AlignX, AlignY )
+centered =
+    ( CenterX, CenterY )
 
 
 {-| -}
@@ -83,7 +92,13 @@ bottom =
 
 
 {-| -}
-row : { wrap : Bool, align : ( AlignX, AlignY ) } -> List (Attribute msg) -> List (Element msg) -> Element msg
+row :
+    { wrap : Bool
+    , align : ( AlignX, AlignY )
+    }
+    -> List (Attribute msg)
+    -> List (Element msg)
+    -> Element msg
 row options attrs children =
     let
         wrapped =
@@ -125,7 +140,13 @@ row options attrs children =
 
 
 {-| -}
-column : { wrap : Bool, align : ( AlignX, AlignY ) } -> List (Attribute msg) -> List (Element msg) -> Element msg
+column :
+    { wrap : Bool
+    , align : ( AlignX, AlignY )
+    }
+    -> List (Attribute msg)
+    -> List (Element msg)
+    -> Element msg
 column options attrs children =
     let
         wrapped =
@@ -166,15 +187,16 @@ column options attrs children =
         children
 
 
-{-| -}
-grid : Int -> List (Attribute msg) -> List (Element msg) -> Element msg
-grid cols attrs children =
-    Two.element Two.AsGrid
-        (Two.style "grid-template-columns"
-            ("repeat(" ++ String.fromInt cols ++ ", minmax(0, 1fr))")
-            :: attrs
-        )
-        children
+
+-- {-| -}
+-- grid : Int -> List (Attribute msg) -> List (Element msg) -> Element msg
+-- grid cols attrs children =
+--     Two.element Two.AsGrid
+--         (Two.style "grid-template-columns"
+--             ("repeat(" ++ String.fromInt cols ++ ", minmax(0, 1fr))")
+--             :: attrs
+--         )
+--         children
 
 
 {-| -}
@@ -223,11 +245,15 @@ bounded =
 
 
 {-| -}
-gridWith : List Width -> List (Attribute msg) -> List (Element msg) -> Element msg
-gridWith cols attrs children =
+rowWithConstraints :
+    List Width
+    -> List (Attribute msg)
+    -> List (Element msg)
+    -> Element msg
+rowWithConstraints columns attrs children =
     Two.element Two.AsGrid
         (Two.style "grid-template-columns"
-            (gridTemplate cols "")
+            (gridTemplate columns "")
             :: attrs
         )
         children

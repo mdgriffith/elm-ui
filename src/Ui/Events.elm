@@ -511,3 +511,38 @@ custom :
     -> Attribute msg
 custom name decoder =
     Two.attribute (Html.Events.custom name decoder)
+
+
+{-| Decodes a given
+[`Event`](http://developer.mozilla.org/en-US/docs/Web/API/Event) into a `Bool`
+which indicates whether or not the the event's
+[`target`](http://developer.mozilla.org/en-US/docs/Web/API/Event/target) is a
+child of the `HTMLElement`s identified by the given
+[`id`](http://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id)s.
+
+Implementation adapted from
+<https://dev.to/margaretkrutikova/elm-dom-node-decoder-to-detect-click-outside-3ioh>.
+
+-}
+isOutsideTargetDecoder : List String -> Decoder Bool
+isOutsideTargetDecoder htmlIds =
+    htmlIds
+        |> isOutsideElementsDecoder
+        |> JD.field "target"
+
+
+isOutsideElementsDecoder : List String -> Decoder Bool
+isOutsideElementsDecoder htmlIds =
+    JD.oneOf
+        [ JD.field "id" JD.string
+            |> JD.andThen
+                (\htmlId_ ->
+                    if List.member htmlId_ htmlIds then
+                        JD.succeed False
+
+                    else
+                        JD.fail "check parent node"
+                )
+        , JD.lazy (\_ -> isOutsideElementsDecoder htmlIds |> JD.field "parentNode")
+        , JD.succeed True
+        ]

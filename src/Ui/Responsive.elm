@@ -17,6 +17,12 @@ module Ui.Responsive exposing
 
 @docs Breakpoints, breakpoints
 
+    {-| Translates into
+        0-800       -> Small
+        800-1400   -> Medium
+        1400-2400  -> Large
+        2400-above -> ExtraLarge
+    -}
     breakpoints : Ui.Responsive.Breakpoints Breakpoints
     breakpoints =
         Ui.Responsive.breakpoints Small
@@ -24,6 +30,8 @@ module Ui.Responsive exposing
             , (1400, Large)
             , (2400, ExtraLarge)
             ]
+
+
 
 
     el
