@@ -1,5 +1,5 @@
 module Ui exposing
-    ( layout, Option, focusStyle, FocusStyle
+    ( layout, embed, Option
     , Element, none, text, el
     , row, column
     , ellip, paragraph, textColumn
@@ -12,6 +12,9 @@ module Ui exposing
     , spacing, spacingXY, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
     , opacity
+    , border, borderWith
+    , rounded, roundedWith, circle
+    , background, Gradient, backgroundGradient
     , pointer, grab, grabbing
     , moveUp, moveDown, moveRight, moveLeft, rotate, scale
     , scrollable, clipped
@@ -23,7 +26,6 @@ module Ui exposing
     , turns, radians
     , map
     , html, htmlAttribute
-    , embed
     )
 
 {-|
@@ -31,7 +33,7 @@ module Ui exposing
 
 # Getting started
 
-@docs layout, Option, focusStyle, FocusStyle
+@docs layout, embed, Option
 
 
 # Basic Elements
@@ -128,6 +130,18 @@ Where there are two elements on the left, one on the right, and one in the cente
 @docs opacity
 
 
+# Borders
+
+@docs border, borderWith
+
+@docs rounded, roundedWith, circle
+
+
+# Backgrounds
+
+@docs background, Gradient, backgroundGradient
+
+
 # Cursors
 
 @docs pointer, grab, grabbing
@@ -206,9 +220,6 @@ This is very useful for things like dropdown menus or tooltips.
 
 -}
 
-import Animator
-import Animator.Timeline
-import Animator.Watcher
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as Event
@@ -369,44 +380,6 @@ styleRules styleStr =
 {-| -}
 type alias Option =
     Two.Option
-
-
-{-| -}
-defaultFocus :
-    { borderColor : Maybe Color
-    , backgroundColor : Maybe Color
-    , shadow :
-        Maybe
-            { x : Float
-            , y : Float
-            , size : Float
-            , blur : Float
-            , color : Color
-            }
-    }
-defaultFocus =
-    Two.focusDefaultStyle
-
-
-{-| -}
-type alias FocusStyle =
-    { borderColor : Maybe Color
-    , backgroundColor : Maybe Color
-    , shadow :
-        Maybe
-            { x : Float
-            , y : Float
-            , size : Float
-            , blur : Float
-            , color : Color
-            }
-    }
-
-
-{-| -}
-focusStyle : FocusStyle -> Two.Option
-focusStyle =
-    Two.FocusStyleOption
 
 
 {-| When you want to render exactly nothing.
@@ -646,6 +619,92 @@ image attrs img =
                     []
             )
         ]
+
+
+{-| -}
+border : { width : Int, color : Color } -> Attribute msg
+border options =
+    Two.styleWith Flag.borderWidth
+        "border"
+        (String.fromInt options.width
+            ++ "px solid "
+            ++ Style.color options.color
+        )
+
+
+{-| -}
+borderWith :
+    { width :
+        { bottom : Int
+        , left : Int
+        , right : Int
+        , top : Int
+        }
+    , color : Color
+    }
+    -> Attribute msg
+borderWith options =
+    Two.style2
+        "border-width"
+        ((String.fromInt options.width.top ++ "px ")
+            ++ (String.fromInt options.width.right ++ "px ")
+            ++ (String.fromInt options.width.bottom ++ "px ")
+            ++ (String.fromInt options.width.left ++ "px")
+        )
+        "border-color"
+        (Style.color options.color)
+
+
+{-| -}
+rounded : Int -> Attribute msg
+rounded radius =
+    Two.style "border-radius" (String.fromInt radius ++ "px")
+
+
+{-| -}
+roundedWith :
+    { topLeft : Int
+    , topRight : Int
+    , bottomLeft : Int
+    , bottomRight : Int
+    }
+    -> Attribute msg
+roundedWith options =
+    Two.style "border-radius"
+        ((String.fromInt options.topLeft ++ "px ")
+            ++ (String.fromInt options.topRight ++ "px ")
+            ++ (String.fromInt options.bottomRight ++ "px ")
+            ++ (String.fromInt options.bottomLeft ++ "px")
+        )
+
+
+{-| -}
+circle : Attribute msg
+circle =
+    Two.style "border-radius" "50%"
+
+
+{-| -}
+background : Color -> Attribute msg
+background color =
+    Two.styleWith Flag.background
+        "background-color"
+        (Style.color color)
+
+
+{-| -}
+type alias Gradient =
+    Style.Gradient
+
+
+{-| -}
+backgroundGradient : List Gradient -> Attribute msg
+backgroundGradient gradient =
+    Two.styleWith Flag.background
+        "background-image"
+        (List.map Style.toCssGradient gradient
+            |> String.join ", "
+        )
 
 
 {-|

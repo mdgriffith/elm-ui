@@ -4,7 +4,7 @@ module Ui.Input exposing
     , text, multiline
     , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
-    , sliderX, sliderY, Thumb, thumb
+    , sliderHorizontal, sliderVertical, Thumb, thumb
     , chooseOne, Option, option, optionWith, OptionState(..)
     , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
     )
@@ -79,7 +79,7 @@ A slider is great for choosing between a range of numerical values.
   - **thumb** - The icon that you click and drag to change the value.
   - **track** - The line behind the thumb denoting where you can slide to.
 
-@docs sliderX, sliderY, Thumb, thumb
+@docs sliderHorizontal, sliderVertical, Thumb, thumb
 
 
 # Choose One or a 'Radio' Selection
@@ -183,10 +183,9 @@ import Json.Decode as Json
 import Json.Encode as Encode
 import Ui exposing (Attribute, Element)
 import Ui.Accessibility
-import Ui.Background
-import Ui.Border
 import Ui.Events
 import Ui.Font
+import Ui.Shadow
 
 
 {-| -}
@@ -283,6 +282,24 @@ hiddenLabelAttribute2 label =
 
 
 {-| -}
+focus :
+    { borderColor : Maybe Ui.Color
+    , backgroundColor : Maybe Ui.Color
+    , shadow :
+        Maybe
+            { x : Float
+            , y : Float
+            , size : Float
+            , blur : Float
+            , color : Ui.Color
+            }
+    }
+    -> Ui.Option
+focus =
+    Two.FocusStyleOption
+
+
+{-| -}
 checkbox :
     List (Attribute msg)
     ->
@@ -364,52 +381,17 @@ defaultThumb =
     Thumb
         [ Ui.width (Ui.px 16)
         , Ui.height (Ui.px 16)
-        , Ui.Border.rounded 8
-        , Ui.Border.width 1
-        , Ui.Border.color (Ui.rgb 100 100 100)
-        , Ui.Background.color (Ui.rgb 255 255 255)
+        , Ui.rounded 8
+        , Ui.border
+            { width = 1
+            , color = Ui.rgb 100 100 100
+            }
+        , Ui.background (Ui.rgb 255 255 255)
         ]
 
 
-{-| A slider input, good for capturing float values.
-Input.slider
-[ Ui.height (Ui.px 30)
--- Here is where we're creating/styling the "track"
-, Ui.behindContent
-(Ui.el
-[ Ui.width Ui.fill
-, Ui.height (Ui.px 2)
-, Ui.centerY
-, Background.color grey
-, Border.rounded 2
-]
-Ui.none
-)
-]
-{ onChange = AdjustValue
-, label =
-Input.labelAbove []
-(text "My Slider Value")
-, min = 0
-, max = 75
-, step = Nothing
-, value = model.sliderValue
-, thumb =
-Input.defaultThumb
-}
-`Ui.behindContent` is used to render the track of the slider. Without it, no track would be rendered. The `thumb` is the icon that you can move around.
-The slider can be vertical or horizontal depending on the width/height of the slider.
-
-  - `height fill` and `width (px someWidth)` will cause the slider to be vertical.
-  - `height (px someHeight)` and `width (px someWidth)` where `someHeight` > `someWidth` will also do it.
-  - otherwise, the slider will be horizontal.
-    **Note** If you want a slider for an `Int` value:
-  - set `step` to be `Just 1`, or some other whole value
-  - `value = toFloat model.myInt`
-  - And finally, round the value before making a message `onChange = round >> AdjustValue`
-
--}
-sliderX :
+{-| -}
+sliderHorizontal :
     List (Ui.Attribute msg)
     ->
         { onChange : Float -> msg
@@ -421,7 +403,7 @@ sliderX :
         , step : Maybe Float
         }
     -> Element msg
-sliderX attributes input =
+sliderHorizontal attributes input =
     let
         (Thumb thumbAttributes) =
             Maybe.withDefault defaultThumb input.thumb
@@ -506,7 +488,8 @@ sliderX attributes input =
         )
 
 
-sliderY :
+{-| -}
+sliderVertical :
     List (Ui.Attribute msg)
     ->
         { onChange : Float -> msg
@@ -518,7 +501,7 @@ sliderY :
         , step : Maybe Float
         }
     -> Element msg
-sliderY attrs input =
+sliderVertical attrs input =
     let
         attributes =
             Ui.height (Ui.px 200)
@@ -1106,6 +1089,12 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
                 , inputParent = attr :: els.inputParent
             }
 
+        Two.Style2 _ ->
+            { els
+                | parent = attr :: els.parent
+                , inputParent = attr :: els.inputParent
+            }
+
         Two.Transition2 details ->
             { els
                 | parent = attr :: els.parent
@@ -1506,8 +1495,8 @@ defaultRadioOption optionLabel status =
         [ Ui.el
             [ Ui.width (Ui.px 14)
             , Ui.height (Ui.px 14)
-            , Ui.Background.color white2
-            , Ui.Border.rounded 7
+            , Ui.background white2
+            , Ui.rounded 7
             , case status of
                 Selected ->
                     Two.class "focusable"
@@ -1535,26 +1524,28 @@ defaultRadioOption optionLabel status =
             --         1
             --     , color = Color.rgba 235 235 235 0
             --     }
-            , Ui.Border.width <|
-                case status of
-                    Idle ->
-                        1
+            , Ui.border
+                { color =
+                    case status of
+                        Idle ->
+                            Ui.rgb 208 208 208
 
-                    Focused ->
-                        1
+                        Focused ->
+                            Ui.rgb 208 208 208
 
-                    Selected ->
-                        5
-            , Ui.Border.color <|
-                case status of
-                    Idle ->
-                        Ui.rgb 208 208 208
+                        Selected ->
+                            Ui.rgb 59 153 252
+                , width =
+                    case status of
+                        Idle ->
+                            1
 
-                    Focused ->
-                        Ui.rgb 208 208 208
+                        Focused ->
+                            1
 
-                    Selected ->
-                        Ui.rgb 59 153 252
+                        Selected ->
+                            5
+                }
             ]
             Ui.none
         , Ui.el [ Ui.width Ui.fill, Two.class "unfocusable" ] optionLabel
@@ -1684,10 +1675,12 @@ focusedOnLoad =
 defaultTextBoxStyle2 : List (Ui.Attribute msg)
 defaultTextBoxStyle2 =
     [ Ui.paddingXY 12 12
-    , Ui.Border.rounded 3
-    , Ui.Border.color darkGrey2
-    , Ui.Background.color white2
-    , Ui.Border.width 1
+    , Ui.rounded 3
+    , Ui.border
+        { color = darkGrey2
+        , width = 1
+        }
+    , Ui.background white2
     , Ui.spacing 5
     , Ui.width Ui.fill
 
@@ -1710,18 +1703,26 @@ defaultCheckbox checked =
         , Ui.centerY
         , Ui.Font.size 9
         , Ui.Font.center
-        , Ui.Border.rounded 3
-        , Ui.Border.color <|
-            if checked then
-                Ui.rgb 59 153 252
+        , Ui.rounded 3
+        , Ui.border
+            { color =
+                if checked then
+                    Ui.rgb 59 153 252
 
-            else
-                Ui.rgb 211 211 211
+                else
+                    Ui.rgb 211 211 211
+            , width =
+                if checked then
+                    0
+
+                else
+                    1
+            }
         , if checked then
             Ui.opacity 0
 
           else
-            Ui.Border.shadows
+            Ui.Shadow.shadows
                 [ { x = 0
                   , y = 0
                   , blur = 1
@@ -1730,34 +1731,30 @@ defaultCheckbox checked =
                         Ui.rgb 238 238 238
                   }
                 ]
-        , Ui.Background.color <|
+        , Ui.background <|
             if checked then
                 Ui.rgb 59 153 252
 
             else
                 white2
-        , Ui.Border.width <|
-            if checked then
-                0
-
-            else
-                1
         ]
         (if checked then
             Ui.el
-                [ Ui.Border.color white2
+                [ Ui.borderWith
+                    { color = white2
+                    , width =
+                        { top = 0
+                        , left = 2
+                        , bottom = 2
+                        , right = 0
+                        }
+                    }
                 , Ui.height (Ui.px 6)
                 , Ui.width (Ui.px 9)
                 , Ui.rotate (degrees -45)
                 , Ui.centerX
                 , Ui.centerY
                 , Ui.moveUp 1
-                , Ui.Border.widthEach
-                    { top = 0
-                    , left = 2
-                    , bottom = 2
-                    , right = 0
-                    }
                 ]
                 Ui.none
 

@@ -39,18 +39,17 @@ module Ui.Anim exposing
 
 @docs opacity, x, y, rotation, scale, scaleX, scaleY
 
-@docs padding, paddingEach, background, border, font, height, width
+-- @docs padding, paddingEach, background, border, font, height, width
 
+-- # Premade animations
 
-# Premade animations
+-- Here are some premade animations.
 
-Here are some premade animations.
+-- There's nothing special about them, they're just convenient!
 
-There's nothing special about them, they're just convenient!
+-- Check out how they're defined if you want to make your own.
 
-Check out how they're defined if you want to make your own.
-
-@docs spinning, pulsing, bouncing, pinging
+-- @docs spinning, pulsing, bouncing, pinging
 
 
 # Using Timelines
@@ -91,10 +90,12 @@ import Time
 import Ui exposing (Attribute, Element)
 
 
+{-| -}
 type alias Animated =
     Animator.Attribute
 
 
+{-| -}
 type alias Personality =
     Two.Personality
 
@@ -656,6 +657,7 @@ layout =
     Two.renderLayout
 
 
+{-| -}
 init : State
 init =
     Two.State
@@ -712,11 +714,13 @@ type alias Animator msg model =
     Two.Animator msg model
 
 
+{-| -}
 subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
 subscription =
     Two.subscription
 
 
+{-| -}
 watching :
     { get : model -> Animator.Timeline.Timeline state
     , set : Animator.Timeline.Timeline state -> model -> model

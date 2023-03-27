@@ -49,7 +49,7 @@ module Ui.Font exposing
 
 ## Font
 
-@docs font, responsive
+@docs font
 
 @docs Sizing, full, byCapital, Adjustment
 
@@ -162,6 +162,7 @@ type alias Adjustment =
     }
 
 
+{-| -}
 type alias Sizing =
     Internal.Font.Sizing
 

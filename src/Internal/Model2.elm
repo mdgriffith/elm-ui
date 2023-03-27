@@ -849,6 +849,9 @@ mapAttr uiFn fn (Attribute attr) =
                 Class cls ->
                     Class cls
 
+                Style2 styleDetails ->
+                    Style2 styleDetails
+
                 Style styleDetails ->
                     Style styleDetails
 
@@ -934,8 +937,7 @@ type Attr msg
     | HeightFill Int
     | Font
         { family : String
-        , adjustments :
-            Maybe (BitField.Bits Bits.Inheritance)
+        , adjustments : Maybe (BitField.Bits Bits.Inheritance)
         , variants : String
         , smallCaps : Bool
         , weight : String
@@ -950,6 +952,12 @@ type Attr msg
         { class : String
         , styleName : String
         , styleVal : String
+        }
+    | Style2
+        { oneName : String
+        , oneVal : String
+        , twoName : String
+        , twoVal : String
         }
     | Nearby Location (Element msg)
     | Transition2
@@ -1246,6 +1254,25 @@ style name val =
                 { class = ""
                 , styleName = name
                 , styleVal = val
+                }
+        }
+
+
+style2 :
+    String
+    -> String
+    -> String
+    -> String
+    -> Attribute msg
+style2 oneName oneVal twoName twoVal =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Style2
+                { oneName = oneName
+                , oneVal = oneVal
+                , twoName = twoName
+                , twoVal = twoVal
                 }
         }
 
@@ -2047,6 +2074,20 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                                         Just downloadName ->
                                             Attr.download downloadName
                                    )
+                                :: htmlAttrs
+                            )
+                            classes
+                            remain
+
+                    Style2 styleDetails ->
+                        renderAttrs parentBits
+                            myBits
+                            layout
+                            details
+                            children
+                            (Flag.add flag has)
+                            (Attr.style styleDetails.oneName styleDetails.oneVal
+                                :: Attr.style styleDetails.twoName styleDetails.twoVal
                                 :: htmlAttrs
                             )
                             classes

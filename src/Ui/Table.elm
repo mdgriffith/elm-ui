@@ -62,8 +62,6 @@ import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Element)
-import Ui.Background
-import Ui.Border
 import Ui.Events
 import Ui.Font
 import Ui.Lazy
@@ -171,13 +169,15 @@ default =
             , bottom = 8
             }
     , fontAlignment = Ui.Font.alignLeft
-    , borderHeaderColor = Ui.Border.color (Ui.rgb 200 200 200)
     , borderHeader =
-        Ui.Border.widthEach
-            { top = 0
-            , left = 0
-            , right = 0
-            , bottom = 1
+        Ui.borderWith
+            { color = Ui.rgb 200 200 200
+            , width =
+                { top = 0
+                , left = 0
+                , right = 0
+                , bottom = 1
+                }
             }
     }
 
@@ -458,7 +458,7 @@ renderColumnHeader cfg state isFirstColumn (Column col) =
                 )
             :: Two.attrIf
                 (cfg.stickHeader || stickyColumn)
-                (Ui.Background.color (Ui.rgb 255 255 255))
+                (Ui.background (Ui.rgb 255 255 255))
             :: Two.attrIf
                 (cfg.stickHeader || stickyColumn)
                 (if cfg.stickHeader && stickyColumn then
@@ -549,7 +549,7 @@ renderColumn config state rowIndex row isFirstColumn (Column col) =
                 (Two.style "display" "none")
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
-                (Ui.Background.color (Ui.rgb 255 255 255))
+                (Ui.background (Ui.rgb 255 255 255))
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
                 (Two.style "z-index" "1")
@@ -612,7 +612,7 @@ renderSummaryColumn config state rows isFirstColumn (Column col) =
                 )
             :: Two.attrIf
                 config.stickHeader
-                (Ui.Background.color (Ui.rgb 255 255 255))
+                (Ui.background (Ui.rgb 255 255 255))
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
                 (Two.style "z-index" "1")
