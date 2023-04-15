@@ -18,10 +18,12 @@ import Internal.Style2 as Style
 import Ui exposing (Angle, Color)
 
 
+{-| -}
 type alias Gradient =
     Style.Gradient
 
 
+{-| -}
 type alias Step =
     Style.Step
 
