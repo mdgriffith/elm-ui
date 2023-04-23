@@ -13,8 +13,9 @@ import Internal.BitEncodings as Bits
 import Internal.BitField as BitField exposing (BitField)
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Style2 as Style
+import Internal.Teleport as Teleport
 import Json.Decode as Json
-import Json.Encode
+import Json.Encode as Encode
 import Set exposing (Set)
 import Task
 import Time
@@ -46,51 +47,10 @@ map fn el =
                 )
 
 
-mapUIMsg : (a -> b) -> Msg a -> Msg b
-mapUIMsg fn msg =
-    case msg of
-        Tick time ->
-            Tick time
-
-        RuleNew str ->
-            RuleNew str
-
-        Trans phase str detailList ->
-            Trans phase str detailList
-
-        BoxNew id box ->
-            BoxNew id box
-
-        RefreshBoxesAndThen externalMsg ->
-            RefreshBoxesAndThen (fn externalMsg)
-
-        AnimationAdd trigger css ->
-            AnimationAdd trigger css
-
-        Animate maybeBox trigger classString props ->
-            Animate maybeBox trigger classString props
-
-        BoxesNew externalMsg newBoxes ->
-            BoxesNew (fn externalMsg) newBoxes
-
-
-type Msg msg
+type Msg
     = Tick Time.Posix
-    | RuleNew String
-    | Trans Phase String (List TransitionDetails)
+    | Teleported (List Teleport.Data)
     | BoxNew Id Box
-    | RefreshBoxesAndThen msg
-    | BoxesNew msg (List ( Id, Box ))
-    | AnimationAdd Trigger Animator.Css
-    | Animate
-        (Maybe
-            { id : Id
-            , box : Box
-            }
-        )
-        Trigger
-        String
-        (List Animated)
 
 
 type State
@@ -220,8 +180,8 @@ type alias Animator msg model =
 
 
 updateWith :
-    (Msg msg -> msg)
-    -> Msg msg
+    (Msg -> msg)
+    -> Msg
     -> State
     ->
         { ui : State -> model
@@ -246,29 +206,19 @@ updateWith toAppMsg msg state config =
     )
 
 
-subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
+subscription : (Msg -> msg) -> State -> Animator msg model -> model -> Sub msg
 subscription toAppMsg state animator model =
     Animator.Watcher.toSubscription (toAppMsg << Tick) model animator.animator
 
 
-update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
+update : (Msg -> msg) -> Msg -> State -> ( State, Cmd msg )
 update toAppMsg msg ((State details) as unchanged) =
     case msg of
         Tick _ ->
             ( unchanged, Cmd.none )
 
-        RuleNew new ->
-            if Set.member new details.added then
-                ( unchanged, Cmd.none )
-
-            else
-                ( State
-                    { rules = new :: details.rules
-                    , added = Set.insert new details.added
-                    , boxes = details.boxes
-                    }
-                , Cmd.none
-                )
+        Teleported dataList ->
+            ( unchanged, Cmd.none )
 
         BoxNew id box ->
             -- if this id matches an existing box in the cache
@@ -304,126 +254,6 @@ update toAppMsg msg ((State details) as unchanged) =
                         }
                     , Cmd.none
                     )
-
-        AnimationAdd trigger css ->
-            let
-                _ =
-                    Debug.log "CSS " css
-            in
-            if Set.member css.hash details.added then
-                ( unchanged, Cmd.none )
-
-            else
-                let
-                    newClass =
-                        ("." ++ css.hash ++ phaseName trigger ++ phasePseudoClass trigger ++ " {")
-                            ++ renderProps css.props ""
-                            ++ "}"
-                in
-                ( State
-                    { rules = css.keyframes :: newClass :: details.rules
-                    , added = Set.insert css.hash details.added
-                    , boxes = details.boxes
-                    }
-                , Cmd.none
-                )
-
-        Animate maybeId trigger classString props ->
-            if Set.member classString details.added then
-                ( unchanged, Cmd.none )
-
-            else
-                let
-                    arrivingTransitionStr =
-                        transitionFor .arriving False props
-
-                    departingTransitionStr =
-                        transitionFor .departing False props
-
-                    stylesStr =
-                        renderTargetAnimatedStyle Nothing props
-
-                    new =
-                        ("." ++ classString ++ phasePseudoClass trigger ++ " {")
-                            ++ ("transition:" ++ arrivingTransitionStr ++ ";\n")
-                            ++ stylesStr
-                            ++ "}"
-
-                    newReturn =
-                        ("." ++ classString ++ " {")
-                            ++ ("transition:" ++ departingTransitionStr ++ ";")
-                            ++ "}"
-                in
-                ( State
-                    { rules = new :: newReturn :: details.rules
-                    , added = Set.insert classString details.added
-                    , boxes = details.boxes
-                    }
-                , Cmd.none
-                )
-
-        Trans phase classStr transition ->
-            if Set.member classStr details.added then
-                ( unchanged, Cmd.none )
-
-            else
-                let
-                    arrivingTransitionStr =
-                        renderArrivingTransitionString transition
-
-                    departingTransitionStr =
-                        renderDepartingTransitionString transition
-
-                    stylesStr =
-                        renderStylesString transition
-
-                    phasePseudoClassStr =
-                        case phase of
-                            Focused ->
-                                ":focus"
-
-                            Hovered ->
-                                ":hover"
-
-                            Pressed ->
-                                ":active"
-
-                    new =
-                        ("." ++ classStr ++ phasePseudoClassStr ++ " {")
-                            ++ ("transition:" ++ arrivingTransitionStr ++ ";\n")
-                            ++ stylesStr
-                            ++ "}"
-
-                    newReturn =
-                        ("." ++ classStr ++ " {")
-                            ++ ("transition:" ++ departingTransitionStr ++ ";")
-                            ++ "}"
-                in
-                ( State
-                    { rules = new :: newReturn :: details.rules
-                    , added = Set.insert classStr details.added
-                    , boxes = details.boxes
-                    }
-                , Cmd.none
-                )
-
-        RefreshBoxesAndThen uiMsg ->
-            ( unchanged
-            , requestBoundingBoxes details.boxes
-                |> Task.perform
-                    (toAppMsg << BoxesNew uiMsg)
-            )
-
-        BoxesNew uiMsg newBoxes ->
-            -- we've received new boxes
-            -- This represents ground truth for the moment
-            ( State
-                { details
-                    | boxes = newBoxes
-                }
-            , Task.succeed uiMsg
-                |> Task.perform identity
-            )
 
 
 requestBoundingBoxes boxes =
@@ -804,8 +634,8 @@ transitionToClass (Transition transition) =
         ++ BitField.toString transition.departing.curve
 
 
-mapAttr : (Msg b -> b) -> (a -> b) -> Attribute a -> Attribute b
-mapAttr uiFn fn (Attribute attr) =
+mapAttr : (a -> b) -> Attribute a -> Attribute b
+mapAttr fn (Attribute attr) =
     Attribute
         { flag = attr.flag
         , attr =
@@ -858,15 +688,8 @@ mapAttr uiFn fn (Attribute attr) =
                 Nearby loc el ->
                     Nearby loc (map fn el)
 
-                Transition2 t ->
-                    Transition2
-                        { toMsg = uiFn
-                        , trigger = t.trigger
-                        , css = t.css
-                        }
-
-                Animated toMsg id ->
-                    Animated uiFn id
+                CssTeleport teleport ->
+                    CssTeleport teleport
         }
 
 
@@ -960,12 +783,10 @@ type Attr msg
         , twoVal : String
         }
     | Nearby Location (Element msg)
-    | Transition2
-        { toMsg : Msg msg -> msg
-        , trigger : Trigger
-        , css : Animator.Css
+    | CssTeleport
+        { class : String
+        , data : Encode.Value
         }
-    | Animated (Msg msg -> msg) Id
 
 
 type ResponsiveInt
@@ -1105,11 +926,11 @@ emptyEdges =
     }
 
 
-emptyDetails : Details msg
+emptyDetails : Details
 emptyDetails =
     { fontSize = -1
     , transform = Nothing
-    , animEvents = []
+    , teleportData = []
     }
 
 
@@ -1163,35 +984,33 @@ text str =
                         ]
 
                     attrsWithParentSpacing =
-                        if height == 1 && offset == 0 then
-                            Attr.style "margin"
-                                (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
-                                :: attrs
-
-                        else
-                            let
-                                -- This doesn't totally make sense to me, but it works :/
-                                -- I thought that the top margin should have a smaller negative margin than the bottom
-                                -- however it seems evenly distributing the empty space works out.
-                                topVal =
-                                    offset
-
-                                bottomVal =
-                                    (1 - height) - offset
-
-                                even =
-                                    (topVal + bottomVal) / 2
-
-                                margin =
-                                    "-"
-                                        ++ String.fromFloat (even + 0.25)
-                                        ++ "em "
-                                        ++ (String.fromInt spacingX ++ "0px ")
-                            in
-                            Attr.style "margin"
-                                margin
-                                :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
-                                :: attrs
+                        -- if height == 1 && offset == 0 then
+                        --     Attr.style "margin"
+                        --         (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
+                        --         ::
+                        --         attrs
+                        -- else
+                        --     let
+                        --         -- This doesn't totally make sense to me, but it works :/
+                        --         -- I thought that the top margin should have a smaller negative margin than the bottom
+                        --         -- however it seems evenly distributing the empty space works out.
+                        --         topVal =
+                        --             offset
+                        --         bottomVal =
+                        --             (1 - height) - offset
+                        --         even =
+                        --             (topVal + bottomVal) / 2
+                        --         margin =
+                        --             "-"
+                        --                 ++ String.fromFloat (even + 0.25)
+                        --                 ++ "em "
+                        --                 ++ (String.fromInt spacingX ++ "0px ")
+                        --     in
+                        --     Attr.style "margin"
+                        --         margin
+                        --         :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
+                        --         :: attrs
+                        attrs
                 in
                 Html.span
                     attrsWithParentSpacing
@@ -1315,10 +1134,10 @@ type alias Edges =
     }
 
 
-type alias Details msg =
+type alias Details =
     { fontSize : Int
     , transform : Maybe Transform
-    , animEvents : List (Json.Decoder msg)
+    , teleportData : List Json.Value
     }
 
 
@@ -1454,7 +1273,7 @@ element layout attrs children =
                                     |> Debug.log "STYLE"
                         in
                         Attr.property "style"
-                            (Json.Encode.string
+                            (Encode.string
                                 styleStr
                             )
                             :: rendered.attrs
@@ -1522,7 +1341,7 @@ elementAs toNode layout attrs children =
                                     (List.reverse attrs)
                         in
                         Attr.property "style"
-                            (Json.Encode.string
+                            (Encode.string
                                 styleStr
                             )
                             :: rendered.attrs
@@ -1594,7 +1413,7 @@ elementKeyed name layout attrs children =
                                     (List.reverse attrs)
                         in
                         Attr.property "style"
-                            (Json.Encode.string
+                            (Encode.string
                                 styleStr
                             )
                             :: rendered.attrs
@@ -1662,7 +1481,7 @@ renderAttrs :
     BitField.Bits Bits.Inheritance
     -> BitField.Bits Bits.Inheritance
     -> Layout
-    -> Details msg
+    -> Details
     -> ElemChildren msg
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
@@ -1671,7 +1490,7 @@ renderAttrs :
     ->
         { fields : Flag.Field
         , myBits : BitField.Bits Bits.Inheritance
-        , details : Details msg
+        , details : Details
         , attrs : List (Html.Attribute msg)
         , children : Children msg
         }
@@ -1680,23 +1499,22 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
         [] ->
             let
                 attrsWithParentSpacing =
-                    if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
-                        Attr.style "margin"
-                            ((parentBits
-                                |> BitField.get Bits.spacingY
-                                |> String.fromInt
-                             )
-                                ++ "px "
-                                ++ (parentBits
-                                        |> BitField.get Bits.spacingX
-                                        |> String.fromInt
-                                   )
-                                ++ "px"
-                            )
-                            :: htmlAttrs
-
-                    else
-                        htmlAttrs
+                    -- if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
+                    --     Attr.style "margin"
+                    --         ((parentBits
+                    --             |> BitField.get Bits.spacingY
+                    --             |> String.fromInt
+                    --          )
+                    --             ++ "px "
+                    --             ++ (parentBits
+                    --                     |> BitField.get Bits.spacingX
+                    --                     |> String.fromInt
+                    --                )
+                    --             ++ "px"
+                    --         )
+                    --         :: htmlAttrs
+                    -- else
+                    htmlAttrs
 
                 attrsWithTransform =
                     case details.transform of
@@ -1767,30 +1585,28 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                 --             )
                 --             :: attrsWithTransform
                 attrsWithAnimations =
-                    case details.animEvents of
+                    case details.teleportData of
                         [] ->
                             attrsWithTransform
 
-                        animEvents ->
-                            Events.on "animationstart"
-                                (Json.oneOf details.animEvents)
+                        teleportData ->
+                            Attr.property "data-elm-ui" (Encode.list identity teleportData)
                                 :: attrsWithTransform
 
                 attrsWithWidthFill =
                     if Flag.present Flag.width has then
                         -- we know we've set the width to fill
                         attrsWithAnimations
-
-                    else if
-                        not
-                            (Flag.present Flag.borderWidth has
-                                || Flag.present Flag.background has
-                                || Flag.present Flag.event has
-                            )
-                            && not (BitField.has Bits.isRow parentBits)
-                    then
-                        Attr.class Style.classes.widthFill
-                            :: attrsWithAnimations
+                        -- else if
+                        --     not
+                        --         (Flag.present Flag.borderWidth has
+                        --             || Flag.present Flag.background has
+                        --             || Flag.present Flag.event has
+                        --         )
+                        --         && not (BitField.has Bits.isRow parentBits)
+                        -- then
+                        --     Attr.class Style.classes.widthFill
+                        --         :: attrsWithAnimations
 
                     else
                         -- we are not widthFill, we set it to widthContent
@@ -1802,17 +1618,16 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         -- we know we've set the width to fill
                         Attr.class classes
                             :: attrsWithWidthFill
-
-                    else if
-                        not
-                            (Flag.present Flag.borderWidth has
-                                || Flag.present Flag.background has
-                                || Flag.present Flag.event has
-                            )
-                            && BitField.has Bits.isRow parentBits
-                    then
-                        Attr.class (classes ++ " " ++ Style.classes.heightFill)
-                            :: attrsWithWidthFill
+                        -- else if
+                        --     not
+                        --         (Flag.present Flag.borderWidth has
+                        --             || Flag.present Flag.background has
+                        --             || Flag.present Flag.event has
+                        --         )
+                        --         && BitField.has Bits.isRow parentBits
+                        -- then
+                        --     Attr.class (classes ++ " " ++ Style.classes.heightFill)
+                        --         :: attrsWithWidthFill
 
                     else
                         Attr.class (classes ++ " " ++ Style.classes.heightContent)
@@ -1842,61 +1657,58 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                     BitField.get Bits.spacingY myBits
 
                 finalChildren =
-                    case renderedChildren of
-                        Keyed keyedChilds ->
-                            case layout of
-                                AsParagraph ->
-                                    Keyed <|
-                                        if Flag.present Flag.id has then
-                                            ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
-                                                :: ( "top-spacer", spacerTop (toFloat spacingY / -2) )
-                                                :: keyedChilds
-                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
-
-                                        else
-                                            ( "top-spacer", spacerTop (toFloat spacingY / -2) )
-                                                :: keyedChilds
-                                                ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
-
-                                _ ->
-                                    if Flag.present Flag.id has then
-                                        (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
-                                            :: keyedChilds
-                                        )
-                                            |> Keyed
-
-                                    else
-                                        renderedChildren
-
-                        Children childs ->
-                            case layout of
-                                AsParagraph ->
-                                    Children <|
-                                        if Flag.present Flag.id has then
-                                            Html.div (Attr.class "ui-movable" :: finalAttrs) childs
-                                                :: spacerTop (toFloat spacingY / -2)
-                                                :: childs
-                                                ++ [ spacerBottom (toFloat spacingY / -2) ]
-
-                                        else
-                                            spacerTop (toFloat spacingY / -2)
-                                                :: childs
-                                                ++ [ spacerBottom (toFloat spacingY / -2) ]
-
-                                _ ->
-                                    if Flag.present Flag.id has then
-                                        (Html.div (Attr.class "ui-movable" :: finalAttrs) childs
-                                            :: childs
-                                        )
-                                            |> Children
-
-                                    else
-                                        renderedChildren
+                    -- case renderedChildren of
+                    --     Keyed keyedChilds ->
+                    --         case layout of
+                    --             AsParagraph ->
+                    --                 Keyed <|
+                    --                     if Flag.present Flag.id has then
+                    --                         -- ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
+                    --                             -- :: ( "top-spacer", spacerTop (toFloat spacingY / -2) )
+                    --                             -- ::
+                    --                             keyedChilds
+                    --                         -- ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
+                    --                     else
+                    --                         -- ( "top-spacer", spacerTop (toFloat spacingY / -2) )
+                    --                         -- ::
+                    --                         keyedChilds
+                    --             -- ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
+                    --             _ ->
+                    --                 if Flag.present Flag.id has then
+                    --                     -- (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
+                    --                         -- ::
+                    --                          keyedChilds
+                    --                     -- )
+                    --                         |> Keyed
+                    --                 else
+                    --                     renderedChildren
+                    --     Children childs ->
+                    --         case layout of
+                    --             AsParagraph ->
+                    --                 Children <|
+                    --                     if Flag.present Flag.id has then
+                    --                         Html.div (Attr.class "ui-movable" :: finalAttrs) childs
+                    --                             -- :: spacerTop (toFloat spacingY / -2)
+                    --                             :: childs
+                    --                         -- ++ [ spacerBottom (toFloat spacingY / -2) ]
+                    --                     else
+                    --                         -- spacerTop (toFloat spacingY / -2)
+                    --                         -- ::
+                    --                         childs
+                    --             -- ++ [ spacerBottom (toFloat spacingY / -2) ]
+                    --             _ ->
+                    --                 if Flag.present Flag.id has then
+                    --                     (Html.div (Attr.class "ui-movable" :: finalAttrs) childs
+                    --                         :: childs
+                    --                     )
+                    --                         |> Children
+                    --                 else
+                    --                     renderedChildren
+                    renderedChildren
             in
             { fields = has
             , myBits = myBits
-            , attrs =
-                finalAttrs
+            , attrs = finalAttrs
             , children = finalChildren
             , details = details
             }
@@ -1973,10 +1785,9 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                                         |> BitField.copy Bits.fontOffset adj
                             )
                             layout
-                            { fontSize =
-                                details.fontSize
+                            { fontSize = details.fontSize
                             , transform = details.transform
-                            , animEvents = details.animEvents
+                            , teleportData = details.teleportData
                             }
                             children
                             (case font.adjustments of
@@ -2254,72 +2065,80 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                             )
                             remain
 
-                    Transition2 { toMsg, trigger, css } ->
-                        let
-                            triggerClass =
-                                triggerName trigger
-
-                            styleClass =
-                                css.hash ++ phaseName trigger
-
-                            event =
-                                Json.field "animationName" Json.string
-                                    |> Json.andThen
-                                        (\name ->
-                                            if name == triggerClass then
-                                                Json.succeed
-                                                    (toMsg
-                                                        (AnimationAdd trigger css)
-                                                    )
-
-                                            else
-                                                Json.fail "Nonmatching animation"
-                                        )
-                        in
+                    CssTeleport teleport ->
                         renderAttrs parentBits
                             myBits
                             layout
                             details
                             children
-                            has
-                            (Events.on "animationstart" event
-                                :: htmlAttrs
-                            )
-                            (triggerClass ++ " " ++ styleClass ++ " " ++ classes)
+                            (Flag.add flag has)
+                            htmlAttrs
+                            (teleport.class ++ " " ++ classes)
                             remain
 
-                    Animated toMsg id ->
-                        let
-                            event =
-                                Json.map2
-                                    (\_ box ->
-                                        toMsg (BoxNew id box)
-                                    )
-                                    (Json.field "animationName" Json.string
-                                        |> Json.andThen
-                                            (\name ->
-                                                if name == "on-rendered" then
-                                                    Json.succeed ()
 
-                                                else
-                                                    Json.fail "Nonmatching animation"
-                                            )
-                                    )
-                                    decodeBoundingBox
-                        in
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            { fontSize =
-                                details.fontSize
-                            , transform = details.transform
-                            , animEvents = event :: details.animEvents
-                            }
-                            children
-                            (Flag.add Flag.id has)
-                            (Attr.id (toCssId id) :: htmlAttrs)
-                            ("on-rendered ui-placeholder " ++ toCssClass id ++ " " ++ classes)
-                            remain
+
+-- Transition2 { toMsg, trigger, css } ->
+--     let
+--         triggerClass =
+--             triggerName trigger
+--         styleClass =
+--             css.hash ++ phaseName trigger
+--         event =
+--             Json.field "animationName" Json.string
+--                 |> Json.andThen
+--                     (\name ->
+--                         if name == triggerClass then
+--                             Json.succeed
+--                                 (toMsg
+--                                     (AnimationAdd trigger css)
+--                                 )
+--                         else
+--                             Json.fail "Nonmatching animation"
+--                     )
+--     in
+--     renderAttrs parentBits
+--         myBits
+--         layout
+--         details
+--         children
+--         has
+--         (Events.on "animationstart" event
+--             :: htmlAttrs
+--         )
+--         (triggerClass ++ " " ++ styleClass ++ " " ++ classes)
+--         remain
+-- Animated toMsg id ->
+--     let
+--         event =
+--             Json.map2
+--                 (\_ box ->
+--                     toMsg (BoxNew id box)
+--                 )
+--                 (Json.field "animationName" Json.string
+--                     |> Json.andThen
+--                         (\name ->
+--                             if name == "on-rendered" then
+--                                 Json.succeed ()
+--                             else
+--                                 Json.fail "Nonmatching animation"
+--                         )
+--                 )
+--                 decodeBoundingBox
+--     in
+--     renderAttrs parentBits
+--         myBits
+--         layout
+--         { fontSize =
+--             details.fontSize
+--         , transform = details.transform
+--         , animEvents = event :: details.animEvents
+--         }
+--         children
+--         (Flag.add Flag.id has)
+--         (Attr.id (toCssId id) :: htmlAttrs)
+--         ("on-rendered ui-placeholder " ++ toCssClass id ++ " " ++ classes)
+--         remain
 
 
 {-| In order to make css variables work, we need to gather all styles into a `Attribute.property "style"`
@@ -2334,7 +2153,7 @@ renderInlineStylesToString :
     BitField.Bits Bits.Inheritance
     -> BitField.Bits Bits.Inheritance
     -> Layout
-    -> Details msg
+    -> Details
     -> Flag.Field
     -> String
     -> List (Attribute msg)
@@ -2344,23 +2163,22 @@ renderInlineStylesToString parentBits myBits layout details has vars attrs =
         [] ->
             let
                 varsWithParentSpacing =
-                    if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
-                        "margin: "
-                            ++ ((parentBits
-                                    |> BitField.get Bits.spacingY
-                                    |> String.fromInt
-                                )
-                                    ++ "px "
-                                    ++ (parentBits
-                                            |> BitField.get Bits.spacingX
-                                            |> String.fromInt
-                                       )
-                                    ++ "px;"
-                               )
-                            ++ vars
-
-                    else
-                        vars
+                    -- if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
+                    --     "margin: "
+                    --         ++ ((parentBits
+                    --                 |> BitField.get Bits.spacingY
+                    --                 |> String.fromInt
+                    --             )
+                    --                 ++ "px "
+                    --                 ++ (parentBits
+                    --                         |> BitField.get Bits.spacingX
+                    --                         |> String.fromInt
+                    --                    )
+                    --                 ++ "px;"
+                    --            )
+                    --         ++ vars
+                    -- else
+                    vars
 
                 varsWithTransform =
                     case details.transform of

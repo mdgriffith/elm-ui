@@ -10,7 +10,7 @@ module Ui.Anim exposing
     , set, wait, step
     , loop, loopFor
     , onTimeline, onTimelineWith
-    , persistent, withTransition
+    , persistent
     , mapAttribute
     )
 
@@ -68,7 +68,7 @@ module Ui.Anim exposing
 
 # Persistent Elements
 
-@docs persistent, withTransition
+@docs persistent
 
 
 # Mapping
@@ -85,9 +85,13 @@ import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Internal.Model2 as Two
+import Internal.Teleport as Teleport
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Set
 import Time
 import Ui exposing (Attribute, Element)
+import Ui.Events
 
 
 {-| -}
@@ -101,29 +105,32 @@ type alias Personality =
 
 
 {-| -}
-persistent : (Msg msg -> msg) -> String -> String -> Attribute msg
-persistent toMsg group instance =
+persistent : String -> String -> Attribute msg
+persistent group instance =
     --  attach a class and a message handler for the animation message
     -- we could also need to gather up any animateable state as well
     Two.Attribute
         { flag = Flag.skip
-        , attr = Two.Animated toMsg (Two.Id group instance)
+        , attr =
+            Two.CssTeleport
+                { class = onRenderTrigger
+                , data =
+                    Teleport.persistentId group instance
+                }
         }
 
 
 {-| -}
-onTimeline : (Msg msg -> msg) -> Timeline state -> (state -> List Animated) -> Attribute msg
-onTimeline toMsg timeline fn =
+onTimeline : Timeline state -> (state -> List Animated) -> Attribute msg
+onTimeline timeline fn =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnIf True
-                , css =
-                    Animator.css
-                        timeline
-                        (\state -> ( fn state, [] ))
+            Two.CssTeleport
+                { class = onRenderTrigger
+                , data =
+                    Animator.css timeline (\state -> ( fn state, [] ))
+                        |> Teleport.encodeCss
                 }
         }
 
@@ -162,64 +169,92 @@ loopFor =
     Animator.loopFor
 
 
+
+{- Triggers -}
+
+
+onRenderTrigger : String
+onRenderTrigger =
+    "on-rendered"
+
+
+onHoverTrigger : String
+onHoverTrigger =
+    "on-hovered"
+
+
+onFocusTrigger : String
+onFocusTrigger =
+    "on-focused"
+
+
+onFocusWithinTrigger : String
+onFocusWithinTrigger =
+    "on-focused-within"
+
+
+onActiveTrigger : String
+onActiveTrigger =
+    "on-pressed"
+
+
+
+{- Animation stuff -}
+
+
 {-| -}
-transition : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
-transition toMsg dur attrs =
+transition : Duration -> List Animated -> Attribute msg
+transition dur attrs =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnIf True
-                , css =
+            Two.CssTeleport
+                { class = onRenderTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to dur attrs
                             |> Animator.Timeline.update (Time.millisToPosix 1)
-                         -- |> Animator.Timeline.update (Time.millisToPosix 2)
                         )
                         (\animated ->
                             ( animated, [] )
                         )
+                        |> Teleport.encodeCss
                 }
         }
 
 
 {-| -}
-hovered : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
-hovered toMsg dur attrs =
+hovered : Duration -> List Animated -> Attribute msg
+hovered dur attrs =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnHovered
-                , css =
+            Two.CssTeleport
+                { class = onHoverTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to dur attrs
                             |> Animator.Timeline.update (Time.millisToPosix 1)
-                            -- |> Animator.Timeline.update (Time.millisToPosix 1000)
-                            |> Debug.log "TIMELINE"
                         )
                         (\animated ->
                             ( animated, [] )
                         )
-                        |> Debug.log "SOURCE CSS"
+                        |> Teleport.encodeCss
                 }
         }
 
 
 {-| -}
-focused : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
-focused toMsg dur attrs =
+focused : Duration -> List Animated -> Attribute msg
+focused dur attrs =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnFocused
-                , css =
+            Two.CssTeleport
+                { class = onFocusTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to dur attrs
@@ -229,20 +264,20 @@ focused toMsg dur attrs =
                         (\animated ->
                             ( animated, [] )
                         )
+                        |> Teleport.encodeCss
                 }
         }
 
 
 {-| -}
-pressed : (Msg msg -> msg) -> Duration -> List Animated -> Attribute msg
-pressed toMsg dur attrs =
+pressed : Duration -> List Animated -> Attribute msg
+pressed dur attrs =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnPressed
-                , css =
+            Two.CssTeleport
+                { class = onActiveTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to dur attrs
@@ -252,18 +287,9 @@ pressed toMsg dur attrs =
                         (\animated ->
                             ( animated, [] )
                         )
+                        |> Teleport.encodeCss
                 }
         }
-
-
-{-| The style we are just as the element is created.
-
-_NOTE_ this may be unreliable
-
--}
-intro : (Msg msg -> msg) -> List Animated -> Attribute msg
-intro toMsg attrs =
-    Debug.todo ""
 
 
 
@@ -342,172 +368,6 @@ padding p =
 
 
 
--- paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Animated
--- paddingEach edges =
---     Two.Anim
---         ("pad-"
---             ++ String.fromInt edges.top
---             ++ " "
---             ++ String.fromInt edges.right
---             ++ " "
---             ++ String.fromInt edges.bottom
---             ++ " "
---             ++ String.fromInt edges.left
---         )
---         linear
---         "padding"
---         (Two.AnimQuad
---             { one = toFloat edges.top
---             , oneUnit = "px"
---             , two = toFloat edges.right
---             , twoUnit = "px"
---             , three = toFloat edges.bottom
---             , threeUnit = "px"
---             , four = toFloat edges.left
---             , fourUnit = "px"
---             }
---         )
--- width =
---     { px =
---         \i ->
---             Two.Anim
---                 ("w-" ++ String.fromInt i)
---                 linear
---                 "width"
---                 (Two.AnimFloat (toFloat i) "px")
---     }
--- height =
---     { px =
---         \i ->
---             Two.Anim
---                 ("h-" ++ String.fromInt i)
---                 linear
---                 "height"
---                 (Two.AnimFloat (toFloat i) "px")
---     }
--- font =
---     { size =
---         \i ->
---             -- NOTE!  We still need to do a font adjustment for this value
---             Two.Anim
---                 ("fs-" ++ String.fromInt i)
---                 linear
---                 "font-size"
---                 (Two.AnimFloat (toFloat i) "px")
---     , color =
---         \((Style.Rgb red green blue) as fcColor) ->
---             let
---                 redStr =
---                     String.fromInt red
---                 greenStr =
---                     String.fromInt green
---                 blueStr =
---                     String.fromInt blue
---             in
---             Two.Anim
---                 ("fc-" ++ redStr ++ "-" ++ greenStr ++ "-" ++ blueStr)
---                 linear
---                 "color"
---                 (Two.AnimColor fcColor)
---     , letterSpacing =
---         \i ->
---             Two.Anim
---                 ("ls-" ++ String.fromInt i)
---                 linear
---                 "letter-spacing"
---                 (Two.AnimFloat (toFloat i) "px")
---     , wordSpacing =
---         \i ->
---             Two.Anim
---                 ("ws-" ++ String.fromInt i)
---                 linear
---                 "word-spacing"
---                 (Two.AnimFloat (toFloat i) "px")
---     }
--- background =
---     { color =
---         \((Style.Rgb red green blue) as bgColor) ->
---             let
---                 redStr =
---                     String.fromInt red
---                 greenStr =
---                     String.fromInt green
---                 blueStr =
---                     String.fromInt blue
---             in
---             Two.Anim
---                 ("bg-" ++ redStr ++ "-" ++ greenStr ++ "-" ++ blueStr)
---                 linear
---                 "background-color"
---                 (Two.AnimColor bgColor)
---     , position = 0
---     }
--- border =
---     { width =
---         \i ->
---             Two.Anim
---                 ("bw-" ++ String.fromInt i)
---                 linear
---                 "border-width"
---                 (Two.AnimFloat (toFloat i) "px")
---     , widthEach =
---         \edges ->
---             Two.Anim
---                 ("bw-"
---                     ++ String.fromInt edges.top
---                     ++ " "
---                     ++ String.fromInt edges.right
---                     ++ " "
---                     ++ String.fromInt edges.bottom
---                     ++ " "
---                     ++ String.fromInt edges.left
---                 )
---                 linear
---                 "border-width"
---                 (Two.AnimQuad
---                     { one = toFloat edges.top
---                     , oneUnit = "px"
---                     , two = toFloat edges.right
---                     , twoUnit = "px"
---                     , three = toFloat edges.bottom
---                     , threeUnit = "px"
---                     , four = toFloat edges.left
---                     , fourUnit = "px"
---                     }
---                 )
---     , rounded =
---         \i ->
---             Two.Anim
---                 ("br-" ++ String.fromInt i)
---                 linear
---                 "border-radius"
---                 (Two.AnimFloat (toFloat i) "px")
---     , roundedEach =
---         \edges ->
---             Two.Anim
---                 ("pad-"
---                     ++ String.fromInt edges.topLeft
---                     ++ " "
---                     ++ String.fromInt edges.topRight
---                     ++ " "
---                     ++ String.fromInt edges.bottomRight
---                     ++ " "
---                     ++ String.fromInt edges.bottomLeft
---                 )
---                 linear
---                 "border-radius"
---                 (Two.AnimQuad
---                     { one = toFloat edges.top
---                     , oneUnit = "px"
---                     , two = toFloat edges.topRight
---                     , twoUnit = "px"
---                     , three = toFloat edges.bottomRight
---                     , threeUnit = "px"
---                     , four = toFloat edges.bottomLeft
---                     , fourUnit = "px"
---                     }
---                 )
---     }
 {- DURATIONS! -}
 
 
@@ -528,38 +388,34 @@ ms =
 
 {-| -}
 onTimelineWith :
-    (Msg msg -> msg)
-    -> Timeline state
+    Timeline state
     ->
         (state
          -> ( List Animated, List Step )
         )
     -> Attribute msg
-onTimelineWith toMsg timeline fn =
+onTimelineWith timeline fn =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnIf True
-                , css =
-                    Animator.css
-                        timeline
-                        fn
+            Two.CssTeleport
+                { class = onRenderTrigger
+                , data =
+                    Animator.css timeline fn
+                        |> Teleport.encodeCss
                 }
         }
 
 
 {-| -}
-keyframes : (Msg msg -> msg) -> List Step -> Attribute msg
-keyframes toMsg steps =
+keyframes : List Step -> Attribute msg
+keyframes steps =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnIf True
-                , css =
+            Two.CssTeleport
+                { class = onRenderTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to (Animator.ms 0) steps
@@ -569,20 +425,20 @@ keyframes toMsg steps =
                         (\mySteps ->
                             ( [], mySteps )
                         )
+                        |> Teleport.encodeCss
                 }
         }
 
 
 {-| -}
-hoveredWith : (Msg msg -> msg) -> List Step -> Attribute msg
-hoveredWith toMsg steps =
+hoveredWith : List Step -> Attribute msg
+hoveredWith steps =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnHovered
-                , css =
+            Two.CssTeleport
+                { class = onHoverTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to (Animator.ms 0) steps
@@ -592,20 +448,20 @@ hoveredWith toMsg steps =
                         (\mySteps ->
                             ( [], mySteps )
                         )
+                        |> Teleport.encodeCss
                 }
         }
 
 
 {-| -}
-focusedWith : (Msg msg -> msg) -> List Step -> Attribute msg
-focusedWith toMsg steps =
+focusedWith : List Step -> Attribute msg
+focusedWith steps =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnFocused
-                , css =
+            Two.CssTeleport
+                { class = onFocusTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to (Animator.ms 0) steps
@@ -615,20 +471,20 @@ focusedWith toMsg steps =
                         (\mySteps ->
                             ( [], mySteps )
                         )
+                        |> Teleport.encodeCss
                 }
         }
 
 
 {-| -}
-pressedWith : (Msg msg -> msg) -> List Step -> Attribute msg
-pressedWith toMsg steps =
+pressedWith : List Step -> Attribute msg
+pressedWith steps =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.Transition2
-                { toMsg = toMsg
-                , trigger = Two.OnPressed
-                , css =
+            Two.CssTeleport
+                { class = onActiveTrigger
+                , data =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to (Animator.ms 0) steps
@@ -638,6 +494,7 @@ pressedWith toMsg steps =
                         (\mySteps ->
                             ( [], mySteps )
                         )
+                        |> Teleport.encodeCss
                 }
         }
 
@@ -648,13 +505,62 @@ pressedWith toMsg steps =
 
 {-| -}
 layout :
-    { options : List Ui.Option }
+    { options : List Ui.Option
+    , toMsg : Msg -> msg
+    }
     -> State
     -> List (Attribute msg)
     -> Element msg
     -> Html.Html msg
-layout =
+layout opts state attrs els =
     Two.renderLayout
+        { options =
+            opts.options
+        }
+        state
+        (onAnimationEvents opts.toMsg :: attrs)
+        els
+
+
+onAnimationEvents : (Msg -> msg) -> Ui.Attribute msg
+onAnimationEvents onMsg =
+    Ui.Events.on "animationstart"
+        (Decode.field "animationName" Decode.string
+            |> Decode.andThen
+                (\name ->
+                    let
+                        _ =
+                            Debug.log "TEST" name
+                    in
+                    if name == "on-rendered" then
+                        -- Decode.map2
+                        --     (\id info ->
+                        --         let
+                        --             _ =
+                        --                 Debug.log "elem" ( id, info )
+                        --         in
+                        --         onMsg Test
+                        --     )
+                        --     -- target = element that fired the event
+                        --     -- currentTarget = element that listened for the event
+                        --     (Decode.field "target"
+                        --         (Decode.field "id" Decode.string)
+                        --     )
+                        --     (Decode.field "target"
+                        --         (Decode.field "fin"
+                        --             (Decode.map2
+                        --                 Tuple.pair
+                        --                 (Decode.field "test" Decode.int)
+                        --                 (Decode.field "test2" Decode.string)
+                        --             )
+                        --         )
+                        --     )
+                        Decode.fail "Nonmatching animation"
+
+                    else
+                        Decode.fail "Nonmatching animation"
+                )
+        )
 
 
 {-| -}
@@ -673,32 +579,26 @@ type alias State =
 
 
 {-| -}
-type alias Msg msg =
-    Two.Msg msg
+type alias Msg =
+    Two.Msg
 
 
 {-| -}
-mapAttribute : (Msg msg2 -> msg2) -> (msg -> msg2) -> Attribute msg -> Attribute msg2
+mapAttribute : (msg -> msg2) -> Attribute msg -> Attribute msg2
 mapAttribute =
     Two.mapAttr
 
 
 {-| -}
-withTransition : (Msg msg -> msg) -> msg -> msg
-withTransition toMsg appMsg =
-    toMsg (Two.RefreshBoxesAndThen appMsg)
-
-
-{-| -}
-update : (Msg msg -> msg) -> Msg msg -> State -> ( State, Cmd msg )
+update : (Msg -> msg) -> Msg -> State -> ( State, Cmd msg )
 update =
     Two.update
 
 
 {-| -}
 updateWith :
-    (Msg msg -> msg)
-    -> Msg msg
+    (Msg -> msg)
+    -> Msg
     -> State
     ->
         { ui : State -> model
@@ -715,7 +615,7 @@ type alias Animator msg model =
 
 
 {-| -}
-subscription : (Msg msg -> msg) -> State -> Animator msg model -> model -> Sub msg
+subscription : (Msg -> msg) -> State -> Animator msg model -> model -> Sub msg
 subscription =
     Two.subscription
 
