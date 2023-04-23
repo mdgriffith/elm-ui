@@ -519,16 +519,8 @@ Which will look something like
 -}
 paragraph : List (Attribute msg) -> List (Element msg) -> Element msg
 paragraph attrs children =
-    -- Internal.element
-    --     Internal.asParagraph
-    --     Internal.div
-    --     (Internal.Describe Internal.Paragraph
-    --         :: width fill
-    --         :: spacing 5
-    --         :: attrs
-    --     )
-    --     (Internal.Unkeyed children)
-    Two.element Two.AsParagraph
+    Two.elementAs Html.p
+        Two.AsParagraph
         attrs
         children
 
