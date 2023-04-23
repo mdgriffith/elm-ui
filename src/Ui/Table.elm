@@ -199,6 +199,7 @@ header str =
     cell
         [ default.padding
         , default.borderHeader
+        , Ui.height Ui.fill
         ]
         (Ui.text str)
 
