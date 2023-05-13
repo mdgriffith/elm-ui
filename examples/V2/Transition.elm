@@ -9,8 +9,6 @@ import Html.Events as Events
 import Json.Decode
 import Ui exposing (..)
 import Ui.Anim
-import Ui.Background as Background
-import Ui.Border as Border
 import Ui.Events
 import Ui.Font
 import Ui.Gradient
@@ -104,13 +102,15 @@ view model =
         model.ui
         [ Ui.Font.italic
         , Ui.Font.size 32
-        , Ui.Font.gradient
-            (Ui.Gradient.linear Ui.right
-                [ Ui.Gradient.percent 0 (rgb 0 255 255)
-                , Ui.Gradient.percent 20 (rgb 255 255 255)
-                , Ui.Gradient.percent 100 (rgb 255 255 255)
-                ]
-            )
+
+        -- , Ui.Font.gradient
+        --     (Ui.Gradient.linear Ui.right
+        --         [ Ui.Gradient.percent 0 (rgb 0 255 255)
+        --         , Ui.Gradient.percent 20 (rgb 255 255 255)
+        --         , Ui.Gradient.percent 100 (rgb 255 255 255)
+        --         ]
+        --     )
+        , Ui.Font.color (rgb 0 0 0)
         , Ui.Font.font
             { name = "EB Garamond"
             , fallback = [ Ui.Font.serif ]
@@ -125,15 +125,13 @@ view model =
             , size = 16
             }
         , Ui.Events.onClick
-            (Ui.Anim.withTransition Ui
-                (Focus
-                    (case model.focus of
-                        Detail ->
-                            Mini
+            (Focus
+                (case model.focus of
+                    Detail ->
+                        Mini
 
-                        Mini ->
-                            Detail
-                    )
+                    Mini ->
+                        Detail
                 )
             )
         ]
@@ -142,14 +140,14 @@ view model =
             , spacing 64
             , height fill
             ]
-            [ row [ height (px 800), width (px 500), explain Debug.todo ]
+            [ row [ height (px 800), width (px 500) ]
                 [ if model.focus == Mini then
                     viewData model.focus
 
                   else
                     none
                 ]
-            , row [ height (px 800), width (px 500), padding 80, spacing 10, explain Debug.todo ]
+            , row [ height (px 800), width (px 500), padding 80, spacing 10 ]
                 [ if model.focus == Detail then
                     viewData model.focus
 
@@ -169,10 +167,12 @@ viewData focus =
                 [ id (One 0)
                 , width fill
                 , padding 24
-                , Background.color (rgb 255 255 255)
-                , Border.rounded 3
-                , Border.width 3
-                , Border.dashed
+                , Ui.background (rgb 255 255 255)
+                , Ui.rounded 3
+                , Ui.border
+                    { width = 3
+                    , color = rgb 0 0 0
+                    }
                 ]
                 (text "Mini")
 
@@ -182,8 +182,8 @@ viewData focus =
                 , width fill
                 , height fill
                 , padding 24
-                , Background.color (rgb 0 255 255)
-                , Border.rounded 3
+                , Ui.background (rgb 0 255 255)
+                , Ui.rounded 3
                 ]
                 [ el [] (text "Details")
                 , el [] (text "so many details")
