@@ -834,10 +834,10 @@ renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
                , Ui.width Ui.fill
                , Ui.opacity
                     (if on then
-                        0
+                        1
 
                      else
-                        1
+                        0
                     )
                ]
             ++ placeholderAttrs
@@ -1095,12 +1095,7 @@ redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
                 , inputParent = attr :: els.inputParent
             }
 
-        Two.Transition2 details ->
-            { els
-                | parent = attr :: els.parent
-            }
-
-        Two.Animated _ _ ->
+        Two.CssTeleport _ ->
             { els | parent = attr :: els.parent }
 
 

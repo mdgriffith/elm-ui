@@ -518,44 +518,41 @@ layout opts state attrs els =
             opts.options
         }
         state
-        (onAnimationEvents opts.toMsg :: attrs)
+        (onAnimationStart opts.toMsg
+            :: onAnimationUnmount opts.toMsg
+            :: attrs
+        )
         els
 
 
-onAnimationEvents : (Msg -> msg) -> Ui.Attribute msg
-onAnimationEvents onMsg =
+onAnimationStart : (Msg -> msg) -> Ui.Attribute msg
+onAnimationStart onMsg =
     Ui.Events.on "animationstart"
+        (Decode.field "animationName" Decode.string
+            |> Decode.andThen
+                (\name ->
+                    case Debug.log "Event" <| Teleport.stringToTrigger name of
+                        Just trigger ->
+                            Decode.map (onMsg << Two.Teleported trigger) Teleport.decode
+
+                        Nothing ->
+                            Decode.fail "Nonmatching animation"
+                )
+        )
+
+
+onAnimationUnmount : (Msg -> msg) -> Ui.Attribute msg
+onAnimationUnmount onMsg =
+    Ui.Events.on "animationcancel"
         (Decode.field "animationName" Decode.string
             |> Decode.andThen
                 (\name ->
                     let
                         _ =
-                            Debug.log "TEST" name
+                            Debug.log "DISMOUNT" name
                     in
-                    if name == "on-rendered" then
-                        -- Decode.map2
-                        --     (\id info ->
-                        --         let
-                        --             _ =
-                        --                 Debug.log "elem" ( id, info )
-                        --         in
-                        --         onMsg Test
-                        --     )
-                        --     -- target = element that fired the event
-                        --     -- currentTarget = element that listened for the event
-                        --     (Decode.field "target"
-                        --         (Decode.field "id" Decode.string)
-                        --     )
-                        --     (Decode.field "target"
-                        --         (Decode.field "fin"
-                        --             (Decode.map2
-                        --                 Tuple.pair
-                        --                 (Decode.field "test" Decode.int)
-                        --                 (Decode.field "test2" Decode.string)
-                        --             )
-                        --         )
-                        --     )
-                        Decode.fail "Nonmatching animation"
+                    if name == "on-dismount" then
+                        Decode.map (onMsg << Two.Teleported Teleport.OnDismount) Teleport.decode
 
                     else
                         Decode.fail "Nonmatching animation"
