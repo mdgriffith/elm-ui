@@ -8,6 +8,7 @@
     "Ui",
     "Ui.Font",
     "Ui.Anim",
+    "Ui.Gradient",
     "Ui.Input",
     "Ui.Events",
     "Ui.Accessibility",
