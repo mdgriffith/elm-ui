@@ -65,17 +65,22 @@ spacingY =
         |> BitField.next 6
 
 
-{-| -}
-hasFontAdjustment : Bits Inheritance -> Bool
-hasFontAdjustment bits =
-    (bits |> BitField.has fontHeight)
-        || (bits |> BitField.has fontOffset)
+isRow : BitField Inheritance
+isRow =
+    spacingY
+        |> BitField.next 1
+
+
+isParagraph : BitField Inheritance
+isParagraph =
+    isRow
+        |> BitField.next 1
 
 
 fontHeight : BitField Inheritance
 fontHeight =
-    spacingY
-        |> BitField.next 6
+    isParagraph
+        |> BitField.next 5
 
 
 fontOffset : BitField Inheritance
@@ -84,10 +89,11 @@ fontOffset =
         |> BitField.next 5
 
 
-isRow : BitField Inheritance
-isRow =
-    fontOffset
-        |> BitField.next 1
+{-| -}
+hasFontAdjustment : Bits Inheritance -> Bool
+hasFontAdjustment bits =
+    (bits |> BitField.has fontHeight)
+        || (bits |> BitField.has fontOffset)
 
 
 

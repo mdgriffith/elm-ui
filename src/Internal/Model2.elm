@@ -49,8 +49,11 @@ map fn el =
 
 type Msg
     = Tick Time.Posix
-    | Teleported (List Teleport.Data)
-    | BoxNew Id Box
+    | Teleported Teleport.Trigger Teleport.Event
+
+
+
+-- | BoxNew Id Box
 
 
 type State
@@ -217,43 +220,48 @@ update toAppMsg msg ((State details) as unchanged) =
         Tick _ ->
             ( unchanged, Cmd.none )
 
-        Teleported dataList ->
-            ( unchanged, Cmd.none )
+        Teleported trigger teleported ->
+            let
+                ( updated, cmds ) =
+                    List.foldl
+                        (applyTeleported teleported)
+                        ( unchanged, [] )
+                        teleported.data
+            in
+            ( updated
+            , Cmd.map toAppMsg (Cmd.batch cmds)
+            )
 
-        BoxNew id box ->
+
+applyTeleported : Teleport.Event -> Teleport.Data -> ( State, List (Cmd Msg) ) -> ( State, List (Cmd Msg) )
+applyTeleported event data ( State state, cmds ) =
+    case data of
+        Teleport.Persistent group instance ->
+            let
+                id =
+                    Id group instance
+            in
             -- if this id matches an existing box in the cache
             -- it means this box was previously rendered at the position found
-            case matchBox id details.boxes of
+            case matchBox id state.boxes of
                 Nothing ->
-                    ( State
-                        { rules = details.rules
-                        , added = details.added
-                        , boxes = ( id, box ) :: details.boxes
-                        }
-                    , Cmd.none
-                    )
+                    ( State { state | boxes = ( id, event.box ) :: state.boxes }, cmds )
 
                 Just found ->
-                    ( State
-                        { rules =
-                            if found.transition then
-                                let
-                                    previous =
-                                        found.box
+                    ( State state, cmds )
 
-                                    current =
-                                        box
-                                in
-                                moveAnimation (toCssClass id) previous current
-                                    :: details.rules
+        Teleport.Css css ->
+            if Set.member css.hash state.added then
+                ( State state, cmds )
 
-                            else
-                                details.rules
-                        , added = details.added
-                        , boxes = ( id, box ) :: found.others
-                        }
-                    , Cmd.none
-                    )
+            else
+                ( State
+                    { state
+                        | rules = css.keyframes :: state.rules
+                        , added = Set.insert css.hash state.added
+                    }
+                , cmds
+                )
 
 
 requestBoundingBoxes boxes =
@@ -354,7 +362,7 @@ transformToString trans =
         ++ String.fromFloat trans.rotation
         ++ "rad) scale("
         ++ String.fromFloat trans.scale
-        ++ ") !important;"
+        ++ ")"
 
 
 renderTargetAnimatedStyle : Maybe Transform -> List Animated -> String
@@ -368,6 +376,7 @@ renderTargetAnimatedStyle transform props =
                 Just details ->
                     "transform: "
                         ++ transformToString details
+                        ++ ";"
 
         (Anim _ _ name (AnimFloat val unit)) :: remaining ->
             if name == "rotate" then
@@ -958,63 +967,62 @@ text : String -> Element msg
 text str =
     Element
         (\encoded ->
-            if BitField.equal encoded Bits.row || BitField.equal encoded Bits.column then
-                Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+            if BitField.has Bits.isParagraph encoded then
+                Html.text str
 
             else
-                let
-                    height =
-                        encoded
-                            |> BitField.getPercentage Bits.fontHeight
-
-                    offset =
-                        encoded
-                            |> BitField.getPercentage Bits.fontOffset
-
-                    spacingY =
-                        encoded
-                            |> BitField.get Bits.spacingY
-
-                    spacingX =
-                        encoded
-                            |> BitField.get Bits.spacingX
-
-                    attrs =
-                        [ Attr.class textElementClasses
-                        ]
-
-                    attrsWithParentSpacing =
-                        -- if height == 1 && offset == 0 then
-                        --     Attr.style "margin"
-                        --         (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
-                        --         ::
-                        --         attrs
-                        -- else
-                        --     let
-                        --         -- This doesn't totally make sense to me, but it works :/
-                        --         -- I thought that the top margin should have a smaller negative margin than the bottom
-                        --         -- however it seems evenly distributing the empty space works out.
-                        --         topVal =
-                        --             offset
-                        --         bottomVal =
-                        --             (1 - height) - offset
-                        --         even =
-                        --             (topVal + bottomVal) / 2
-                        --         margin =
-                        --             "-"
-                        --                 ++ String.fromFloat (even + 0.25)
-                        --                 ++ "em "
-                        --                 ++ (String.fromInt spacingX ++ "0px ")
-                        --     in
-                        --     Attr.style "margin"
-                        --         margin
-                        --         :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
-                        --         :: attrs
-                        attrs
-                in
-                Html.span
-                    attrsWithParentSpacing
-                    [ Html.text str ]
+                Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+         -- if BitField.equal encoded Bits.row || BitField.equal encoded Bits.column then
+         --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+         -- else
+         --     let
+         --         height =
+         --             encoded
+         --                 |> BitField.getPercentage Bits.fontHeight
+         --         offset =
+         --             encoded
+         --                 |> BitField.getPercentage Bits.fontOffset
+         --         spacingY =
+         --             encoded
+         --                 |> BitField.get Bits.spacingY
+         --         spacingX =
+         --             encoded
+         --                 |> BitField.get Bits.spacingX
+         --         attrs =
+         --             [ Attr.class textElementClasses
+         --             ]
+         --         attrsWithParentSpacing =
+         --             -- if height == 1 && offset == 0 then
+         --             --     Attr.style "margin"
+         --             --         (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
+         --             --         ::
+         --             --         attrs
+         --             -- else
+         --             --     let
+         --             --         -- This doesn't totally make sense to me, but it works :/
+         --             --         -- I thought that the top margin should have a smaller negative margin than the bottom
+         --             --         -- however it seems evenly distributing the empty space works out.
+         --             --         topVal =
+         --             --             offset
+         --             --         bottomVal =
+         --             --             (1 - height) - offset
+         --             --         even =
+         --             --             (topVal + bottomVal) / 2
+         --             --         margin =
+         --             --             "-"
+         --             --                 ++ String.fromFloat (even + 0.25)
+         --             --                 ++ "em "
+         --             --                 ++ (String.fromInt spacingX ++ "0px ")
+         --             --     in
+         --             --     Attr.style "margin"
+         --             --         margin
+         --             --         :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
+         --             --         :: attrs
+         --             attrs
+         --     in
+         --     Html.span
+         --         attrsWithParentSpacing
+         --         [ Html.text str ]
         )
 
 
@@ -1221,6 +1229,7 @@ viewBox ( boxId, box ) =
         , Attr.style "border-radius" "3px"
         , Attr.style "border" "3px dashed rgba(255,0,0,0.2)"
         , Attr.style "box-sizing" "border-box"
+        , Attr.style "pointer-events" "none"
         ]
         [--Html.text (Debug.toString id)
         ]
@@ -1242,6 +1251,12 @@ element layout attrs children =
 
                             else
                                 BitField.set Bits.isRow 0
+                           )
+                        |> (if layout == AsParagraph then
+                                BitField.set Bits.isParagraph 1
+
+                            else
+                                BitField.set Bits.isParagraph 0
                            )
 
                 rendered =
@@ -1311,6 +1326,12 @@ elementAs toNode layout attrs children =
 
                             else
                                 BitField.set Bits.isRow 0
+                           )
+                        |> (if layout == AsParagraph then
+                                BitField.set Bits.isParagraph 1
+
+                            else
+                                BitField.set Bits.isParagraph 0
                            )
 
                 rendered =
@@ -1387,6 +1408,12 @@ elementKeyed name layout attrs children =
 
                                 else
                                     BitField.set Bits.isRow 0
+                               )
+                            |> (if layout == AsParagraph then
+                                    BitField.set Bits.isParagraph 1
+
+                                else
+                                    BitField.set Bits.isParagraph 0
                                )
                         )
                         layout
@@ -2069,76 +2096,15 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         renderAttrs parentBits
                             myBits
                             layout
-                            details
+                            { fontSize = details.fontSize
+                            , transform = details.transform
+                            , teleportData = teleport.data :: details.teleportData
+                            }
                             children
                             (Flag.add flag has)
                             htmlAttrs
                             (teleport.class ++ " " ++ classes)
                             remain
-
-
-
--- Transition2 { toMsg, trigger, css } ->
---     let
---         triggerClass =
---             triggerName trigger
---         styleClass =
---             css.hash ++ phaseName trigger
---         event =
---             Json.field "animationName" Json.string
---                 |> Json.andThen
---                     (\name ->
---                         if name == triggerClass then
---                             Json.succeed
---                                 (toMsg
---                                     (AnimationAdd trigger css)
---                                 )
---                         else
---                             Json.fail "Nonmatching animation"
---                     )
---     in
---     renderAttrs parentBits
---         myBits
---         layout
---         details
---         children
---         has
---         (Events.on "animationstart" event
---             :: htmlAttrs
---         )
---         (triggerClass ++ " " ++ styleClass ++ " " ++ classes)
---         remain
--- Animated toMsg id ->
---     let
---         event =
---             Json.map2
---                 (\_ box ->
---                     toMsg (BoxNew id box)
---                 )
---                 (Json.field "animationName" Json.string
---                     |> Json.andThen
---                         (\name ->
---                             if name == "on-rendered" then
---                                 Json.succeed ()
---                             else
---                                 Json.fail "Nonmatching animation"
---                         )
---                 )
---                 decodeBoundingBox
---     in
---     renderAttrs parentBits
---         myBits
---         layout
---         { fontSize =
---             details.fontSize
---         , transform = details.transform
---         , animEvents = event :: details.animEvents
---         }
---         children
---         (Flag.add Flag.id has)
---         (Attr.id (toCssId id) :: htmlAttrs)
---         ("on-rendered ui-placeholder " ++ toCssClass id ++ " " ++ classes)
---         remain
 
 
 {-| In order to make css variables work, we need to gather all styles into a `Attribute.property "style"`
