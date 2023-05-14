@@ -916,7 +916,7 @@ baseSheet =
             [ --Prop "white-space" "pre"
               -- ,
               Prop "display" "inline-block"
-            , Prop "width" "100%"
+            , Prop "max-width" "100%"
 
             -- , Prop "overflow" "hidden"
             -- , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
