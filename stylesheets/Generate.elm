@@ -243,6 +243,7 @@ overrides =
         ++ trackReset
         ++ thumbReset
         ++ explainer
+        ++ debug
         ++ transitionPlaceholders
         ++ animationTriggerKeyframes
 
@@ -258,6 +259,7 @@ animationTriggerKeyframes =
 @keyframes on-focused { from {} to {} }
 @keyframes on-pressed { from {} to {} }
 @keyframes on-rendered { from {} to {} }
+@keyframes on-dismount { from {} to {} }
 """
 
 
@@ -339,6 +341,17 @@ thumbReset =
     -- }
     -- """
     ""
+
+
+debug =
+    """
+.debug-box {
+    display:fixed;
+    outline: 1px solid red !important;
+}
+
+
+"""
 
 
 explainer =
@@ -737,7 +750,6 @@ baseSheet =
         , Prop "font-size" "inherit"
         , Prop "color" "inherit"
         , Prop "font-family" "inherit"
-        , Prop "line-height" "1"
         , Prop "font-weight" "inherit"
 
         -- Text decoration is *mandatorily inherited* in the css spec.
@@ -905,8 +917,8 @@ baseSheet =
               -- ,
               Prop "display" "inline-block"
             , Prop "width" "100%"
-            , Prop "overflow" "hidden"
 
+            -- , Prop "overflow" "hidden"
             -- , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
             -- , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-bottom) - var(--visible-bottom)) ))"
             -- , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
@@ -1090,10 +1102,10 @@ baseSheet =
                     [ Prop "flex-basis" "auto"
                     ]
                 ]
-
-            -- , Child (dot classes.heightFill)
-            --     [ Prop "flex-grow" "100000"
-            --     ]
+            , Child (dot classes.heightFill)
+                [ Prop "flex-grow" "100000"
+                , Prop "max-height" "100%"
+                ]
             , Batch
                 (List.map
                     (\f ->
@@ -1454,16 +1466,23 @@ baseSheet =
 
 animationTriggers =
     [ Descriptor ".on-hovered:hover"
-        [ Prop "animation" "on-hovered 0ms"
+        [ Prop "animation" "on-hovered 1ms"
         ]
     , Descriptor ".on-focused:focus"
-        [ Prop "animation" "on-focused 0ms"
+        [ Prop "animation" "on-focused 1ms"
+        ]
+    , Descriptor ".on-focused-within:focus-within"
+        [ Prop "animation" "on-focused 1ms"
         ]
     , Descriptor ".on-pressed:active"
-        [ Prop "animation" "on-pressed 0ms"
+        [ Prop "animation" "on-pressed 1ms"
         ]
     , Descriptor ".on-rendered"
-        [ Prop "animation" "on-rendered 0ms"
+        [ Prop "animation" "on-rendered 1ms"
+        ]
+    , Descriptor ".on-dismount"
+        --  A years worth of seconds :imp-smiling:
+        [ Prop "animation" "on-dismount 31449600s"
         ]
     ]
 
@@ -1484,6 +1503,14 @@ elDescription =
         ]
     , Child (dot classes.heightFill)
         [ Prop "flex-grow" "100000"
+
+        -- max height is for when the child is larger than the parent el.
+        -- An example case is
+        -- el [ height fill ]
+        --   (row [heightFill]
+        --     [ scrollable [ height fill ] (text "hello")
+        -- We want the height fill to translate through the row so that scrollable know show to scroll.
+        , Prop "max-height" "100%"
         ]
     , Child (dot classes.widthFill)
         [ -- alignLeft, alignRight, centerX are overridden by width.
