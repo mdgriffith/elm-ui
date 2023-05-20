@@ -12,7 +12,7 @@ module Ui exposing
     , spacing, spacingXY, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
     , opacity
-    , border, borderWith
+    , border, borderWith, borderGradient
     , rounded, roundedWith, circle
     , background, Gradient, backgroundGradient
     , pointer, grab, grabbing
@@ -132,7 +132,7 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Borders
 
-@docs border, borderWith
+@docs border, borderWith, borderGradient
 
 @docs rounded, roundedWith, circle
 
@@ -614,7 +614,11 @@ image attrs img =
 
 
 {-| -}
-border : { width : Int, color : Color } -> Attribute msg
+border :
+    { width : Int
+    , color : Color
+    }
+    -> Attribute msg
 border options =
     Two.styleWith Flag.borderWidth
         "border"
@@ -622,6 +626,26 @@ border options =
             ++ "px solid "
             ++ Style.color options.color
         )
+
+
+{-| -}
+borderGradient :
+    { width : Int
+    , gradient : Gradient
+    , background : Gradient
+    }
+    -> Attribute msg
+borderGradient options =
+    -- https://codyhouse.co/nuggets/css-gradient-borders
+    Two.style2
+        "background"
+        (Style.toCssGradient options.background
+            ++ " padding-box, "
+            ++ Style.toCssGradient options.gradient
+            ++ " border-box"
+        )
+        "border"
+        (String.fromInt options.width ++ "px solid transparent")
 
 
 {-| -}

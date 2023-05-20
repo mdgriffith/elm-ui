@@ -186,6 +186,28 @@ vars =
     }
 
 
+lineHeightAdjustment : Int -> String
+lineHeightAdjustment i =
+    let
+        -- offset would be 5 if the line-height is 1.05
+        offsetInt =
+            i * 5
+
+        lineHeightOffset =
+            toFloat offsetInt / 100
+
+        offset =
+            -- 0.05 line height
+            -- But we need to express it as a percentage of the *existing* lineheight.
+            lineHeightOffset
+                / (1 + lineHeightOffset)
+
+        offsetString =
+            String.fromFloat (offset / 2)
+    in
+    "-" ++ offsetString ++ "lh"
+
+
 
 {- END COPY -}
 
@@ -643,6 +665,7 @@ baseSheet =
         , Prop "display" "flex"
         , Prop "flex-direction" "row"
         , Prop "flex-basis" "auto"
+        , Prop "border-radius" "inherit"
         , Descriptor (dot classes.single)
             elDescription
         , Batch <|
@@ -793,11 +816,12 @@ baseSheet =
                 , Prop "-webkit-background-clip" "text"
                 , Prop "-webkit-text-fill-color" "transparent"
                 ]
-            , AllChildren (dot classes.paragraph)
-                [ Prop "background" "var(--text-gradient)"
-                , Prop "-webkit-background-clip" "text"
-                , Prop "-webkit-text-fill-color" "transparent"
-                ]
+
+            -- , AllChildren (dot classes.paragraph)
+            --     [ Prop "background" "var(--text-gradient)"
+            --     , Prop "-webkit-background-clip" "text"
+            --     , Prop "-webkit-text-fill-color" "transparent"
+            --     ]
             ]
         , Descriptor (dot classes.fontAdjusted)
             [ Prop "font-size" "calc(1em * var(--font-size-factor))"
@@ -949,21 +973,29 @@ baseSheet =
             (List.map
                 (\i ->
                     let
-                        -- offset would be 5 if the line-height is 1.05
                         offsetInt =
                             i * 5
 
-                        offset =
-                            toFloat offsetInt
+                        -- lineHeightOffset =
+                        --     toFloat offsetInt / 100
+                        -- offset =
+                        --     -- 0.05 line height
+                        --     -- But we need to express it as a percentage of the *existing* lineheight.
+                        --     lineHeightOffset
+                        --         / (1 + lineHeightOffset)
+                        -- offsetString =
+                        --     String.fromFloat (offset / 2)
+                        offsetString =
+                            lineHeightAdjustment i
                     in
                     Descriptor (dot (classes.lineHeightPrefix ++ "-" ++ String.fromInt offsetInt))
                         [ AllChildren (dot classes.text)
-                            [ Prop "margin-top" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
-                            , Prop "margin-bottom" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
+                            [ Prop "margin-top" offsetString
+                            , Prop "margin-bottom" offsetString
                             ]
                         , AllChildren (dot classes.paragraph)
-                            [ Prop "margin-top" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
-                            , Prop "margin-bottom" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
+                            [ Prop "margin-top" offsetString
+                            , Prop "margin-bottom" offsetString
                             ]
                         ]
                 )
