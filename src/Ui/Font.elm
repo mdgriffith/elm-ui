@@ -5,7 +5,7 @@ module Ui.Font exposing
     , alignLeft, alignRight, center, justify
     , lineHeight, letterSpacing, wordSpacing
     , font
-    , Sizing, full, byCapital, Adjustment
+    , fontAdjustment
     , underline, strike, italic
     , weight
     , Weight, heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
@@ -54,7 +54,7 @@ module Ui.Font exposing
 
 @docs font
 
-@docs Sizing, full, byCapital, Adjustment
+@docs fontAdjustment
 
 
 ## Font Styles
@@ -176,9 +176,14 @@ full =
 
 
 {-| -}
-byCapital : Adjustment -> Sizing
-byCapital =
-    Internal.Font.ByCapital
+fontAdjustment :
+    { family : String
+    , offset : Float
+    , height : Float
+    }
+    -> Ui.Option
+fontAdjustment =
+    Internal.FontAdjustment
 
 
 
@@ -200,10 +205,7 @@ byCapital =
     Ui.Font.font
         { name = "EB Garamond"
         , fallback = [ Ui.Font.serif ]
-        , sizing =
-            Ui.Font.full
-        , variants =
-            []
+        , variants = []
         , weight = Ui.Font.bold
         , size = 16
         }
@@ -212,7 +214,6 @@ byCapital =
 font :
     { name : String
     , fallback : List Font
-    , sizing : Sizing
     , variants : List Variant
     , weight : Weight
     , size : Int
@@ -225,16 +226,7 @@ font details =
             Internal.Font
                 { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
                 , adjustments =
-                    case details.sizing of
-                        Internal.Font.Full ->
-                            Nothing
-
-                        Internal.Font.ByCapital adjustment ->
-                            Just
-                                (BitField.init
-                                    |> BitField.setPercentage Bits.fontHeight adjustment.height
-                                    |> BitField.setPercentage Bits.fontOffset adjustment.offset
-                                )
+                    Nothing
                 , variants =
                     Internal.Font.renderVariants details.variants ""
                 , smallCaps =
@@ -244,16 +236,7 @@ font details =
                         Internal.Font.Weight wght ->
                             String.fromInt wght
                 , size =
-                    case details.sizing of
-                        Internal.Font.Full ->
-                            String.fromInt details.size ++ "px"
-
-                        Internal.Font.ByCapital adjustment ->
-                            String.fromFloat
-                                (Internal.fontSizeAdjusted details.size
-                                    adjustment.height
-                                )
-                                ++ "px"
+                    String.fromInt details.size ++ "px"
                 }
         }
 

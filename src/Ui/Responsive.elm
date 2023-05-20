@@ -292,7 +292,6 @@ rowWhen breaks labels attrs children =
 font :
     { name : String
     , fallback : List Ui.Font.Font
-    , sizing : Ui.Font.Sizing
     , variants : List Ui.Font.Variant
     , breakpoints : Breakpoints breakpoint
     , size : breakpoint -> Value
@@ -305,17 +304,7 @@ font details =
         , attr =
             Internal.Font
                 { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
-                , adjustments =
-                    case details.sizing of
-                        Internal.Font.Full ->
-                            Nothing
-
-                        Internal.Font.ByCapital adjustment ->
-                            Just
-                                (BitField.init
-                                    |> BitField.setPercentage Bits.fontHeight adjustment.height
-                                    |> BitField.setPercentage Bits.fontOffset adjustment.offset
-                                )
+                , adjustments = Nothing
                 , variants =
                     Internal.Font.renderVariants details.variants ""
                 , smallCaps =
@@ -332,17 +321,7 @@ font details =
                     Internal.responsiveCssValue
                         details.breakpoints
                         (\bp ->
-                            case details.sizing of
-                                Internal.Font.Full ->
-                                    details.size bp
-
-                                Internal.Font.ByCapital adjustment ->
-                                    Internal.mapResonsive
-                                        (\s ->
-                                            Internal.fontSizeAdjusted s adjustment.height
-                                                |> round
-                                        )
-                                        (details.size bp)
+                            details.size bp
                         )
                 }
         }
