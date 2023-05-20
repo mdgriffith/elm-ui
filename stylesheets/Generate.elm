@@ -126,6 +126,9 @@ classes =
     , textRight = "tr"
     , textLeft = "tl"
 
+    -- line height
+    , lineHeightPrefix = "lh"
+
     -- text alignment
     , transition = "ts"
 
@@ -592,7 +595,19 @@ baseSheet =
         , Prop "height" "auto"
         , Prop "min-height" "100%"
         , Prop "z-index" "0"
-        , Prop "line-height" "1"
+
+        -- Default line-height rules
+        , Prop "line-height" "1.2"
+        , Batch
+            [ AllChildren (dot classes.text)
+                [ Prop "margin-top" "-0.1em"
+                , Prop "margin-bottom" "-0.1em"
+                ]
+            , AllChildren (dot classes.paragraph)
+                [ Prop "margin-top" "-0.1em"
+                , Prop "margin-bottom" "-0.1em"
+                ]
+            ]
 
         -- defaults
         , Prop "font-size" "16px"
@@ -778,6 +793,11 @@ baseSheet =
                 , Prop "-webkit-background-clip" "text"
                 , Prop "-webkit-text-fill-color" "transparent"
                 ]
+            , AllChildren (dot classes.paragraph)
+                [ Prop "background" "var(--text-gradient)"
+                , Prop "-webkit-background-clip" "text"
+                , Prop "-webkit-text-fill-color" "transparent"
+                ]
             ]
         , Descriptor (dot classes.fontAdjusted)
             [ Prop "font-size" "calc(1em * var(--font-size-factor))"
@@ -925,6 +945,30 @@ baseSheet =
             -- , Prop "padding-top" "calc(var(--visible-top) * (1em/var(--font-size-factor)))"
             -- , Prop "padding-bottom" "calc(var(--visible-bottom) * (1em/var(--font-size-factor)))"
             ]
+        , Batch
+            (List.map
+                (\i ->
+                    let
+                        -- offset would be 5 if the line-height is 1.05
+                        offsetInt =
+                            i * 5
+
+                        offset =
+                            toFloat offsetInt
+                    in
+                    Descriptor (dot (classes.lineHeightPrefix ++ "-" ++ String.fromInt offsetInt))
+                        [ AllChildren (dot classes.text)
+                            [ Prop "margin-top" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
+                            , Prop "margin-bottom" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
+                            ]
+                        , AllChildren (dot classes.paragraph)
+                            [ Prop "margin-top" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
+                            , Prop "margin-bottom" ("-0." ++ String.fromFloat (offset / 2) ++ "em")
+                            ]
+                        ]
+                )
+                (List.range 1 20)
+            )
         , Descriptor (dot classes.single)
             elDescription
         , Descriptor (dot classes.row)
@@ -1405,12 +1449,14 @@ baseSheet =
 
                         Right ->
                             ( []
-                            , [ Prop "float" "right" ]
+                            , [ Prop "float" "right"
+                              ]
                             )
 
                         Left ->
                             ( []
-                            , [ Prop "float" "left" ]
+                            , [ Prop "float" "left"
+                              ]
                             )
 
                         CenterX ->
