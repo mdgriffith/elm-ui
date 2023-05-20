@@ -177,7 +177,7 @@ toCssGradient : Gradient -> String
 toCssGradient grad =
     case grad of
         Linear angle steps ->
-            "repeating-linear-gradient("
+            "linear-gradient("
                 ++ ((String.fromFloat (toRadians angle) ++ "rad")
                         :: List.map renderStep steps
                         |> String.join ", "
