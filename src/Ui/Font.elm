@@ -2,7 +2,8 @@ module Ui.Font exposing
     ( size, color, gradient
     , Font
     , family, typeface, serif, sansSerif, monospace
-    , alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
+    , alignLeft, alignRight, center, justify
+    , lineHeight, letterSpacing, wordSpacing
     , font
     , Sizing, full, byCapital, Adjustment
     , underline, strike, italic
@@ -44,7 +45,9 @@ module Ui.Font exposing
 
 ## Alignment and Spacing
 
-@docs alignLeft, alignRight, center, justify, letterSpacing, wordSpacing
+@docs alignLeft, alignRight, center, justify
+
+@docs lineHeight, letterSpacing, wordSpacing
 
 
 ## Font
@@ -77,7 +80,6 @@ module Ui.Font exposing
 
 -}
 
-import Html.Attributes as Attr
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
 import Internal.Flag as Flag
@@ -263,6 +265,21 @@ size i =
     Internal.Attribute
         { flag = Flag.fontSize
         , attr = Internal.FontSize i
+        }
+
+
+{-| -}
+lineHeight : Float -> Attribute msg
+lineHeight height =
+    Internal.styleAndClass Flag.skip
+        { class =
+            let
+                offset =
+                    ((floor (height * 100) - 100) // 5) * 5
+            in
+            Style.classes.lineHeightPrefix ++ "-" ++ String.fromInt offset
+        , styleName = "line-height"
+        , styleVal = String.fromFloat height
         }
 
 
