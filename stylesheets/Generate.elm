@@ -832,6 +832,8 @@ baseSheet =
         , Descriptor (dot classes.ellipses)
             [ AllChildren (dot classes.text)
                 [ Prop "text-overflow" "ellipsis"
+                , Prop "white-space" "nowrap"
+                , Prop "overflow" "hidden"
                 ]
             ]
         , Descriptor (dot classes.noTextSelection)
