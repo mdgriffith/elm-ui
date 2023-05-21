@@ -34,6 +34,7 @@ encodeCss css =
     Encode.object
         [ ( "hash", Encode.string css.hash )
         , ( "keyframes", Encode.string css.keyframes )
+        , ( "tranition", Encode.string css.transition )
         , ( "props", Encode.list encodeProp css.props )
         ]
 
@@ -165,9 +166,10 @@ decodeData =
 
 decodeCss : Decode.Decoder Animator.Css
 decodeCss =
-    Decode.map3 Animator.Css
+    Decode.map4 Animator.Css
         (Decode.field "hash" Decode.string)
         (Decode.field "keyframes" Decode.string)
+        (Decode.field "transition" Decode.string)
         (Decode.field "props" (Decode.list decodeProp))
 
 

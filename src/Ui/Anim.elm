@@ -115,6 +115,7 @@ persistent group instance =
         , attr =
             Two.CssTeleport
                 { class = onRenderTrigger
+                , style = []
                 , data =
                     Teleport.persistentId group instance
                 }
@@ -129,6 +130,7 @@ onTimeline timeline fn =
         , attr =
             Two.CssTeleport
                 { class = onRenderTrigger
+                , style = []
                 , data =
                     Animator.css timeline (\state -> ( fn state, [] ))
                         |> Teleport.encodeCss
@@ -203,15 +205,20 @@ onActiveTrigger =
 {- Animation stuff -}
 
 
-{-| -}
-transition : Duration -> List Animated -> Attribute msg
-transition dur attrs =
+type Trigger
+    = Hover
+    | Focus
+    | Active
+    | Live
+
+
+transitionWith : Trigger -> Duration -> List Animated -> Attribute msg
+transitionWith trigger duration attrs =
     Two.Attribute
         { flag = Flag.skip
         , attr =
-            Two.CssTeleport
-                { class = onRenderTrigger
-                , data =
+            let
+                css =
                     Animator.css
                         (Animator.Timeline.init []
                             |> Animator.Timeline.to dur attrs
@@ -220,77 +227,75 @@ transition dur attrs =
                         (\animated ->
                             ( animated, [] )
                         )
+
+                triggerClass =
+                    case trigger of
+                        Hover ->
+                            onHoverTrigger
+
+                        Focus ->
+                            onFocusTrigger
+
+                        Active ->
+                            onActiveTrigger
+
+                        Live ->
+                            ""
+
+                triggerPsuedo =
+                    case trigger of
+                        Hover ->
+                            ":hover"
+
+                        Focus ->
+                            ":focus"
+
+                        Active ->
+                            ":active"
+
+                        Live ->
+                            ""
+            in
+            Two.CssTeleport
+                { class = triggerClass ++ " " ++ css.hash
+                , style = [ ( "transition", css.transition ) ]
+                , data =
+                    css
+                        |> addPsuedoClass triggerPsuedo
                         |> Teleport.encodeCss
                 }
         }
+
+
+addPsuedoClass : String -> Animator.Css -> Animator.Css
+addPsuedoClass psuedo css =
+    { css
+        | hash = css.hash ++ psuedo
+    }
+
+
+{-| -}
+transition : Duration -> List Animated -> Attribute msg
+transition dur attrs =
+    transitionWith Live dur attrs
 
 
 {-| -}
 hovered : Duration -> List Animated -> Attribute msg
 hovered dur attrs =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr =
-            Two.CssTeleport
-                { class = onHoverTrigger
-                , data =
-                    Animator.css
-                        (Animator.Timeline.init []
-                            |> Animator.Timeline.to dur attrs
-                            |> Animator.Timeline.update (Time.millisToPosix 1)
-                        )
-                        (\animated ->
-                            ( animated, [] )
-                        )
-                        |> Teleport.encodeCss
-                }
-        }
+    transitionWith Hover dur attrs
 
 
 {-| -}
 focused : Duration -> List Animated -> Attribute msg
 focused dur attrs =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr =
-            Two.CssTeleport
-                { class = onFocusTrigger
-                , data =
-                    Animator.css
-                        (Animator.Timeline.init []
-                            |> Animator.Timeline.to dur attrs
-                            |> Animator.Timeline.update (Time.millisToPosix 1)
-                            |> Animator.Timeline.update (Time.millisToPosix 2)
-                        )
-                        (\animated ->
-                            ( animated, [] )
-                        )
-                        |> Teleport.encodeCss
-                }
-        }
+    transitionWith Focus dur attrs
 
 
 {-| -}
 pressed : Duration -> List Animated -> Attribute msg
 pressed dur attrs =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr =
-            Two.CssTeleport
-                { class = onActiveTrigger
-                , data =
-                    Animator.css
-                        (Animator.Timeline.init []
-                            |> Animator.Timeline.to dur attrs
-                            |> Animator.Timeline.update (Time.millisToPosix 1)
-                            |> Animator.Timeline.update (Time.millisToPosix 2)
-                        )
-                        (\animated ->
-                            ( animated, [] )
-                        )
-                        |> Teleport.encodeCss
-                }
-        }
+    transitionWith Active dur attrs
 
 
 
@@ -401,6 +406,7 @@ onTimelineWith timeline fn =
         , attr =
             Two.CssTeleport
                 { class = onRenderTrigger
+                , style = []
                 , data =
                     Animator.css timeline fn
                         |> Teleport.encodeCss
@@ -416,6 +422,7 @@ keyframes steps =
         , attr =
             Two.CssTeleport
                 { class = onRenderTrigger
+                , style = []
                 , data =
                     Animator.css
                         (Animator.Timeline.init []
@@ -439,6 +446,7 @@ hoveredWith steps =
         , attr =
             Two.CssTeleport
                 { class = onHoverTrigger
+                , style = []
                 , data =
                     Animator.css
                         (Animator.Timeline.init []
@@ -462,6 +470,7 @@ focusedWith steps =
         , attr =
             Two.CssTeleport
                 { class = onFocusTrigger
+                , style = []
                 , data =
                     Animator.css
                         (Animator.Timeline.init []
@@ -485,6 +494,7 @@ pressedWith steps =
         , attr =
             Two.CssTeleport
                 { class = onActiveTrigger
+                , style = []
                 , data =
                     Animator.css
                         (Animator.Timeline.init []
@@ -540,7 +550,7 @@ onAnimationStart onMsg =
         (Decode.field "animationName" Decode.string
             |> Decode.andThen
                 (\name ->
-                    case Debug.log "Event" <| Teleport.stringToTrigger name of
+                    case Teleport.stringToTrigger name of
                         Just trigger ->
                             Decode.map (onMsg << Two.Teleported trigger) Teleport.decode
 
@@ -556,10 +566,6 @@ onAnimationUnmount onMsg =
         (Decode.field "animationName" Decode.string
             |> Decode.andThen
                 (\name ->
-                    let
-                        _ =
-                            Debug.log "DISMOUNT" name
-                    in
                     if name == "on-dismount" then
                         Decode.map (onMsg << Two.Teleported Teleport.OnDismount) Teleport.decode
 

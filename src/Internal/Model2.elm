@@ -12,6 +12,7 @@ import Html.Lazy
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField exposing (BitField)
 import Internal.Flag as Flag exposing (Flag)
+import Internal.Style.Generated as Generated
 import Internal.Style2 as Style
 import Internal.Teleport as Teleport
 import Json.Decode as Json
@@ -234,7 +235,7 @@ update toAppMsg msg ((State details) as unchanged) =
 
 
 applyTeleported : Teleport.Event -> Teleport.Data -> ( State, List (Cmd Msg) ) -> ( State, List (Cmd Msg) )
-applyTeleported event data ( State state, cmds ) =
+applyTeleported event data ( (State state) as untouched, cmds ) =
     case data of
         Teleport.Persistent group instance ->
             let
@@ -248,20 +249,36 @@ applyTeleported event data ( State state, cmds ) =
                     ( State { state | boxes = ( id, event.box ) :: state.boxes }, cmds )
 
                 Just found ->
-                    ( State state, cmds )
+                    ( untouched, cmds )
 
         Teleport.Css css ->
             if Set.member css.hash state.added then
-                ( State state, cmds )
+                ( untouched, cmds )
 
             else
+                let
+                    cssClass =
+                        "." ++ css.hash ++ "{" ++ addStylesToString css.props "" ++ "}"
+                in
                 ( State
                     { state
-                        | rules = css.keyframes :: state.rules
+                        | rules =
+                            state.rules
+                                |> addRule cssClass
+                                |> addRule css.keyframes
                         , added = Set.insert css.hash state.added
                     }
                 , cmds
                 )
+
+
+addRule : String -> List String -> List String
+addRule rule existingRules =
+    if rule == "" then
+        existingRules
+
+    else
+        rule :: existingRules
 
 
 requestBoundingBoxes boxes =
@@ -794,6 +811,7 @@ type Attr msg
     | Nearby Location (Element msg)
     | CssTeleport
         { class : String
+        , style : List ( String, String )
         , data : Encode.Value
         }
 
@@ -873,6 +891,11 @@ type Location
 type Option
     = FocusStyleOption FocusStyle
     | ResponsiveBreakpoints String
+    | FontAdjustment
+        { family : String
+        , offset : Float
+        , height : Float
+        }
 
 
 type Transition
@@ -967,11 +990,10 @@ text : String -> Element msg
 text str =
     Element
         (\encoded ->
-            if BitField.has Bits.isParagraph encoded then
-                Html.text str
-
-            else
-                Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+            -- if BitField.has Bits.isParagraph encoded then
+            --     Html.text str
+            -- else
+            Html.span [ Attr.class textElementClasses ] [ Html.text str ]
          -- if BitField.equal encoded Bits.row || BitField.equal encoded Bits.column then
          --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
          -- else
@@ -1282,10 +1304,10 @@ element layout attrs children =
                                     myBits
                                     layout
                                     rendered.details
-                                    rendered.fields
+                                    -- rendered.fields
+                                    Flag.none
                                     ""
                                     (List.reverse attrs)
-                                    |> Debug.log "STYLE"
                         in
                         Attr.property "style"
                             (Encode.string
@@ -1300,6 +1322,9 @@ element layout attrs children =
                 Children finalChildren ->
                     if Flag.present Flag.isLink rendered.fields then
                         Html.a finalAttrs finalChildren
+
+                    else if BitField.has Bits.isParagraph parentBits then
+                        Html.span finalAttrs finalChildren
 
                     else
                         Html.div finalAttrs finalChildren
@@ -1526,22 +1551,23 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
         [] ->
             let
                 attrsWithParentSpacing =
-                    -- if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
-                    --     Attr.style "margin"
-                    --         ((parentBits
-                    --             |> BitField.get Bits.spacingY
-                    --             |> String.fromInt
-                    --          )
-                    --             ++ "px "
-                    --             ++ (parentBits
-                    --                     |> BitField.get Bits.spacingX
-                    --                     |> String.fromInt
-                    --                )
-                    --             ++ "px"
-                    --         )
-                    --         :: htmlAttrs
-                    -- else
-                    htmlAttrs
+                    if Bits.hasSpacing parentBits && BitField.has Bits.isParagraph parentBits then
+                        Attr.style "margin"
+                            ((parentBits
+                                |> BitField.get Bits.spacingY
+                                |> String.fromInt
+                             )
+                                ++ "px "
+                                ++ (parentBits
+                                        |> BitField.get Bits.spacingX
+                                        |> String.fromInt
+                                   )
+                                ++ "px"
+                            )
+                            :: htmlAttrs
+
+                    else
+                        htmlAttrs
 
                 attrsWithTransform =
                     case details.transform of
@@ -1942,6 +1968,10 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                             details
                             children
                             (if isVar then
+                                let
+                                    _ =
+                                        Debug.log "HAS VAR" styleDetails.styleName
+                                in
                                 has
                                     |> Flag.add flag
                                     |> Flag.add Flag.hasCssVars
@@ -2000,19 +2030,13 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                             details
                             children
                             (Flag.add flag has)
-                            (if layout == AsParagraph then
-                                Attr.style "line-height"
-                                    ("calc(1em + " ++ String.fromInt y ++ "px")
-                                    :: htmlAttrs
-
-                             else
-                                Attr.style "gap"
-                                    (String.fromInt y
-                                        ++ "px "
-                                        ++ String.fromInt x
-                                        ++ "px"
-                                    )
-                                    :: htmlAttrs
+                            (Attr.style "gap"
+                                (String.fromInt y
+                                    ++ "px "
+                                    ++ String.fromInt x
+                                    ++ "px"
+                                )
+                                :: htmlAttrs
                             )
                             (Style.classes.spacing ++ " " ++ classes)
                             remain
@@ -2102,9 +2126,33 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                             }
                             children
                             (Flag.add flag has)
-                            htmlAttrs
+                            (htmlAttrs
+                                |> addStyles teleport.style
+                            )
                             (teleport.class ++ " " ++ classes)
                             remain
+
+
+addStyles : List ( String, String ) -> List (Html.Attribute msg) -> List (Html.Attribute msg)
+addStyles styles attrs =
+    case styles of
+        [] ->
+            attrs
+
+        ( name, val ) :: remain ->
+            addStyles remain
+                (Attr.style name val :: attrs)
+
+
+addStylesToString : List ( String, String ) -> String -> String
+addStylesToString styles attrs =
+    case styles of
+        [] ->
+            attrs
+
+        ( name, val ) :: remain ->
+            addStylesToString remain
+                (name ++ ":" ++ val ++ ";" ++ attrs)
 
 
 {-| In order to make css variables work, we need to gather all styles into a `Attribute.property "style"`
@@ -2222,7 +2270,7 @@ renderInlineStylesToString parentBits myBits layout details has vars attrs =
                                )
                             ++ varsWithTransform
             in
-            Debug.log "AS STRING" varsWithFontSize
+            varsWithFontSize
 
         (Attribute { flag, attr }) :: remain ->
             let
@@ -2242,7 +2290,7 @@ renderInlineStylesToString parentBits myBits layout details has vars attrs =
                 renderInlineStylesToString parentBits myBits layout details has vars remain
 
             else
-                case attr of
+                case Debug.log "   toString" attr of
                     FontSize size ->
                         renderInlineStylesToString parentBits
                             myBits
@@ -2374,6 +2422,17 @@ renderInlineStylesToString parentBits myBits layout details has vars attrs =
 
                              else
                                 vars
+                            )
+                            remain
+
+                    CssTeleport teleport ->
+                        renderInlineStylesToString parentBits
+                            myBits
+                            layout
+                            details
+                            (Flag.add flag has)
+                            (vars
+                                |> addStylesToString teleport.style
                             )
                             remain
 
@@ -3070,6 +3129,55 @@ renderOptionItem alreadyRendered renderedStr opts =
                 renderOptionItem { alreadyRendered | breakpoints = True }
                     (renderedStr ++ mediaQueryStr)
                     remain
+
+        (FontAdjustment adjustment) :: remain ->
+            renderOptionItem alreadyRendered
+                (renderedStr ++ renderFontAdjustment adjustment)
+                remain
+
+
+renderFontAdjustment :
+    { family : String
+    , offset : Float
+    , height : Float
+    }
+    -> String
+renderFontAdjustment adjustment =
+    let
+        fontid =
+            adjustment.family
+
+        sizeAdjustmentRule =
+            ("." ++ fontid)
+                ++ curlyBrackets
+                    [ "font-size:" ++ String.fromFloat adjustment.height ++ "%;"
+                    ]
+    in
+    sizeAdjustmentRule
+        ++ (List.map
+                (\i ->
+                    let
+                        -- offset would be 5 if the line-height is 1.05
+                        offsetInt =
+                            i * 5
+
+                        body =
+                            curlyBrackets
+                                [ "margin-top:" ++ Generated.lineHeightAdjustment i ++ ";"
+                                , "margin-bottom:" ++ Generated.lineHeightAdjustment i ++ ";"
+                                ]
+                    in
+                    (("." ++ fontid ++ " .lh-" ++ String.fromInt offsetInt ++ " .s.p ") ++ body)
+                        ++ (("." ++ fontid ++ " .lh-" ++ String.fromInt offsetInt ++ " .s.t ") ++ body)
+                )
+                (List.range 1 20)
+                |> String.join ""
+           )
+
+
+curlyBrackets : List String -> String
+curlyBrackets lines =
+    "{" ++ String.join "" lines ++ "}"
 
 
 maybeString fn maybeStr =
