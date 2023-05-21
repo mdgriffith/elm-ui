@@ -1,6 +1,5 @@
 module Ui.Responsive exposing
-    ( layout
-    , Breakpoints, breakpoints
+    ( Breakpoints, breakpoints
     , visible
     , Value, value, fluid
     , rowWhen
@@ -12,8 +11,6 @@ module Ui.Responsive exposing
     )
 
 {-|
-
-@docs layout
 
 @docs Breakpoints, breakpoints
 
@@ -113,7 +110,6 @@ import Internal.Model2 as Internal
         , ResponsiveTransition
         )
 import Ui
-import Ui.Anim
 import Ui.Font
 
 
@@ -178,38 +174,6 @@ orBelow label resp =
         )
         resp
         |> Tuple.second
-
-
-{-| -}
-type alias LayoutOption =
-    Internal.Option
-
-
-{-| -}
-layout :
-    { options : List Ui.Option
-    , breakpoints : Breakpoints label
-    }
-    -> Ui.Anim.State
-    -> List (Ui.Attribute msg)
-    -> Ui.Element msg
-    -> Html.Html msg
-layout opts state attrs els =
-    Internal.renderLayout
-        { options =
-            Internal.ResponsiveBreakpoints
-                (Internal.toMediaQuery opts.breakpoints)
-                :: opts.options
-        }
-        state
-        attrs
-        els
-
-
-layoutBreakpoints : Breakpoints label -> LayoutOption
-layoutBreakpoints resp =
-    Internal.ResponsiveBreakpoints
-        (Internal.toMediaQuery resp)
 
 
 {-| -}

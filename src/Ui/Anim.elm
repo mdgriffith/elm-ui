@@ -92,6 +92,7 @@ import Set
 import Time
 import Ui exposing (Attribute, Element)
 import Ui.Events
+import Ui.Responsive
 
 
 {-| -}
@@ -507,6 +508,7 @@ pressedWith steps =
 layout :
     { options : List Ui.Option
     , toMsg : Msg -> msg
+    , breakpoints : Maybe (Ui.Responsive.Breakpoints label)
     }
     -> State
     -> List (Attribute msg)
@@ -515,7 +517,14 @@ layout :
 layout opts state attrs els =
     Two.renderLayout
         { options =
-            opts.options
+            case opts.breakpoints of
+                Just breakpoints ->
+                    Two.ResponsiveBreakpoints
+                        (Two.toMediaQuery breakpoints)
+                        :: opts.options
+
+                Nothing ->
+                    opts.options
         }
         state
         (onAnimationStart opts.toMsg
