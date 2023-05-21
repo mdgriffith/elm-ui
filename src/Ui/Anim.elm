@@ -212,7 +212,7 @@ type Trigger
 
 
 transitionWithTrigger : Trigger -> Duration -> List Animated -> Attribute msg
-transitionWithTrigger trigger duration attrs =
+transitionWithTrigger trigger dur attrs =
     Two.Attribute
         { flag = Flag.skip
         , attr =
