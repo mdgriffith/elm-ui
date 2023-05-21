@@ -1,10 +1,35 @@
-module Ui.Shadow exposing (inner, shadows)
+module Ui.Shadow exposing
+    ( shadows, inner
+    , font
+    )
+
+{-|
+
+@docs shadows, inner
+
+@docs font
+
+-}
+
+import Internal.Model2 as Internal
+import Internal.Style2 as Style
+import Ui exposing (Attribute, Color)
+
 
 {-| -}
-
-import Internal.Model2 as Two
-import Internal.Style2 as Style
-import Ui exposing (Attribute)
+font :
+    { offset : ( Float, Float )
+    , blur : Float
+    , color : Color
+    }
+    -> Attribute msg
+font shade =
+    Internal.style "text-shadow"
+        ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
+            ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
+            ++ (String.fromFloat shade.blur ++ "px ")
+            ++ Style.color shade.color
+        )
 
 
 {-| -}
@@ -14,11 +39,11 @@ shadows :
         , y : Float
         , size : Float
         , blur : Float
-        , color : Ui.Color
+        , color : Color
         }
     -> Attribute msg
 shadows shades =
-    Two.style
+    Internal.style
         "box-shadow"
         (List.map Style.singleShadow shades
             |> String.join ", "
@@ -31,44 +56,10 @@ inner :
     , y : Float
     , size : Float
     , blur : Float
-    , color : Ui.Color
+    , color : Color
     }
     -> Attribute msg
 inner shade =
-    Two.style
+    Internal.style
         "box-shadow"
         ("inset " ++ Style.singleShadow shade)
-
-
-{-| Do we need this?
--}
-lights :
-    { elevation : Float
-    , lights :
-        List
-            { direction : Float
-            , elevation : Float
-            , hardness : Float
-            }
-    }
-    -> Attribute msg
-lights details =
-    Two.style "box-shadow"
-        (List.map (renderLight details.elevation) details.lights
-            |> String.join ", "
-        )
-
-
-renderLight elevation light =
-    let
-        ( x, y ) =
-            fromPolar ( elevation, turns (0.25 + light.direction) )
-    in
-    Style.quad
-        (Style.floatPx x)
-        (Style.floatPx y)
-        -- blur
-        (Style.floatPx light.hardness)
-        -- size
-        -- (Style.floatPx (10 * light.elevation))
-        ("rgba(0,0,0," ++ String.fromFloat ((100 - elevation) / 500) ++ ")")

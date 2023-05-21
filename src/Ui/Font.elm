@@ -11,7 +11,6 @@ module Ui.Font exposing
     , weight
     , Weight, heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
     , Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
-    , glow, shadow
     )
 
 {-|
@@ -57,11 +56,6 @@ module Ui.Font exposing
 ## Variants
 
 @docs Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
-
-
-## Shadows
-
-@docs glow, shadow
 
 -}
 
@@ -393,49 +387,6 @@ heavy =
 unitalicized : Attribute msg
 unitalicized =
     Internal.class Style.classes.textUnitalicized
-
-
-{-| -}
-shadow :
-    { offset : ( Float, Float )
-    , blur : Float
-    , color : Color
-    }
-    -> Attribute msg
-shadow shade =
-    -- Internal.Style Flag.txtShadows
-    --     ("text-shadow:"
-    --         ++ (String.fromFloat (Tuple.first shade.offset) ++ "px ")
-    --         ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
-    --         ++ (String.fromFloat shade.blur ++ "px ")
-    --         ++ Style.color shade.color
-    --         ++ ";"
-    --     )
-    Internal.style "text-shadow"
-        ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
-            ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
-            ++ (String.fromFloat shade.blur ++ "px ")
-            ++ Style.color shade.color
-        )
-
-
-{-| A glow is just a simplified shadow.
--}
-glow : Color -> Float -> Attribute msg
-glow clr i =
-    let
-        shade =
-            { offset = ( 0, 0 )
-            , blur = i * 2
-            , color = clr
-            }
-    in
-    Internal.style "text-shadow"
-        ((String.fromFloat (Tuple.first shade.offset) ++ "px ")
-            ++ (String.fromFloat (Tuple.second shade.offset) ++ "px ")
-            ++ (String.fromFloat shade.blur ++ "px ")
-            ++ Style.color shade.color
-        )
 
 
 

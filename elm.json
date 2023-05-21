@@ -14,6 +14,7 @@
     "Ui.Accessibility",
     "Ui.Responsive",
     "Ui.Layout",
+    "Ui.Shadow",
     "Ui.Table",
     "Ui.Lazy",
     "Ui.Keyed"
