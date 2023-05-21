@@ -2,7 +2,7 @@ module Ui exposing
     ( layout, embed, Option
     , Element, none, text, el
     , row, column
-    , ellip, paragraph, textColumn
+    , ellipsis, paragraph, textColumn
     , id, noAttr
     , Attribute, Length, px, fill, portion
     , width, widthMin, widthMax
@@ -52,7 +52,7 @@ So, the common ways to do that would be `row` and `column`.
 
 # Text Layout
 
-@docs ellip, paragraph, textColumn
+@docs ellipsis, paragraph, textColumn
 
 
 # Attributes
@@ -307,8 +307,8 @@ fill =
 
 
 {-| -}
-ellip : Attribute msg
-ellip =
+ellipsis : Attribute msg
+ellipsis =
     Two.Attribute
         { flag = Flag.skip
         , attr = Two.Class Style.classes.ellipses
