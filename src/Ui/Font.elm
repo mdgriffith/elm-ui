@@ -3,6 +3,7 @@ module Ui.Font exposing
     , Font
     , family, typeface, serif, sansSerif, monospace
     , alignLeft, alignRight, center, justify
+    , exactWhitespace
     , lineHeight, letterSpacing, wordSpacing
     , font
     , fontAdjustment
@@ -14,24 +15,6 @@ module Ui.Font exposing
     )
 
 {-|
-
-    import Ui
-    import Ui.Font
-
-    view =
-        Ui.el
-            [ Ui.Font.color (Ui.rgb 0 0 1)
-            , Ui.Font.size 18
-            , Ui.Font.family
-                [ Ui.Font.typeface "Open Sans"
-                , Ui.Font.sansSerif
-                ]
-            ]
-            (Ui.text "Woohoo, I'm stylish text")
-
-**Note:** `Font.color`, `Font.size`, and `Font.family` are inherited, meaning you can set them at the top of your view and all subsequent nodes will have that value.
-
-**Other Note:** If you're looking for something like `line-height`, it's handled by `Ui.spacing` on a `paragraph`.
 
 @docs size, color, gradient
 
@@ -46,6 +29,8 @@ module Ui.Font exposing
 ## Alignment and Spacing
 
 @docs alignLeft, alignRight, center, justify
+
+@docs exactWhitespace
 
 @docs lineHeight, letterSpacing, wordSpacing
 
@@ -264,6 +249,12 @@ lineHeight height =
         , styleName = "line-height"
         , styleVal = String.fromFloat height
         }
+
+
+{-| -}
+exactWhitespace : Attribute msg
+exactWhitespace =
+    Internal.style "whitespace" "pre"
 
 
 {-| In `px`.
