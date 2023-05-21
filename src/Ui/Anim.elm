@@ -209,11 +209,10 @@ type Trigger
     = Hover
     | Focus
     | Active
-    | Live
 
 
-transitionWith : Trigger -> Duration -> List Animated -> Attribute msg
-transitionWith trigger duration attrs =
+transitionWithTrigger : Trigger -> Duration -> List Animated -> Attribute msg
+transitionWithTrigger trigger duration attrs =
     Two.Attribute
         { flag = Flag.skip
         , attr =
@@ -239,9 +238,6 @@ transitionWith trigger duration attrs =
                         Active ->
                             onActiveTrigger
 
-                        Live ->
-                            ""
-
                 triggerPsuedo =
                     case trigger of
                         Hover ->
@@ -252,9 +248,6 @@ transitionWith trigger duration attrs =
 
                         Active ->
                             ":active"
-
-                        Live ->
-                            ""
             in
             Two.CssTeleport
                 { class = triggerClass ++ " " ++ css.hash
@@ -277,25 +270,46 @@ addPsuedoClass psuedo css =
 {-| -}
 transition : Duration -> List Animated -> Attribute msg
 transition dur attrs =
-    transitionWith Live dur attrs
+    Two.Attribute
+        { flag = Flag.skip
+        , attr =
+            let
+                css =
+                    Animator.css
+                        (Animator.Timeline.init []
+                            |> Animator.Timeline.to dur attrs
+                            |> Animator.Timeline.update (Time.millisToPosix 1)
+                        )
+                        (\animated ->
+                            ( animated, [] )
+                        )
+            in
+            Two.CssTeleport
+                { class = ""
+                , style = css.props
+                , data =
+                    css
+                        |> Teleport.encodeCss
+                }
+        }
 
 
 {-| -}
 hovered : Duration -> List Animated -> Attribute msg
 hovered dur attrs =
-    transitionWith Hover dur attrs
+    transitionWithTrigger Hover dur attrs
 
 
 {-| -}
 focused : Duration -> List Animated -> Attribute msg
 focused dur attrs =
-    transitionWith Focus dur attrs
+    transitionWithTrigger Focus dur attrs
 
 
 {-| -}
 pressed : Duration -> List Animated -> Attribute msg
 pressed dur attrs =
-    transitionWith Active dur attrs
+    transitionWithTrigger Active dur attrs
 
 
 
