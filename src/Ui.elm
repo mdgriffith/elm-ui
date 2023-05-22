@@ -1136,7 +1136,7 @@ alignRight =
 spaceEvenly : Attribute msg
 spaceEvenly =
     Two.Attribute
-        { flag = Flag.spacing
+        { flag = Flag.skip
         , attr = Two.Class Style.classes.spaceEvenly
         }
 
