@@ -225,8 +225,8 @@ import Html.Attributes as Attr
 import Html.Events as Event
 import Html.Keyed
 import Html.Lazy
-import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
+import Internal.Bits.Inheritance as Bits
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -839,10 +839,30 @@ width len =
                 , styleVal = Style.px x
                 }
 
-        Fill f ->
-            -- TODO
+        Fill 1 ->
             Two.classWith Flag.width
                 Style.classes.widthFill
+
+        Fill portionSize ->
+            Two.Attribute
+                { flag = Flag.width
+                , attr =
+                    Two.Attr
+                        { node = Two.NodeAsDiv
+                        , attrs = []
+                        , class = Just Style.classes.widthFill
+                        , styles =
+                            \inheritance _ ->
+                                if BitField.has Bits.isRow inheritance then
+                                    [ Tuple.pair "flex-grow" (String.fromInt (portionSize * 100000)) ]
+
+                                else
+                                    []
+                        , nearby = Nothing
+                        , transform = Nothing
+                        , teleport = Nothing
+                        }
+                }
 
 
 {-| -}
@@ -896,9 +916,30 @@ height len =
                 , styleVal = Style.px x
                 }
 
-        Fill f ->
+        Fill 1 ->
             Two.classWith Flag.height
                 Style.classes.heightFill
+
+        Fill portionSize ->
+            Two.Attribute
+                { flag = Flag.width
+                , attr =
+                    Two.Attr
+                        { node = Two.NodeAsDiv
+                        , attrs = []
+                        , class = Just Style.classes.heightFill
+                        , styles =
+                            \inheritance _ ->
+                                if BitField.has Bits.isColumn inheritance then
+                                    [ Tuple.pair "flex-grow" (String.fromInt (portionSize * 100000)) ]
+
+                                else
+                                    []
+                        , nearby = Nothing
+                        , transform = Nothing
+                        , teleport = Nothing
+                        }
+                }
 
 
 {-| -}

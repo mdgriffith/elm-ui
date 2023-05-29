@@ -58,6 +58,8 @@ module Ui.Font exposing
 
 -}
 
+import Internal.BitField as BitField
+import Internal.Bits.Inheritance as Inheritance
 import Internal.Flag as Flag
 import Internal.Font
 import Internal.Model2 as Internal
@@ -217,9 +219,21 @@ fontAdjustment =
 -}
 size : Int -> Attribute msg
 size i =
-    Internal.style
+    Internal.styleDynamic
         "font-size"
-        (String.fromInt i ++ "px")
+        (\inheritance ->
+            let
+                baseSize =
+                    toFloat i
+
+                modificationInt =
+                    BitField.get Inheritance.fontHeight inheritance
+
+                modification =
+                    (toFloat modificationInt / 100) * baseSize
+            in
+            String.fromFloat (baseSize - modification) ++ "px"
+        )
 
 
 {-| -}

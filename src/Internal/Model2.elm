@@ -707,7 +707,7 @@ noAttr =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -724,7 +724,7 @@ justFlag flag =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -741,7 +741,7 @@ nearby loc el =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Just ( loc, el )
                 , transform = Nothing
                 , teleport = Nothing
@@ -763,12 +763,22 @@ teleport options =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Just options.class
-                , styles = options.style
+                , styles =
+                    \_ _ ->
+                        options.style
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Just options.data
                 }
         }
+
+
+noStyles :
+    Inheritance.Encoded
+    -> AnalyzeBits.Encoded
+    -> List ( String, String )
+noStyles inheritance encoded =
+    []
 
 
 class : String -> Attribute msg
@@ -780,7 +790,7 @@ class cls =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Just cls
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -797,7 +807,7 @@ classWith flag cls =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Just cls
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -814,7 +824,7 @@ transformPiece slot value =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Just ( slot, value )
                 , teleport = Nothing
@@ -883,7 +893,10 @@ type Attr msg
         { node : Node
         , attrs : List (Html.Attribute msg)
         , class : Maybe String
-        , styles : List ( String, String )
+        , styles :
+            Inheritance.Encoded
+            -> AnalyzeBits.Encoded
+            -> List ( String, String )
         , nearby : Maybe ( Location, Element msg )
         , transform : Maybe ( TransformSlot, Float )
         , teleport : Maybe Encode.Value
@@ -1174,7 +1187,7 @@ attribute a =
                 { node = NodeAsDiv
                 , attrs = [ a ]
                 , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1190,23 +1203,7 @@ attributeWith flag a =
                 { node = NodeAsDiv
                 , attrs = [ a ]
                 , class = Nothing
-                , styles = []
-                , nearby = Nothing
-                , transform = Nothing
-                , teleport = Nothing
-                }
-        }
-
-
-attrList flag list =
-    Attribute
-        { flag = flag
-        , attr =
-            Attr
-                { node = NodeAsDiv
-                , attrs = list
-                , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1234,7 +1231,7 @@ onPress msg =
                     --     0
                     ]
                 , class = Just Style.classes.cursorPointer
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1278,7 +1275,7 @@ onKey details =
                     , Attr.tabindex 0
                     ]
                 , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1315,7 +1312,7 @@ link details =
                             Attr.download downloadName
                     ]
                 , class = Nothing
-                , styles = []
+                , styles = noStyles
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1332,7 +1329,28 @@ style name val =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Nothing
-                , styles = [ ( name, val ) ]
+                , styles =
+                    \_ _ ->
+                        [ Tuple.pair name val ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+styleDynamic : String -> (Inheritance.Encoded -> String) -> Attribute msg
+styleDynamic name toVal =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles =
+                    \inheritance _ ->
+                        [ Tuple.pair name (toVal inheritance) ]
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1354,7 +1372,9 @@ style2 oneName oneVal twoName twoVal =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Nothing
-                , styles = [ ( oneName, oneVal ), ( twoName, twoVal ) ]
+                , styles =
+                    \_ _ ->
+                        Tuple.pair oneName oneVal :: Tuple.pair twoName twoVal :: []
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1371,7 +1391,9 @@ styleWith flag name val =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Nothing
-                , styles = [ ( name, val ) ]
+                , styles =
+                    \_ _ ->
+                        Tuple.pair name val :: []
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1395,7 +1417,9 @@ styleAndClass flag v =
                 { node = NodeAsDiv
                 , attrs = []
                 , class = Just v.class
-                , styles = [ ( v.styleName, v.styleVal ) ]
+                , styles =
+                    \_ _ ->
+                        Tuple.pair v.styleName v.styleVal :: []
                 , nearby = Nothing
                 , transform = Nothing
                 , teleport = Nothing
@@ -1543,7 +1567,7 @@ element node layout attrs children =
                         in
                         Attr.property "style"
                             (Encode.string
-                                (toStyleString parentBits myBits Flag.none transformString attrs)
+                                (toStyleString parentBits myBits analyzedBits Flag.none transformString attrs)
                             )
                             :: htmlAttrs
 
@@ -1557,10 +1581,8 @@ element node layout attrs children =
                                 else
                                     htmlAttrs
                         in
-                        toStyle parentBits myBits Flag.none startingProps (contextClasses layout) attrs
+                        toStyle parentBits myBits analyzedBits Flag.none startingProps (contextClasses layout) attrs
 
-                -- classStr =
-                --     toClass parentBits myBits Flag.none (contextClasses layout) attrs
                 finalChildren =
                     toChildren myBits analyzedBits attrs children
             in
@@ -1986,55 +2008,16 @@ toNearbyElements inheritance foundElems attrs =
                             toNearbyElements inheritance (nearbyToHtml inheritance location nearbyElem :: foundElems) remain
 
 
-toClass :
-    Inheritance.Encoded
-    -> Inheritance.Encoded
-    -> Flag.Field
-    -> String
-    -> List (Attribute msg)
-    -> String
-toClass parentBits myBits has renderedClass attrs =
-    case attrs of
-        [] ->
-            renderedClass
-
-        (Attribute { flag, attr }) :: remain ->
-            let
-                alwaysRender =
-                    case flag of
-                        Flag.Flag f ->
-                            f == 0
-
-                previouslyRendered =
-                    if alwaysRender then
-                        False
-
-                    else
-                        Flag.present flag has
-            in
-            if previouslyRendered then
-                toClass parentBits myBits has renderedClass remain
-
-            else
-                case attr of
-                    Attr details ->
-                        case details.class of
-                            Nothing ->
-                                toClass parentBits myBits has renderedClass remain
-
-                            Just classStr ->
-                                toClass parentBits myBits (Flag.add flag has) (renderedClass ++ " " ++ classStr) remain
-
-
 toStyle :
     Inheritance.Encoded
     -> Inheritance.Encoded
+    -> AnalyzeBits.Encoded
     -> Flag.Field
     -> List (VirtualDom.Attribute msg)
     -> String
     -> List (Attribute msg)
     -> List (Html.Attribute msg)
-toStyle parentBits myBits has htmlAttrs classes attrs =
+toStyle parentBits myBits analyzedBits has htmlAttrs classes attrs =
     case attrs of
         [] ->
             Attr.class classes :: htmlAttrs
@@ -2054,33 +2037,32 @@ toStyle parentBits myBits has htmlAttrs classes attrs =
                         Flag.present flag has
             in
             if previouslyRendered then
-                toStyle parentBits myBits has htmlAttrs classes remain
+                toStyle parentBits myBits analyzedBits has htmlAttrs classes remain
 
             else
                 case attr of
                     Attr details ->
-                        -- let
-                        --     newClasses =
-                        --         case details.class of
-                        --             Nothing ->
-                        --                 classes
-                        --             Just classStr ->
-                        --                 classes ++ " " ++ classStr
-                        -- in
-                        -- case details.class of
-                        --     Nothing ->
-                        case details.styles of
+                        let
+                            newClasses =
+                                case details.class of
+                                    Nothing ->
+                                        classes
+
+                                    Just classStr ->
+                                        classes ++ " " ++ classStr
+                        in
+                        case details.styles parentBits analyzedBits of
                             [] ->
-                                toStyle parentBits myBits has htmlAttrs classes remain
+                                toStyle parentBits myBits analyzedBits has htmlAttrs newClasses remain
 
                             [ ( name, val ) ] ->
-                                toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: htmlAttrs) classes remain
+                                toStyle parentBits myBits analyzedBits (Flag.add flag has) (Attr.style name val :: htmlAttrs) newClasses remain
 
                             [ ( name, val ), ( twoName, twoVal ) ] ->
-                                toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: Attr.style twoName twoVal :: htmlAttrs) classes remain
+                                toStyle parentBits myBits analyzedBits (Flag.add flag has) (Attr.style name val :: Attr.style twoName twoVal :: htmlAttrs) newClasses remain
 
                             list ->
-                                toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) classes remain
+                                toStyle parentBits myBits analyzedBits (Flag.add flag has) (addStyles list htmlAttrs) newClasses remain
 
 
 
@@ -2131,11 +2113,12 @@ addStyles styles attrs =
 toStyleString :
     Inheritance.Encoded
     -> Inheritance.Encoded
+    -> AnalyzeBits.Encoded
     -> Flag.Field
     -> String
     -> List (Attribute msg)
     -> String
-toStyleString parentBits myBits has str attrs =
+toStyleString parentBits myBits analyzed has str attrs =
     case attrs of
         [] ->
             str
@@ -2155,23 +2138,23 @@ toStyleString parentBits myBits has str attrs =
                         Flag.present flag has
             in
             if previouslyRendered then
-                toStyleString parentBits myBits has str remain
+                toStyleString parentBits myBits analyzed has str remain
 
             else
                 case attr of
                     Attr details ->
-                        case details.styles of
+                        case details.styles parentBits analyzed of
                             [] ->
-                                toStyleString parentBits myBits has str remain
+                                toStyleString parentBits myBits analyzed has str remain
 
                             [ ( name, val ) ] ->
-                                toStyleString parentBits myBits (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ str) remain
+                                toStyleString parentBits myBits analyzed (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ str) remain
 
                             [ ( name, val ), ( twoName, twoVal ) ] ->
-                                toStyleString parentBits myBits (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ twoName ++ ":" ++ twoVal ++ ";" ++ str) remain
+                                toStyleString parentBits myBits analyzed (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ twoName ++ ":" ++ twoVal ++ ";" ++ str) remain
 
                             list ->
-                                toStyleString parentBits myBits (Flag.add flag has) (addStylesToString list str) remain
+                                toStyleString parentBits myBits analyzed (Flag.add flag has) (addStylesToString list str) remain
 
 
 addStylesToString : List ( String, String ) -> String -> String
