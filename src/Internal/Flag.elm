@@ -126,108 +126,108 @@ fontColor =
     flag 8
 
 
+fontGradient : Flag
+fontGradient =
+    flag 9
+
+
 fontAdjustment : Flag
 fontAdjustment =
-    flag 9
+    flag 10
+
+
+fontEllipsis : Flag
+fontEllipsis =
+    flag 11
 
 
 id : Flag
 id =
-    flag 10
+    flag 12
 
 
 txtShadows : Flag
 txtShadows =
-    flag 11
+    flag 13
 
 
 shadows : Flag
 shadows =
-    flag 12
+    flag 14
 
 
 overflow : Flag
 overflow =
-    flag 13
+    flag 15
 
 
 cursor : Flag
 cursor =
-    flag 14
+    flag 16
 
 
 transform : Flag
 transform =
-    flag 15
+    flag 17
 
 
 borderWidth : Flag
 borderWidth =
-    flag 16
+    flag 18
 
 
 yAlign : Flag
 yAlign =
-    flag 17
+    flag 19
 
 
 xAlign : Flag
 xAlign =
-    flag 18
+    flag 20
 
 
 focus : Flag
 focus =
-    flag 19
+    flag 21
 
 
 active : Flag
 active =
-    flag 20
+    flag 22
 
 
 hover : Flag
 hover =
-    flag 21
+    flag 23
 
 
 gridTemplate : Flag
 gridTemplate =
-    flag 22
+    flag 24
 
 
 gridPosition : Flag
 gridPosition =
-    flag 23
+    flag 25
 
 
 widthBetween : Flag
 widthBetween =
-    flag 24
+    flag 26
 
 
 heightBetween : Flag
 heightBetween =
-    flag 25
-
-
-isLink : Flag
-isLink =
-    flag 26
+    flag 27
 
 
 background : Flag
 background =
-    flag 27
+    flag 28
 
 
 event : Flag
 event =
-    flag 28
-
-
-hasCssVars : Flag
-hasCssVars =
     flag 29
 
 

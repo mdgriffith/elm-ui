@@ -11,6 +11,8 @@ import Html.Keyed
 import Html.Lazy
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField exposing (BitField)
+import Internal.Bits.Analyze as AnalyzeBits
+import Internal.Bits.Inheritance as Inheritance
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Style.Generated as Generated
 import Internal.Style2 as Style
@@ -23,19 +25,9 @@ import Time
 import VirtualDom
 
 
-{-| Data to potentially pass down.
-
-1.  SpacingX, spacingY (could be 16 bits each if we use bitwise to split things)
-2.  Layout that we're in to know where spacing goes.
-3.  Id context?
-4.  Browser window size? (again using 16 bits for each.)
-5.  Width fill?
-
-(could encode this as a string...or at least the stuff that isn't used much)
-
--}
+{-| -}
 type Element msg
-    = Element (BitField.Bits Bits.Inheritance -> Html.Html msg)
+    = Element (Inheritance.Encoded -> Html.Html msg)
 
 
 map : (a -> b) -> Element a -> Element b
@@ -666,56 +658,17 @@ mapAttr fn (Attribute attr) =
         { flag = attr.flag
         , attr =
             case attr.attr of
-                NoAttribute ->
-                    NoAttribute
-
-                WidthFill i ->
-                    WidthFill i
-
-                HeightFill i ->
-                    HeightFill i
-
-                Font a ->
-                    Font a
-
-                FontSize i ->
-                    FontSize i
-
-                TransformPiece s t ->
-                    TransformPiece s t
-
-                OnPress msg ->
-                    OnPress (fn msg)
-
-                OnKey event ->
-                    OnKey (Attr.map fn event)
-
-                Spacing x y ->
-                    Spacing x y
-
-                Padding edges ->
-                    Padding edges
-
                 Attr a ->
-                    Attr (Attr.map fn a)
-
-                Link link ->
-                    Link link
-
-                Class cls ->
-                    Class cls
-
-                Style2 styleDetails ->
-                    Style2 styleDetails
-
-                Style styleDetails ->
-                    Style styleDetails
-
-                Nearby loc el ->
-                    Nearby loc (map fn el)
-
-                CssTeleport teleport ->
-                    CssTeleport teleport
+                    Attr
+                        { node = a.node
+                        , attrs = List.map (Attr.map fn) a.attrs
+                        , class = a.class
+                        , styles = a.styles
+                        , nearby =
+                            Maybe.map (\( loc, elem ) -> ( loc, map fn elem )) a.nearby
+                        , transform = a.transform
+                        , teleport = a.teleport
+                        }
         }
 
 
@@ -745,11 +698,93 @@ toCssId (Id one two) =
     one ++ "_" ++ two
 
 
+noAttr : Attribute msg
+noAttr =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+justFlag : Flag -> Attribute msg
+justFlag flag =
+    Attribute
+        { flag = flag
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+nearby : Location -> Element msg -> Attribute msg
+nearby loc el =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles = []
+                , nearby = Just ( loc, el )
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+teleport :
+    { class : String
+    , style : List ( String, String )
+    , data : Encode.Value
+    }
+    -> Attribute msg
+teleport options =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Just options.class
+                , styles = options.style
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Just options.data
+                }
+        }
+
+
 class : String -> Attribute msg
 class cls =
     Attribute
         { flag = Flag.skip
-        , attr = Attr (Attr.class cls)
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Just cls
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
         }
 
 
@@ -757,7 +792,33 @@ classWith : Flag -> String -> Attribute msg
 classWith flag cls =
     Attribute
         { flag = flag
-        , attr = Attr (Attr.class cls)
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Just cls
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+transformPiece : TransformSlot -> Float -> Attribute msg
+transformPiece slot value =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Just ( slot, value )
+                , teleport = Nothing
+                }
         }
 
 
@@ -772,48 +833,82 @@ type Attribute msg
         }
 
 
+
+-- type Attr msg
+--     = NoAttribute
+--     | OnPress msg
+--     | OnKey (Html.Attribute msg)
+--     | Attr (Html.Attribute msg)
+--     | Link
+-- { newTab : Bool
+-- , url : String
+-- , download : Maybe String
+-- }
+--     | WidthFill Int
+--     | HeightFill Int
+--     | Font
+--         { family : String
+--         , adjustments : Maybe (Inheritance.Encoded)
+--         , variants : String
+--         , smallCaps : Bool
+--         , weight : String
+--         , size : String
+--         }
+--     | FontSize Int
+--     | Spacing Int Int
+--     | Padding Edges
+--     | TransformPiece TransformSlot Float
+--     | Class String
+--     | Style
+--         { class : String
+--         , styleName : String
+--         , styleVal : String
+--         }
+--     | Style2
+--         { oneName : String
+--         , oneVal : String
+--         , twoName : String
+--         , twoVal : String
+--         }
+--     | Nearby Location (Element msg)
+--     | CssTeleport
+--         { class : String
+--         , style : List ( String, String )
+--         , data : Encode.Value
+--         }
+
+
 type Attr msg
-    = NoAttribute
-    | OnPress msg
-    | OnKey (Html.Attribute msg)
-    | Attr (Html.Attribute msg)
-    | Link
-        { newTab : Bool
-        , url : String
-        , download : Maybe String
+    = Attr
+        { node : Node
+        , attrs : List (Html.Attribute msg)
+        , class : Maybe String
+        , styles : List ( String, String )
+        , nearby : Maybe ( Location, Element msg )
+        , transform : Maybe ( TransformSlot, Float )
+        , teleport : Maybe Encode.Value
         }
-    | WidthFill Int
-    | HeightFill Int
-    | Font
-        { family : String
-        , adjustments : Maybe (BitField.Bits Bits.Inheritance)
-        , variants : String
-        , smallCaps : Bool
-        , weight : String
-        , size : String
-        }
-    | FontSize Int
-    | Spacing Int Int
-    | Padding Edges
-    | TransformPiece TransformSlot Float
-    | Class String
-    | Style
-        { class : String
-        , styleName : String
-        , styleVal : String
-        }
-    | Style2
-        { oneName : String
-        , oneVal : String
-        , twoName : String
-        , twoVal : String
-        }
-    | Nearby Location (Element msg)
-    | CssTeleport
-        { class : String
-        , style : List ( String, String )
-        , data : Encode.Value
-        }
+
+
+type Node
+    = NodeAsDiv
+    | NodeAsLink
+    | NodeAsParagraph
+    | NodeAsButton
+      -- Accessibility nodes
+    | NodeAsH1
+    | NodeAsH2
+    | NodeAsH3
+    | NodeAsH4
+    | NodeAsH5
+    | NodeAsH6
+    | NodeAsNav
+    | NodeAsMain
+    | NodeAsAside
+    | NodeAsSection
+    | NodeAsArticle
+    | NodeAsNumberedList
+    | NodeAsBulletedList
 
 
 type ResponsiveInt
@@ -966,14 +1061,7 @@ emptyDetails =
     }
 
 
-unwrap : BitField.Bits Bits.Inheritance -> Element msg -> Html.Html msg
-unwrap s el =
-    case el of
-        Element html ->
-            html s
-
-
-unwrapKeyed : BitField.Bits Bits.Inheritance -> ( String, Element msg ) -> ( String, Html.Html msg )
+unwrapKeyed : Inheritance.Encoded -> ( String, Element msg ) -> ( String, Html.Html msg )
 unwrapKeyed s el =
     case el of
         ( key, Element html ) ->
@@ -990,10 +1078,15 @@ text : String -> Element msg
 text str =
     Element
         (\encoded ->
-            -- if BitField.has Bits.isParagraph encoded then
-            --     Html.text str
-            -- else
-            Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+            if
+                BitField.has Inheritance.isRow encoded
+                    || BitField.has Inheritance.isColumn encoded
+                    || BitField.has Inheritance.hasTextModification encoded
+            then
+                Html.span [ Attr.class textElementClasses ] [ Html.text str ]
+
+            else
+                Html.text str
          -- if BitField.equal encoded Bits.row || BitField.equal encoded Bits.column then
          --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
          -- else
@@ -1073,24 +1166,160 @@ attrIf bool attr =
         noAttr
 
 
-noAttr =
-    Attribute
-        { flag = Flag.skip
-        , attr = NoAttribute
-        }
-
-
 attribute a =
     Attribute
         { flag = Flag.skip
-        , attr = Attr a
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = [ a ]
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
         }
 
 
 attributeWith flag a =
     Attribute
         { flag = flag
-        , attr = Attr a
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = [ a ]
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+attrList flag list =
+    Attribute
+        { flag = flag
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , attrs = list
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+onPress :
+    msg
+    -> Attribute msg
+onPress msg =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsButton
+                , attrs =
+                    [ Events.onClick msg
+
+                    --     Events.stopPropagationOn "pointerdown"
+                    --     (Json.succeed ( msg, True ))
+                    -- , onKeyListener "Enter"
+                    --     msg
+                    -- , Attr.tabindex
+                    --     0
+                    ]
+                , class = Just Style.classes.cursorPointer
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+onKey :
+    { key : String
+    , msg : msg
+    }
+    -> Attribute msg
+onKey details =
+    let
+        decode code =
+            if code == details.key then
+                Json.succeed details.msg
+
+            else
+                Json.fail "Not the enter key"
+
+        isKey =
+            Json.field "key" Json.string
+                |> Json.andThen decode
+    in
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsLink
+                , attrs =
+                    [ Events.preventDefaultOn "keyup"
+                        (Json.map
+                            (\fired ->
+                                ( fired
+                                , True
+                                )
+                            )
+                            isKey
+                        )
+                    , Attr.tabindex 0
+                    ]
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+link :
+    { newTab : Bool
+    , url : String
+    , download : Maybe String
+    }
+    -> Attribute msg
+link details =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsLink
+                , attrs =
+                    [ Attr.href details.url
+                    , Attr.rel "noopener noreferrer"
+                    , case details.download of
+                        Nothing ->
+                            Attr.target
+                                (if details.newTab then
+                                    "_blank"
+
+                                 else
+                                    "_self"
+                                )
+
+                        Just downloadName ->
+                            Attr.download downloadName
+                    ]
+                , class = Nothing
+                , styles = []
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
         }
 
 
@@ -1099,10 +1328,14 @@ style name val =
     Attribute
         { flag = Flag.skip
         , attr =
-            Style
-                { class = ""
-                , styleName = name
-                , styleVal = val
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles = [ ( name, val ) ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
                 }
         }
 
@@ -1117,11 +1350,14 @@ style2 oneName oneVal twoName twoVal =
     Attribute
         { flag = Flag.skip
         , attr =
-            Style2
-                { oneName = oneName
-                , oneVal = oneVal
-                , twoName = twoName
-                , twoVal = twoVal
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles = [ ( oneName, oneVal ), ( twoName, twoVal ) ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
                 }
         }
 
@@ -1131,10 +1367,14 @@ styleWith flag name val =
     Attribute
         { flag = flag
         , attr =
-            Style
-                { class = ""
-                , styleName = name
-                , styleVal = val
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Nothing
+                , styles = [ ( name, val ) ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
                 }
         }
 
@@ -1151,8 +1391,15 @@ styleAndClass flag v =
     Attribute
         { flag = flag
         , attr =
-            Style
-                v
+            Attr
+                { node = NodeAsDiv
+                , attrs = []
+                , class = Just v.class
+                , styles = [ ( v.styleName, v.styleVal ) ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
         }
 
 
@@ -1202,23 +1449,29 @@ renderLayout :
     -> Element msg
     -> Html.Html msg
 renderLayout { options } (State state) attrs content =
-    unwrap zero <|
-        element AsRoot
-            attrs
-            [ Element
-                (\_ ->
-                    Html.Keyed.node "div"
-                        []
-                        [ ( "options", Html.Lazy.lazy renderOptions options )
-                        , ( "static", staticStyles )
-                        , ( "animations", Html.Lazy.lazy styleRules state.rules )
-                        , ( "boxes"
-                          , Html.div [] (List.map viewBox state.boxes)
-                          )
-                        ]
-                )
-            , content
-            ]
+    let
+        rendered =
+            element NodeAsDiv
+                AsRoot
+                attrs
+                [ Element
+                    (\_ ->
+                        Html.Keyed.node "div"
+                            []
+                            [ ( "options", Html.Lazy.lazy renderOptions options )
+                            , ( "static", staticStyles )
+                            , ( "animations", Html.Lazy.lazy styleRules state.rules )
+                            , ( "boxes"
+                              , Html.div [] (List.map viewBox state.boxes)
+                              )
+                            ]
+                    )
+                , content
+                ]
+    in
+    case rendered of
+        Element toFinalLayout ->
+            toFinalLayout zero
 
 
 staticStyles : Html.Html msg
@@ -1258,160 +1511,205 @@ viewBox ( boxId, box ) =
 
 
 element :
-    Layout
-    -> List (Attribute msg)
-    -> List (Element msg)
-    -> Element msg
-element layout attrs children =
-    Element
-        (\parentBits ->
-            let
-                myBits =
-                    Bits.clearSpacing parentBits
-                        |> (if layout == AsRow then
-                                BitField.set Bits.isRow 1
-
-                            else
-                                BitField.set Bits.isRow 0
-                           )
-                        |> (if layout == AsParagraph then
-                                BitField.set Bits.isParagraph 1
-
-                            else
-                                BitField.set Bits.isParagraph 0
-                           )
-
-                rendered =
-                    renderAttrs
-                        parentBits
-                        myBits
-                        layout
-                        emptyDetails
-                        (ElemChildren children emptyNearbys)
-                        Flag.none
-                        []
-                        -- the "" below is the starting class
-                        -- though we want some defaults based on the layout
-                        (contextClasses layout)
-                        (List.reverse attrs)
-
-                finalAttrs =
-                    if Flag.present Flag.hasCssVars rendered.fields then
-                        let
-                            styleStr =
-                                renderInlineStylesToString
-                                    parentBits
-                                    myBits
-                                    layout
-                                    rendered.details
-                                    -- rendered.fields
-                                    Flag.none
-                                    ""
-                                    (List.reverse attrs)
-                        in
-                        Attr.property "style"
-                            (Encode.string
-                                styleStr
-                            )
-                            :: rendered.attrs
-
-                    else
-                        rendered.attrs
-            in
-            case rendered.children of
-                Children finalChildren ->
-                    if Flag.present Flag.isLink rendered.fields then
-                        Html.a finalAttrs finalChildren
-
-                    else if BitField.has Bits.isParagraph parentBits then
-                        Html.span finalAttrs finalChildren
-
-                    else
-                        Html.div finalAttrs finalChildren
-
-                _ ->
-                    Html.div finalAttrs []
-        )
-
-
-elementAs :
-    (List (Html.Attribute msg) -> List (Html.Html msg) -> Html.Html msg)
+    Node
     -> Layout
     -> List (Attribute msg)
     -> List (Element msg)
     -> Element msg
-elementAs toNode layout attrs children =
+element node layout attrs children =
     Element
         (\parentBits ->
             let
-                myBits =
-                    Bits.clearSpacing parentBits
-                        |> (if layout == AsRow then
-                                BitField.set Bits.isRow 1
+                myBaseBits =
+                    Inheritance.clearSpacing parentBits
+                        |> BitField.flip Inheritance.isRow (layout == AsRow)
+                        |> BitField.flip Inheritance.isColumn (layout == AsColumn)
 
-                            else
-                                BitField.set Bits.isRow 0
-                           )
-                        |> (if layout == AsParagraph then
-                                BitField.set Bits.isParagraph 1
+                ( analyzedBits, myBits ) =
+                    analyze Flag.none BitField.init myBaseBits attrs
 
-                            else
-                                BitField.set Bits.isParagraph 0
-                           )
+                htmlAttrs =
+                    toAttrs parentBits myBits Flag.none [] [] attrs
 
-                rendered =
-                    renderAttrs
-                        parentBits
-                        myBits
-                        layout
-                        emptyDetails
-                        (ElemChildren children emptyNearbys)
-                        Flag.none
-                        []
-                        -- the "" below is the starting class
-                        -- though we want some defaults based on the layout
-                        (contextClasses layout)
-                        (List.reverse attrs)
-
-                finalAttrs =
-                    if Flag.present Flag.hasCssVars rendered.fields then
+                styleAttrs =
+                    if BitField.has AnalyzeBits.cssVars analyzedBits then
                         let
-                            styleStr =
-                                renderInlineStylesToString
-                                    parentBits
-                                    myBits
-                                    layout
-                                    rendered.details
-                                    rendered.fields
+                            transformString =
+                                if BitField.has AnalyzeBits.transforms analyzedBits then
+                                    "transform:" ++ toTransformString parentBits myBits Flag.none 0 1 0 0 0 attrs ++ ";"
+
+                                else
                                     ""
-                                    (List.reverse attrs)
                         in
                         Attr.property "style"
                             (Encode.string
-                                styleStr
+                                (toStyleString parentBits myBits Flag.none transformString attrs)
                             )
-                            :: rendered.attrs
+                            :: htmlAttrs
 
                     else
-                        rendered.attrs
+                        let
+                            startingProps =
+                                if BitField.has AnalyzeBits.transforms analyzedBits then
+                                    Attr.style "transform" (toTransformString parentBits myBits Flag.none 0 1 0 0 0 attrs)
+                                        :: htmlAttrs
+
+                                else
+                                    htmlAttrs
+                        in
+                        toStyle parentBits myBits Flag.none startingProps (contextClasses layout) attrs
+
+                -- classStr =
+                --     toClass parentBits myBits Flag.none (contextClasses layout) attrs
+                finalChildren =
+                    toChildren myBits analyzedBits attrs children
             in
-            case rendered.children of
-                Children finalChildren ->
-                    if Flag.present Flag.isLink rendered.fields then
-                        Html.a finalAttrs finalChildren
+            if BitField.has AnalyzeBits.isLink analyzedBits then
+                Html.a styleAttrs finalChildren
 
-                    else
-                        toNode finalAttrs finalChildren
+            else if BitField.has AnalyzeBits.isButton analyzedBits then
+                Html.button styleAttrs finalChildren
 
-                _ ->
-                    toNode finalAttrs []
+            else
+                case node of
+                    NodeAsDiv ->
+                        Html.div styleAttrs finalChildren
+
+                    NodeAsLink ->
+                        Html.a styleAttrs finalChildren
+
+                    NodeAsParagraph ->
+                        Html.p styleAttrs finalChildren
+
+                    NodeAsButton ->
+                        Html.button styleAttrs finalChildren
+
+                    NodeAsH1 ->
+                        Html.h1 styleAttrs finalChildren
+
+                    NodeAsH2 ->
+                        Html.h2 styleAttrs finalChildren
+
+                    NodeAsH3 ->
+                        Html.h3 styleAttrs finalChildren
+
+                    NodeAsH4 ->
+                        Html.h4 styleAttrs finalChildren
+
+                    NodeAsH5 ->
+                        Html.h5 styleAttrs finalChildren
+
+                    NodeAsH6 ->
+                        Html.h6 styleAttrs finalChildren
+
+                    NodeAsNav ->
+                        Html.nav styleAttrs finalChildren
+
+                    NodeAsMain ->
+                        Html.main_ styleAttrs finalChildren
+
+                    NodeAsAside ->
+                        Html.aside styleAttrs finalChildren
+
+                    NodeAsSection ->
+                        Html.section styleAttrs finalChildren
+
+                    NodeAsArticle ->
+                        Html.article styleAttrs finalChildren
+
+                    NodeAsNumberedList ->
+                        Html.ol styleAttrs finalChildren
+
+                    NodeAsBulletedList ->
+                        Html.ul styleAttrs finalChildren
         )
 
 
-emptyNearbys =
-    { behind = []
-    , inFront = []
-    }
+toTransformString :
+    Inheritance.Encoded
+    -> Inheritance.Encoded
+    -> Flag.Field
+    -> Float
+    -> Float
+    -> Float
+    -> Float
+    -> Float
+    -> List (Attribute msg)
+    -> String
+toTransformString parentBits myBits has rotation scale x y z attrs =
+    case attrs of
+        [] ->
+            "translate("
+                ++ String.fromFloat x
+                ++ "px, "
+                ++ String.fromFloat y
+                ++ "px, "
+                ++ String.fromFloat z
+                ++ "px) rotate("
+                ++ String.fromFloat rotation
+                ++ "rad) scale("
+                ++ String.fromFloat scale
+                ++ ")"
+
+        (Attribute { flag, attr }) :: remain ->
+            let
+                alwaysRender =
+                    case flag of
+                        Flag.Flag f ->
+                            f == 0
+
+                previouslyRendered =
+                    if alwaysRender then
+                        False
+
+                    else
+                        Flag.present flag has
+            in
+            if previouslyRendered then
+                toTransformString parentBits myBits has rotation scale x y z remain
+
+            else
+                case attr of
+                    Attr details ->
+                        case details.transform of
+                            Nothing ->
+                                toTransformString parentBits myBits (Flag.add flag has) rotation scale x y z remain
+
+                            Just ( 0, newX ) ->
+                                toTransformString parentBits myBits (Flag.add flag has) rotation scale newX y z remain
+
+                            Just ( 1, newY ) ->
+                                toTransformString parentBits myBits (Flag.add flag has) rotation scale x newY z remain
+
+                            Just ( 2, newRotation ) ->
+                                toTransformString parentBits myBits (Flag.add flag has) newRotation scale x y z remain
+
+                            Just ( 3, newScale ) ->
+                                toTransformString parentBits myBits (Flag.add flag has) rotation newScale x y z remain
+
+                            _ ->
+                                toTransformString parentBits myBits (Flag.add flag has) rotation scale x y z remain
+
+
+toChildren :
+    Inheritance.Encoded
+    -> AnalyzeBits.Encoded
+    -> List (Attribute msg)
+    -> List (Element msg)
+    -> List (Html.Html msg)
+toChildren myBits analyzedBits attrs children =
+    if BitField.has AnalyzeBits.nearbys analyzedBits then
+        let
+            behind =
+                toBehindElements myBits [] attrs
+
+            after =
+                toNearbyElements myBits [] attrs
+        in
+        behind ++ List.map (\(Element toChild) -> toChild myBits) children ++ after
+
+    else
+        List.map (\(Element toChild) -> toChild myBits) children
 
 
 elementKeyed :
@@ -1423,70 +1721,65 @@ elementKeyed :
 elementKeyed name layout attrs children =
     Element
         (\parentBits ->
-            let
-                rendered =
-                    renderAttrs
-                        parentBits
-                        (Bits.clearSpacing parentBits
-                            |> (if layout == AsRow then
-                                    BitField.set Bits.isRow 1
-
-                                else
-                                    BitField.set Bits.isRow 0
-                               )
-                            |> (if layout == AsParagraph then
-                                    BitField.set Bits.isParagraph 1
-
-                                else
-                                    BitField.set Bits.isParagraph 0
-                               )
-                        )
-                        layout
-                        emptyDetails
-                        (ElemKeyed children emptyKeyedNearbys)
-                        Flag.none
-                        []
-                        -- the "" below is the starting class
-                        -- though we want some defaults based on the layout
-                        (contextClasses layout)
-                        (List.reverse attrs)
-
-                finalAttrs =
-                    if Flag.present Flag.hasCssVars rendered.fields then
-                        let
-                            styleStr =
-                                renderInlineStylesToString
-                                    parentBits
-                                    rendered.myBits
-                                    layout
-                                    rendered.details
-                                    rendered.fields
-                                    ""
-                                    (List.reverse attrs)
-                        in
-                        Attr.property "style"
-                            (Encode.string
-                                styleStr
-                            )
-                            :: rendered.attrs
-
-                    else
-                        rendered.attrs
-            in
-            case rendered.children of
-                Keyed finalChildren ->
-                    Html.Keyed.node
-                        (if Flag.present Flag.isLink rendered.fields then
-                            "a"
-
-                         else
-                            name
-                        )
-                        finalAttrs
-                        finalChildren
-
-                _ ->
-                    Html.div finalAttrs []
+            -- let
+            --     rendered =
+            --         renderAttrs
+            --             parentBits
+            --             (Bits.clearSpacing parentBits
+            --                 |> (if layout == AsRow then
+            --                         BitField.set Bits.isRow 1
+            --                     else
+            --                         BitField.set Bits.isRow 0
+            --                    )
+            --                 |> (if layout == AsParagraph then
+            --                         BitField.set Bits.isParagraph 1
+            --                     else
+            --                         BitField.set Bits.isParagraph 0
+            --                    )
+            --             )
+            --             layout
+            --             emptyDetails
+            --             (ElemKeyed children emptyKeyedNearbys)
+            --             Flag.none
+            --             []
+            --             -- the "" below is the starting class
+            --             -- though we want some defaults based on the layout
+            --             (contextClasses layout)
+            --             (List.reverse attrs)
+            --     finalAttrs =
+            --         if Flag.present Flag.hasCssVars rendered.fields then
+            --             let
+            --                 styleStr =
+            --                     renderInlineStylesToString
+            --                         parentBits
+            --                         rendered.myBits
+            --                         layout
+            --                         rendered.details
+            --                         rendered.fields
+            --                         ""
+            --                         (List.reverse attrs)
+            --             in
+            --             Attr.property "style"
+            --                 (Encode.string
+            --                     styleStr
+            --                 )
+            --                 :: rendered.attrs
+            --         else
+            --             rendered.attrs
+            -- in
+            -- case rendered.children of
+            --     Keyed finalChildren ->
+            --         Html.Keyed.node
+            --             (if Flag.present Flag.isLink rendered.fields then
+            --                 "a"
+            --              else
+            --                 name
+            --             )
+            --             finalAttrs
+            --             finalChildren
+            --     _ ->
+            --         Html.div finalAttrs []
+            Html.div [] []
         )
 
 
@@ -1519,252 +1812,23 @@ fontSizeAdjusted size height =
     toFloat size * (1 / height)
 
 
-{-| We track a number of things in the function and it can be difficult to remember exactly why.
+{-|
 
-A lot of these questions essentially fall to, "do we do the work or do we count on the browser to do it."
-
-So, let's try to give an overview of all the systems:
-
-  - In order to render Font.gradient, (possibly) TextColumn spacing, and Responsive.value/fluid, we need to maintain css variables
-    This means detecting if we need to render a css variable, and at the end, rerender styles as a `Property` instead of `style`.
+    1. What nodes are we rendering?
+    2. Do any attributes use css variables?
+    3. Are there any transforms?
 
 -}
-renderAttrs :
-    BitField.Bits Bits.Inheritance
-    -> BitField.Bits Bits.Inheritance
-    -> Layout
-    -> Details
-    -> ElemChildren msg
-    -> Flag.Field
-    -> List (VirtualDom.Attribute msg)
-    -> String
+analyze :
+    Flag.Field
+    -> AnalyzeBits.Encoded
+    -> Inheritance.Encoded
     -> List (Attribute msg)
-    ->
-        { fields : Flag.Field
-        , myBits : BitField.Bits Bits.Inheritance
-        , details : Details
-        , attrs : List (Html.Attribute msg)
-        , children : Children msg
-        }
-renderAttrs parentBits myBits layout details children has htmlAttrs classes attrs =
+    -> ( AnalyzeBits.Encoded, Inheritance.Encoded )
+analyze has encoded inheritance attrs =
     case attrs of
         [] ->
-            let
-                attrsWithParentSpacing =
-                    if Bits.hasSpacing parentBits && BitField.has Bits.isParagraph parentBits then
-                        Attr.style "margin"
-                            ((parentBits
-                                |> BitField.get Bits.spacingY
-                                |> String.fromInt
-                             )
-                                ++ "px "
-                                ++ (parentBits
-                                        |> BitField.get Bits.spacingX
-                                        |> String.fromInt
-                                   )
-                                ++ "px"
-                            )
-                            :: htmlAttrs
-
-                    else
-                        htmlAttrs
-
-                attrsWithTransform =
-                    case details.transform of
-                        Nothing ->
-                            attrsWithParentSpacing
-
-                        Just trans ->
-                            Attr.style "transform"
-                                (transformToString trans)
-                                :: attrsWithParentSpacing
-
-                adjustmentNotSet =
-                    not (Flag.present Flag.fontAdjustment has)
-
-                -- {-
-                --    no fontsize or adjustment -> skip
-                --    if fontsize is set, not adjustment:
-                --        -> set fontsize px
-                --    adjsutment, not fontsize
-                --        -> set font size (em
-                --    if both are set
-                --        -> fontsize px
-                -- -}
-                -- attrsWithFontSize =
-                --     if details.fontSize == -1 && adjustmentNotSet then
-                --         -- no fontsize or adjustment set
-                --         attrsWithTransform
-                --     else if adjustmentNotSet then
-                --         -- font size is set, not adjustment
-                --         -- set font size, adjust via inherited value
-                --         let
-                --             height =
-                --                 parentBits
-                --                     |> BitField.getPercentage Bits.fontHeight
-                --         in
-                --         Attr.style "font-size"
-                --             (String.fromFloat
-                --                 (toFloat details.fontSize * (1 / height))
-                --                 ++ "px"
-                --             )
-                --             :: attrsWithTransform
-                --     else if details.fontSize /= -1 then
-                --         -- a font size is set as well as an adjustment
-                --         -- set font size from details
-                --         let
-                --             fontHeight =
-                --                 myBits
-                --                     |> BitField.getPercentage Bits.fontHeight
-                --         in
-                --         Attr.style "font-size"
-                --             (String.fromFloat
-                --                 (toFloat details.fontSize * (1 / fontHeight))
-                --                 ++ "px"
-                --             )
-                --             :: attrsWithTransform
-                --     else
-                --         -- a font size is NOT set, but we have an adjustment
-                --         -- operate on `em`
-                --         let
-                --             fontHeight =
-                --                 myBits
-                --                     |> BitField.getPercentage Bits.fontHeight
-                --         in
-                --         Attr.style "font-size"
-                --             (String.fromFloat
-                --                 (1 / fontHeight)
-                --                 ++ "em"
-                --             )
-                --             :: attrsWithTransform
-                attrsWithAnimations =
-                    case details.teleportData of
-                        [] ->
-                            attrsWithTransform
-
-                        teleportData ->
-                            Attr.property "data-elm-ui" (Encode.list identity teleportData)
-                                :: attrsWithTransform
-
-                attrsWithWidthFill =
-                    if Flag.present Flag.width has then
-                        -- we know we've set the width to fill
-                        attrsWithAnimations
-                        -- else if
-                        --     not
-                        --         (Flag.present Flag.borderWidth has
-                        --             || Flag.present Flag.background has
-                        --             || Flag.present Flag.event has
-                        --         )
-                        --         && not (BitField.has Bits.isRow parentBits)
-                        -- then
-                        --     Attr.class Style.classes.widthFill
-                        --         :: attrsWithAnimations
-
-                    else
-                        -- we are not widthFill, we set it to widthContent
-                        Attr.class Style.classes.widthContent
-                            :: attrsWithAnimations
-
-                finalAttrs =
-                    if Flag.present Flag.height has then
-                        -- we know we've set the width to fill
-                        Attr.class classes
-                            :: attrsWithWidthFill
-                        -- else if
-                        --     not
-                        --         (Flag.present Flag.borderWidth has
-                        --             || Flag.present Flag.background has
-                        --             || Flag.present Flag.event has
-                        --         )
-                        --         && BitField.has Bits.isRow parentBits
-                        -- then
-                        --     Attr.class (classes ++ " " ++ Style.classes.heightFill)
-                        --         :: attrsWithWidthFill
-
-                    else
-                        Attr.class (classes ++ " " ++ Style.classes.heightContent)
-                            :: attrsWithWidthFill
-
-                {- RENDER NEARBY CHILDREN -}
-                renderedChildren =
-                    case children of
-                        ElemChildren elems nearby ->
-                            Children <|
-                                (List.map (unwrap myBits) nearby.behind
-                                    ++ List.map (unwrap myBits) elems
-                                    ++ List.map (unwrap myBits) nearby.inFront
-                                )
-
-                        ElemKeyed keyedElems nearby ->
-                            Keyed <|
-                                List.map
-                                    (unwrapKeyed myBits)
-                                    nearby.behind
-                                    ++ List.map (unwrapKeyed myBits) keyedElems
-                                    ++ List.map
-                                        (unwrapKeyed myBits)
-                                        nearby.inFront
-
-                spacingY =
-                    BitField.get Bits.spacingY myBits
-
-                finalChildren =
-                    -- case renderedChildren of
-                    --     Keyed keyedChilds ->
-                    --         case layout of
-                    --             AsParagraph ->
-                    --                 Keyed <|
-                    --                     if Flag.present Flag.id has then
-                    --                         -- ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
-                    --                             -- :: ( "top-spacer", spacerTop (toFloat spacingY / -2) )
-                    --                             -- ::
-                    --                             keyedChilds
-                    --                         -- ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
-                    --                     else
-                    --                         -- ( "top-spacer", spacerTop (toFloat spacingY / -2) )
-                    --                         -- ::
-                    --                         keyedChilds
-                    --             -- ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
-                    --             _ ->
-                    --                 if Flag.present Flag.id has then
-                    --                     -- (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
-                    --                         -- ::
-                    --                          keyedChilds
-                    --                     -- )
-                    --                         |> Keyed
-                    --                 else
-                    --                     renderedChildren
-                    --     Children childs ->
-                    --         case layout of
-                    --             AsParagraph ->
-                    --                 Children <|
-                    --                     if Flag.present Flag.id has then
-                    --                         Html.div (Attr.class "ui-movable" :: finalAttrs) childs
-                    --                             -- :: spacerTop (toFloat spacingY / -2)
-                    --                             :: childs
-                    --                         -- ++ [ spacerBottom (toFloat spacingY / -2) ]
-                    --                     else
-                    --                         -- spacerTop (toFloat spacingY / -2)
-                    --                         -- ::
-                    --                         childs
-                    --             -- ++ [ spacerBottom (toFloat spacingY / -2) ]
-                    --             _ ->
-                    --                 if Flag.present Flag.id has then
-                    --                     (Html.div (Attr.class "ui-movable" :: finalAttrs) childs
-                    --                         :: childs
-                    --                     )
-                    --                         |> Children
-                    --                 else
-                    --                     renderedChildren
-                    renderedChildren
-            in
-            { fields = has
-            , myBits = myBits
-            , attrs = finalAttrs
-            , children = finalChildren
-            , details = details
-            }
+            ( encoded, inheritance )
 
         (Attribute { flag, attr }) :: remain ->
             let
@@ -1781,356 +1845,276 @@ renderAttrs parentBits myBits layout details children has htmlAttrs classes attr
                         Flag.present flag has
             in
             if previouslyRendered then
-                renderAttrs parentBits myBits layout details children has htmlAttrs classes remain
+                analyze has encoded inheritance remain
 
             else
                 case attr of
-                    NoAttribute ->
-                        renderAttrs parentBits myBits layout details children has htmlAttrs classes remain
-
-                    FontSize size ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (Attr.style "font-size"
-                                (String.fromFloat
-                                    (fontSizeAdjusted size
-                                        (parentBits
-                                            |> BitField.getPercentage Bits.fontHeight
+                    Attr details ->
+                        let
+                            newEncoded =
+                                encoded
+                                    |> BitField.flipIf AnalyzeBits.transforms (details.transform /= Nothing)
+                                    |> BitField.flipIf AnalyzeBits.nearbys (details.nearby /= Nothing)
+                                    |> BitField.flipIf AnalyzeBits.cssVars
+                                        (Flag.equal Flag.fontGradient flag)
+                                    |> BitField.flipIf AnalyzeBits.isLink
+                                        (NodeAsLink == details.node)
+                                    |> BitField.flipIf AnalyzeBits.isButton
+                                        ((NodeAsButton == details.node)
+                                            && not (BitField.has AnalyzeBits.isLink encoded)
                                         )
-                                    )
-                                    ++ "px"
-                                )
-                                :: htmlAttrs
-                            )
-                            classes
-                            remain
 
-                    Font font ->
-                        let
-                            withSmallcaps =
-                                if font.smallCaps then
-                                    Attr.style "font-variant-caps" "small-caps"
-                                        :: htmlAttrs
-
-                                else
-                                    htmlAttrs
-
-                            withFeatures =
-                                if font.variants == "" then
-                                    withSmallcaps
-
-                                else
-                                    Attr.style "font-feature-settings" font.variants
-                                        :: withSmallcaps
+                            newInheritance =
+                                inheritance
+                                    |> BitField.flipIf Inheritance.hasTextModification
+                                        (Flag.equal Flag.fontGradient flag || Flag.equal Flag.fontEllipsis flag)
                         in
-                        renderAttrs parentBits
-                            (case font.adjustments of
-                                Nothing ->
-                                    myBits
+                        analyze (Flag.add flag has) newEncoded newInheritance remain
 
-                                Just adj ->
-                                    myBits
-                                        |> BitField.copy Bits.fontHeight adj
-                                        |> BitField.copy Bits.fontOffset adj
-                            )
-                            layout
-                            { fontSize = details.fontSize
-                            , transform = details.transform
-                            , teleportData = details.teleportData
-                            }
-                            children
-                            (case font.adjustments of
-                                Nothing ->
-                                    has
 
-                                Just _ ->
-                                    Flag.add Flag.fontAdjustment has
-                            )
-                            (Attr.style "font-family" font.family
-                                :: Attr.style "font-size" font.size
-                                :: Attr.style "font-weight" font.weight
-                                :: withFeatures
-                            )
-                            classes
-                            remain
+toAttrs :
+    Inheritance.Encoded
+    -> Inheritance.Encoded
+    -> Flag.Field
+    -> List (VirtualDom.Attribute msg)
+    -> List Json.Value
+    -> List (Attribute msg)
+    -> List (Html.Attribute msg)
+toAttrs parentBits myBits has htmlAttrs teleported attrs =
+    case attrs of
+        [] ->
+            case teleported of
+                [] ->
+                    htmlAttrs
 
-                    TransformPiece slot val ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            { details | transform = Just (upsertTransform slot val details.transform) }
-                            children
-                            (Flag.add flag has)
-                            htmlAttrs
-                            classes
-                            remain
+                _ ->
+                    Attr.property "data-elm-ui" (Encode.list identity teleported) :: htmlAttrs
 
-                    Attr htmlAttr ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (htmlAttr :: htmlAttrs)
-                            classes
-                            remain
+        (Attribute { flag, attr }) :: remain ->
+            let
+                alwaysRender =
+                    case flag of
+                        Flag.Flag f ->
+                            f == 0
 
-                    OnPress msg ->
-                        -- Make focusable
-                        -- Attach keyboard handler
-                        -- Attach click handler
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (Events.stopPropagationOn "pointerdown"
-                                (Json.succeed ( msg, True ))
-                                :: onKey "Enter" msg
-                                :: Attr.tabindex 0
-                                :: htmlAttrs
-                            )
-                            (Style.classes.cursorPointer
-                                ++ " "
-                                ++ classes
-                            )
-                            remain
+                previouslyRendered =
+                    if alwaysRender then
+                        False
 
-                    OnKey handler ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (handler
-                                :: Attr.tabindex 0
-                                :: htmlAttrs
-                            )
-                            classes
-                            remain
+                    else
+                        Flag.present flag has
+            in
+            if previouslyRendered then
+                toAttrs parentBits myBits has htmlAttrs teleported remain
 
-                    Link link ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (Attr.href link.url
-                                :: Attr.rel "noopener noreferrer"
-                                :: (case link.download of
-                                        Nothing ->
-                                            Attr.target
-                                                (if link.newTab then
-                                                    "_blank"
+            else
+                case attr of
+                    Attr details ->
+                        case details.attrs of
+                            [] ->
+                                toAttrs parentBits myBits has htmlAttrs teleported remain
 
-                                                 else
-                                                    "_self"
-                                                )
-
-                                        Just downloadName ->
-                                            Attr.download downloadName
-                                   )
-                                :: htmlAttrs
-                            )
-                            classes
-                            remain
-
-                    Style2 styleDetails ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (Attr.style styleDetails.oneName styleDetails.oneVal
-                                :: Attr.style styleDetails.twoName styleDetails.twoVal
-                                :: htmlAttrs
-                            )
-                            classes
-                            remain
-
-                    Style styleDetails ->
-                        let
-                            isVar =
-                                String.startsWith "--" styleDetails.styleName
-                        in
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (if isVar then
+                            _ ->
                                 let
-                                    _ =
-                                        Debug.log "HAS VAR" styleDetails.styleName
+                                    newAttrs =
+                                        case details.attrs of
+                                            [] ->
+                                                htmlAttrs
+
+                                            [ single ] ->
+                                                single :: htmlAttrs
+
+                                            [ first, second ] ->
+                                                first :: second :: htmlAttrs
+
+                                            list ->
+                                                list ++ htmlAttrs
+
+                                    newTeleported =
+                                        case details.teleport of
+                                            Nothing ->
+                                                teleported
+
+                                            Just newTele ->
+                                                newTele :: teleported
                                 in
-                                has
-                                    |> Flag.add flag
-                                    |> Flag.add Flag.hasCssVars
+                                toAttrs parentBits myBits (Flag.add flag has) newAttrs newTeleported remain
 
-                             else
-                                Flag.add flag has
-                            )
-                            (if isVar then
-                                htmlAttrs
 
-                             else
-                                Attr.style styleDetails.styleName styleDetails.styleVal :: htmlAttrs
-                            )
-                            (case styleDetails.class of
-                                "" ->
-                                    classes
+toBehindElements :
+    Inheritance.Encoded
+    -> List (Html.Html msg)
+    -> List (Attribute msg)
+    -> List (Html.Html msg)
+toBehindElements inheritance foundElems attrs =
+    case attrs of
+        [] ->
+            foundElems
 
-                                newClass ->
-                                    newClass ++ " " ++ classes
-                            )
-                            remain
+        (Attribute { attr }) :: remain ->
+            case attr of
+                Attr details ->
+                    case details.nearby of
+                        Just ( Behind, behindElem ) ->
+                            toBehindElements inheritance (nearbyToHtml inheritance Behind behindElem :: foundElems) remain
 
-                    Class str ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            htmlAttrs
-                            (str ++ " " ++ classes)
-                            remain
+                        _ ->
+                            toBehindElements inheritance foundElems remain
 
-                    Nearby location elem ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            (addNearbyElement location elem children)
-                            has
-                            htmlAttrs
-                            classes
-                            remain
 
-                    Spacing x y ->
-                        renderAttrs parentBits
-                            (if layout == AsTextColumn || layout == AsParagraph then
-                                myBits
-                                    |> BitField.set Bits.spacingX x
-                                    |> BitField.set Bits.spacingY y
+toNearbyElements :
+    Inheritance.Encoded
+    -> List (Html.Html msg)
+    -> List (Attribute msg)
+    -> List (Html.Html msg)
+toNearbyElements inheritance foundElems attrs =
+    case attrs of
+        [] ->
+            foundElems
 
-                             else
-                                myBits
-                            )
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (Attr.style "gap"
-                                (String.fromInt y
-                                    ++ "px "
-                                    ++ String.fromInt x
-                                    ++ "px"
-                                )
-                                :: htmlAttrs
-                            )
-                            (Style.classes.spacing ++ " " ++ classes)
-                            remain
+        (Attribute { attr }) :: remain ->
+            case attr of
+                Attr details ->
+                    case details.nearby of
+                        Nothing ->
+                            toNearbyElements inheritance foundElems remain
 
-                    Padding padding ->
-                        -- This is tracked because we're doing something weird with Input rendering.
-                        -- Myabe it's not necessary if we get smarter about how the Text input is rendered?
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
-                                Attr.style "padding"
-                                    (String.fromInt padding.top ++ "px")
-                                    :: htmlAttrs
+                        Just ( Behind, _ ) ->
+                            toNearbyElements inheritance foundElems remain
 
-                             else
-                                Attr.style "padding"
-                                    ((String.fromInt padding.top ++ "px ")
-                                        ++ (String.fromInt padding.right ++ "px ")
-                                        ++ (String.fromInt padding.bottom ++ "px ")
-                                        ++ (String.fromInt padding.left ++ "px")
-                                    )
-                                    :: htmlAttrs
-                            )
-                            classes
-                            remain
+                        Just ( location, nearbyElem ) ->
+                            toNearbyElements inheritance (nearbyToHtml inheritance location nearbyElem :: foundElems) remain
 
-                    HeightFill i ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            -- we're in a column
-                            (if i > 1 && not (BitField.has Bits.isRow parentBits) then
-                                Attr.style "flex-grow" (String.fromInt (i * 100000))
-                                    :: htmlAttrs
 
-                             else
-                                htmlAttrs
-                            )
-                            (if i <= 0 then
-                                classes
+toClass :
+    Inheritance.Encoded
+    -> Inheritance.Encoded
+    -> Flag.Field
+    -> String
+    -> List (Attribute msg)
+    -> String
+toClass parentBits myBits has renderedClass attrs =
+    case attrs of
+        [] ->
+            renderedClass
 
-                             else
-                                Style.classes.heightFill
-                                    ++ " "
-                                    ++ classes
-                            )
-                            remain
+        (Attribute { flag, attr }) :: remain ->
+            let
+                alwaysRender =
+                    case flag of
+                        Flag.Flag f ->
+                            f == 0
 
-                    WidthFill i ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            details
-                            children
-                            (Flag.add flag has)
-                            (if i > 1 && BitField.has Bits.isRow parentBits then
-                                Attr.style "flex-grow" (String.fromInt (i * 100000))
-                                    :: htmlAttrs
+                previouslyRendered =
+                    if alwaysRender then
+                        False
 
-                             else
-                                htmlAttrs
-                            )
-                            (if i <= 0 then
-                                classes
+                    else
+                        Flag.present flag has
+            in
+            if previouslyRendered then
+                toClass parentBits myBits has renderedClass remain
 
-                             else
-                                Style.classes.widthFill
-                                    ++ " "
-                                    ++ classes
-                            )
-                            remain
+            else
+                case attr of
+                    Attr details ->
+                        case details.class of
+                            Nothing ->
+                                toClass parentBits myBits has renderedClass remain
 
-                    CssTeleport teleport ->
-                        renderAttrs parentBits
-                            myBits
-                            layout
-                            { fontSize = details.fontSize
-                            , transform = details.transform
-                            , teleportData = teleport.data :: details.teleportData
-                            }
-                            children
-                            (Flag.add flag has)
-                            (htmlAttrs
-                                |> addStyles teleport.style
-                            )
-                            (teleport.class ++ " " ++ classes)
-                            remain
+                            Just classStr ->
+                                toClass parentBits myBits (Flag.add flag has) (renderedClass ++ " " ++ classStr) remain
+
+
+toStyle :
+    Inheritance.Encoded
+    -> Inheritance.Encoded
+    -> Flag.Field
+    -> List (VirtualDom.Attribute msg)
+    -> String
+    -> List (Attribute msg)
+    -> List (Html.Attribute msg)
+toStyle parentBits myBits has htmlAttrs classes attrs =
+    case attrs of
+        [] ->
+            Attr.class classes :: htmlAttrs
+
+        (Attribute { flag, attr }) :: remain ->
+            let
+                alwaysRender =
+                    case flag of
+                        Flag.Flag f ->
+                            f == 0
+
+                previouslyRendered =
+                    if alwaysRender then
+                        False
+
+                    else
+                        Flag.present flag has
+            in
+            if previouslyRendered then
+                toStyle parentBits myBits has htmlAttrs classes remain
+
+            else
+                case attr of
+                    Attr details ->
+                        -- let
+                        --     newClasses =
+                        --         case details.class of
+                        --             Nothing ->
+                        --                 classes
+                        --             Just classStr ->
+                        --                 classes ++ " " ++ classStr
+                        -- in
+                        -- case details.class of
+                        --     Nothing ->
+                        case details.styles of
+                            [] ->
+                                toStyle parentBits myBits has htmlAttrs classes remain
+
+                            [ ( name, val ) ] ->
+                                toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: htmlAttrs) classes remain
+
+                            [ ( name, val ), ( twoName, twoVal ) ] ->
+                                toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: Attr.style twoName twoVal :: htmlAttrs) classes remain
+
+                            list ->
+                                toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) classes remain
+
+
+
+-- Just classStr ->
+--     case details.styles of
+--         [] ->
+--             toStyle parentBits myBits has htmlAttrs (classes ++ " " ++ classStr) remain
+--         [ ( name, val ) ] ->
+--             toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: htmlAttrs) (classes ++ " " ++ classStr) remain
+--         [ ( name, val ), ( twoName, twoVal ) ] ->
+-- toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: Attr.style twoName twoVal :: htmlAttrs) (classes ++ " " ++ classStr) remain
+--     list ->
+--         toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) (classes ++ " " ++ classStr) remain
+-- case details.class of
+--     Nothing ->
+--         case details.styles of
+--             [] ->
+--                 toStyle parentBits myBits has htmlAttrs classes remain
+--             [ ( name, val ) ] ->
+--                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ name) remain
+--             [ ( name, val ), ( twoName, twoVal ) ] ->
+--                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ name ++ " " ++ twoName) remain
+--             list ->
+--                 toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) classes remain
+--     Just classStr ->
+--         case details.styles of
+--             [] ->
+--                 toStyle parentBits myBits has htmlAttrs (classes ++ " " ++ classStr) remain
+--             [ ( name, val ) ] ->
+--                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ classStr ++ " " ++ name) remain
+--             [ ( name, val ), ( twoName, twoVal ) ] ->
+--                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ classStr ++ " " ++ name ++ " " ++ twoName) remain
+--             list ->
+--                 toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) (classes ++ " " ++ classStr) remain
 
 
 addStyles : List ( String, String ) -> List (Html.Attribute msg) -> List (Html.Attribute msg)
@@ -2144,133 +2128,17 @@ addStyles styles attrs =
                 (Attr.style name val :: attrs)
 
 
-addStylesToString : List ( String, String ) -> String -> String
-addStylesToString styles attrs =
-    case styles of
-        [] ->
-            attrs
-
-        ( name, val ) :: remain ->
-            addStylesToString remain
-                (name ++ ":" ++ val ++ ";" ++ attrs)
-
-
-{-| In order to make css variables work, we need to gather all styles into a `Attribute.property "style"`
-
-However, that method is slower than calling `Html.Attributes.style` directly,
-because it requires the browser to parse the string instead of setting styles directly via style.setProperty or whatever.
-
-This does mean we only want to use css variables sparingly.
-
--}
-renderInlineStylesToString :
-    BitField.Bits Bits.Inheritance
-    -> BitField.Bits Bits.Inheritance
-    -> Layout
-    -> Details
+toStyleString :
+    Inheritance.Encoded
+    -> Inheritance.Encoded
     -> Flag.Field
     -> String
     -> List (Attribute msg)
     -> String
-renderInlineStylesToString parentBits myBits layout details has vars attrs =
+toStyleString parentBits myBits has str attrs =
     case attrs of
         [] ->
-            let
-                varsWithParentSpacing =
-                    -- if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
-                    --     "margin: "
-                    --         ++ ((parentBits
-                    --                 |> BitField.get Bits.spacingY
-                    --                 |> String.fromInt
-                    --             )
-                    --                 ++ "px "
-                    --                 ++ (parentBits
-                    --                         |> BitField.get Bits.spacingX
-                    --                         |> String.fromInt
-                    --                    )
-                    --                 ++ "px;"
-                    --            )
-                    --         ++ vars
-                    -- else
-                    vars
-
-                varsWithTransform =
-                    case details.transform of
-                        Nothing ->
-                            varsWithParentSpacing
-
-                        Just trans ->
-                            "transform: "
-                                ++ transformToString trans
-                                ++ ";"
-                                ++ varsWithParentSpacing
-
-                adjustmentNotSet =
-                    not (Flag.present Flag.fontAdjustment has)
-
-                {-
-                   no fontsize or adjustment -> skip
-                   if fontsize is set, not adjustment:
-                       -> set fontsize px
-
-                   adjsutment, not fontsize
-                       -> set font size (em
-                   if both are set
-                       -> fontsize px
-
-
-                -}
-                varsWithFontSize =
-                    if details.fontSize == -1 && adjustmentNotSet then
-                        -- no fontsize or adjustment set
-                        varsWithTransform
-
-                    else if adjustmentNotSet then
-                        -- font size is set, not adjustment
-                        -- set font size, adjust via inherited value
-                        let
-                            height =
-                                parentBits
-                                    |> BitField.getPercentage Bits.fontHeight
-                        in
-                        "font-size: "
-                            ++ (String.fromFloat
-                                    (toFloat details.fontSize * (1 / height))
-                                    ++ "px;"
-                               )
-                            ++ varsWithTransform
-
-                    else if details.fontSize /= -1 then
-                        -- a font size is set as well as an adjustment
-                        -- set font size from details
-                        let
-                            fontHeight =
-                                myBits
-                                    |> BitField.getPercentage Bits.fontHeight
-                        in
-                        "font-size: "
-                            ++ (String.fromFloat
-                                    (toFloat details.fontSize * (1 / fontHeight))
-                                    ++ "px;"
-                               )
-                            ++ varsWithTransform
-
-                    else
-                        -- a font size is NOT set, but we have an adjustment
-                        -- operate on `em`
-                        let
-                            fontHeight =
-                                myBits
-                                    |> BitField.getPercentage Bits.fontHeight
-                        in
-                        "font-size: "
-                            ++ (String.fromFloat
-                                    (1 / fontHeight)
-                                    ++ "em;"
-                               )
-                            ++ varsWithTransform
-            in
-            varsWithFontSize
+            str
 
         (Attribute { flag, attr }) :: remain ->
             let
@@ -2287,163 +2155,848 @@ renderInlineStylesToString parentBits myBits layout details has vars attrs =
                         Flag.present flag has
             in
             if previouslyRendered then
-                renderInlineStylesToString parentBits myBits layout details has vars remain
+                toStyleString parentBits myBits has str remain
 
             else
-                case Debug.log "   toString" attr of
-                    FontSize size ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (vars
-                                ++ ("font-size: "
-                                        ++ String.fromFloat
-                                            (fontSizeAdjusted size
-                                                (parentBits
-                                                    |> BitField.getPercentage Bits.fontHeight
-                                                )
-                                            )
-                                        ++ "px;"
-                                   )
-                            )
-                            remain
+                case attr of
+                    Attr details ->
+                        case details.styles of
+                            [] ->
+                                toStyleString parentBits myBits has str remain
 
-                    Font font ->
-                        let
-                            withSmallcaps =
-                                if font.smallCaps then
-                                    vars ++ "font-variant-caps: small-caps;"
+                            [ ( name, val ) ] ->
+                                toStyleString parentBits myBits (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ str) remain
 
-                                else
-                                    vars
+                            [ ( name, val ), ( twoName, twoVal ) ] ->
+                                toStyleString parentBits myBits (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ twoName ++ ":" ++ twoVal ++ ";" ++ str) remain
 
-                            withFeatures =
-                                if font.variants == "" then
-                                    vars
+                            list ->
+                                toStyleString parentBits myBits (Flag.add flag has) (addStylesToString list str) remain
 
-                                else
-                                    vars ++ "font-feature-settings: " ++ font.variants ++ ";"
-                        in
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (withFeatures
-                                ++ ("font-family:" ++ font.family ++ ";")
-                                ++ ("font-size:" ++ font.size ++ ";")
-                                ++ ("font-weight:" ++ font.weight ++ ";")
-                            )
-                            remain
 
-                    Style styleDetails ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (vars ++ styleDetails.styleName ++ ":" ++ styleDetails.styleVal ++ ";")
-                            remain
+addStylesToString : List ( String, String ) -> String -> String
+addStylesToString styles attrs =
+    case styles of
+        [] ->
+            attrs
 
-                    Spacing x y ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (if layout == AsParagraph then
-                                vars
-                                    ++ "line-height:"
-                                    ++ ("calc(1em + " ++ String.fromInt y ++ "px;")
+        ( name, val ) :: remain ->
+            addStylesToString remain
+                (name ++ ":" ++ val ++ ";" ++ attrs)
 
-                             else
-                                vars
-                                    ++ "gap:"
-                                    ++ (String.fromInt y
-                                            ++ "px "
-                                            ++ String.fromInt x
-                                            ++ "px;"
-                                       )
-                            )
-                            remain
 
-                    Padding padding ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
-                                vars
-                                    ++ "padding: "
-                                    ++ (String.fromInt padding.top ++ "px;")
 
-                             else
-                                vars
-                                    ++ "padding: "
-                                    ++ ((String.fromInt padding.top ++ "px ")
-                                            ++ (String.fromInt padding.right ++ "px ")
-                                            ++ (String.fromInt padding.bottom ++ "px ")
-                                            ++ (String.fromInt padding.left ++ "px;")
-                                       )
-                            )
-                            remain
-
-                    HeightFill i ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (if i > 1 && not (BitField.has Bits.isRow parentBits) then
-                                vars
-                                    ++ "flex-grow: "
-                                    ++ String.fromInt (i * 100000)
-                                    ++ ";"
-
-                             else
-                                vars
-                            )
-                            remain
-
-                    WidthFill i ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (if i > 1 && BitField.has Bits.isRow parentBits then
-                                vars
-                                    ++ "flex-grow: "
-                                    ++ String.fromInt (i * 100000)
-                                    ++ ";"
-
-                             else
-                                vars
-                            )
-                            remain
-
-                    CssTeleport teleport ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            (vars
-                                |> addStylesToString teleport.style
-                            )
-                            remain
-
-                    _ ->
-                        renderInlineStylesToString parentBits
-                            myBits
-                            layout
-                            details
-                            (Flag.add flag has)
-                            vars
-                            remain
+-- {-| We track a number of things in the function and it can be difficult to remember exactly why.
+-- A lot of these questions essentially fall to, "do we do the work or do we count on the browser to do it."
+-- So, let's try to give an overview of all the systems:
+--   - In order to render Font.gradient, (possibly) TextColumn spacing, and Responsive.value/fluid, we need to maintain css variables
+--     This means detecting if we need to render a css variable, and at the end, rerender styles as a `Property` instead of `style`.
+-- -}
+-- renderAttrs :
+--     Inheritance.Encoded
+--     -> Inheritance.Encoded
+--     -> Layout
+--     -> Details
+--     -> ElemChildren msg
+--     -> Flag.Field
+--     -> List (VirtualDom.Attribute msg)
+--     -> String
+--     -> List (Attribute msg)
+--     ->
+--         { fields : Flag.Field
+--         , myBits : Inheritance.Encoded
+--         , details : Details
+--         , attrs : List (Html.Attribute msg)
+--         , children : Children msg
+--         }
+-- renderAttrs parentBits myBits layout details children has htmlAttrs classes attrs =
+--     case attrs of
+--         [] ->
+--             let
+--                 attrsWithParentSpacing =
+--                     if Bits.hasSpacing parentBits && BitField.has Bits.isParagraph parentBits then
+--                         Attr.style "margin"
+--                             ((parentBits
+--                                 |> BitField.get Bits.spacingY
+--                                 |> String.fromInt
+--                              )
+--                                 ++ "px "
+--                                 ++ (parentBits
+--                                         |> BitField.get Bits.spacingX
+--                                         |> String.fromInt
+--                                    )
+--                                 ++ "px"
+--                             )
+--                             :: htmlAttrs
+--                     else
+--                         htmlAttrs
+--                 attrsWithTransform =
+--                     case details.transform of
+--                         Nothing ->
+--                             attrsWithParentSpacing
+--                         Just trans ->
+--                             Attr.style "transform"
+--                                 (transformToString trans)
+--                                 :: attrsWithParentSpacing
+--                 adjustmentNotSet =
+--                     not (Flag.present Flag.fontAdjustment has)
+--                 -- {-
+--                 --    no fontsize or adjustment -> skip
+--                 --    if fontsize is set, not adjustment:
+--                 --        -> set fontsize px
+--                 --    adjsutment, not fontsize
+--                 --        -> set font size (em
+--                 --    if both are set
+--                 --        -> fontsize px
+--                 -- -}
+--                 -- attrsWithFontSize =
+--                 --     if details.fontSize == -1 && adjustmentNotSet then
+--                 --         -- no fontsize or adjustment set
+--                 --         attrsWithTransform
+--                 --     else if adjustmentNotSet then
+--                 --         -- font size is set, not adjustment
+--                 --         -- set font size, adjust via inherited value
+--                 --         let
+--                 --             height =
+--                 --                 parentBits
+--                 --                     |> BitField.getPercentage Bits.fontHeight
+--                 --         in
+--                 --         Attr.style "font-size"
+--                 --             (String.fromFloat
+--                 --                 (toFloat details.fontSize * (1 / height))
+--                 --                 ++ "px"
+--                 --             )
+--                 --             :: attrsWithTransform
+--                 --     else if details.fontSize /= -1 then
+--                 --         -- a font size is set as well as an adjustment
+--                 --         -- set font size from details
+--                 --         let
+--                 --             fontHeight =
+--                 --                 myBits
+--                 --                     |> BitField.getPercentage Bits.fontHeight
+--                 --         in
+--                 --         Attr.style "font-size"
+--                 --             (String.fromFloat
+--                 --                 (toFloat details.fontSize * (1 / fontHeight))
+--                 --                 ++ "px"
+--                 --             )
+--                 --             :: attrsWithTransform
+--                 --     else
+--                 --         -- a font size is NOT set, but we have an adjustment
+--                 --         -- operate on `em`
+--                 --         let
+--                 --             fontHeight =
+--                 --                 myBits
+--                 --                     |> BitField.getPercentage Bits.fontHeight
+--                 --         in
+--                 --         Attr.style "font-size"
+--                 --             (String.fromFloat
+--                 --                 (1 / fontHeight)
+--                 --                 ++ "em"
+--                 --             )
+--                 --             :: attrsWithTransform
+--                 attrsWithAnimations =
+--                     case details.teleportData of
+--                         [] ->
+--                             attrsWithTransform
+--                         teleportData ->
+--                             Attr.property "data-elm-ui" (Encode.list identity teleportData)
+--                                 :: attrsWithTransform
+--                 attrsWithWidthFill =
+--                     if Flag.present Flag.width has then
+--                         -- we know we've set the width to fill
+--                         attrsWithAnimations
+--                         -- else if
+--                         --     not
+--                         --         (Flag.present Flag.borderWidth has
+--                         --             || Flag.present Flag.background has
+--                         --             || Flag.present Flag.event has
+--                         --         )
+--                         --         && not (BitField.has Bits.isRow parentBits)
+--                         -- then
+--                         --     Attr.class Style.classes.widthFill
+--                         --         :: attrsWithAnimations
+--                     else
+--                         -- we are not widthFill, we set it to widthContent
+--                         Attr.class Style.classes.widthContent
+--                             :: attrsWithAnimations
+--                 finalAttrs =
+--                     if Flag.present Flag.height has then
+--                         -- we know we've set the width to fill
+--                         Attr.class classes
+--                             :: attrsWithWidthFill
+--                         -- else if
+--                         --     not
+--                         --         (Flag.present Flag.borderWidth has
+--                         --             || Flag.present Flag.background has
+--                         --             || Flag.present Flag.event has
+--                         --         )
+--                         --         && BitField.has Bits.isRow parentBits
+--                         -- then
+--                         --     Attr.class (classes ++ " " ++ Style.classes.heightFill)
+--                         --         :: attrsWithWidthFill
+--                     else
+--                         Attr.class (classes ++ " " ++ Style.classes.heightContent)
+--                             :: attrsWithWidthFill
+--                 {- RENDER NEARBY CHILDREN -}
+--                 renderedChildren =
+--                     case children of
+--                         ElemChildren elems nearbyRecord ->
+--                             Children <|
+--                                 (List.map (unwrap myBits) nearbyRecord.behind
+--                                     ++ List.map (unwrap myBits) elems
+--                                     ++ List.map (unwrap myBits) nearbyRecord.inFront
+--                                 )
+--                         ElemKeyed keyedElems nearbyRecord ->
+--                             Keyed <|
+--                                 List.map
+--                                     (unwrapKeyed myBits)
+--                                     nearbyRecord.behind
+--                                     ++ List.map (unwrapKeyed myBits) keyedElems
+--                                     ++ List.map
+--                                         (unwrapKeyed myBits)
+--                                         nearbyRecord.inFront
+--                 spacingY =
+--                     BitField.get Bits.spacingY myBits
+--                 finalChildren =
+--                     -- case renderedChildren of
+--                     --     Keyed keyedChilds ->
+--                     --         case layout of
+--                     --             AsParagraph ->
+--                     --                 Keyed <|
+--                     --                     if Flag.present Flag.id has then
+--                     --                         -- ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
+--                     --                             -- :: ( "top-spacer", spacerTop (toFloat spacingY / -2) )
+--                     --                             -- ::
+--                     --                             keyedChilds
+--                     --                         -- ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
+--                     --                     else
+--                     --                         -- ( "top-spacer", spacerTop (toFloat spacingY / -2) )
+--                     --                         -- ::
+--                     --                         keyedChilds
+--                     --             -- ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
+--                     --             _ ->
+--                     --                 if Flag.present Flag.id has then
+--                     --                     -- (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
+--                     --                         -- ::
+--                     --                          keyedChilds
+--                     --                     -- )
+--                     --                         |> Keyed
+--                     --                 else
+--                     --                     renderedChildren
+--                     --     Children childs ->
+--                     --         case layout of
+--                     --             AsParagraph ->
+--                     --                 Children <|
+--                     --                     if Flag.present Flag.id has then
+--                     --                         Html.div (Attr.class "ui-movable" :: finalAttrs) childs
+--                     --                             -- :: spacerTop (toFloat spacingY / -2)
+--                     --                             :: childs
+--                     --                         -- ++ [ spacerBottom (toFloat spacingY / -2) ]
+--                     --                     else
+--                     --                         -- spacerTop (toFloat spacingY / -2)
+--                     --                         -- ::
+--                     --                         childs
+--                     --             -- ++ [ spacerBottom (toFloat spacingY / -2) ]
+--                     --             _ ->
+--                     --                 if Flag.present Flag.id has then
+--                     --                     (Html.div (Attr.class "ui-movable" :: finalAttrs) childs
+--                     --                         :: childs
+--                     --                     )
+--                     --                         |> Children
+--                     --                 else
+--                     --                     renderedChildren
+--                     renderedChildren
+--             in
+--             { fields = has
+--             , myBits = myBits
+--             , attrs = finalAttrs
+--             , children = finalChildren
+--             , details = details
+--             }
+--         (Attribute { flag, attr }) :: remain ->
+-- let
+--     alwaysRender =
+--         case flag of
+--             Flag.Flag f ->
+--                 f == 0
+--     previouslyRendered =
+--         if alwaysRender then
+--             False
+--         else
+--             Flag.present flag has
+-- in
+-- if previouslyRendered then
+--     renderAttrs parentBits myBits layout details children has htmlAttrs classes remain
+-- else
+--                 case attr of
+--                     NoAttribute ->
+--                         renderAttrs parentBits myBits layout details children has htmlAttrs classes remain
+--                     FontSize size ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (Attr.style "font-size"
+--                                 (String.fromFloat
+--                                     (fontSizeAdjusted size
+--                                         (parentBits
+--                                             |> BitField.getPercentage Bits.fontHeight
+--                                         )
+--                                     )
+--                                     ++ "px"
+--                                 )
+--                                 :: htmlAttrs
+--                             )
+--                             classes
+--                             remain
+--                     Font font ->
+--                         let
+--                             withSmallcaps =
+--                                 if font.smallCaps then
+--                                     Attr.style "font-variant-caps" "small-caps"
+--                                         :: htmlAttrs
+--                                 else
+--                                     htmlAttrs
+--                             withFeatures =
+--                                 if font.variants == "" then
+--                                     withSmallcaps
+--                                 else
+--                                     Attr.style "font-feature-settings" font.variants
+--                                         :: withSmallcaps
+--                         in
+--                         renderAttrs parentBits
+--                             (case font.adjustments of
+--                                 Nothing ->
+--                                     myBits
+--                                 Just adj ->
+--                                     myBits
+--                                         |> BitField.copy Bits.fontHeight adj
+--                                         |> BitField.copy Bits.fontOffset adj
+--                             )
+--                             layout
+--                             { fontSize = details.fontSize
+--                             , transform = details.transform
+--                             , teleportData = details.teleportData
+--                             }
+--                             children
+--                             (case font.adjustments of
+--                                 Nothing ->
+--                                     has
+--                                 Just _ ->
+--                                     Flag.add Flag.fontAdjustment has
+--                             )
+--                             (Attr.style "font-family" font.family
+--                                 :: Attr.style "font-size" font.size
+--                                 :: Attr.style "font-weight" font.weight
+--                                 :: withFeatures
+--                             )
+--                             classes
+--                             remain
+--                     TransformPiece slot val ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             { details | transform = Just (upsertTransform slot val details.transform) }
+--                             children
+--                             (Flag.add flag has)
+--                             htmlAttrs
+--                             classes
+--                             remain
+--                     Attr htmlAttr ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (htmlAttr :: htmlAttrs)
+--                             classes
+--                             remain
+--                     OnPress msg ->
+--                         -- Make focusable
+--                         -- Attach keyboard handler
+--                         -- Attach click handler
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (Events.stopPropagationOn "pointerdown"
+--                                 (Json.succeed ( msg, True ))
+--                                 :: onKey "Enter" msg
+--                                 :: Attr.tabindex 0
+--                                 :: htmlAttrs
+--                             )
+--                             (Style.classes.cursorPointer
+--                                 ++ " "
+--                                 ++ classes
+--                             )
+--                             remain
+--                     OnKey handler ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (handler
+--                                 :: Attr.tabindex 0
+--                                 :: htmlAttrs
+--                             )
+--                             classes
+--                             remain
+--                     Link link ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+-- (Attr.href link.url
+--     :: Attr.rel "noopener noreferrer"
+--     :: (case link.download of
+--             Nothing ->
+--                 Attr.target
+--                     (if link.newTab then
+--                         "_blank"
+--                      else
+--                         "_self"
+--                     )
+--             Just downloadName ->
+--                 Attr.download downloadName
+--        )
+--                                 :: htmlAttrs
+--                             )
+--                             classes
+--                             remain
+--                     Style2 styleDetails ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (Attr.style styleDetails.oneName styleDetails.oneVal
+--                                 :: Attr.style styleDetails.twoName styleDetails.twoVal
+--                                 :: htmlAttrs
+--                             )
+--                             classes
+--                             remain
+--                     Style styleDetails ->
+--                         let
+--                             isVar =
+--                                 String.startsWith "--" styleDetails.styleName
+--                         in
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (if isVar then
+--                                 has
+--                                     |> Flag.add flag
+--                                     |> Flag.add Flag.hasCssVars
+--                              else
+--                                 Flag.add flag has
+--                             )
+--                             (if isVar then
+--                                 htmlAttrs
+--                              else
+--                                 Attr.style styleDetails.styleName styleDetails.styleVal :: htmlAttrs
+--                             )
+--                             (case styleDetails.class of
+--                                 "" ->
+--                                     classes
+--                                 newClass ->
+--                                     newClass ++ " " ++ classes
+--                             )
+--                             remain
+--                     Class str ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             htmlAttrs
+--                             (str ++ " " ++ classes)
+--                             remain
+--                     Nearby location elem ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (addNearbyElement location elem children)
+--                             has
+--                             htmlAttrs
+--                             classes
+--                             remain
+--                     Spacing x y ->
+--                         renderAttrs parentBits
+--                             (if layout == AsTextColumn || layout == AsParagraph then
+--                                 myBits
+--                                     |> BitField.set Bits.spacingX x
+--                                     |> BitField.set Bits.spacingY y
+--                              else
+--                                 myBits
+--                             )
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (Attr.style "gap"
+--                                 (String.fromInt y
+--                                     ++ "px "
+--                                     ++ String.fromInt x
+--                                     ++ "px"
+--                                 )
+--                                 :: htmlAttrs
+--                             )
+--                             (Style.classes.spacing ++ " " ++ classes)
+--                             remain
+--                     Padding padding ->
+--                         -- This is tracked because we're doing something weird with Input rendering.
+--                         -- Myabe it's not necessary if we get smarter about how the Text input is rendered?
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
+--                                 Attr.style "padding"
+--                                     (String.fromInt padding.top ++ "px")
+--                                     :: htmlAttrs
+--                              else
+--                                 Attr.style "padding"
+--                                     ((String.fromInt padding.top ++ "px ")
+--                                         ++ (String.fromInt padding.right ++ "px ")
+--                                         ++ (String.fromInt padding.bottom ++ "px ")
+--                                         ++ (String.fromInt padding.left ++ "px")
+--                                     )
+--                                     :: htmlAttrs
+--                             )
+--                             classes
+--                             remain
+--                     HeightFill i ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             -- we're in a column
+--                             (if i > 1 && not (BitField.has Bits.isRow parentBits) then
+--                                 Attr.style "flex-grow" (String.fromInt (i * 100000))
+--                                     :: htmlAttrs
+--                              else
+--                                 htmlAttrs
+--                             )
+--                             (if i <= 0 then
+--                                 classes
+--                              else
+--                                 Style.classes.heightFill
+--                                     ++ " "
+--                                     ++ classes
+--                             )
+--                             remain
+--                     WidthFill i ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             children
+--                             (Flag.add flag has)
+--                             (if i > 1 && BitField.has Bits.isRow parentBits then
+--                                 Attr.style "flex-grow" (String.fromInt (i * 100000))
+--                                     :: htmlAttrs
+--                              else
+--                                 htmlAttrs
+--                             )
+--                             (if i <= 0 then
+--                                 classes
+--                              else
+--                                 Style.classes.widthFill
+--                                     ++ " "
+--                                     ++ classes
+--                             )
+--                             remain
+--                     CssTeleport teleport ->
+--                         renderAttrs parentBits
+--                             myBits
+--                             layout
+--                             { fontSize = details.fontSize
+--                             , transform = details.transform
+--                             , teleportData = teleport.data :: details.teleportData
+--                             }
+--                             children
+--                             (Flag.add flag has)
+--                             (htmlAttrs
+--                                 |> addStyles teleport.style
+--                             )
+--                             (teleport.class ++ " " ++ classes)
+--                             remain
+-- {-| In order to make css variables work, we need to gather all styles into a `Attribute.property "style"`
+-- However, that method is slower than calling `Html.Attributes.style` directly,
+-- because it requires the browser to parse the string instead of setting styles directly via style.setProperty or whatever.
+-- This does mean we only want to use css variables sparingly.
+-- -}
+-- renderInlineStylesToString :
+--     Inheritance.Encoded
+--     -> Inheritance.Encoded
+--     -> Layout
+--     -> Details
+--     -> Flag.Field
+--     -> String
+--     -> List (Attribute msg)
+--     -> String
+-- renderInlineStylesToString parentBits myBits layout details has vars attrs =
+--     case attrs of
+--         [] ->
+--             let
+--                 varsWithParentSpacing =
+--                     -- if Bits.hasSpacing parentBits && (layout == AsParagraph || layout == AsTextColumn) then
+--                     --     "margin: "
+--                     --         ++ ((parentBits
+--                     --                 |> BitField.get Bits.spacingY
+--                     --                 |> String.fromInt
+--                     --             )
+--                     --                 ++ "px "
+--                     --                 ++ (parentBits
+--                     --                         |> BitField.get Bits.spacingX
+--                     --                         |> String.fromInt
+--                     --                    )
+--                     --                 ++ "px;"
+--                     --            )
+--                     --         ++ vars
+--                     -- else
+--                     vars
+--                 varsWithTransform =
+--                     case details.transform of
+--                         Nothing ->
+--                             varsWithParentSpacing
+--                         Just trans ->
+--                             "transform: "
+--                                 ++ transformToString trans
+--                                 ++ ";"
+--                                 ++ varsWithParentSpacing
+--                 adjustmentNotSet =
+--                     not (Flag.present Flag.fontAdjustment has)
+--                 {-
+--                    no fontsize or adjustment -> skip
+--                    if fontsize is set, not adjustment:
+--                        -> set fontsize px
+--                    adjsutment, not fontsize
+--                        -> set font size (em
+--                    if both are set
+--                        -> fontsize px
+--                 -}
+--                 varsWithFontSize =
+--                     if details.fontSize == -1 && adjustmentNotSet then
+--                         -- no fontsize or adjustment set
+--                         varsWithTransform
+--                     else if adjustmentNotSet then
+--                         -- font size is set, not adjustment
+--                         -- set font size, adjust via inherited value
+--                         let
+--                             height =
+--                                 parentBits
+--                                     |> BitField.getPercentage Bits.fontHeight
+--                         in
+--                         "font-size: "
+--                             ++ (String.fromFloat
+--                                     (toFloat details.fontSize * (1 / height))
+--                                     ++ "px;"
+--                                )
+--                             ++ varsWithTransform
+--                     else if details.fontSize /= -1 then
+--                         -- a font size is set as well as an adjustment
+--                         -- set font size from details
+--                         let
+--                             fontHeight =
+--                                 myBits
+--                                     |> BitField.getPercentage Bits.fontHeight
+--                         in
+--                         "font-size: "
+--                             ++ (String.fromFloat
+--                                     (toFloat details.fontSize * (1 / fontHeight))
+--                                     ++ "px;"
+--                                )
+--                             ++ varsWithTransform
+--                     else
+--                         -- a font size is NOT set, but we have an adjustment
+--                         -- operate on `em`
+--                         let
+--                             fontHeight =
+--                                 myBits
+--                                     |> BitField.getPercentage Bits.fontHeight
+--                         in
+--                         "font-size: "
+--                             ++ (String.fromFloat
+--                                     (1 / fontHeight)
+--                                     ++ "em;"
+--                                )
+--                             ++ varsWithTransform
+--             in
+--             varsWithFontSize
+--         (Attribute { flag, attr }) :: remain ->
+--             let
+--                 alwaysRender =
+--                     case flag of
+--                         Flag.Flag f ->
+--                             f == 0
+--                 previouslyRendered =
+--                     if alwaysRender then
+--                         False
+--                     else
+--                         Flag.present flag has
+--             in
+--             if previouslyRendered then
+--                 renderInlineStylesToString parentBits myBits layout details has vars remain
+--             else
+--                 case attr of
+--                     FontSize size ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (vars
+--                                 ++ ("font-size: "
+--                                         ++ String.fromFloat
+--                                             (fontSizeAdjusted size
+--                                                 (parentBits
+--                                                     |> BitField.getPercentage Bits.fontHeight
+--                                                 )
+--                                             )
+--                                         ++ "px;"
+--                                    )
+--                             )
+--                             remain
+--                     Font font ->
+--                         let
+--                             withSmallcaps =
+--                                 if font.smallCaps then
+--                                     vars ++ "font-variant-caps: small-caps;"
+--                                 else
+--                                     vars
+--                             withFeatures =
+--                                 if font.variants == "" then
+--                                     vars
+--                                 else
+--                                     vars ++ "font-feature-settings: " ++ font.variants ++ ";"
+--                         in
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (withFeatures
+--                                 ++ ("font-family:" ++ font.family ++ ";")
+--                                 ++ ("font-size:" ++ font.size ++ ";")
+--                                 ++ ("font-weight:" ++ font.weight ++ ";")
+--                             )
+--                             remain
+--                     Style styleDetails ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (vars ++ styleDetails.styleName ++ ":" ++ styleDetails.styleVal ++ ";")
+--                             remain
+--                     Spacing x y ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (if layout == AsParagraph then
+--                                 vars
+--                                     ++ "line-height:"
+--                                     ++ ("calc(1em + " ++ String.fromInt y ++ "px;")
+--                              else
+--                                 vars
+--                                     ++ "gap:"
+--                                     ++ (String.fromInt y
+--                                             ++ "px "
+--                                             ++ String.fromInt x
+--                                             ++ "px;"
+--                                        )
+--                             )
+--                             remain
+--                     Padding padding ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (if padding.top == padding.right && padding.top == padding.left && padding.top == padding.bottom then
+--                                 vars
+--                                     ++ "padding: "
+--                                     ++ (String.fromInt padding.top ++ "px;")
+--                              else
+--                                 vars
+--                                     ++ "padding: "
+--                                     ++ ((String.fromInt padding.top ++ "px ")
+--                                             ++ (String.fromInt padding.right ++ "px ")
+--                                             ++ (String.fromInt padding.bottom ++ "px ")
+--                                             ++ (String.fromInt padding.left ++ "px;")
+--                                        )
+--                             )
+--                             remain
+--                     HeightFill i ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (if i > 1 && not (BitField.has Bits.isRow parentBits) then
+--                                 vars
+--                                     ++ "flex-grow: "
+--                                     ++ String.fromInt (i * 100000)
+--                                     ++ ";"
+--                              else
+--                                 vars
+--                             )
+--                             remain
+--                     WidthFill i ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (if i > 1 && BitField.has Bits.isRow parentBits then
+--                                 vars
+--                                     ++ "flex-grow: "
+--                                     ++ String.fromInt (i * 100000)
+--                                     ++ ";"
+--                              else
+--                                 vars
+--                             )
+--                             remain
+--                     CssTeleport teleport ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             (vars
+--                                 |> addStylesToString teleport.style
+--                             )
+--                             remain
+--                     _ ->
+--                         renderInlineStylesToString parentBits
+--                             myBits
+--                             layout
+--                             details
+--                             (Flag.add flag has)
+--                             vars
+--                             remain
 
 
 triggerName : Trigger -> String
@@ -2464,8 +3017,8 @@ triggerName trigger =
 
 
 {-| -}
-onKey : String -> msg -> Html.Attribute msg
-onKey desiredCode msg =
+onKeyListener : String -> msg -> Html.Attribute msg
+onKeyListener desiredCode msg =
     let
         decode code =
             if code == desiredCode then
@@ -2479,7 +3032,12 @@ onKey desiredCode msg =
                 |> Json.andThen decode
     in
     Events.preventDefaultOn "keyup"
-        (Json.map (\fired -> ( fired, True )) isKey)
+        (Json.map
+            (\fired ->
+                ( fired, True )
+            )
+            isKey
+        )
 
 
 upsertTransform : Int -> Float -> Maybe Transform -> Transform
@@ -2515,94 +3073,43 @@ upsertTransform slot val maybeTransform =
     }
 
 
-addNearbyElement : Location -> Element msg -> ElemChildren msg -> ElemChildren msg
-addNearbyElement location elem existing =
-    let
-        nearby =
-            nearbyElement location elem
-    in
-    case existing of
-        ElemChildren children near ->
+nearbyToHtml : Inheritance.Encoded -> Location -> Element msg -> Html.Html msg
+nearbyToHtml inheritance location (Element elem) =
+    Html.div
+        [ Attr.class <|
             case location of
+                Above ->
+                    Style.classes.nearby
+                        ++ Style.classes.single
+                        ++ Style.classes.above
+
+                Below ->
+                    Style.classes.nearby
+                        ++ Style.classes.single
+                        ++ Style.classes.below
+
+                OnRight ->
+                    Style.classes.nearby
+                        ++ Style.classes.single
+                        ++ Style.classes.onRight
+
+                OnLeft ->
+                    Style.classes.nearby
+                        ++ Style.classes.single
+                        ++ Style.classes.onLeft
+
+                InFront ->
+                    Style.classes.nearby
+                        ++ Style.classes.single
+                        ++ Style.classes.inFront
+
                 Behind ->
-                    ElemChildren children
-                        { behind = nearby :: near.behind
-                        , inFront = near.inFront
-                        }
-
-                _ ->
-                    ElemChildren children
-                        { behind = near.behind
-                        , inFront = nearby :: near.inFront
-                        }
-
-        ElemKeyed children near ->
-            case location of
-                Behind ->
-                    ElemKeyed children
-                        { behind = ( "bh", nearby ) :: near.behind
-                        , inFront = near.inFront
-                        }
-
-                _ ->
-                    ElemKeyed children
-                        { behind = near.behind
-                        , inFront = ( "if", nearby ) :: near.inFront
-                        }
-
-
-nearbyElement : Location -> Element msg -> Element msg
-nearbyElement location (Element elem) =
-    Element
-        (\parent ->
-            Html.div
-                [ Attr.class <|
-                    case location of
-                        Above ->
-                            String.join " "
-                                [ Style.classes.nearby
-                                , Style.classes.single
-                                , Style.classes.above
-                                ]
-
-                        Below ->
-                            String.join " "
-                                [ Style.classes.nearby
-                                , Style.classes.single
-                                , Style.classes.below
-                                ]
-
-                        OnRight ->
-                            String.join " "
-                                [ Style.classes.nearby
-                                , Style.classes.single
-                                , Style.classes.onRight
-                                ]
-
-                        OnLeft ->
-                            String.join " "
-                                [ Style.classes.nearby
-                                , Style.classes.single
-                                , Style.classes.onLeft
-                                ]
-
-                        InFront ->
-                            String.join " "
-                                [ Style.classes.nearby
-                                , Style.classes.single
-                                , Style.classes.inFront
-                                ]
-
-                        Behind ->
-                            String.join " "
-                                [ Style.classes.nearby
-                                , Style.classes.single
-                                , Style.classes.behind
-                                ]
-                ]
-                [ elem parent
-                ]
-        )
+                    Style.classes.nearby
+                        ++ Style.classes.single
+                        ++ Style.classes.behind
+        ]
+        [ elem inheritance
+        ]
 
 
 zero =

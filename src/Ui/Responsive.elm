@@ -99,8 +99,6 @@ module Ui.Responsive exposing
 
 import Html
 import Html.Attributes as Attr
-import Internal.BitEncodings as Bits
-import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Internal.Font
 import Internal.Model2 as Internal

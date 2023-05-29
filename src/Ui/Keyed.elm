@@ -33,11 +33,11 @@ el attrs child =
 
 {-| -}
 row : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
-row =
-    Two.elementKeyed "div" Two.AsRow
+row attrs children =
+    Two.elementKeyed "div" Two.AsRow attrs children
 
 
 {-| -}
 column : List (Attribute msg) -> List ( String, Element msg ) -> Element msg
-column =
-    Two.elementKeyed "div" Two.AsColumn
+column attrs children =
+    Two.elementKeyed "div" Two.AsColumn attrs children

@@ -275,10 +275,7 @@ html x =
 {-| -}
 htmlAttribute : Html.Attribute msg -> Attribute msg
 htmlAttribute a =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Attr a
-        }
+    Two.attribute a
 
 
 {-| -}
@@ -309,10 +306,7 @@ fill =
 {-| -}
 ellipsis : Attribute msg
 ellipsis =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Class Style.classes.ellipses
-        }
+    Two.classWith Flag.fontEllipsis Style.classes.ellipses
 
 
 {-| Sometimes you may not want to split available space evenly. In this case you can use `portion` to define which elements should have what portion of the available space.
@@ -323,26 +317,41 @@ So, two elements, one with `width (portion 2)` and one with `width (portion 3)`.
 
 -}
 portion : Int -> Length
-portion =
-    Fill
+portion i =
+    Fill (min 1 i)
 
 
 {-| This is your top level node where you can turn `Element` into `Html`.
 -}
 layout : List (Attribute msg) -> Element msg -> Html msg
 layout attrs content =
-    Two.unwrap Two.zero <|
-        Two.element Two.AsRoot
-            attrs
-            [ Two.Element
-                (\_ ->
-                    Html.Keyed.node "div"
-                        []
-                        [ ( "static", Html.Lazy.lazy style Style.rules )
-                        ]
-                )
-            , content
-            ]
+    -- Two.unwrap Two.zero <|
+    --     Two.element Two.NodeAsDiv
+    --         Two.AsRoot
+    --         attrs
+    --         [ Two.Element
+    --             (\_ ->
+    --                 Html.Keyed.node "div"
+    --                     []
+    --                     [ ( "static", Html.Lazy.lazy style Style.rules )
+    --                     ]
+    --             )
+    --         , content
+    --         ]
+    Two.renderLayout defaultOptions emptyState attrs content
+
+
+defaultOptions =
+    { options = [] }
+
+
+emptyState : Two.State
+emptyState =
+    Two.State
+        { added = Set.empty
+        , rules = []
+        , boxes = []
+        }
 
 
 {-| Converts an `Element msg` to an `Html msg` but does not include the stylesheet.
@@ -352,11 +361,7 @@ You'll need to include it manually yourself
 -}
 embed : List (Attribute msg) -> Element msg -> Html msg
 embed attrs content =
-    Two.unwrap Two.zero <|
-        Two.element Two.AsRoot
-            attrs
-            [ content
-            ]
+    Two.renderLayout defaultOptions emptyState attrs content
 
 
 style : String -> Html msg
@@ -422,7 +427,8 @@ If you want multiple children, you'll need to use something like `row` or `colum
 -}
 el : List (Attribute msg) -> Element msg -> Element msg
 el attrs child =
-    Two.element Two.AsEl
+    Two.element Two.NodeAsDiv
+        Two.AsEl
         attrs
         [ child ]
 
@@ -430,7 +436,8 @@ el attrs child =
 {-| -}
 row : List (Attribute msg) -> List (Element msg) -> Element msg
 row attrs children =
-    Two.element Two.AsRow
+    Two.element Two.NodeAsDiv
+        Two.AsRow
         attrs
         children
 
@@ -438,7 +445,8 @@ row attrs children =
 {-| -}
 column : List (Attribute msg) -> List (Element msg) -> Element msg
 column attrs children =
-    Two.element Two.AsColumn
+    Two.element Two.NodeAsDiv
+        Two.AsColumn
         attrs
         children
 
@@ -452,10 +460,7 @@ id strId =
 {-| -}
 noAttr : Attribute msg
 noAttr =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.NoAttribute
-        }
+    Two.noAttr
 
 
 {-| This is just an alias for `Debug.todo`
@@ -519,7 +524,8 @@ Which will look something like
 -}
 paragraph : List (Attribute msg) -> List (Element msg) -> Element msg
 paragraph attrs children =
-    Two.elementAs Html.p
+    -- Two.element Two.NodeAsDivAs Html.p
+    Two.element Two.NodeAsParagraph
         Two.AsParagraph
         attrs
         children
@@ -546,7 +552,8 @@ Which will result in something like:
 -}
 textColumn : List (Attribute msg) -> List (Element msg) -> Element msg
 textColumn attrs children =
-    Two.element Two.AsTextColumn
+    Two.element Two.NodeAsDiv
+        Two.AsTextColumn
         attrs
         children
 
@@ -600,7 +607,8 @@ image attrs img =
     --             (Internal.Unkeyed [])
     --         ]
     --     )
-    Two.element Two.AsEl
+    Two.element Two.NodeAsDiv
+        Two.AsEl
         (Two.class Style.classes.imageContainer :: attrs)
         [ Two.Element
             (\s ->
@@ -732,28 +740,20 @@ backgroundGradient gradient =
 -}
 link : String -> Attribute msg
 link uri =
-    Two.Attribute
-        { flag = Flag.isLink
-        , attr =
-            Two.Link
-                { newTab = False
-                , url = uri
-                , download = Nothing
-                }
+    Two.link
+        { newTab = False
+        , url = uri
+        , download = Nothing
         }
 
 
 {-| -}
 linkNewTab : String -> Attribute msg
 linkNewTab uri =
-    Two.Attribute
-        { flag = Flag.isLink
-        , attr =
-            Two.Link
-                { newTab = True
-                , url = uri
-                , download = Nothing
-                }
+    Two.link
+        { newTab = True
+        , url = uri
+        , download = Nothing
         }
 
 
@@ -770,20 +770,16 @@ download :
     }
     -> Attribute msg
 download opts =
-    Two.Attribute
-        { flag = Flag.isLink
-        , attr =
-            Two.Link
-                { newTab = False
-                , url = opts.url
-                , download =
-                    case opts.filename of
-                        Nothing ->
-                            Just ""
+    Two.link
+        { newTab = False
+        , url = opts.url
+        , download =
+            case opts.filename of
+                Nothing ->
+                    Just ""
 
-                        _ ->
-                            opts.filename
-                }
+                _ ->
+                    opts.filename
         }
 
 
@@ -794,37 +790,25 @@ download opts =
 {-| -}
 below : Element msg -> Attribute msg
 below element =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Nearby Two.Below element
-        }
+    Two.nearby Two.Below element
 
 
 {-| -}
 above : Element msg -> Attribute msg
 above element =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Nearby Two.Above element
-        }
+    Two.nearby Two.Above element
 
 
 {-| -}
 onRight : Element msg -> Attribute msg
 onRight element =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Nearby Two.OnRight element
-        }
+    Two.nearby Two.OnRight element
 
 
 {-| -}
 onLeft : Element msg -> Attribute msg
 onLeft element =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Nearby Two.OnLeft element
-        }
+    Two.nearby Two.OnLeft element
 
 
 {-| This will place an element in front of another.
@@ -834,20 +818,14 @@ onLeft element =
 -}
 inFront : Element msg -> Attribute msg
 inFront element =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Nearby Two.InFront element
-        }
+    Two.nearby Two.InFront element
 
 
 {-| This will place an element between the background and the content of an Ui.
 -}
 behindContent : Element msg -> Attribute msg
 behindContent element =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Nearby Two.Behind element
-        }
+    Two.nearby Two.Behind element
 
 
 {-| -}
@@ -862,10 +840,9 @@ width len =
                 }
 
         Fill f ->
-            Two.Attribute
-                { flag = Flag.width
-                , attr = Two.WidthFill f
-                }
+            -- TODO
+            Two.classWith Flag.width
+                Style.classes.widthFill
 
 
 {-| -}
@@ -920,20 +897,14 @@ height len =
                 }
 
         Fill f ->
-            Two.Attribute
-                { flag = Flag.height
-                , attr =
-                    Two.HeightFill f
-                }
+            Two.classWith Flag.height
+                Style.classes.heightFill
 
 
 {-| -}
 scale : Float -> Attribute msg
 scale s =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.TransformPiece 3 s
-        }
+    Two.transformPiece 3 s
 
 
 {-| -}
@@ -981,79 +952,47 @@ radians =
 -}
 rotate : Float -> Attribute msg
 rotate r =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.TransformPiece 2 r
-        }
+    Two.transformPiece 2 r
 
 
 {-| -}
 moveUp : Float -> Attribute msg
 moveUp x =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.TransformPiece 1 (negate x)
-        }
+    Two.transformPiece 1 (negate x)
 
 
 {-| -}
 moveDown : Float -> Attribute msg
 moveDown x =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.TransformPiece 1 x
-        }
+    Two.transformPiece 1 x
 
 
 {-| -}
 moveRight : Float -> Attribute msg
 moveRight x =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr =
-            Two.TransformPiece 0 x
-        }
+    Two.transformPiece 0 x
 
 
 {-| -}
 moveLeft : Float -> Attribute msg
 moveLeft x =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr =
-            Two.TransformPiece 0 (negate x)
-        }
+    Two.transformPiece 0 (negate x)
 
 
 {-| -}
 padding : Int -> Attribute msg
 padding x =
-    Two.Attribute
-        { flag = Flag.padding
-        , attr =
-            Two.Padding
-                { top = x
-                , left = x
-                , bottom = x
-                , right = x
-                }
-        }
+    Two.style "padding" (String.fromInt x ++ "px")
 
 
 {-| Set horizontal and vertical padding.
 -}
 paddingXY : Int -> Int -> Attribute msg
 paddingXY x y =
-    Two.Attribute
-        { flag = Flag.padding
-        , attr =
-            Two.Padding
-                { top = y
-                , left = x
-                , bottom = y
-                , right = x
-                }
-        }
+    Two.style "padding"
+        ((String.fromInt y ++ "px ")
+            ++ (String.fromInt x ++ "px")
+        )
 
 
 {-| If you find yourself defining unique paddings all the time, you might consider defining
@@ -1072,82 +1011,64 @@ And then just do
 -}
 paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute msg
 paddingEach pad =
-    Two.Attribute
-        { flag = Flag.padding
-        , attr = Two.Padding pad
-        }
+    Two.style "padding"
+        ((String.fromInt pad.top ++ "px ")
+            ++ (String.fromInt pad.right ++ "px ")
+            ++ (String.fromInt pad.bottom ++ "px ")
+            ++ (String.fromInt pad.left ++ "px")
+        )
 
 
 {-| -}
 centerX : Attribute msg
 centerX =
-    Two.Attribute
-        { flag = Flag.xAlign
-        , attr = Two.Class Style.classes.alignCenterX
-        }
+    Two.classWith Flag.xAlign Style.classes.alignCenterX
 
 
 {-| -}
 centerY : Attribute msg
 centerY =
-    Two.Attribute
-        { flag = Flag.yAlign
-        , attr = Two.Class Style.classes.alignCenterY
-        }
+    Two.classWith Flag.yAlign Style.classes.alignCenterY
 
 
 {-| -}
 alignTop : Attribute msg
 alignTop =
-    Two.Attribute
-        { flag = Flag.yAlign
-        , attr = Two.Class Style.classes.alignTop
-        }
+    Two.classWith Flag.yAlign Style.classes.alignTop
 
 
 {-| -}
 alignBottom : Attribute msg
 alignBottom =
-    Two.Attribute
-        { flag = Flag.yAlign
-        , attr = Two.Class Style.classes.alignBottom
-        }
+    Two.classWith Flag.yAlign Style.classes.alignBottom
 
 
 {-| -}
 alignLeft : Attribute msg
 alignLeft =
-    Two.Attribute
-        { flag = Flag.xAlign
-        , attr = Two.Class Style.classes.alignLeft
-        }
+    Two.classWith Flag.xAlign Style.classes.alignLeft
 
 
 {-| -}
 alignRight : Attribute msg
 alignRight =
-    Two.Attribute
-        { flag = Flag.xAlign
-        , attr = Two.Class Style.classes.alignRight
-        }
+    Two.classWith Flag.xAlign Style.classes.alignRight
 
 
 {-| -}
 spaceEvenly : Attribute msg
 spaceEvenly =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.Class Style.classes.spaceEvenly
-        }
+    Two.class Style.classes.spaceEvenly
 
 
 {-| -}
 spacing : Int -> Attribute msg
 spacing x =
-    Two.Attribute
-        { flag = Flag.spacing
-        , attr = Two.Spacing x x
-        }
+    Two.styleWith Flag.spacing
+        "gap"
+        (String.fromInt x
+            ++ "px"
+        )
 
 
 {-| In the majority of cases you'll just need to use `spacing`, which will work as intended.
@@ -1157,10 +1078,13 @@ However for some layouts, like `textColumn`, you may want to set a different spa
 -}
 spacingXY : Int -> Int -> Attribute msg
 spacingXY x y =
-    Two.Attribute
-        { flag = Flag.spacing
-        , attr = Two.Spacing x y
-        }
+    Two.styleWith Flag.spacing
+        "gap"
+        (String.fromInt y
+            ++ "px "
+            ++ String.fromInt x
+            ++ "px"
+        )
 
 
 {-| -}
@@ -1172,7 +1096,8 @@ opacity o =
 {-| -}
 scrollable : List (Attribute msg) -> Element msg -> Element msg
 scrollable attrs child =
-    Two.element Two.AsEl
+    Two.element Two.NodeAsDiv
+        Two.AsEl
         (scrollbarY
             :: width fill
             :: height fill
@@ -1184,28 +1109,19 @@ scrollable attrs child =
 {-| -}
 scrollbars : Attribute msg
 scrollbars =
-    Two.Attribute
-        { flag = Flag.overflow
-        , attr = Two.Class Style.classes.scrollbars
-        }
+    Two.classWith Flag.overflow Style.classes.scrollbars
 
 
 {-| -}
 scrollbarY : Attribute msg
 scrollbarY =
-    Two.Attribute
-        { flag = Flag.overflow
-        , attr = Two.Class Style.classes.scrollbarsY
-        }
+    Two.classWith Flag.overflow Style.classes.scrollbarsY
 
 
 {-| -}
 scrollbarX : Attribute msg
 scrollbarX =
-    Two.Attribute
-        { flag = Flag.overflow
-        , attr = Two.Class Style.classes.scrollbarsX
-        }
+    Two.classWith Flag.overflow Style.classes.scrollbarsX
 
 
 {-| Clip the content if it overflows.
@@ -1217,7 +1133,8 @@ If the content overflows this element, it will be clipped.
 -}
 clipped : List (Attribute msg) -> Element msg -> Element msg
 clipped attrs child =
-    Two.element Two.AsEl
+    Two.element Two.NodeAsDiv
+        Two.AsEl
         (clip
             :: width fill
             :: height fill
@@ -1229,53 +1146,35 @@ clipped attrs child =
 {-| -}
 clip : Attribute msg
 clip =
-    Two.Attribute
-        { flag = Flag.overflow
-        , attr = Two.Class Style.classes.clip
-        }
+    Two.classWith Flag.overflow Style.classes.clip
 
 
 {-| -}
 clipY : Attribute msg
 clipY =
-    Two.Attribute
-        { flag = Flag.overflow
-        , attr = Two.Class Style.classes.clipY
-        }
+    Two.classWith Flag.overflow Style.classes.clipY
 
 
 {-| -}
 clipX : Attribute msg
 clipX =
-    Two.Attribute
-        { flag = Flag.overflow
-        , attr = Two.Class Style.classes.clipX
-        }
+    Two.classWith Flag.overflow Style.classes.clipX
 
 
 {-| Set the cursor to be a pointing hand when it's hovering over this Ui.
 -}
 pointer : Attribute msg
 pointer =
-    Two.Attribute
-        { flag = Flag.cursor
-        , attr = Two.Class Style.classes.cursorPointer
-        }
+    Two.class Style.classes.cursorPointer
 
 
 {-| -}
 grab : Attribute msg
 grab =
-    Two.Attribute
-        { flag = Flag.cursor
-        , attr = Two.Class Style.classes.cursorGrab
-        }
+    Two.class Style.classes.cursorGrab
 
 
 {-| -}
 grabbing : Attribute msg
 grabbing =
-    Two.Attribute
-        { flag = Flag.cursor
-        , attr = Two.Class Style.classes.cursorGrabbing
-        }
+    Two.class Style.classes.cursorGrabbing

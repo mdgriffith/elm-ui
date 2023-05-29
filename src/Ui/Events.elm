@@ -2,7 +2,7 @@ module Ui.Events exposing
     ( onClick
     , onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
     , onFocus, onLoseFocus
-    , onKey, onKeyWith
+    , onKey
     , Key, enter, space, up, down, left, right, backspace, key
     , on, stopPropagationOn, preventDefaultOn, custom
     )
@@ -24,7 +24,7 @@ module Ui.Events exposing
 
 # Keyboard
 
-@docs onKey, onKeyWith
+@docs onKey
 
 @docs Key, enter, space, up, down, left, right, backspace, key
 
@@ -49,10 +49,7 @@ import Ui exposing (Attribute)
 {-| -}
 onClick : msg -> Attribute msg
 onClick msg =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr = Two.OnPress msg
-        }
+    Two.onPress msg
 
 
 {-| -}
@@ -256,70 +253,46 @@ keyCode =
 {-| -}
 onKey : Key -> msg -> Attribute msg
 onKey desiredKey msg =
-    let
-        decode code =
-            if code == toCodeString desiredKey then
-                Json.succeed msg
-
-            else
-                Json.fail "Not the enter key"
-
-        isKey =
-            Json.field "key" Json.string
-                |> Json.andThen decode
-    in
-    Two.Attribute
-        { flag = Flag.event
-        , attr =
-            Two.OnKey
-                (Html.Events.preventDefaultOn "keyup"
-                    (Json.map
-                        (\fired ->
-                            ( fired
-                            , True
-                            )
-                        )
-                        isKey
-                    )
-                )
+    Two.onKey
+        { key = toCodeString desiredKey
+        , msg = msg
         }
 
 
-{-| -}
-onKeyWith :
-    ({ key : Key
-     , ctrl : Bool
-     , alt : Bool
-     , shift : Bool
-     , meta : Bool
-     }
-     -> Maybe msg
-    )
-    -> Attribute msg
-onKeyWith toMsg =
-    Two.Attribute
-        { flag = Flag.event
-        , attr =
-            Two.OnKey
-                (Html.Events.preventDefaultOn "keyup"
-                    (decodeKeyboardEvent
-                        |> Json.map2 Tuple.pair decodeIMEComposition
-                        |> Json.andThen
-                            (\( isComposing, keyDetails ) ->
-                                case toMsg keyDetails of
-                                    Nothing ->
-                                        Json.fail "Ignored"
 
-                                    Just msg ->
-                                        if isComposing then
-                                            Json.fail "IME composing is ignored"
-
-                                        else
-                                            Json.succeed ( msg, True )
-                            )
-                    )
-                )
-        }
+-- {-| -}
+-- onKeyWith :
+--     ({ key : Key
+--      , ctrl : Bool
+--      , alt : Bool
+--      , shift : Bool
+--      , meta : Bool
+--      }
+--      -> Maybe msg
+--     )
+--     -> Attribute msg
+-- onKeyWith toMsg =
+--     Two.Attribute
+--         { flag = Flag.event
+--         , attr =
+--             Two.OnKey
+--                 (Html.Events.preventDefaultOn "keyup"
+--                     (decodeKeyboardEvent
+--                         |> Json.map2 Tuple.pair decodeIMEComposition
+--                         |> Json.andThen
+--                             (\( isComposing, keyDetails ) ->
+--                                 case toMsg keyDetails of
+--                                     Nothing ->
+--                                         Json.fail "Ignored"
+--                                     Just msg ->
+--                                         if isComposing then
+--                                             Json.fail "IME composing is ignored"
+--                                         else
+--                                             Json.succeed ( msg, True )
+--                             )
+--                     )
+--                 )
+--         }
 
 
 decodeKeyboardEvent :

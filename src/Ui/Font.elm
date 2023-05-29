@@ -5,7 +5,6 @@ module Ui.Font exposing
     , alignLeft, alignRight, center, justify
     , exactWhitespace
     , lineHeight, letterSpacing, wordSpacing
-    , font
     , fontAdjustment
     , underline, strike, italic
     , weight
@@ -59,8 +58,6 @@ module Ui.Font exposing
 
 -}
 
-import Internal.BitEncodings as Bits
-import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Internal.Font
 import Internal.Model2 as Internal
@@ -85,7 +82,7 @@ gradient :
     Ui.Gradient.Gradient
     -> Attribute msg
 gradient grad =
-    Internal.styleAndClass Flag.fontColor
+    Internal.styleAndClass Flag.fontGradient
         { class = Style.classes.textGradient
         , styleName = "--text-gradient"
         , styleVal = Style.toCssGradient grad
@@ -177,57 +174,52 @@ fontAdjustment =
 
 
 -}
-
-
-{-|
-
-    Ui.Font.font
-        { name = "EB Garamond"
-        , fallback = [ Ui.Font.serif ]
-        , variants = []
-        , weight = Ui.Font.bold
-        , size = 16
-        }
-
--}
-font :
-    { name : String
-    , fallback : List Font
-    , variants : List Variant
-    , weight : Weight
-    , size : Int
-    }
-    -> Attribute msg
-font details =
-    Internal.Attribute
-        { flag = Flag.fontAdjustment
-        , attr =
-            Internal.Font
-                { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
-                , adjustments =
-                    Nothing
-                , variants =
-                    Internal.Font.renderVariants details.variants ""
-                , smallCaps =
-                    Internal.Font.hasSmallCaps details.variants
-                , weight =
-                    case details.weight of
-                        Internal.Font.Weight wght ->
-                            String.fromInt wght
-                , size =
-                    String.fromInt details.size ++ "px"
-                }
-        }
+-- {-|
+--     Ui.Font.font
+--         { name = "EB Garamond"
+--         , fallback = [ Ui.Font.serif ]
+--         , variants = []
+--         , weight = Ui.Font.bold
+--         , size = 16
+--         }
+-- -}
+-- font :
+--     { name : String
+--     , fallback : List Font
+--     , variants : List Variant
+--     , weight : Weight
+--     , size : Int
+--     }
+--     -> Attribute msg
+-- font details =
+--     Internal.Attribute
+--         { flag = Flag.fontAdjustment
+--         , attr =
+--             Internal.Font
+--                 { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
+--                 , adjustments =
+--                     Nothing
+--                 , variants =
+--                     Internal.Font.renderVariants details.variants ""
+--                 , smallCaps =
+--                     Internal.Font.hasSmallCaps details.variants
+--                 , weight =
+--                     case details.weight of
+--                         Internal.Font.Weight wght ->
+--                             String.fromInt wght
+--                 , size =
+--                     String.fromInt details.size ++ "px"
+--                 }
+--         }
 
 
 {-| Font sizes are always given as `px`.
 -}
 size : Int -> Attribute msg
 size i =
-    Internal.Attribute
-        { flag = Flag.fontSize
-        , attr = Internal.FontSize i
-        }
+    Internal.style
+        "font-size"
+        (String.fromInt i ++ "px")
 
 
 {-| -}
