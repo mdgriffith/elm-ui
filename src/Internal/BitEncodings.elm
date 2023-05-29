@@ -29,13 +29,33 @@ column =
 
 -- fields
 {-
-   - spacing           12bits
-   - spacingRatio       6bits
-   - fontHeight         6bits
-   - fontAdjustment     5bits
-   - isRow              1bit
-   - widthFill          1bit
-   - heightFill         1bit
+         - spacing           12bits
+         - spacingRatio       6bits
+         - fontHeight         6bits
+         - fontAdjustment     5bits
+         - isRow              1bit
+         - widthFill          1bit
+         - heightFill         1bit
+
+
+   New fields
+
+       - isRow                1bit
+       - isColumn             1bit
+       - hasTextModification  1bit  (text gradient, text ellipsis)
+
+       - # font height adjustment
+       - fontHeight           7bits
+
+       - # only used for spacing in paragraphs/textColumns
+       - spacingX             10bits
+       - spacingY             10bits
+
+
+
+
+
+
 
 -}
 
