@@ -92,13 +92,6 @@ none =
     BitField.init
 
 
-{-| If the query is in the truth, return True
--}
-present : Flag -> Field -> Bool
-present =
-    BitField.has
-
-
 {-| Add a flag to a field.
 -}
 add : Flag -> Field -> Field
