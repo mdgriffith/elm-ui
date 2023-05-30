@@ -4,6 +4,7 @@ module Internal.BitField exposing
     , set, setPercentage, flipIf, flip, copy, clear
     , get, getPercentage
     , has, equal
+    , fieldEqual
     )
 
 {-|
@@ -48,6 +49,8 @@ module Internal.BitField exposing
 @docs get, getPercentage
 
 @docs has, equal
+
+@docs fieldEqual
 
 -}
 
@@ -370,3 +373,9 @@ has (BitField { mask }) (Bits base) =
 equal : Bits encoding -> Bits encoding -> Bool
 equal (Bits one) (Bits two) =
     one - two == 0
+
+
+fieldEqual : BitField encoding -> BitField encoding -> Bool
+fieldEqual (BitField one) (BitField two) =
+    (one.offset == two.offset)
+        && (one.length == two.length)
