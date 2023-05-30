@@ -1,6 +1,6 @@
 module Ui.Accessibility exposing
     ( mainContent, info
-    , navigation, heading, aside
+    , navigation, aside
     , description
     , announce, announceUrgently
     )
@@ -23,7 +23,9 @@ Here's an example of annotating your navigation region:
 
 @docs mainContent, info
 
-@docs navigation, heading, aside
+@docs navigation, aside
+
+@docs h1, h2, h3, h4 h5, h6
 
 @docs description
 
@@ -41,21 +43,19 @@ import Ui exposing (Attribute)
 -}
 mainContent : Attribute msg
 mainContent =
-    Two.attribute (Html.Attributes.attribute "role" "main")
+    Two.nodeAs Two.NodeAsMain
 
 
 {-| -}
 aside : Attribute msg
 aside =
-    -- TODO! if there is more than one of these on a page, it should be labeled.
-    Two.attribute (Html.Attributes.attribute "role" "complementary")
+    Two.nodeAs Two.NodeAsAside
 
 
 {-| -}
 navigation : Attribute msg
 navigation =
-    -- TODO! if there is more than one of these, it should be labeled.
-    Two.attribute (Html.Attributes.attribute "role" "navigation")
+    Two.nodeAs Two.NodeAsNav
 
 
 
@@ -82,30 +82,40 @@ info =
     Two.attribute (Html.Attributes.attribute "role" "contentinfo")
 
 
-{-| This will mark an element as `h1`, `h2`, etc where possible.
+{-| -}
+h1 : Attribute msg
+h1 =
+    Two.nodeAs Two.NodeAsH1
 
-Though it's also smart enough to not conflict with existing nodes.
 
-So, this code
+{-| -}
+h2 : Attribute msg
+h2 =
+    Two.nodeAs Two.NodeAsH2
 
-    el
-        [ Region.heading 1
-        , link "http://fruits.com"
-        ]
-        (text "Best site ever")
 
-will generate
+{-| -}
+h3 : Attribute msg
+h3 =
+    Two.nodeAs Two.NodeAsH3
 
-    <a href="http://fruits.com">
-        <h1>Best site ever</h1>
-    </a>
 
--}
-heading : Int -> Attribute msg
-heading level =
-    -- Internal.Describe << Heading
-    -- TODO: add heading level!!
-    Two.attribute (Html.Attributes.attribute "role" "header")
+{-| -}
+h4 : Attribute msg
+h4 =
+    Two.nodeAs Two.NodeAsH4
+
+
+{-| -}
+h5 : Attribute msg
+h5 =
+    Two.nodeAs Two.NodeAsH5
+
+
+{-| -}
+h6 : Attribute msg
+h6 =
+    Two.nodeAs Two.NodeAsH6
 
 
 {-| Screen readers will announce changes to this element and potentially interrupt any other announcement.
