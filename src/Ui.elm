@@ -55,6 +55,11 @@ So, the common ways to do that would be `row` and `column`.
 @docs ellipsis, paragraph, textColumn
 
 
+# Markup
+
+@docs h1, h2, h3, h4, h5, h6
+
+
 # Attributes
 
 @docs id, noAttr
@@ -428,6 +433,60 @@ If you want multiple children, you'll need to use something like `row` or `colum
 el : List (Attribute msg) -> Element msg -> Element msg
 el attrs child =
     Two.element Two.NodeAsDiv
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h1 : List (Attribute msg) -> Element msg -> Element msg
+h1 attrs child =
+    Two.element Two.NodeAsH1
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h2 : List (Attribute msg) -> Element msg -> Element msg
+h2 attrs child =
+    Two.element Two.NodeAsH2
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h3 : List (Attribute msg) -> Element msg -> Element msg
+h3 attrs child =
+    Two.element Two.NodeAsH3
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h4 : List (Attribute msg) -> Element msg -> Element msg
+h4 attrs child =
+    Two.element Two.NodeAsH4
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h5 : List (Attribute msg) -> Element msg -> Element msg
+h5 attrs child =
+    Two.element Two.NodeAsH5
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h6 : List (Attribute msg) -> Element msg -> Element msg
+h6 attrs child =
+    Two.element Two.NodeAsH6
         Two.AsEl
         attrs
         [ child ]
