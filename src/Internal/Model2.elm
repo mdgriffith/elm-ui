@@ -929,8 +929,10 @@ type Node
     | NodeAsAside
     | NodeAsSection
     | NodeAsArticle
+    | NodeAsFooter
     | NodeAsNumberedList
     | NodeAsBulletedList
+    | NodeAsListItem
 
 
 type ResponsiveInt
@@ -1330,6 +1332,24 @@ link details =
         }
 
 
+nodeAs : Node -> Attribute msg
+nodeAs node =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = node
+                , additionalInheritance = BitField.none
+                , attrs = []
+                , class = Nothing
+                , styles = noStyles
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
 style : String -> String -> Attribute msg
 style name val =
     Attribute
@@ -1688,11 +1708,17 @@ element node layout attrs children =
                     NodeAsArticle ->
                         Html.article styleAttrs finalChildren
 
+                    NodeAsFooter ->
+                        Html.footer styleAttrs finalChildren
+
                     NodeAsNumberedList ->
                         Html.ol styleAttrs finalChildren
 
                     NodeAsBulletedList ->
                         Html.ul styleAttrs finalChildren
+
+                    NodeAsListItem ->
+                        Html.li styleAttrs finalChildren
         )
 
 
