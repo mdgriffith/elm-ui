@@ -1,233 +1,188 @@
 module Internal.Flag exposing (..)
-{-| THIS FILE IS GENERATED, NO TOUCHY -}
+
+{-| THIS FILE IS GENERATED, NO TOUCHY
+
+This file is generated via 'npm run stylesheet' in the elm-ui repository
+
+-}
+
+import Internal.BitField as BitField exposing (BitField, Bits)
 
 
-import Bitwise
+type IsFlag
+    = IsFlag
 
 
-value : Field -> Int
-value (Field int) =
-    int
+type alias Field =
+    Bits IsFlag
 
 
-viewBits : Int -> String
-viewBits i =
-    String.fromInt i ++ ":" ++ viewBitsHelper i 32
+type alias Flag =
+    BitField IsFlag
 
-
-viewBitsHelper : Int -> Int -> String
-viewBitsHelper field slot =
-    if slot <= 0 then
-        ""
-
-    else if Bitwise.and slot field - slot == 0 then
-        viewBitsHelper field (slot - 1) ++ "1"
-
-    else
-        viewBitsHelper field (slot - 1) ++ "0"
-
-
-type Field
-    = Field Int
-
-type Flag
-    = Flag Int
 
 none : Field
 none =
-    Field 0
-
-
-{-| If the query is in the truth, return True
--}
-present : Flag -> Field -> Bool
-present (Flag first) (Field fieldOne) =
-    Bitwise.and first fieldOne - first == 0
+    BitField.init
 
 
 {-| Add a flag to a field.
 -}
 add : Flag -> Field -> Field
-add myFlag (Field one) =
-    case myFlag of
-        Flag first ->
-            Field (Bitwise.or first one)
-
-{-| Generally you want to use add, which keeps a distinction between Fields and Flags.
-
-Merging will combine two fields
-
--}
-merge : Field -> Field -> Field
-merge (Field one) (Field three) =
-    Field (Bitwise.or one three)
+add myFlag myField =
+    BitField.flipIf myFlag True myField
 
 
-equal : Flag -> Flag -> Bool
-equal (Flag one) (Flag two) =
-    one - two == 0
-
-
-flag : Int -> Flag
-flag i =
-    Flag
-        (Bitwise.shiftLeftBy i 1)
-
-
-skip : Flag 
+skip : Flag
 skip =
-    Flag 0
-
-
+    BitField.first 0
 
 
 padding : Flag
 padding =
-    flag 0
+    BitField.next 1 skip
 
 
 spacing : Flag
 spacing =
-    flag 1
+    BitField.next 1 padding
 
 
 fontSize : Flag
 fontSize =
-    flag 2
+    BitField.next 1 spacing
 
 
 fontFamily : Flag
 fontFamily =
-    flag 3
+    BitField.next 1 fontSize
 
 
 width : Flag
 width =
-    flag 4
+    BitField.next 1 fontFamily
 
 
 height : Flag
 height =
-    flag 5
+    BitField.next 1 width
 
 
 fontAlignment : Flag
 fontAlignment =
-    flag 6
+    BitField.next 1 height
 
 
 fontWeight : Flag
 fontWeight =
-    flag 7
+    BitField.next 1 fontAlignment
 
 
 fontColor : Flag
 fontColor =
-    flag 8
+    BitField.next 1 fontWeight
 
 
 fontGradient : Flag
 fontGradient =
-    flag 9
+    BitField.next 1 fontColor
 
 
 fontAdjustment : Flag
 fontAdjustment =
-    flag 10
+    BitField.next 1 fontGradient
 
 
 fontEllipsis : Flag
 fontEllipsis =
-    flag 11
+    BitField.next 1 fontAdjustment
 
 
 id : Flag
 id =
-    flag 12
+    BitField.next 1 fontEllipsis
 
 
 txtShadows : Flag
 txtShadows =
-    flag 13
+    BitField.next 1 id
 
 
 shadows : Flag
 shadows =
-    flag 14
+    BitField.next 1 txtShadows
 
 
 overflow : Flag
 overflow =
-    flag 15
+    BitField.next 1 shadows
 
 
 cursor : Flag
 cursor =
-    flag 16
+    BitField.next 1 overflow
 
 
 transform : Flag
 transform =
-    flag 17
+    BitField.next 1 cursor
 
 
 borderWidth : Flag
 borderWidth =
-    flag 18
+    BitField.next 1 transform
 
 
 yAlign : Flag
 yAlign =
-    flag 19
+    BitField.next 1 borderWidth
 
 
 xAlign : Flag
 xAlign =
-    flag 20
+    BitField.next 1 yAlign
 
 
 focus : Flag
 focus =
-    flag 21
+    BitField.next 1 xAlign
 
 
 active : Flag
 active =
-    flag 22
+    BitField.next 1 focus
 
 
 hover : Flag
 hover =
-    flag 23
+    BitField.next 1 active
 
 
 gridTemplate : Flag
 gridTemplate =
-    flag 24
+    BitField.next 1 hover
 
 
 gridPosition : Flag
 gridPosition =
-    flag 25
+    BitField.next 1 gridTemplate
 
 
 widthBetween : Flag
 widthBetween =
-    flag 26
+    BitField.next 1 gridPosition
 
 
 heightBetween : Flag
 heightBetween =
-    flag 27
+    BitField.next 1 widthBetween
 
 
 background : Flag
 background =
-    flag 28
+    BitField.next 1 heightBetween
 
 
 event : Flag
 event =
-    flag 29
-
-
+    BitField.next 1 background

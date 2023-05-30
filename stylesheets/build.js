@@ -22,7 +22,7 @@ async function build() {
   const end = elmSource.indexOf("{- END COPY -}");
   const copy = elmSource.slice(start, end);
 
-  const elm = `module Internal.Style.Generated exposing (Var(..), classes, vars, stylesheet)
+  const elm = `module Internal.Style.Generated exposing (Var(..), classes, vars, stylesheet, lineHeightAdjustment)
 
 {-| This file is generated via 'npm run stylesheet' in the elm-ui repository -}
 
@@ -50,7 +50,9 @@ const flags = [
   "fontAlignment",
   "fontWeight",
   "fontColor",
+  "fontGradient",
   "fontAdjustment",
+  "fontEllipsis",
   "id",
   "txtShadows",
   "shadows",
@@ -67,107 +69,71 @@ const flags = [
   "gridPosition",
   "widthBetween",
   "heightBetween",
-  "isLink",
   "background",
   "event",
-  "hasCssVars",
 ];
 
-const base = `import Bitwise
+const base = `import Internal.BitField as BitField exposing (BitField, Bits)
 
 
-value : Field -> Int
-value (Field int) =
-    int
+type IsFlag = IsFlag
 
 
-viewBits : Int -> String
-viewBits i =
-    String.fromInt i ++ ":" ++ viewBitsHelper i 32
+type alias Field
+    = Bits IsFlag
 
 
-viewBitsHelper : Int -> Int -> String
-viewBitsHelper field slot =
-    if slot <= 0 then
-        ""
+type alias Flag
+    = BitField IsFlag
 
-    else if Bitwise.and slot field - slot == 0 then
-        viewBitsHelper field (slot - 1) ++ "1"
-
-    else
-        viewBitsHelper field (slot - 1) ++ "0"
-
-
-type Field
-    = Field Int
-
-type Flag
-    = Flag Int
 
 none : Field
 none =
-    Field 0
+    BitField.init
 
 
 {-| If the query is in the truth, return True
 -}
 present : Flag -> Field -> Bool
-present (Flag first) (Field fieldOne) =
-    Bitwise.and first fieldOne - first == 0
+present =
+    BitField.has
 
 
 {-| Add a flag to a field.
 -}
 add : Flag -> Field -> Field
-add myFlag (Field one) =
-    case myFlag of
-        Flag first ->
-            Field (Bitwise.or first one)
-
-{-| Generally you want to use add, which keeps a distinction between Fields and Flags.
-
-Merging will combine two fields
-
--}
-merge : Field -> Field -> Field
-merge (Field one) (Field three) =
-    Field (Bitwise.or one three)
-
-
-equal : Flag -> Flag -> Bool
-equal (Flag one) (Flag two) =
-    one - two == 0
-
-
-flag : Int -> Flag
-flag i =
-    Flag
-        (Bitwise.shiftLeftBy i 1)
+add myFlag myField =
+   BitField.flipIf myFlag True myField
 
 
 skip : Flag 
 skip =
-    Flag 0
-`;
+    BitField.first 0`;
 
 function build_flags(flags) {
   let items = "";
   let i = 0;
+  let previous = "skip";
   for (const flag of flags) {
     items += `
 
 ${flag} : Flag
 ${flag} =
-    flag ${i}
+    BitField.next 1 ${previous}
 `;
     i += 1;
+    previous = flag;
   }
   if (i > 32) {
     console.warn(`You have ${i} flags. The limit is 32!`);
   }
 
   return `module Internal.Flag exposing (..)
-{-| THIS FILE IS GENERATED, NO TOUCHY -}
+{-| THIS FILE IS GENERATED, NO TOUCHY 
+
+This file is generated via 'npm run stylesheet' in the elm-ui repository
+  
+-}
 
 
 ${base}
