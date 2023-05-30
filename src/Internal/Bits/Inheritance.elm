@@ -1,6 +1,7 @@
 module Internal.Bits.Inheritance exposing
     ( Encoded, Field
-    , isRow, isColumn, hasTextModification, fontHeight, spacingX, spacingY
+    , isRow, isColumn, isTextLayout
+    , hasTextModification, fontHeight, spacingX, spacingY
     , clearSpacing
     )
 
@@ -8,7 +9,9 @@ module Internal.Bits.Inheritance exposing
 
 @docs Encoded, Field
 
-@docs isRow, isColumn, hasTextModification, fontHeight, spacingX, spacingY
+@docs isRow, isColumn, isTextLayout
+
+@docs hasTextModification, fontHeight, spacingX, spacingY
 
 @docs clearSpacing
 
@@ -16,14 +19,15 @@ This module is all the information that is inherited from one node to another, w
 
     - isRow                1bit
     - isColumn             1bit
+    - isTextLayout         1bit
     - hasTextModification  1bit  (text gradient, text ellipsis)
 
     - # font height adjustment
     - fontHeight           7bits
 
     - # only used for spacing in paragraphs/textColumns
-    - spacingX             10bits
-    - spacingY             10bits
+    - spacingX             9bits
+    - spacingY             9bits
 
 -}
 
@@ -57,9 +61,15 @@ isColumn =
         |> BitField.next 1
 
 
+isTextLayout : Field
+isTextLayout =
+    isColumn
+        |> BitField.next 1
+
+
 hasTextModification : Field
 hasTextModification =
-    isColumn
+    isTextLayout
         |> BitField.next 1
 
 
@@ -72,13 +82,13 @@ fontHeight =
 spacingX : Field
 spacingX =
     fontHeight
-        |> BitField.next 10
+        |> BitField.next 9
 
 
 spacingY : Field
 spacingY =
     spacingX
-        |> BitField.next 10
+        |> BitField.next 9
 
 
 
