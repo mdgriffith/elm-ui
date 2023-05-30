@@ -226,7 +226,7 @@ import Html.Events as Event
 import Html.Keyed
 import Html.Lazy
 import Internal.BitField as BitField
-import Internal.Bits.Inheritance as Bits
+import Internal.Bits.Inheritance as Inheritance
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
@@ -849,11 +849,12 @@ width len =
                 , attr =
                     Two.Attr
                         { node = Two.NodeAsDiv
+                        , additionalInheritance = BitField.none
                         , attrs = []
                         , class = Just Style.classes.widthFill
                         , styles =
                             \inheritance _ ->
-                                if BitField.has Bits.isRow inheritance then
+                                if BitField.has Inheritance.isRow inheritance then
                                     [ Tuple.pair "flex-grow" (String.fromInt (portionSize * 100000)) ]
 
                                 else
@@ -926,11 +927,12 @@ height len =
                 , attr =
                     Two.Attr
                         { node = Two.NodeAsDiv
+                        , additionalInheritance = BitField.none
                         , attrs = []
                         , class = Just Style.classes.heightFill
                         , styles =
                             \inheritance _ ->
-                                if BitField.has Bits.isColumn inheritance then
+                                if BitField.has Inheritance.isColumn inheritance then
                                     [ Tuple.pair "flex-grow" (String.fromInt (portionSize * 100000)) ]
 
                                 else
@@ -1105,11 +1107,33 @@ spaceEvenly =
 {-| -}
 spacing : Int -> Attribute msg
 spacing x =
-    Two.styleWith Flag.spacing
-        "gap"
-        (String.fromInt x
-            ++ "px"
-        )
+    Two.Attribute
+        { flag = Flag.spacing
+        , attr =
+            Two.Attr
+                { node = Two.NodeAsDiv
+                , additionalInheritance =
+                    BitField.none
+                        |> BitField.set Inheritance.spacingX x
+                        |> BitField.set Inheritance.spacingY x
+                , attrs = []
+                , class = Nothing
+                , styles =
+                    \inheritance _ ->
+                        if BitField.has Inheritance.isTextLayout inheritance then
+                            []
+
+                        else
+                            [ Tuple.pair "gap"
+                                (String.fromInt x
+                                    ++ "px"
+                                )
+                            ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
 
 
 {-| In the majority of cases you'll just need to use `spacing`, which will work as intended.
@@ -1119,13 +1143,35 @@ However for some layouts, like `textColumn`, you may want to set a different spa
 -}
 spacingXY : Int -> Int -> Attribute msg
 spacingXY x y =
-    Two.styleWith Flag.spacing
-        "gap"
-        (String.fromInt y
-            ++ "px "
-            ++ String.fromInt x
-            ++ "px"
-        )
+    Two.Attribute
+        { flag = Flag.spacing
+        , attr =
+            Two.Attr
+                { node = Two.NodeAsDiv
+                , additionalInheritance =
+                    BitField.none
+                        |> BitField.set Inheritance.spacingX x
+                        |> BitField.set Inheritance.spacingY y
+                , attrs = []
+                , class = Nothing
+                , styles =
+                    \inheritance _ ->
+                        if BitField.has Inheritance.isTextLayout inheritance then
+                            []
+
+                        else
+                            [ Tuple.pair "gap"
+                                (String.fromInt y
+                                    ++ "px "
+                                    ++ String.fromInt x
+                                    ++ "px"
+                                )
+                            ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
 
 
 {-| -}

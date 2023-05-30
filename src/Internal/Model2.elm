@@ -661,6 +661,7 @@ mapAttr fn (Attribute attr) =
                 Attr a ->
                     Attr
                         { node = a.node
+                        , additionalInheritance = a.additionalInheritance
                         , attrs = List.map (Attr.map fn) a.attrs
                         , class = a.class
                         , styles = a.styles
@@ -705,6 +706,7 @@ noAttr =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles = noStyles
@@ -722,6 +724,7 @@ justFlag flag =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles = noStyles
@@ -739,6 +742,7 @@ nearby loc el =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles = noStyles
@@ -761,6 +765,7 @@ teleport options =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Just options.class
                 , styles =
@@ -788,6 +793,7 @@ class cls =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Just cls
                 , styles = noStyles
@@ -805,6 +811,7 @@ classWith flag cls =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Just cls
                 , styles = noStyles
@@ -822,6 +829,7 @@ transformPiece slot value =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles = noStyles
@@ -891,6 +899,7 @@ type Attribute msg
 type Attr msg
     = Attr
         { node : Node
+        , additionalInheritance : Inheritance.Encoded
         , attrs : List (Html.Attribute msg)
         , class : Maybe String
         , styles :
@@ -981,10 +990,6 @@ type alias TransitionDetails =
     , prop : String
     , val : String
     }
-
-
-hasFlags flags (Attribute attr) =
-    List.any (Flag.equal attr.flag) flags
 
 
 type Location
@@ -1185,6 +1190,7 @@ attribute a =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = [ a ]
                 , class = Nothing
                 , styles = noStyles
@@ -1201,6 +1207,7 @@ attributeWith flag a =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = [ a ]
                 , class = Nothing
                 , styles = noStyles
@@ -1220,6 +1227,7 @@ onPress msg =
         , attr =
             Attr
                 { node = NodeAsButton
+                , additionalInheritance = BitField.none
                 , attrs =
                     [ Events.onClick msg
 
@@ -1262,6 +1270,7 @@ onKey details =
         , attr =
             Attr
                 { node = NodeAsLink
+                , additionalInheritance = BitField.none
                 , attrs =
                     [ Events.preventDefaultOn "keyup"
                         (Json.map
@@ -1295,6 +1304,7 @@ link details =
         , attr =
             Attr
                 { node = NodeAsLink
+                , additionalInheritance = BitField.none
                 , attrs =
                     [ Attr.href details.url
                     , Attr.rel "noopener noreferrer"
@@ -1327,6 +1337,7 @@ style name val =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles =
@@ -1346,6 +1357,7 @@ styleDynamic name toVal =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles =
@@ -1370,6 +1382,7 @@ style2 oneName oneVal twoName twoVal =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles =
@@ -1389,6 +1402,7 @@ styleWith flag name val =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Nothing
                 , styles =
@@ -1415,6 +1429,7 @@ styleAndClass flag v =
         , attr =
             Attr
                 { node = NodeAsDiv
+                , additionalInheritance = BitField.none
                 , attrs = []
                 , class = Just v.class
                 , styles =
@@ -1546,14 +1561,48 @@ element node layout attrs children =
             let
                 myBaseBits =
                     Inheritance.clearSpacing parentBits
-                        |> BitField.flip Inheritance.isRow (layout == AsRow)
-                        |> BitField.flip Inheritance.isColumn (layout == AsColumn)
+                        |> (case layout of
+                                AsRow ->
+                                    BitField.flip Inheritance.isRow True
 
-                ( analyzedBits, myBits ) =
+                                AsColumn ->
+                                    BitField.flip Inheritance.isColumn True
+
+                                AsParagraph ->
+                                    BitField.flip Inheritance.isTextLayout True
+
+                                AsTextColumn ->
+                                    BitField.flip Inheritance.isTextLayout True
+
+                                _ ->
+                                    identity
+                           )
+
+                ( analyzedBits, myBits, iHave ) =
                     analyze Flag.none BitField.init myBaseBits attrs
 
                 htmlAttrs =
-                    toAttrs parentBits myBits Flag.none [] [] attrs
+                    if BitField.has Inheritance.isTextLayout parentBits && BitField.has Flag.xAlign iHave then
+                        let
+                            spacingX =
+                                BitField.get Inheritance.spacingX parentBits
+
+                            spacingY =
+                                BitField.get Inheritance.spacingY parentBits
+
+                            margin =
+                                Attr.style "margin"
+                                    (String.fromInt spacingY
+                                        ++ "px"
+                                        ++ " "
+                                        ++ String.fromInt spacingX
+                                        ++ "px"
+                                    )
+                        in
+                        toAttrs parentBits myBits Flag.none [ margin ] [] attrs
+
+                    else
+                        toAttrs parentBits myBits Flag.none [] [] attrs
 
                 styleAttrs =
                     if BitField.has AnalyzeBits.cssVars analyzedBits then
@@ -1675,17 +1724,12 @@ toTransformString parentBits myBits has rotation scale x y z attrs =
 
         (Attribute { flag, attr }) :: remain ->
             let
-                alwaysRender =
-                    case flag of
-                        Flag.Flag f ->
-                            f == 0
-
                 previouslyRendered =
-                    if alwaysRender then
+                    if BitField.fieldEqual flag Flag.skip then
                         False
 
                     else
-                        Flag.present flag has
+                        BitField.has flag has
             in
             if previouslyRendered then
                 toTransformString parentBits myBits has rotation scale x y z remain
@@ -1769,7 +1813,7 @@ elementKeyed name layout attrs children =
             --             (contextClasses layout)
             --             (List.reverse attrs)
             --     finalAttrs =
-            --         if Flag.present Flag.hasCssVars rendered.fields then
+            --         if BitField.has Flag.hasCssVars rendered.fields then
             --             let
             --                 styleStr =
             --                     renderInlineStylesToString
@@ -1792,7 +1836,7 @@ elementKeyed name layout attrs children =
             -- case rendered.children of
             --     Keyed finalChildren ->
             --         Html.Keyed.node
-            --             (if Flag.present Flag.isLink rendered.fields then
+            --             (if BitField.has Flag.isLink rendered.fields then
             --                 "a"
             --              else
             --                 name
@@ -1846,25 +1890,29 @@ analyze :
     -> AnalyzeBits.Encoded
     -> Inheritance.Encoded
     -> List (Attribute msg)
-    -> ( AnalyzeBits.Encoded, Inheritance.Encoded )
+    -> ( AnalyzeBits.Encoded, Inheritance.Encoded, Flag.Field )
 analyze has encoded inheritance attrs =
     case attrs of
         [] ->
-            ( encoded, inheritance )
+            ( encoded
+                |> BitField.flipIf AnalyzeBits.cssVars
+                    (BitField.has Flag.fontGradient has)
+            , inheritance
+                |> BitField.flipIf Inheritance.hasTextModification
+                    (BitField.has Flag.fontGradient has
+                        || BitField.has Flag.fontEllipsis has
+                    )
+            , has
+            )
 
         (Attribute { flag, attr }) :: remain ->
             let
-                alwaysRender =
-                    case flag of
-                        Flag.Flag f ->
-                            f == 0
-
                 previouslyRendered =
-                    if alwaysRender then
+                    if BitField.fieldEqual flag Flag.skip then
                         False
 
                     else
-                        Flag.present flag has
+                        BitField.has flag has
             in
             if previouslyRendered then
                 analyze has encoded inheritance remain
@@ -1877,8 +1925,6 @@ analyze has encoded inheritance attrs =
                                 encoded
                                     |> BitField.flipIf AnalyzeBits.transforms (details.transform /= Nothing)
                                     |> BitField.flipIf AnalyzeBits.nearbys (details.nearby /= Nothing)
-                                    |> BitField.flipIf AnalyzeBits.cssVars
-                                        (Flag.equal Flag.fontGradient flag)
                                     |> BitField.flipIf AnalyzeBits.isLink
                                         (NodeAsLink == details.node)
                                     |> BitField.flipIf AnalyzeBits.isButton
@@ -1888,8 +1934,7 @@ analyze has encoded inheritance attrs =
 
                             newInheritance =
                                 inheritance
-                                    |> BitField.flipIf Inheritance.hasTextModification
-                                        (Flag.equal Flag.fontGradient flag || Flag.equal Flag.fontEllipsis flag)
+                                    |> BitField.merge details.additionalInheritance
                         in
                         analyze (Flag.add flag has) newEncoded newInheritance remain
 
@@ -1914,17 +1959,12 @@ toAttrs parentBits myBits has htmlAttrs teleported attrs =
 
         (Attribute { flag, attr }) :: remain ->
             let
-                alwaysRender =
-                    case flag of
-                        Flag.Flag f ->
-                            f == 0
-
                 previouslyRendered =
-                    if alwaysRender then
+                    if BitField.fieldEqual flag Flag.skip then
                         False
 
                     else
-                        Flag.present flag has
+                        BitField.has flag has
             in
             if previouslyRendered then
                 toAttrs parentBits myBits has htmlAttrs teleported remain
@@ -2024,17 +2064,12 @@ toStyle parentBits myBits analyzedBits has htmlAttrs classes attrs =
 
         (Attribute { flag, attr }) :: remain ->
             let
-                alwaysRender =
-                    case flag of
-                        Flag.Flag f ->
-                            f == 0
-
                 previouslyRendered =
-                    if alwaysRender then
+                    if BitField.fieldEqual flag Flag.skip then
                         False
 
                     else
-                        Flag.present flag has
+                        BitField.has flag has
             in
             if previouslyRendered then
                 toStyle parentBits myBits analyzedBits has htmlAttrs classes remain
@@ -2065,40 +2100,6 @@ toStyle parentBits myBits analyzedBits has htmlAttrs classes attrs =
                                 toStyle parentBits myBits analyzedBits (Flag.add flag has) (addStyles list htmlAttrs) newClasses remain
 
 
-
--- Just classStr ->
---     case details.styles of
---         [] ->
---             toStyle parentBits myBits has htmlAttrs (classes ++ " " ++ classStr) remain
---         [ ( name, val ) ] ->
---             toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: htmlAttrs) (classes ++ " " ++ classStr) remain
---         [ ( name, val ), ( twoName, twoVal ) ] ->
--- toStyle parentBits myBits (Flag.add flag has) (Attr.style name val :: Attr.style twoName twoVal :: htmlAttrs) (classes ++ " " ++ classStr) remain
---     list ->
---         toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) (classes ++ " " ++ classStr) remain
--- case details.class of
---     Nothing ->
---         case details.styles of
---             [] ->
---                 toStyle parentBits myBits has htmlAttrs classes remain
---             [ ( name, val ) ] ->
---                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ name) remain
---             [ ( name, val ), ( twoName, twoVal ) ] ->
---                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ name ++ " " ++ twoName) remain
---             list ->
---                 toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) classes remain
---     Just classStr ->
---         case details.styles of
---             [] ->
---                 toStyle parentBits myBits has htmlAttrs (classes ++ " " ++ classStr) remain
---             [ ( name, val ) ] ->
---                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ classStr ++ " " ++ name) remain
---             [ ( name, val ), ( twoName, twoVal ) ] ->
---                 toStyle parentBits myBits (Flag.add flag has) htmlAttrs (classes ++ " " ++ classStr ++ " " ++ name ++ " " ++ twoName) remain
---             list ->
---                 toStyle parentBits myBits (Flag.add flag has) (addStyles list htmlAttrs) (classes ++ " " ++ classStr) remain
-
-
 addStyles : List ( String, String ) -> List (Html.Attribute msg) -> List (Html.Attribute msg)
 addStyles styles attrs =
     case styles of
@@ -2125,17 +2126,12 @@ toStyleString parentBits myBits analyzed has str attrs =
 
         (Attribute { flag, attr }) :: remain ->
             let
-                alwaysRender =
-                    case flag of
-                        Flag.Flag f ->
-                            f == 0
-
                 previouslyRendered =
-                    if alwaysRender then
+                    if BitField.fieldEqual flag Flag.skip then
                         False
 
                     else
-                        Flag.present flag has
+                        BitField.has flag has
             in
             if previouslyRendered then
                 toStyleString parentBits myBits analyzed has str remain
@@ -2222,7 +2218,7 @@ addStylesToString styles attrs =
 --                                 (transformToString trans)
 --                                 :: attrsWithParentSpacing
 --                 adjustmentNotSet =
---                     not (Flag.present Flag.fontAdjustment has)
+--                     not (BitField.has Flag.fontAdjustment has)
 --                 -- {-
 --                 --    no fontsize or adjustment -> skip
 --                 --    if fontsize is set, not adjustment:
@@ -2286,14 +2282,14 @@ addStylesToString styles attrs =
 --                             Attr.property "data-elm-ui" (Encode.list identity teleportData)
 --                                 :: attrsWithTransform
 --                 attrsWithWidthFill =
---                     if Flag.present Flag.width has then
+--                     if BitField.has Flag.width has then
 --                         -- we know we've set the width to fill
 --                         attrsWithAnimations
 --                         -- else if
 --                         --     not
---                         --         (Flag.present Flag.borderWidth has
---                         --             || Flag.present Flag.background has
---                         --             || Flag.present Flag.event has
+--                         --         (BitField.has Flag.borderWidth has
+--                         --             || BitField.has Flag.background has
+--                         --             || BitField.has Flag.event has
 --                         --         )
 --                         --         && not (BitField.has Bits.isRow parentBits)
 --                         -- then
@@ -2304,15 +2300,15 @@ addStylesToString styles attrs =
 --                         Attr.class Style.classes.widthContent
 --                             :: attrsWithAnimations
 --                 finalAttrs =
---                     if Flag.present Flag.height has then
+--                     if BitField.has Flag.height has then
 --                         -- we know we've set the width to fill
 --                         Attr.class classes
 --                             :: attrsWithWidthFill
 --                         -- else if
 --                         --     not
---                         --         (Flag.present Flag.borderWidth has
---                         --             || Flag.present Flag.background has
---                         --             || Flag.present Flag.event has
+--                         --         (BitField.has Flag.borderWidth has
+--                         --             || BitField.has Flag.background has
+--                         --             || BitField.has Flag.event has
 --                         --         )
 --                         --         && BitField.has Bits.isRow parentBits
 --                         -- then
@@ -2347,7 +2343,7 @@ addStylesToString styles attrs =
 --                     --         case layout of
 --                     --             AsParagraph ->
 --                     --                 Keyed <|
---                     --                     if Flag.present Flag.id has then
+--                     --                     if BitField.has Flag.id has then
 --                     --                         -- ( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
 --                     --                             -- :: ( "top-spacer", spacerTop (toFloat spacingY / -2) )
 --                     --                             -- ::
@@ -2359,7 +2355,7 @@ addStylesToString styles attrs =
 --                     --                         keyedChilds
 --                     --             -- ++ [ ( "bottom-spacer", spacerBottom (toFloat spacingY / -2) ) ]
 --                     --             _ ->
---                     --                 if Flag.present Flag.id has then
+--                     --                 if BitField.has Flag.id has then
 --                     --                     -- (( "ui-movable", Html.Keyed.node "div" (Attr.class "ui-movable" :: finalAttrs) keyedChilds )
 --                     --                         -- ::
 --                     --                          keyedChilds
@@ -2371,7 +2367,7 @@ addStylesToString styles attrs =
 --                     --         case layout of
 --                     --             AsParagraph ->
 --                     --                 Children <|
---                     --                     if Flag.present Flag.id has then
+--                     --                     if BitField.has Flag.id has then
 --                     --                         Html.div (Attr.class "ui-movable" :: finalAttrs) childs
 --                     --                             -- :: spacerTop (toFloat spacingY / -2)
 --                     --                             :: childs
@@ -2382,7 +2378,7 @@ addStylesToString styles attrs =
 --                     --                         childs
 --                     --             -- ++ [ spacerBottom (toFloat spacingY / -2) ]
 --                     --             _ ->
---                     --                 if Flag.present Flag.id has then
+--                     --                 if BitField.has Flag.id has then
 --                     --                     (Html.div (Attr.class "ui-movable" :: finalAttrs) childs
 --                     --                         :: childs
 --                     --                     )
@@ -2407,7 +2403,7 @@ addStylesToString styles attrs =
 --         if alwaysRender then
 --             False
 --         else
---             Flag.present flag has
+--             BitField.has flag has
 -- in
 -- if previouslyRendered then
 --     renderAttrs parentBits myBits layout details children has htmlAttrs classes remain
@@ -2768,7 +2764,7 @@ addStylesToString styles attrs =
 --                                 ++ ";"
 --                                 ++ varsWithParentSpacing
 --                 adjustmentNotSet =
---                     not (Flag.present Flag.fontAdjustment has)
+--                     not (BitField.has Flag.fontAdjustment has)
 --                 {-
 --                    no fontsize or adjustment -> skip
 --                    if fontsize is set, not adjustment:
@@ -2836,7 +2832,7 @@ addStylesToString styles attrs =
 --                     if alwaysRender then
 --                         False
 --                     else
---                         Flag.present flag has
+--                         BitField.has flag has
 --             in
 --             if previouslyRendered then
 --                 renderInlineStylesToString parentBits myBits layout details has vars remain
