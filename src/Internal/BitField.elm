@@ -1,7 +1,7 @@
 module Internal.BitField exposing
-    ( init, Bits, toInt, fromInt, toString
+    ( init, none, Bits, toInt, fromInt, toString
     , BitField, first, next
-    , set, setPercentage, flipIf, flip, copy, clear
+    , set, setPercentage, flipIf, flip, copy, clear, merge
     , get, getPercentage
     , has, equal
     , fieldEqual
@@ -40,11 +40,11 @@ module Internal.BitField exposing
         myColor
             |> BitField.get red
 
-@docs init, Bits, toInt, fromInt, toString
+@docs init, none, Bits, toInt, fromInt, toString
 
 @docs BitField, first, next
 
-@docs set, setPercentage, flipIf, flip, copy, clear
+@docs set, setPercentage, flipIf, flip, copy, clear, merge
 
 @docs get, getPercentage
 
@@ -102,6 +102,12 @@ type Bits encoding
 {-| -}
 init : Bits encoding
 init =
+    Bits 0
+
+
+{-| -}
+none : Bits encoding
+none =
     Bits 0
 
 
@@ -379,3 +385,8 @@ fieldEqual : BitField encoding -> BitField encoding -> Bool
 fieldEqual (BitField one) (BitField two) =
     (one.offset == two.offset)
         && (one.length == two.length)
+
+
+merge : Bits encoding -> Bits encoding -> Bits encoding
+merge (Bits one) (Bits two) =
+    Bits (Bitwise.or one two)
