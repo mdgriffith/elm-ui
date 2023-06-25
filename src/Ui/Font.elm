@@ -5,6 +5,7 @@ module Ui.Font exposing
     , alignLeft, alignRight, center, justify
     , exactWhitespace
     , lineHeight, letterSpacing, wordSpacing
+    , font
     , fontAdjustment
     , underline, strike, italic
     , weight
@@ -176,43 +177,84 @@ fontAdjustment =
 
 
 -}
--- {-|
---     Ui.Font.font
---         { name = "EB Garamond"
---         , fallback = [ Ui.Font.serif ]
---         , variants = []
---         , weight = Ui.Font.bold
---         , size = 16
---         }
--- -}
--- font :
---     { name : String
---     , fallback : List Font
---     , variants : List Variant
---     , weight : Weight
---     , size : Int
---     }
---     -> Attribute msg
--- font details =
---     Internal.Attribute
---         { flag = Flag.fontAdjustment
---         , attr =
---             Internal.Font
---                 { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
---                 , adjustments =
---                     Nothing
---                 , variants =
---                     Internal.Font.renderVariants details.variants ""
---                 , smallCaps =
---                     Internal.Font.hasSmallCaps details.variants
---                 , weight =
---                     case details.weight of
---                         Internal.Font.Weight wght ->
---                             String.fromInt wght
---                 , size =
---                     String.fromInt details.size ++ "px"
---                 }
---         }
+
+
+{-|
+
+    Ui.Font.font
+        { name = "EB Garamond"
+        , fallback = [ Ui.Font.serif ]
+        , variants = []
+        , weight = Ui.Font.bold
+        , size = 16
+        }
+
+-}
+font :
+    { name : String
+    , fallback : List Font
+    , variants : List Variant
+    , weight : Weight
+    , size : Int
+    }
+    -> Attribute msg
+font details =
+    Internal.Attribute
+        { flag = Flag.fontAdjustment
+        , attr =
+            Internal.Attr
+                { node = Internal.NodeAsDiv
+                , additionalInheritance = BitField.none
+                , attrs = []
+                , class = Nothing
+                , styles =
+                    \_ _ ->
+                        listIfFirst
+                            [ ( True
+                              , ( "font-family"
+                                , details.name
+                                    |> Internal.Font.render details.fallback
+                                )
+                              )
+                            , ( True
+                              , ( "font-size"
+                                , String.fromInt details.size ++ "px"
+                                )
+                              )
+                            , ( True
+                              , ( "font-weight"
+                                , case details.weight of
+                                    Internal.Font.Weight wght ->
+                                        String.fromInt wght
+                                )
+                              )
+                            , ( not (List.isEmpty details.variants)
+                              , ( "font-feature-settings"
+                                , Internal.Font.renderVariants details.variants ""
+                                )
+                              )
+                            , ( Internal.Font.hasSmallCaps details.variants
+                              , ( "font-variant-caps", "small-caps" )
+                              )
+                            ]
+                , nearby = Nothing
+                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+listIfFirst : List ( Bool, a ) -> List a
+listIfFirst list =
+    List.filterMap
+        (\( first, item ) ->
+            if first then
+                Just item
+
+            else
+                Nothing
+        )
+        list
 
 
 {-| Font sizes are always given as `px`.
