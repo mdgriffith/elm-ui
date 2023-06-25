@@ -328,32 +328,29 @@ checkbox attrs { label, icon, checked, onChange } =
             ]
                 ++ attrs
     in
-    applyLabel attributes
-        label
-        (Two.element
-            Two.AsEl
-            [ Two.attribute <|
-                Html.Attributes.attribute "role" "checkbox"
-            , Two.attribute <|
-                Html.Attributes.attribute "aria-checked" <|
-                    if checked then
-                        "true"
+    Two.element Two.NodeAsDiv
+        Two.AsEl
+        [ Two.attribute <|
+            Html.Attributes.attribute "role" "checkbox"
+        , Two.attribute <|
+            Html.Attributes.attribute "aria-checked" <|
+                if checked then
+                    "true"
 
-                    else
-                        "false"
-            , hiddenLabelAttribute2 label
-            , Ui.centerY
-            , Ui.height Ui.fill
+                else
+                    "false"
+        , hiddenLabelAttribute2 label
+        , Ui.centerY
+        , Ui.height Ui.fill
 
-            -- TODO: SHOULD BE WIDTH SHRINK
-            ]
-            [ let
-                viewIcon =
-                    Maybe.withDefault defaultCheckbox icon
-              in
-              viewIcon checked
-            ]
-        )
+        -- TODO: SHOULD BE WIDTH SHRINK
+        ]
+        [ let
+            viewIcon =
+                Maybe.withDefault defaultCheckbox icon
+          in
+          viewIcon checked
+        ]
 
 
 {-| -}
@@ -387,7 +384,6 @@ sliderHorizontal :
     List (Ui.Attribute msg)
     ->
         { onChange : Float -> msg
-        , label : Label msg
         , min : Float
         , max : Float
         , value : Float
@@ -404,80 +400,63 @@ sliderHorizontal attributes input =
             (input.value - input.min)
                 / (input.max - input.min)
     in
-    applyLabel
-        ([ Ui.Accessibility.announce
-         , Ui.width Ui.fill
-         , Ui.height Ui.fill
-         ]
-            ++ List.filter
-                (Two.hasFlags
-                    [ Flag2.width
-                    , Flag2.height
-                    , Flag2.spacing
-                    ]
-                )
-                attributes
-        )
-        input.label
-        (Ui.row
-            [ Ui.width Ui.fill
-            ]
-            [ Two.element Two.NodeAsInput
-                Two.AsEl
-                [ hiddenLabelAttribute2 input.label
-                , Two.class (Style.classes.slider ++ " focusable-parent")
-                , Two.attribute
-                    (Html.Events.onInput
-                        (\str ->
-                            case String.toFloat str of
-                                Nothing ->
-                                    -- This should never happen because the browser
-                                    -- should always provide a Float.
-                                    input.onChange 0
-
-                                Just val ->
-                                    input.onChange val
-                        )
-                    )
-                , Two.attribute
-                    (Html.Attributes.type_ "range")
-                , Two.attribute <|
-                    Html.Attributes.step
-                        (case input.step of
+    Ui.row
+        [ Ui.width Ui.fill
+        ]
+        [ Two.element Two.NodeAsInput
+            Two.AsEl
+            [ Two.class (Style.classes.slider ++ " focusable-parent")
+            , Two.attribute
+                (Html.Events.onInput
+                    (\str ->
+                        case String.toFloat str of
                             Nothing ->
-                                -- Note: If we set `any` here,
-                                -- Firefox makes a single press of the arrows keys equal to 1
-                                -- We could set the step manually to the effective range / 100
-                                -- String.fromFloat ((input.max - input.min) / 100)
-                                -- Which matches Chrome's default behavior
-                                -- HOWEVER, that means manually moving a slider with the mouse will snap to that interval.
-                                "any"
+                                -- This should never happen because the browser
+                                -- should always provide a Float.
+                                input.onChange 0
 
-                            Just step ->
-                                String.fromFloat step
-                        )
-                , Two.attribute
-                    (Html.Attributes.min (String.fromFloat input.min))
-                , Two.attribute
-                    (Html.Attributes.max (String.fromFloat input.max))
-                , Two.attribute <|
-                    Html.Attributes.value (String.fromFloat input.value)
-                , Ui.width Ui.fill
-                , Ui.height Ui.fill
-                ]
-                []
-            , Ui.el
-                (Ui.width Ui.fill
-                    :: Ui.height (Ui.px 20)
-                    :: attributes
-                    -- This is after `attributes` because the thumb should be in front of everything.
-                    ++ [ Ui.behindContent
-                            (viewThumb factor thumbAttributes)
-                       ]
+                            Just val ->
+                                input.onChange val
+                    )
                 )
-                Ui.none
+            , Two.attribute
+                (Html.Attributes.type_ "range")
+            , Two.attribute <|
+                Html.Attributes.step
+                    (case input.step of
+                        Nothing ->
+                            -- Note: If we set `any` here,
+                            -- Firefox makes a single press of the arrows keys equal to 1
+                            -- We could set the step manually to the effective range / 100
+                            -- String.fromFloat ((input.max - input.min) / 100)
+                            -- Which matches Chrome's default behavior
+                            -- HOWEVER, that means manually moving a slider with the mouse will snap to that interval.
+                            "any"
+
+                        Just step ->
+                            String.fromFloat step
+                    )
+            , Two.attribute
+                (Html.Attributes.min (String.fromFloat input.min))
+            , Two.attribute
+                (Html.Attributes.max (String.fromFloat input.max))
+            , Two.attribute <|
+                Html.Attributes.value (String.fromFloat input.value)
+            , Ui.width Ui.fill
+            , Ui.height Ui.fill
             ]
-        )
+            []
+        , Ui.el
+            (Ui.width Ui.fill
+                :: Ui.height (Ui.px 20)
+                :: attributes
+                -- This is after `attributes` because the thumb should be in front of everything.
+                ++ [ Ui.behindContent
+                        (viewThumb factor thumbAttributes)
+                   ]
+            )
+            Ui.none
+        ]
 
 
 {-| -}
@@ -485,7 +464,6 @@ sliderVertical :
     List (Ui.Attribute msg)
     ->
         { onChange : Float -> msg
-        , label : Label msg
         , min : Float
         , max : Float
         , value : Float
@@ -507,82 +485,65 @@ sliderVertical attrs input =
             (input.value - input.min)
                 / (input.max - input.min)
     in
-    applyLabel
-        ([ Ui.Accessibility.announce
-         , Ui.width Ui.fill
-         , Ui.height Ui.fill
-         ]
-            ++ List.filter
-                (Two.hasFlags
-                    [ Flag2.width
-                    , Flag2.height
-                    , Flag2.spacing
-                    ]
-                )
-                attributes
-        )
-        input.label
-        (Ui.row
-            [ Ui.width Ui.fill
-            ]
-            [ Two.element Two.NodeAsInput
-                Two.AsEl
-                [ hiddenLabelAttribute2 input.label
-                , Two.class (Style.classes.slider ++ " focusable-parent")
-                , Two.attribute <|
-                    Html.Attributes.attribute "orient" "vertical"
-                , Two.attribute
-                    (Html.Events.onInput
-                        (\str ->
-                            case String.toFloat str of
-                                Nothing ->
-                                    -- This should never happen because the browser
-                                    -- should always provide a Float.
-                                    input.onChange 0
-
-                                Just val ->
-                                    input.onChange val
-                        )
-                    )
-                , Two.attribute
-                    (Html.Attributes.type_ "range")
-                , Two.attribute <|
-                    Html.Attributes.step
-                        (case input.step of
+    Ui.row
+        [ Ui.width Ui.fill
+        ]
+        [ Two.element Two.NodeAsInput
+            Two.AsEl
+            [ Two.class (Style.classes.slider ++ " focusable-parent")
+            , Two.attribute <|
+                Html.Attributes.attribute "orient" "vertical"
+            , Two.attribute
+                (Html.Events.onInput
+                    (\str ->
+                        case String.toFloat str of
                             Nothing ->
-                                -- Note: If we set `any` here,
-                                -- Firefox makes a single press of the arrows keys equal to 1
-                                -- We could set the step manually to the effective range / 100
-                                -- String.fromFloat ((input.max - input.min) / 100)
-                                -- Which matches Chrome's default behavior
-                                -- HOWEVER, that means manually moving a slider with the mouse will snap to that interval.
-                                "any"
+                                -- This should never happen because the browser
+                                -- should always provide a Float.
+                                input.onChange 0
 
-                            Just step ->
-                                String.fromFloat step
-                        )
-                , Two.attribute
-                    (Html.Attributes.min (String.fromFloat input.min))
-                , Two.attribute
-                    (Html.Attributes.max (String.fromFloat input.max))
-                , Two.attribute <|
-                    Html.Attributes.value (String.fromFloat input.value)
-                , Ui.width Ui.fill
-                , Ui.height Ui.fill
-                ]
-                []
-            , Ui.el
-                (Ui.height Ui.fill
-                    :: Ui.width (Ui.px 20)
-                    :: attributes
-                    -- This is after `attributes` because the thumb should be in front of everything.
-                    ++ [ Ui.behindContent
-                            (viewVerticalThumb factor thumbAttributes)
-                       ]
+                            Just val ->
+                                input.onChange val
+                    )
                 )
-                Ui.none
+            , Two.attribute
+                (Html.Attributes.type_ "range")
+            , Two.attribute <|
+                Html.Attributes.step
+                    (case input.step of
+                        Nothing ->
+                            -- Note: If we set `any` here,
+                            -- Firefox makes a single press of the arrows keys equal to 1
+                            -- We could set the step manually to the effective range / 100
+                            -- String.fromFloat ((input.max - input.min) / 100)
+                            -- Which matches Chrome's default behavior
+                            -- HOWEVER, that means manually moving a slider with the mouse will snap to that interval.
+                            "any"
+
+                        Just step ->
+                            String.fromFloat step
+                    )
+            , Two.attribute
+                (Html.Attributes.min (String.fromFloat input.min))
+            , Two.attribute
+                (Html.Attributes.max (String.fromFloat input.max))
+            , Two.attribute <|
+                Html.Attributes.value (String.fromFloat input.value)
+            , Ui.width Ui.fill
+            , Ui.height Ui.fill
             ]
-        )
+            []
+        , Ui.el
+            (Ui.height Ui.fill
+                :: Ui.width (Ui.px 20)
+                :: attributes
+                -- This is after `attributes` because the thumb should be in front of everything.
+                ++ [ Ui.behindContent
+                        (viewVerticalThumb factor thumbAttributes)
+                   ]
+            )
+            Ui.none
+        ]
 
 
 viewThumb factor thumbAttributes =
@@ -680,14 +641,13 @@ textHelper2 textInput attrs textOptions =
         withDefaults =
             defaultTextBoxStyle2 ++ attrs
 
-        redistributed =
-            redistribute2 textInput.type_ withDefaults
-
+        -- redistributed =
+        --     redistribute2 textInput.type_ withDefaults
         inputElement =
             Two.element
                 (case textInput.type_ of
                     TextInputNode inputType ->
-                        Two.NodeAsLabel
+                        Two.NodeAsInput
 
                     TextArea ->
                         Two.NodeAsTextArea
@@ -725,7 +685,7 @@ textHelper2 textInput attrs textOptions =
                             Just fill ->
                                 Two.attribute (Html.Attributes.attribute "autocomplete" fill)
                        ]
-                    ++ redistributed.input
+                    ++ withDefaults
                 )
                 []
 
@@ -735,23 +695,19 @@ textHelper2 textInput attrs textOptions =
                     -- textarea with height-content means that
                     -- the input element is rendered `inFront` with a transparent background
                     -- Then the input text is rendered as the space filling Ui.
-                    Two.element
+                    Two.element Two.NodeAsDiv
                         Two.AsEl
-                        ([ Ui.width Ui.fill
-                         , Two.class classes.focusedWithin
-                         , Two.class classes.inputMultilineWrapper
-                         ]
-                            ++ redistributed.inputParent
-                        )
-                        [ Two.element
+                        [ Ui.width Ui.fill
+                        , Two.class classes.focusedWithin
+                        , Two.class classes.inputMultilineWrapper
+                        ]
+                        [ Two.element Two.NodeAsDiv
                             Two.AsParagraph
-                            ([ Ui.width Ui.fill
-                             , Ui.height Ui.fill
-                             , Ui.inFront inputElement
-                             , Two.class classes.inputMultilineParent
-                             ]
-                                ++ redistributed.textAreaWrapper
-                            )
+                            [ Ui.width Ui.fill
+                            , Ui.height Ui.fill
+                            , Ui.inFront inputElement
+                            , Two.class classes.inputMultilineParent
+                            ]
                             (if textOptions.text == "" then
                                 case textOptions.placeholder of
                                     Nothing ->
@@ -761,12 +717,13 @@ textHelper2 textInput attrs textOptions =
                                         ]
 
                                     Just place ->
-                                        [ renderPlaceholder redistributed.placeholder place (textOptions.text == "")
+                                        [ renderPlaceholder [] place (textOptions.text == "")
                                         ]
 
                              else
                                 [ Ui.html
-                                    (Html.span (Html.Attributes.class classes.inputMultilineFiller :: redistributed.textAreaFiller)
+                                    (Html.span (Html.Attributes.class classes.inputMultilineFiller :: [])
+                                        --redistributed.textAreaFiller)
                                         -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
                                         [ Html.text (textOptions.text ++ "\u{00A0}")
                                         ]
@@ -776,40 +733,41 @@ textHelper2 textInput attrs textOptions =
                         ]
 
                 TextInputNode inputType ->
-                    Two.element
-                        Two.AsEl
-                        (Ui.width Ui.fill
-                            :: Two.class classes.focusedWithin
-                            :: Two.class Style.classes.inputTextInputWrapper
-                            :: List.concat
-                                [ redistributed.inputParent
-                                , case textOptions.placeholder of
-                                    Nothing ->
-                                        []
+                    -- Two.element
+                    --     Two.AsEl
+                    --     (Ui.width Ui.fill
+                    --         :: Two.class classes.focusedWithin
+                    --         :: Two.class Style.classes.inputTextInputWrapper
+                    --         :: List.concat
+                    --             [ redistributed.inputParent
+                    --             , case textOptions.placeholder of
+                    --                 Nothing ->
+                    --                     []
+                    --                 Just place ->
+                    --                     [ Ui.behindContent
+                    --                         (renderPlaceholder redistributed.placeholder place (textOptions.text == ""))
+                    --                     ]
+                    --             ]
+                    --     )
+                    --     [
+                    inputElement
 
-                                    Just place ->
-                                        [ Ui.behindContent
-                                            (renderPlaceholder redistributed.placeholder place (textOptions.text == ""))
-                                        ]
-                                ]
-                        )
-                        [ inputElement ]
+        -- ]
     in
-    applyLabel
-        (Two.classWith Flag2.cursor classes.cursorText
-            :: Two.class Style.classes.inputTextParent
-            :: (if isHiddenLabel textOptions.label then
-                    Two.noAttr
-
-                else
-                    Ui.spacing
-                        5
-               )
-            :: Ui.Accessibility.announce
-            :: redistributed.parent
-        )
-        textOptions.label
-        wrappedInput
+    -- applyLabel
+    --     (Two.classWith Flag2.cursor classes.cursorText
+    --         :: Two.class Style.classes.inputTextParent
+    --         :: (if isHiddenLabel textOptions.label then
+    --                 Two.noAttr
+    --             else
+    --                 Ui.spacing
+    --                     5
+    --            )
+    --         :: Ui.Accessibility.announce
+    --         :: redistributed.parent
+    --     )
+    --     textOptions.label
+    wrappedInput
 
 
 renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
@@ -860,235 +818,200 @@ renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
 --             Internal.NoAttribute
 --         Just vSpace ->
 --             Ui.moveUp (toFloat (floor (toFloat vSpace / 2)))
-
-
-{-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
-
-redistribute them to the parent, the input, or the cover.
-
-  - fullParent -> Wrapper around label and input
-  - parent -> parent of wrapper
-  - wrapper -> the element that is here to take up space.
-  - cover -> things like placeholders or text areas which are layered on top of input.
-  - input -> actual input element
-
-^^ old logic
-
-----vv new logic
-
-  - nearbys -> inputParent element
-  - attributes -> `input`
-  - styles and classes ->
-    full parent (with special css to invalidate, and move styles to the proper places)
-
--}
-redistribute2 :
-    TextKind
-    -> List (Ui.Attribute msg)
-    ->
-        { parent : List (Ui.Attribute msg)
-        , inputParent : List (Ui.Attribute msg)
-        , input : List (Ui.Attribute msg)
-        , placeholder : List (Ui.Attribute msg)
-        , textAreaWrapper : List (Ui.Attribute msg)
-        , textAreaFiller : List (Html.Attribute msg)
-        }
-redistribute2 input attrs =
-    List.foldl (redistributeOver2 input)
-        { parent = []
-        , inputParent = []
-        , input = []
-        , placeholder = []
-        , textAreaWrapper = []
-        , textAreaFiller = []
-        }
-        attrs
-        |> (\redist ->
-                { parent = List.reverse redist.parent
-                , inputParent = List.reverse redist.inputParent
-                , input = List.reverse redist.input
-                , placeholder = List.reverse redist.placeholder
-                , textAreaWrapper = List.reverse redist.textAreaWrapper
-                , textAreaFiller = List.reverse redist.textAreaFiller
-                }
-           )
-
-
-{-|
-
-    --> full parent
-    <label class="ctxt spacing-12-12 s c wf lbl" aria-live="polite">
-      --> actual label
-      <div class="font-size-14 s e">
-        <div class="s t wf hf">Username</div>
-      </div>
-
-      --> parent (wrapper only applies to multiline text)
-      <div class="pad-0-3060-0-3060 br-3 bc-186-189-182-255 bg-255-255-255-255 b-1 hc spacing-12-12 s e wf focus-within">
-
-        --> placeholder (cover)
-        <div class="nb e bh">
-          <div class="p-12 b-1 fc-136-138-133-255 cp bc-0-0-0-0 bg-0-0-0-0 hf transparency-0 s e wf notxt ppe">
-            <div class="s t wf hf">username</div>
-          </div>
-        </div>
-
-        --> actual input
-        <input
-          class="spacing-12-12 s e wf it"
-          type="text"
-          spellcheck="false"
-          style="line-height: calc(1em + 24px); height: calc(1em + 24px);"
-        />
-
-        --> manually attached `nearby`
-        <div class="nb e b">
-          <div class="hc fc-204-0-0-255 font-size-14 ah ar s e wc mv-0-1530-0">
-            <div class="s t wf hf">This one is wrong</div>
-          </div>
-        </div>
-      </div>
-    </label>
-
--}
-redistributeOver2 :
-    TextKind
-    -> Ui.Attribute msg
-    ->
-        { parent :
-            List (Ui.Attribute msg)
-        , textAreaFiller : List (Html.Attribute b)
-        , input : List (Ui.Attribute msg)
-        , textAreaWrapper : List (Ui.Attribute msg)
-        , inputParent : List (Ui.Attribute msg)
-        , placeholder : List (Ui.Attribute msg)
-        }
-    ->
-        { parent :
-            List (Ui.Attribute msg)
-        , textAreaFiller : List (Html.Attribute b)
-        , input : List (Ui.Attribute msg)
-        , textAreaWrapper : List (Ui.Attribute msg)
-        , inputParent : List (Ui.Attribute msg)
-        , placeholder : List (Ui.Attribute msg)
-        }
-redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
-    case attrDetails.attr of
-        Two.Spacing xSpace ySpace ->
-            case input of
-                TextArea ->
-                    let
-                        height =
-                            Two.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
-
-                        lineHeight =
-                            Two.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
-                    in
-                    { els
-                        | parent = attr :: els.parent
-                        , textAreaFiller =
-                            Html.Attributes.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
-                                :: Html.Attributes.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
-                                :: els.textAreaFiller
-                        , input =
-                            Ui.moveUp
-                                (toFloat (floor (toFloat ySpace / 2)))
-                                :: lineHeight
-                                :: height
-                                :: els.input
-                        , textAreaWrapper = attr :: els.textAreaWrapper
-                    }
-
-                TextInputNode _ ->
-                    { els
-                        | parent = attr :: els.parent
-                    }
-
-        Two.Padding pad ->
-            case input of
-                TextArea ->
-                    { els
-                        | inputParent = attr :: els.inputParent
-                        , placeholder = attr :: els.placeholder
-                    }
-
-                TextInputNode _ ->
-                    { els
-                        | inputParent =
-                            Ui.paddingEach Two.emptyEdges
-                                :: els.inputParent
-                        , placeholder = attr :: els.placeholder
-                        , input =
-                            Two.style "height"
-                                ("calc(1em + "
-                                    ++ String.fromInt (pad.top + pad.bottom)
-                                    ++ "px)"
-                                )
-                                :: Two.style "line-height"
-                                    ("calc(1em + "
-                                        ++ String.fromInt (pad.top + pad.bottom)
-                                        ++ "px)"
-                                    )
-                                :: attr
-                                :: els.input
-                    }
-
-        Two.Nearby _ _ ->
-            { els | inputParent = attr :: els.inputParent }
-
-        Two.NoAttribute ->
-            els
-
-        Two.OnPress _ ->
-            { els | input = attr :: els.input }
-
-        Two.OnKey _ ->
-            { els | input = attr :: els.input }
-
-        Two.Attr a ->
-            { els
-                | input = attr :: els.input
-            }
-
-        Two.Class _ ->
-            { els | parent = attr :: els.parent }
-
-        Two.FontSize _ ->
-            { els | parent = attr :: els.parent }
-
-        Two.Font _ ->
-            { els | parent = attr :: els.parent }
-
-        Two.WidthFill _ ->
-            { els
-                | parent = attr :: els.parent
-            }
-
-        Two.HeightFill _ ->
-            { els
-                | parent = attr :: els.parent
-            }
-
-        Two.Link _ ->
-            els
-
-        Two.TransformPiece _ _ ->
-            { els | parent = attr :: els.parent }
-
-        Two.Style _ ->
-            { els
-                | parent = attr :: els.parent
-                , inputParent = attr :: els.inputParent
-            }
-
-        Two.Style2 _ ->
-            { els
-                | parent = attr :: els.parent
-                , inputParent = attr :: els.inputParent
-            }
-
-        Two.CssTeleport _ ->
-            { els | parent = attr :: els.parent }
+-- {-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
+-- redistribute them to the parent, the input, or the cover.
+--   - fullParent -> Wrapper around label and input
+--   - parent -> parent of wrapper
+--   - wrapper -> the element that is here to take up space.
+--   - cover -> things like placeholders or text areas which are layered on top of input.
+--   - input -> actual input element
+-- ^^ old logic
+-- ----vv new logic
+--   - nearbys -> inputParent element
+--   - attributes -> `input`
+--   - styles and classes ->
+--     full parent (with special css to invalidate, and move styles to the proper places)
+-- -}
+-- redistribute2 :
+--     TextKind
+--     -> List (Ui.Attribute msg)
+--     ->
+--         { parent : List (Ui.Attribute msg)
+--         , inputParent : List (Ui.Attribute msg)
+--         , input : List (Ui.Attribute msg)
+--         , placeholder : List (Ui.Attribute msg)
+--         , textAreaWrapper : List (Ui.Attribute msg)
+--         , textAreaFiller : List (Html.Attribute msg)
+--         }
+-- redistribute2 input attrs =
+--     List.foldl (redistributeOver2 input)
+--         { parent = []
+--         , inputParent = []
+--         , input = []
+--         , placeholder = []
+--         , textAreaWrapper = []
+--         , textAreaFiller = []
+--         }
+--         attrs
+--         |> (\redist ->
+--                 { parent = List.reverse redist.parent
+--                 , inputParent = List.reverse redist.inputParent
+--                 , input = List.reverse redist.input
+--                 , placeholder = List.reverse redist.placeholder
+--                 , textAreaWrapper = List.reverse redist.textAreaWrapper
+--                 , textAreaFiller = List.reverse redist.textAreaFiller
+--                 }
+--            )
+-- {-|
+--     --> full parent
+--     <label class="ctxt spacing-12-12 s c wf lbl" aria-live="polite">
+--       --> actual label
+--       <div class="font-size-14 s e">
+--         <div class="s t wf hf">Username</div>
+--       </div>
+--       --> parent (wrapper only applies to multiline text)
+--       <div class="pad-0-3060-0-3060 br-3 bc-186-189-182-255 bg-255-255-255-255 b-1 hc spacing-12-12 s e wf focus-within">
+--         --> placeholder (cover)
+--         <div class="nb e bh">
+--           <div class="p-12 b-1 fc-136-138-133-255 cp bc-0-0-0-0 bg-0-0-0-0 hf transparency-0 s e wf notxt ppe">
+--             <div class="s t wf hf">username</div>
+--           </div>
+--         </div>
+--         --> actual input
+--         <input
+--           class="spacing-12-12 s e wf it"
+--           type="text"
+--           spellcheck="false"
+--           style="line-height: calc(1em + 24px); height: calc(1em + 24px);"
+--         />
+--         --> manually attached `nearby`
+--         <div class="nb e b">
+--           <div class="hc fc-204-0-0-255 font-size-14 ah ar s e wc mv-0-1530-0">
+--             <div class="s t wf hf">This one is wrong</div>
+--           </div>
+--         </div>
+--       </div>
+--     </label>
+-- -}
+-- redistributeOver2 :
+--     TextKind
+--     -> Ui.Attribute msg
+--     ->
+--         { parent :
+--             List (Ui.Attribute msg)
+--         , textAreaFiller : List (Html.Attribute b)
+--         , input : List (Ui.Attribute msg)
+--         , textAreaWrapper : List (Ui.Attribute msg)
+--         , inputParent : List (Ui.Attribute msg)
+--         , placeholder : List (Ui.Attribute msg)
+--         }
+--     ->
+--         { parent :
+--             List (Ui.Attribute msg)
+--         , textAreaFiller : List (Html.Attribute b)
+--         , input : List (Ui.Attribute msg)
+--         , textAreaWrapper : List (Ui.Attribute msg)
+--         , inputParent : List (Ui.Attribute msg)
+--         , placeholder : List (Ui.Attribute msg)
+--         }
+-- redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
+--     case attrDetails.attr of
+--         Two.Spacing xSpace ySpace ->
+--             case input of
+--                 TextArea ->
+--                     let
+--                         height =
+--                             Two.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
+--                         lineHeight =
+--                             Two.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
+--                     in
+--                     { els
+--                         | parent = attr :: els.parent
+--                         , textAreaFiller =
+--                             Html.Attributes.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
+--                                 :: Html.Attributes.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
+--                                 :: els.textAreaFiller
+--                         , input =
+--                             Ui.moveUp
+--                                 (toFloat (floor (toFloat ySpace / 2)))
+--                                 :: lineHeight
+--                                 :: height
+--                                 :: els.input
+--                         , textAreaWrapper = attr :: els.textAreaWrapper
+--                     }
+--                 TextInputNode _ ->
+--                     { els
+--                         | parent = attr :: els.parent
+--                     }
+--         Two.Padding pad ->
+--             case input of
+--                 TextArea ->
+--                     { els
+--                         | inputParent = attr :: els.inputParent
+--                         , placeholder = attr :: els.placeholder
+--                     }
+--                 TextInputNode _ ->
+--                     { els
+--                         | inputParent =
+--                             Ui.paddingEach Two.emptyEdges
+--                                 :: els.inputParent
+--                         , placeholder = attr :: els.placeholder
+--                         , input =
+--                             Two.style "height"
+--                                 ("calc(1em + "
+--                                     ++ String.fromInt (pad.top + pad.bottom)
+--                                     ++ "px)"
+--                                 )
+--                                 :: Two.style "line-height"
+--                                     ("calc(1em + "
+--                                         ++ String.fromInt (pad.top + pad.bottom)
+--                                         ++ "px)"
+--                                     )
+--                                 :: attr
+--                                 :: els.input
+--                     }
+--         Two.Nearby _ _ ->
+--             { els | inputParent = attr :: els.inputParent }
+--         Two.NoAttribute ->
+--             els
+--         Two.OnPress _ ->
+--             { els | input = attr :: els.input }
+--         Two.OnKey _ ->
+--             { els | input = attr :: els.input }
+--         Two.Attr a ->
+--             { els
+--                 | input = attr :: els.input
+--             }
+--         Two.Class _ ->
+--             { els | parent = attr :: els.parent }
+--         Two.FontSize _ ->
+--             { els | parent = attr :: els.parent }
+--         Two.Font _ ->
+--             { els | parent = attr :: els.parent }
+--         Two.WidthFill _ ->
+--             { els
+--                 | parent = attr :: els.parent
+--             }
+--         Two.HeightFill _ ->
+--             { els
+--                 | parent = attr :: els.parent
+--             }
+--         Two.Link _ ->
+--             els
+--         Two.TransformPiece _ _ ->
+--             { els | parent = attr :: els.parent }
+--         Two.Style _ ->
+--             { els
+--                 | parent = attr :: els.parent
+--                 , inputParent = attr :: els.inputParent
+--             }
+--         Two.Style2 _ ->
+--             { els
+--                 | parent = attr :: els.parent
+--                 , inputParent = attr :: els.inputParent
+--             }
+--         Two.CssTeleport _ ->
+--             { els | parent = attr :: els.parent }
 
 
 {-| -}
@@ -1303,7 +1226,7 @@ applyLabel attrs label input =
         Label position labelAttrs labelChild ->
             let
                 labelElement =
-                    Two.element
+                    Two.element Two.NodeAsDiv
                         Two.AsEl
                         labelAttrs
                         [ labelChild ]
