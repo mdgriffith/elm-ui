@@ -30,6 +30,11 @@ type Element msg
     = Element (Inheritance.Encoded -> Html.Html msg)
 
 
+unwrap : Inheritance.Encoded -> Element msg -> Html.Html msg
+unwrap inheritance (Element fn) =
+    fn inheritance
+
+
 map : (a -> b) -> Element a -> Element b
 map fn el =
     case el of
