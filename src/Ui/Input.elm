@@ -1,6 +1,5 @@
 module Ui.Input exposing
-    ( focusedOnLoad
-    , checkbox
+    ( checkbox
     , text, multiline
     , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
@@ -22,13 +21,6 @@ While these three goals may seem pretty obvious, Html and CSS have made it surpr
 And incredibly difficult for developers to remember all the tricks necessary to make things work. If you've every tried to make a `<textarea>` be the height of it's content or restyle a radio button while maintaining accessibility, you may be familiar.
 
 This module is intended to be accessible by default. You shouldn't have to wade through docs, articles, and books to find out [exactly how accessible your html actually is](https://www.powermapper.com/tests/screen-readers/aria/index.html).
-
-
-# Focus Styling
-
-All Elements can be styled on focus by using [`Ui.focusStyle`](Element#focusStyle) to set a global focus style or [`Ui.focused`](Element#focused) to set a focus style individually for an Ui.
-
-@docs focusedOnLoad
 
 
 # Checkboxes
@@ -430,7 +422,7 @@ sliderHorizontal attributes input =
         (Ui.row
             [ Ui.width Ui.fill
             ]
-            [ Two.elementAs Html.input
+            [ Two.element Two.NodeAsInput
                 Two.AsEl
                 [ hiddenLabelAttribute2 input.label
                 , Two.class (Style.classes.slider ++ " focusable-parent")
@@ -533,7 +525,7 @@ sliderVertical attrs input =
         (Ui.row
             [ Ui.width Ui.fill
             ]
-            [ Two.elementAs Html.input
+            [ Two.element Two.NodeAsInput
                 Two.AsEl
                 [ hiddenLabelAttribute2 input.label
                 , Two.class (Style.classes.slider ++ " focusable-parent")
@@ -692,13 +684,13 @@ textHelper2 textInput attrs textOptions =
             redistribute2 textInput.type_ withDefaults
 
         inputElement =
-            Two.elementAs
+            Two.element
                 (case textInput.type_ of
                     TextInputNode inputType ->
-                        Html.input
+                        Two.NodeAsLabel
 
                     TextArea ->
-                        Html.textarea
+                        Two.NodeAsTextArea
                 )
                 Two.AsEl
                 ((case textInput.type_ of
@@ -1303,7 +1295,7 @@ applyLabel attrs label input =
         HiddenLabel labelText ->
             -- NOTE: This means that the label is applied outside of this function!
             -- It would be nice to unify this logic, but it's a little tricky
-            Two.elementAs Html.label
+            Two.element Two.NodeAsLabel
                 Two.AsColumn
                 attrs
                 [ input ]
@@ -1318,25 +1310,25 @@ applyLabel attrs label input =
             in
             case position of
                 Above ->
-                    Two.elementAs Html.label
+                    Two.element Two.NodeAsLabel
                         Two.AsColumn
                         (Two.class classes.inputLabel :: attrs)
                         [ labelElement, input ]
 
                 Below ->
-                    Two.elementAs Html.label
+                    Two.element Two.NodeAsLabel
                         Two.AsColumn
                         (Two.class classes.inputLabel :: attrs)
                         [ input, labelElement ]
 
                 OnRight ->
-                    Two.elementAs Html.label
+                    Two.element Two.NodeAsLabel
                         Two.AsRow
                         (Two.class classes.inputLabel :: attrs)
                         [ input, labelElement ]
 
                 OnLeft ->
-                    Two.elementAs Html.label
+                    Two.element Two.NodeAsLabel
                         Two.AsRow
                         (Two.class classes.inputLabel :: attrs)
                         [ labelElement, input ]
@@ -1651,16 +1643,6 @@ onKeyLookup2 lookup =
                 |> Json.andThen decode
     in
     Two.attribute <| Html.Events.on "keyup" isKey
-
-
-{-| Attach this attribute to any `Input` that you would like to be automatically focused when the page loads.
-
-You should only have a maximum of one per page.
-
--}
-focusedOnLoad : Ui.Attribute msg
-focusedOnLoad =
-    Two.attribute <| Html.Attributes.autofocus True
 
 
 
