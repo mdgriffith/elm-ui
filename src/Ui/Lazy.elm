@@ -23,65 +23,65 @@ benchmark to be sure!
 -}
 
 import Html.Lazy
-import Internal.Model2 as Two
+import Internal.Model2 as Internal
 import Ui exposing (Element)
 
 
 {-| -}
 lazy : (a -> Element msg) -> a -> Element msg
 lazy fn a =
-    Two.Element (\s -> Html.Lazy.lazy3 apply1 fn a s)
+    Internal.Element (\s -> Html.Lazy.lazy3 apply1 fn a s)
 
 
 {-| -}
 lazy2 : (a -> b -> Element msg) -> a -> b -> Element msg
 lazy2 fn a b =
-    Two.Element (\s -> Html.Lazy.lazy4 apply2 fn a b s)
+    Internal.Element (\s -> Html.Lazy.lazy4 apply2 fn a b s)
 
 
 {-| -}
 lazy3 : (a -> b -> c -> Element msg) -> a -> b -> c -> Element msg
 lazy3 fn a b c =
-    Two.Element (\s -> Html.Lazy.lazy5 apply3 fn a b c s)
+    Internal.Element (\s -> Html.Lazy.lazy5 apply3 fn a b c s)
 
 
 {-| -}
 lazy4 : (a -> b -> c -> d -> Element msg) -> a -> b -> c -> d -> Element msg
 lazy4 fn a b c d =
-    Two.Element (\s -> Html.Lazy.lazy6 apply4 fn a b c d s)
+    Internal.Element (\s -> Html.Lazy.lazy6 apply4 fn a b c d s)
 
 
 {-| -}
 lazy5 : (a -> b -> c -> d -> e -> Element msg) -> a -> b -> c -> d -> e -> Element msg
 lazy5 fn a b c d e =
-    Two.Element (\s -> Html.Lazy.lazy7 apply5 fn a b c d e s)
+    Internal.Element (\s -> Html.Lazy.lazy7 apply5 fn a b c d e s)
 
 
 {-| -}
 lazy6 : (a -> b -> c -> d -> e -> f -> Element msg) -> a -> b -> c -> d -> e -> f -> Element msg
 lazy6 fn a b c d e f =
-    Two.Element (\s -> Html.Lazy.lazy8 apply6 fn a b c d e f s)
+    Internal.Element (\s -> Html.Lazy.lazy8 apply6 fn a b c d e f s)
 
 
 apply1 fn a s =
-    Two.unwrap s (fn a)
+    Internal.unwrap s (fn a)
 
 
 apply2 fn a b s =
-    Two.unwrap s (fn a b)
+    Internal.unwrap s (fn a b)
 
 
 apply3 fn a b c s =
-    Two.unwrap s (fn a b c)
+    Internal.unwrap s (fn a b c)
 
 
 apply4 fn a b c d s =
-    Two.unwrap s (fn a b c d)
+    Internal.unwrap s (fn a b c d)
 
 
 apply5 fn a b c d e s =
-    Two.unwrap s (fn a b c d e)
+    Internal.unwrap s (fn a b c d e)
 
 
 apply6 fn a b c d e f s =
-    Two.unwrap s (fn a b c d e f)
+    Internal.unwrap s (fn a b c d e f)

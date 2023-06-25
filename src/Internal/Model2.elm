@@ -922,6 +922,17 @@ type Node
     | NodeAsLink
     | NodeAsParagraph
     | NodeAsButton
+      -- Table Nodes
+    | NodeAsTable
+    | NodeAsTableHead
+    | NodeAsTableHeaderCell
+    | NodeAsTableRow
+    | NodeAsTableD
+    | NodeAsTableFoot
+      -- Input stuff
+    | NodeAsLabel
+    | NodeAsInput
+    | NodeAsTextArea
       -- Accessibility nodes
     | NodeAsH1
     | NodeAsH2
@@ -1679,6 +1690,33 @@ element node layout attrs children =
 
                     NodeAsButton ->
                         Html.button styleAttrs finalChildren
+
+                    NodeAsTable ->
+                        Html.table styleAttrs finalChildren
+
+                    NodeAsTableHead ->
+                        Html.thead styleAttrs finalChildren
+
+                    NodeAsTableHeaderCell ->
+                        Html.th styleAttrs finalChildren
+
+                    NodeAsTableRow ->
+                        Html.tr styleAttrs finalChildren
+
+                    NodeAsTableD ->
+                        Html.td styleAttrs finalChildren
+
+                    NodeAsTableFoot ->
+                        Html.tfoot styleAttrs finalChildren
+
+                    NodeAsLabel ->
+                        Html.label styleAttrs finalChildren
+
+                    NodeAsInput ->
+                        Html.input styleAttrs finalChildren
+
+                    NodeAsTextArea ->
+                        Html.textarea styleAttrs finalChildren
 
                     NodeAsH1 ->
                         Html.h1 styleAttrs finalChildren

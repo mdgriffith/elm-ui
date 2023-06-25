@@ -299,15 +299,11 @@ viewWithState attrs config state data =
         rows =
             Ui.Lazy.lazy3 renderRows config state data
     in
-    Two.elementAs Html.table
+    Two.element Two.NodeAsTable
         Two.AsColumn
         (Two.style "display" "grid"
             :: Two.attrIf config.scrollable
-                (Two.Attribute
-                    { flag = Flag.overflow
-                    , attr = Two.Class Style.classes.scrollbars
-                    }
-                )
+                (Two.classWith Flag.overflow Style.classes.scrollbars)
             :: Two.style "grid-template-columns"
                 (gridTemplate state config.columns "")
             :: attrs
@@ -411,10 +407,10 @@ gridTemplate state cols str =
 
 renderHeader : state -> Config state data msg -> Element msg
 renderHeader state config =
-    Two.elementAs Html.thead
+    Two.element Two.NodeAsTableHead
         Two.AsRow
         [ Two.style "display" "contents" ]
-        [ Two.elementAs Html.tr
+        [ Two.element Two.NodeAsTableRow
             Two.AsRow
             [ Two.style "display" "contents"
             ]
@@ -440,7 +436,7 @@ renderColumnHeader cfg state isFirstColumn (Column col) =
         stickyColumn =
             cfg.stickFirstColumn && isFirstColumn
     in
-    Two.elementAs Html.th
+    Two.element Two.NodeAsTableHeaderCell
         Two.AsRow
         (default.padding
             :: default.fontAlignment
@@ -502,7 +498,7 @@ renderRowWithKey config state index row =
 
 renderRow : Config state data msg -> state -> data -> Int -> Element msg
 renderRow config state row rowIndex =
-    Two.elementAs Html.tr
+    Two.element Two.NodeAsTableRow
         Two.AsRow
         [ Two.style "display" "contents"
         , case config.onRowClick of
@@ -537,7 +533,7 @@ renderColumn config state rowIndex row isFirstColumn (Column col) =
             else
                 default.padding
     in
-    Two.elementAs Html.td
+    Two.element Two.NodeAsTableD
         Two.AsRow
         (padding
             :: Two.attrIf
@@ -561,10 +557,10 @@ renderColumn config state rowIndex row isFirstColumn (Column col) =
 
 renderSummary : Config state data msg -> state -> List data -> Element msg
 renderSummary config state rows =
-    Two.elementAs Html.tfoot
+    Two.element Two.NodeAsTableFoot
         Two.AsRow
         [ Two.style "display" "contents" ]
-        [ Two.elementAs Html.tr
+        [ Two.element Two.NodeAsTableRow
             Two.AsRow
             [ Two.style "display" "contents"
             ]
@@ -595,7 +591,7 @@ renderSummaryColumn config state rows isFirstColumn (Column col) =
         padding =
             default.padding
     in
-    Two.elementAs Html.td
+    Two.element Two.NodeAsTableD
         Two.AsRow
         (padding
             :: Two.attrIf

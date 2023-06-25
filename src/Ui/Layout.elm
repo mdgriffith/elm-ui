@@ -130,7 +130,8 @@ row options attrs children =
                 Bottom ->
                     Two.style "align-items" "flex-end"
     in
-    Two.element Two.AsRow
+    Two.element Two.NodeAsDiv
+        Two.AsRow
         (wrapped
             :: alignmentX
             :: alignmentY
@@ -178,7 +179,8 @@ column options attrs children =
                 Bottom ->
                     Two.style "justify-content" "flex-end"
     in
-    Two.element Two.AsColumn
+    Two.element Two.NodeAsDiv
+        Two.AsColumn
         (wrapped
             :: alignmentX
             :: alignmentY
@@ -251,7 +253,8 @@ rowWithConstraints :
     -> List (Element msg)
     -> Element msg
 rowWithConstraints columns attrs children =
-    Two.element Two.AsGrid
+    Two.element Two.NodeAsDiv
+        Two.AsGrid
         (Two.style "grid-template-columns"
             (gridTemplate columns "")
             :: attrs
