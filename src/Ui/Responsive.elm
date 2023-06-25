@@ -3,7 +3,6 @@ module Ui.Responsive exposing
     , visible
     , Value, value, fluid
     , rowWhen
-    , font
     , padding, paddingXY, paddingEach
     , height, heightMin, heightMax
     , width, widthMin, widthMax
@@ -84,8 +83,6 @@ module Ui.Responsive exposing
 @docs Value, value, fluid
 
 @docs rowWhen
-
-@docs font
 
 @docs padding, paddingXY, paddingEach
 
@@ -227,7 +224,8 @@ rowWhen :
     -> List (Element msg)
     -> Element msg
 rowWhen breaks labels attrs children =
-    Internal.element Internal.AsRow
+    Internal.element Internal.NodeAsDiv
+        Internal.AsRow
         (Internal.class
             (Internal.foldBreakpoints
                 (\i lab str ->
@@ -248,45 +246,6 @@ rowWhen breaks labels attrs children =
             :: attrs
         )
         children
-
-
-{-| -}
-font :
-    { name : String
-    , fallback : List Ui.Font.Font
-    , variants : List Ui.Font.Variant
-    , breakpoints : Breakpoints breakpoint
-    , size : breakpoint -> Value
-    , weight : breakpoint -> Ui.Font.Weight
-    }
-    -> Attribute msg
-font details =
-    Internal.Attribute
-        { flag = Flag.fontAdjustment
-        , attr =
-            Internal.Font
-                { family = Internal.Font.render details.fallback ("\"" ++ details.name ++ "\"")
-                , adjustments = Nothing
-                , variants =
-                    Internal.Font.renderVariants details.variants ""
-                , smallCaps =
-                    Internal.Font.hasSmallCaps details.variants
-                , weight =
-                    Internal.responsiveCssValue
-                        details.breakpoints
-                        (\bp ->
-                            case details.weight bp of
-                                Internal.Font.Weight wght ->
-                                    Internal.Exactly wght
-                        )
-                , size =
-                    Internal.responsiveCssValue
-                        details.breakpoints
-                        (\bp ->
-                            details.size bp
-                        )
-                }
-        }
 
 
 {-| -}
