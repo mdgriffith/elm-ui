@@ -205,50 +205,46 @@ type Trigger
 
 transitionWithTrigger : Trigger -> Duration -> List Animated -> Attribute msg
 transitionWithTrigger trigger dur attrs =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr =
-            let
-                css =
-                    Animator.css
-                        (Animator.Timeline.init []
-                            |> Animator.Timeline.to dur attrs
-                            |> Animator.Timeline.update (Time.millisToPosix 1)
-                        )
-                        (\animated ->
-                            ( animated, [] )
-                        )
+    let
+        css =
+            Animator.css
+                (Animator.Timeline.init []
+                    |> Animator.Timeline.to dur attrs
+                    |> Animator.Timeline.update (Time.millisToPosix 1)
+                )
+                (\animated ->
+                    ( animated, [] )
+                )
 
-                triggerClass =
-                    case trigger of
-                        Hover ->
-                            onHoverTrigger
+        triggerClass =
+            case trigger of
+                Hover ->
+                    onHoverTrigger
 
-                        Focus ->
-                            onFocusTrigger
+                Focus ->
+                    onFocusTrigger
 
-                        Active ->
-                            onActiveTrigger
+                Active ->
+                    onActiveTrigger
 
-                triggerPsuedo =
-                    case trigger of
-                        Hover ->
-                            ":hover"
+        triggerPsuedo =
+            case trigger of
+                Hover ->
+                    ":hover"
 
-                        Focus ->
-                            ":focus"
+                Focus ->
+                    ":focus"
 
-                        Active ->
-                            ":active"
-            in
-            Two.CssTeleport
-                { class = triggerClass ++ " " ++ css.hash
-                , style = [ ( "transition", css.transition ) ]
-                , data =
-                    css
-                        |> addPsuedoClass triggerPsuedo
-                        |> Teleport.encodeCss
-                }
+                Active ->
+                    ":active"
+    in
+    Two.teleport
+        { class = triggerClass ++ " " ++ css.hash
+        , style = [ ( "transition", css.transition ) ]
+        , data =
+            css
+                |> addPsuedoClass triggerPsuedo
+                |> Teleport.encodeCss
         }
 
 
@@ -262,27 +258,23 @@ addPsuedoClass psuedo css =
 {-| -}
 transition : Duration -> List Animated -> Attribute msg
 transition dur attrs =
-    Two.Attribute
-        { flag = Flag.skip
-        , attr =
-            let
-                css =
-                    Animator.css
-                        (Animator.Timeline.init []
-                            |> Animator.Timeline.to dur attrs
-                            |> Animator.Timeline.update (Time.millisToPosix 1)
-                        )
-                        (\animated ->
-                            ( animated, [] )
-                        )
-            in
-            Two.CssTeleport
-                { class = ""
-                , style = css.props
-                , data =
-                    css
-                        |> Teleport.encodeCss
-                }
+    let
+        css =
+            Animator.css
+                (Animator.Timeline.init []
+                    |> Animator.Timeline.to dur attrs
+                    |> Animator.Timeline.update (Time.millisToPosix 1)
+                )
+                (\animated ->
+                    ( animated, [] )
+                )
+    in
+    Two.teleport
+        { class = ""
+        , style = css.props
+        , data =
+            css
+                |> Teleport.encodeCss
         }
 
 
