@@ -1,23 +1,24 @@
 module Internal.Flag exposing (..)
-{-| THIS FILE IS GENERATED, NO TOUCHY 
+
+{-| THIS FILE IS GENERATED, NO TOUCHY
 
 This file is generated via 'npm run stylesheet' in the elm-ui repository
-  
--}
 
+-}
 
 import Internal.BitField as BitField exposing (BitField, Bits)
 
 
-type IsFlag = IsFlag
+type IsFlag
+    = IsFlag
 
 
-type alias Field
-    = Bits IsFlag
+type alias Field =
+    Bits IsFlag
 
 
-type alias Flag
-    = BitField IsFlag
+type alias Flag =
+    BitField IsFlag
 
 
 none : Field
@@ -29,13 +30,16 @@ none =
 -}
 add : Flag -> Field -> Field
 add myFlag myField =
-   BitField.flipIf myFlag True myField
+    if BitField.isZeroLength myFlag then
+        myField
+
+    else
+        BitField.flipIf myFlag True myField
 
 
-skip : Flag 
+skip : Flag
 skip =
     BitField.first 0
-
 
 
 padding : Flag
@@ -186,5 +190,3 @@ background =
 event : Flag
 event =
     BitField.next 1 background
-
-

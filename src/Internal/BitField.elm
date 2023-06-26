@@ -5,6 +5,7 @@ module Internal.BitField exposing
     , get, getPercentage
     , has, equal
     , fieldEqual
+    , isZeroLength
     )
 
 {-|
@@ -52,6 +53,8 @@ module Internal.BitField exposing
 
 @docs fieldEqual
 
+@docs isZeroLength
+
 -}
 
 import Bitwise
@@ -87,6 +90,11 @@ type BitField encoding
         , mask : Int
         , inverseMask : Int
         }
+
+
+isZeroLength : BitField encoding -> Bool
+isZeroLength (BitField { length }) =
+    length - 0 == 0
 
 
 getFieldMask : BitField encoding -> Int
