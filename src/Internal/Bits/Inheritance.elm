@@ -2,7 +2,7 @@ module Internal.Bits.Inheritance exposing
     ( Encoded, Field
     , isRow, isColumn, isTextLayout
     , hasTextModification, fontHeight, spacingX, spacingY
-    , clearSpacing
+    , clearParentValues
     )
 
 {-|
@@ -13,7 +13,7 @@ module Internal.Bits.Inheritance exposing
 
 @docs hasTextModification, fontHeight, spacingX, spacingY
 
-@docs clearSpacing
+@docs clearParentValues
 
 This module is all the information that is inherited from one node to another, within elm-ui.
 
@@ -95,8 +95,11 @@ spacingY =
 {- HELPERS -}
 
 
-clearSpacing : Encoded -> Encoded
-clearSpacing bits =
+clearParentValues : Encoded -> Encoded
+clearParentValues bits =
     bits
         |> BitField.clear spacingX
         |> BitField.clear spacingY
+        |> BitField.clear isRow
+        |> BitField.clear isColumn
+        |> BitField.clear isTextLayout
