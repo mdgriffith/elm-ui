@@ -1596,7 +1596,7 @@ element node layout attrs children =
         (\parentBits ->
             let
                 myBaseBits =
-                    Inheritance.clearSpacing parentBits
+                    Inheritance.clearParentValues parentBits
                         |> (case layout of
                                 AsRow ->
                                     BitField.flip Inheritance.isRow True
@@ -1642,19 +1642,7 @@ element node layout attrs children =
 
                 styleAttrs =
                     if BitField.has AnalyzeBits.cssVars analyzedBits then
-                        let
-                            transformString =
-                                if BitField.has AnalyzeBits.transforms analyzedBits then
-                                    "transform:" ++ toTransformString parentBits myBits Flag.none 0 1 0 0 0 attrs ++ ";"
-
-                                else
-                                    ""
-                        in
-                        Attr.property "style"
-                            (Encode.string
-                                (toStyleString parentBits myBits analyzedBits Flag.none transformString attrs)
-                            )
-                            :: htmlAttrs
+                        toStyleAsEncodedProperty parentBits myBits analyzedBits Flag.none (contextClasses layout) htmlAttrs "" attrs
 
                     else
                         let
@@ -1997,9 +1985,7 @@ analyze has encoded inheritance attrs =
                                     |> BitField.flipIf AnalyzeBits.isLink
                                         (NodeAsLink == details.node)
                                     |> BitField.flipIf AnalyzeBits.isButton
-                                        ((NodeAsButton == details.node)
-                                            && not (BitField.has AnalyzeBits.isLink encoded)
-                                        )
+                                        (NodeAsButton == details.node)
 
                             newInheritance =
                                 inheritance
@@ -2180,18 +2166,31 @@ addStyles styles attrs =
                 (Attr.style name val :: attrs)
 
 
-toStyleString :
+toStyleAsEncodedProperty :
     Inheritance.Encoded
     -> Inheritance.Encoded
     -> AnalyzeBits.Encoded
     -> Flag.Field
     -> String
-    -> List (Attribute msg)
+    -> List (VirtualDom.Attribute msg)
     -> String
-toStyleString parentBits myBits analyzed has str attrs =
+    -> List (Attribute msg)
+    -> List (Html.Attribute msg)
+toStyleAsEncodedProperty parentBits myBits analyzed has classesString htmlAttrs str attrs =
     case attrs of
         [] ->
-            str
+            let
+                transformString =
+                    if BitField.has AnalyzeBits.transforms analyzed then
+                        "transform:" ++ toTransformString parentBits myBits Flag.none 0 1 0 0 0 attrs ++ ";"
+
+                    else
+                        ""
+            in
+            Attr.class classesString
+                :: Attr.property "style"
+                    (Encode.string (str ++ transformString))
+                :: htmlAttrs
 
         (Attribute { flag, attr }) :: remain ->
             let
@@ -2203,23 +2202,32 @@ toStyleString parentBits myBits analyzed has str attrs =
                         BitField.has flag has
             in
             if previouslyRendered then
-                toStyleString parentBits myBits analyzed has str remain
+                toStyleAsEncodedProperty parentBits myBits analyzed has classesString htmlAttrs str remain
 
             else
                 case attr of
                     Attr details ->
+                        let
+                            newClasses =
+                                case details.class of
+                                    Nothing ->
+                                        classesString
+
+                                    Just moreClasses ->
+                                        classesString ++ " " ++ moreClasses
+                        in
                         case details.styles parentBits analyzed of
                             [] ->
-                                toStyleString parentBits myBits analyzed has str remain
+                                toStyleAsEncodedProperty parentBits myBits analyzed has newClasses htmlAttrs str remain
 
                             [ ( name, val ) ] ->
-                                toStyleString parentBits myBits analyzed (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ str) remain
+                                toStyleAsEncodedProperty parentBits myBits analyzed (Flag.add flag has) newClasses htmlAttrs (name ++ ":" ++ val ++ ";" ++ str) remain
 
                             [ ( name, val ), ( twoName, twoVal ) ] ->
-                                toStyleString parentBits myBits analyzed (Flag.add flag has) (name ++ ":" ++ val ++ ";" ++ twoName ++ ":" ++ twoVal ++ ";" ++ str) remain
+                                toStyleAsEncodedProperty parentBits myBits analyzed (Flag.add flag has) newClasses htmlAttrs (name ++ ":" ++ val ++ ";" ++ twoName ++ ":" ++ twoVal ++ ";" ++ str) remain
 
                             list ->
-                                toStyleString parentBits myBits analyzed (Flag.add flag has) (addStylesToString list str) remain
+                                toStyleAsEncodedProperty parentBits myBits analyzed (Flag.add flag has) newClasses htmlAttrs (addStylesToString list str) remain
 
 
 addStylesToString : List ( String, String ) -> String -> String
