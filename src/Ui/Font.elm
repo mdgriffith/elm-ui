@@ -10,7 +10,7 @@ module Ui.Font exposing
     , underline, strike, italic
     , weight
     , Weight, heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
-    , Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+    , variants, Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
     )
 
 {-|
@@ -55,7 +55,7 @@ module Ui.Font exposing
 
 ## Variants
 
-@docs Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
+@docs variants, Variant, smallCaps, slashedZero, ligatures, ordinal, tabularNumbers, stackedFractions, diagonalFractions, swash, feature, indexed
 
 -}
 
@@ -242,6 +242,12 @@ font details =
                 , teleport = Nothing
                 }
         }
+
+
+{-| -}
+variants : List Variant -> Attribute msg
+variants variantList =
+    Internal.style "font-feature-settings" (Internal.Font.renderVariants variantList "")
 
 
 listIfFirst : List ( Bool, a ) -> List a
