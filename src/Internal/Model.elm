@@ -2622,7 +2622,21 @@ toStyleSheetString options stylesheet =
     in
     case List.foldl combine { topLevel = [], rules = [] } stylesheet of
         { topLevel, rules } ->
-            renderTopLevelValues topLevel ++ String.concat rules
+            let
+                ruleWeight s =
+                    if String.contains ":hover" s then
+                        1
+
+                    else if String.contains ":focus" s then
+                        2
+
+                    else if String.contains ":active" s then
+                        3
+
+                    else
+                        0
+            in
+            renderTopLevelValues topLevel ++ String.concat (List.sortBy ruleWeight rules)
 
 
 renderStyle : OptionRecord -> Maybe PseudoClass -> String -> List Property -> List String
