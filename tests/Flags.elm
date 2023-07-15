@@ -3,6 +3,7 @@ module Flags exposing (suite)
 {-| -}
 
 import Expect
+import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Test
 
@@ -11,7 +12,7 @@ suite =
     Test.describe "Flag Operations"
         [ Test.test "All Flags Invalidate Themselves" <|
             \_ ->
-                Expect.equal True (List.all (\flag -> Flag.present flag (Flag.add flag Flag.none)) allFlags)
+                Expect.equal True (List.all (\flag -> BitField.has flag (Flag.add flag Flag.none)) allFlags)
         , Test.test "All Flags don't interfere with each other" <|
             \_ ->
                 Expect.equal True (List.all (doesntInvalidateOthers allFlags) allFlags)
@@ -27,38 +28,31 @@ doesntInvalidateOthers others flag =
     List.all identity <|
         List.map
             (\otherFlag ->
-                Flag.present otherFlag (Flag.add otherFlag withFlag)
+                BitField.has otherFlag (Flag.add otherFlag withFlag)
             )
             others
 
 
 allFlags =
-    [ Flag.transparency
-    , Flag.padding
+    [ Flag.padding
     , Flag.spacing
     , Flag.fontSize
     , Flag.fontFamily
     , Flag.width
     , Flag.height
-    , Flag.bgColor
-    , Flag.bgImage
-    , Flag.bgGradient
-    , Flag.borderStyle
     , Flag.fontAlignment
     , Flag.fontWeight
     , Flag.fontColor
-    , Flag.wordSpacing
-    , Flag.letterSpacing
-    , Flag.borderRound
+    , Flag.fontGradient
+    , Flag.fontAdjustment
+    , Flag.fontEllipsis
+    , Flag.id
+    , Flag.txtShadows
     , Flag.shadows
     , Flag.overflow
     , Flag.cursor
-    , Flag.scale
-    , Flag.rotate
-    , Flag.moveX
-    , Flag.moveY
+    , Flag.transform
     , Flag.borderWidth
-    , Flag.borderColor
     , Flag.yAlign
     , Flag.xAlign
     , Flag.focus
@@ -66,13 +60,8 @@ allFlags =
     , Flag.hover
     , Flag.gridTemplate
     , Flag.gridPosition
-    , Flag.heightContent
-    , Flag.heightFill
-    , Flag.widthContent
-    , Flag.widthFill
-    , Flag.alignRight
-    , Flag.alignBottom
-    , Flag.centerX
-    , Flag.centerY
-    , Flag.fontVariant
+    , Flag.widthBetween
+    , Flag.heightBetween
+    , Flag.background
+    , Flag.event
     ]

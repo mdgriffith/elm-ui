@@ -74,24 +74,23 @@ type alias Data =
 
 
 new =
-    Test.only <|
-        Test.describe "Encode All"
-            [ Test.test "Encoding is symmetric" <|
-                \_ ->
-                    let
-                        config =
-                            { row = True
-                            , spacingX = 64
-                            , spacingY = 32
-                            , fontTop = 45
-                            , fontBottom = 24
-                            }
-                    in
-                    Expect.equal (decode (encode config)) config
-            , Test.fuzz dataFuzzer "Fuzz test encoding" <|
-                \data ->
-                    Expect.equal (decode (encode data)) data
-            ]
+    Test.describe "Encode All"
+        [ Test.test "Encoding is symmetric" <|
+            \_ ->
+                let
+                    config =
+                        { row = True
+                        , spacingX = 64
+                        , spacingY = 32
+                        , fontTop = 45
+                        , fontBottom = 24
+                        }
+                in
+                Expect.equal (decode (encode config)) config
+        , Test.fuzz dataFuzzer "Fuzz test encoding" <|
+            \data ->
+                Expect.equal (decode (encode data)) data
+        ]
 
 
 dataFuzzer =

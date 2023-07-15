@@ -4,7 +4,7 @@ module ClassNames exposing (suite)
 
 import Expect
 import Html exposing (Html)
-import Internal.Style
+import Internal.Style.Generated as Generated
 import Test exposing (Test)
 
 
@@ -48,7 +48,7 @@ findDuplicates ( name, description ) =
 
 
 allClassNames =
-    List.map (Tuple.mapFirst (\fn -> fn Internal.Style.classes)) allClassNameFns
+    List.map (Tuple.mapFirst (\fn -> fn Generated.classes)) allClassNameFns
 
 
 allClassNameFns =
@@ -71,8 +71,8 @@ allClassNameFns =
     , ( .heightFill, "heightFill" )
     , ( .heightContent, "heightContent" )
     , ( .heightFillPortion, "heightFillPortion" )
-    , ( .seButton, "seButton" )
 
+    -- , ( .seButton, "seButton" )
     -- nearby elements
     , ( .above, "above" )
     , ( .below, "below" )
@@ -138,21 +138,20 @@ allClassNameFns =
     , ( .clipY, "clipY" )
 
     -- borders
-    , ( .borderNone, "borderNone" )
-    , ( .borderDashed, "borderDashed" )
-    , ( .borderDotted, "borderDotted" )
-    , ( .borderSolid, "borderSolid" )
-
+    -- , ( .borderNone, "borderNone" )
+    -- , ( .borderDashed, "borderDashed" )
+    -- , ( .borderDotted, "borderDotted" )
+    -- , ( .borderSolid, "borderSolid" )
     -- text weight
-    , ( .textThin, "textThin" )
-    , ( .textExtraLight, "textExtraLight" )
-    , ( .textLight, "textLight" )
-    , ( .textNormalWeight, "textNormalWeight" )
-    , ( .textMedium, "textMedium" )
-    , ( .textSemiBold, "textSemiBold" )
-    , ( .bold, "bold" )
-    , ( .textExtraBold, "textExtraBold" )
-    , ( .textHeavy, "textHeavy" )
+    -- , ( .textThin, "textThin" )
+    -- , ( .textExtraLight, "textExtraLight" )
+    -- , ( .textLight, "textLight" )
+    -- , ( .textNormalWeight, "textNormalWeight" )
+    -- , ( .textMedium, "textMedium" )
+    -- , ( .textSemiBold, "textSemiBold" )
+    -- , ( .bold, "bold" )
+    -- , ( .textExtraBold, "textExtraBold" )
+    -- , ( .textHeavy, "textHeavy" )
     , ( .italic, "italic" )
     , ( .strike, "strike" )
     , ( .underline, "underline" )
