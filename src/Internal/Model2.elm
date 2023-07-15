@@ -672,7 +672,6 @@ mapAttr fn (Attribute attr) =
                         , styles = a.styles
                         , nearby =
                             Maybe.map (\( loc, elem ) -> ( loc, map fn elem )) a.nearby
-                        , transform = a.transform
                         , teleport = a.teleport
                         }
         }
@@ -716,7 +715,6 @@ noAttr =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -734,7 +732,6 @@ justFlag flag =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -752,7 +749,6 @@ nearby loc el =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Just ( loc, el )
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -777,7 +773,6 @@ teleport options =
                     \_ _ ->
                         options.style
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Just options.data
                 }
         }
@@ -803,7 +798,6 @@ class cls =
                 , class = Just cls
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -821,25 +815,6 @@ classWith flag cls =
                 , class = Just cls
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
-                , teleport = Nothing
-                }
-        }
-
-
-transformPiece : TransformSlot -> Float -> Attribute msg
-transformPiece slot value =
-    Attribute
-        { flag = Flag.skip
-        , attr =
-            Attr
-                { node = NodeAsDiv
-                , additionalInheritance = BitField.none
-                , attrs = []
-                , class = Nothing
-                , styles = noStyles
-                , nearby = Nothing
-                , transform = Just ( slot, value )
                 , teleport = Nothing
                 }
         }
@@ -912,7 +887,6 @@ type Attr msg
             -> AnalyzeBits.Encoded
             -> List ( String, String )
         , nearby : Maybe ( Location, Element msg )
-        , transform : Maybe ( TransformSlot, Float )
         , teleport : Maybe Encode.Value
         }
 
@@ -1213,7 +1187,6 @@ attribute a =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1230,7 +1203,6 @@ attributeWith flag a =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1259,7 +1231,6 @@ onPress msg =
                 , class = Just Style.classes.cursorPointer
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1304,7 +1275,6 @@ onKey details =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1342,7 +1312,6 @@ link details =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1360,7 +1329,6 @@ nodeAs node =
                 , class = Nothing
                 , styles = noStyles
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1380,7 +1348,6 @@ style name val =
                     \_ _ ->
                         [ Tuple.pair name val ]
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1400,7 +1367,6 @@ styleDynamic name toVal =
                     \inheritance _ ->
                         [ Tuple.pair name (toVal inheritance) ]
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1425,7 +1391,35 @@ style2 oneName oneVal twoName twoVal =
                     \_ _ ->
                         Tuple.pair oneName oneVal :: Tuple.pair twoName twoVal :: []
                 , nearby = Nothing
-                , transform = Nothing
+                , teleport = Nothing
+                }
+        }
+
+
+style3 :
+    String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> Attribute msg
+style3 oneName oneVal twoName twoVal threeName threeVal =
+    Attribute
+        { flag = Flag.skip
+        , attr =
+            Attr
+                { node = NodeAsDiv
+                , additionalInheritance = BitField.none
+                , attrs = []
+                , class = Nothing
+                , styles =
+                    \_ _ ->
+                        Tuple.pair oneName oneVal
+                            :: Tuple.pair twoName twoVal
+                            :: Tuple.pair threeName threeVal
+                            :: []
+                , nearby = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1445,7 +1439,6 @@ styleWith flag name val =
                     \_ _ ->
                         Tuple.pair name val :: []
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1472,7 +1465,6 @@ styleAndClass flag v =
                     \_ _ ->
                         Tuple.pair v.styleName v.styleVal :: []
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1645,16 +1637,7 @@ element node layout attrs children =
                         toStyleAsEncodedProperty parentBits myBits analyzedBits Flag.none (contextClasses layout) htmlAttrs "" attrs
 
                     else
-                        let
-                            startingProps =
-                                if BitField.has AnalyzeBits.transforms analyzedBits then
-                                    Attr.style "transform" (toTransformString parentBits myBits Flag.none 0 1 0 0 0 attrs)
-                                        :: htmlAttrs
-
-                                else
-                                    htmlAttrs
-                        in
-                        toStyle parentBits myBits analyzedBits Flag.none startingProps (contextClasses layout) attrs
+                        toStyle parentBits myBits analyzedBits Flag.none htmlAttrs (contextClasses layout) attrs
 
                 finalChildren =
                     toChildren myBits analyzedBits attrs children
@@ -1751,67 +1734,6 @@ element node layout attrs children =
                     NodeAsListItem ->
                         Html.li styleAttrs finalChildren
         )
-
-
-toTransformString :
-    Inheritance.Encoded
-    -> Inheritance.Encoded
-    -> Flag.Field
-    -> Float
-    -> Float
-    -> Float
-    -> Float
-    -> Float
-    -> List (Attribute msg)
-    -> String
-toTransformString parentBits myBits has rotation scale x y z attrs =
-    case attrs of
-        [] ->
-            "translate("
-                ++ String.fromFloat x
-                ++ "px, "
-                ++ String.fromFloat y
-                ++ "px, "
-                ++ String.fromFloat z
-                ++ "px) rotate("
-                ++ String.fromFloat rotation
-                ++ "rad) scale("
-                ++ String.fromFloat scale
-                ++ ")"
-
-        (Attribute { flag, attr }) :: remain ->
-            let
-                previouslyRendered =
-                    if BitField.fieldEqual flag Flag.skip then
-                        False
-
-                    else
-                        BitField.has flag has
-            in
-            if previouslyRendered then
-                toTransformString parentBits myBits has rotation scale x y z remain
-
-            else
-                case attr of
-                    Attr details ->
-                        case details.transform of
-                            Nothing ->
-                                toTransformString parentBits myBits (Flag.add flag has) rotation scale x y z remain
-
-                            Just ( 0, newX ) ->
-                                toTransformString parentBits myBits (Flag.add flag has) rotation scale newX y z remain
-
-                            Just ( 1, newY ) ->
-                                toTransformString parentBits myBits (Flag.add flag has) rotation scale x newY z remain
-
-                            Just ( 2, newRotation ) ->
-                                toTransformString parentBits myBits (Flag.add flag has) newRotation scale x y z remain
-
-                            Just ( 3, newScale ) ->
-                                toTransformString parentBits myBits (Flag.add flag has) rotation newScale x y z remain
-
-                            _ ->
-                                toTransformString parentBits myBits (Flag.add flag has) rotation scale x y z remain
 
 
 toChildren :
@@ -1980,7 +1902,6 @@ analyze has encoded inheritance attrs =
                         let
                             newEncoded =
                                 encoded
-                                    |> BitField.flipIf AnalyzeBits.transforms (details.transform /= Nothing)
                                     |> BitField.flipIf AnalyzeBits.nearbys (details.nearby /= Nothing)
                                     |> BitField.flipIf AnalyzeBits.isLink
                                         (NodeAsLink == details.node)
@@ -2179,17 +2100,9 @@ toStyleAsEncodedProperty :
 toStyleAsEncodedProperty parentBits myBits analyzed has classesString htmlAttrs str attrs =
     case attrs of
         [] ->
-            let
-                transformString =
-                    if BitField.has AnalyzeBits.transforms analyzed then
-                        "transform:" ++ toTransformString parentBits myBits Flag.none 0 1 0 0 0 attrs ++ ";"
-
-                    else
-                        ""
-            in
             Attr.class classesString
                 :: Attr.property "style"
-                    (Encode.string (str ++ transformString))
+                    (Encode.string str)
                 :: htmlAttrs
 
         (Attribute { flag, attr }) :: remain ->

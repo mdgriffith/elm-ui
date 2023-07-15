@@ -3,6 +3,7 @@ module Ui exposing
     , Element, none, text, el
     , row, column
     , ellipsis, paragraph, textColumn
+    , h1, h2, h3, h4, h5, h6
     , id, noAttr
     , Attribute, Length, px, fill, portion
     , width, widthMin, widthMax
@@ -12,18 +13,18 @@ module Ui exposing
     , spacing, spacingXY, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
     , opacity
-    , border, borderWith, borderGradient
+    , border, borderWith, borderGradient, borderColor
     , rounded, roundedWith, circle
     , background, Gradient, backgroundGradient
     , pointer, grab, grabbing
-    , moveUp, moveDown, moveRight, moveLeft, rotate, scale
+    , move, up, down, left, right
+    , rotate, scale
     , scrollable, clipped
     , link, linkNewTab, download
     , image
-    , Color, rgb
+    , Color, rgb, palette
     , above, below, onRight, onLeft, inFront, behindContent
-    , Angle, up, down, right, left
-    , turns, radians
+    , Angle, turns, radians
     , map
     , html, htmlAttribute
     )
@@ -53,6 +54,8 @@ So, the common ways to do that would be `row` and `column`.
 # Text Layout
 
 @docs ellipsis, paragraph, textColumn
+
+@docs h1, h2, h3, h4, h5, h6
 
 
 # Attributes
@@ -132,7 +135,7 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Borders
 
-@docs border, borderWith, borderGradient
+@docs border, borderWith, borderGradient, borderColor
 
 @docs rounded, roundedWith, circle
 
@@ -149,7 +152,9 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Adjustment
 
-@docs moveUp, moveDown, moveRight, moveLeft, rotate, scale
+@docs move, up, down, left, right
+
+@docs rotate, scale
 
 
 # Viewports
@@ -175,7 +180,7 @@ Essentially a `scrollable` is the window that you're looking through. If the con
 
 In order to use attributes like `Font.color` and `Background.color`, you'll need to make some colors!
 
-@docs Color, rgb
+@docs Color, rgb, palette
 
 
 # Nearby Elements
@@ -204,9 +209,7 @@ This is very useful for things like dropdown menus or tooltips.
 
 # Angles
 
-@docs Angle, up, down, right, left
-
-@docs turns, radians
+@docs Angle, turns, radians
 
 
 # Mapping
@@ -434,6 +437,60 @@ el attrs child =
 
 
 {-| -}
+h1 : List (Attribute msg) -> Element msg -> Element msg
+h1 attrs child =
+    Two.element Two.NodeAsH1
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h2 : List (Attribute msg) -> Element msg -> Element msg
+h2 attrs child =
+    Two.element Two.NodeAsH2
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h3 : List (Attribute msg) -> Element msg -> Element msg
+h3 attrs child =
+    Two.element Two.NodeAsH3
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h4 : List (Attribute msg) -> Element msg -> Element msg
+h4 attrs child =
+    Two.element Two.NodeAsH4
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h5 : List (Attribute msg) -> Element msg -> Element msg
+h5 attrs child =
+    Two.element Two.NodeAsH5
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
+h6 : List (Attribute msg) -> Element msg -> Element msg
+h6 attrs child =
+    Two.element Two.NodeAsH6
+        Two.AsEl
+        attrs
+        [ child ]
+
+
+{-| -}
 row : List (Attribute msg) -> List (Element msg) -> Element msg
 row attrs children =
     Two.element Two.NodeAsDiv
@@ -622,18 +679,36 @@ image attrs img =
 
 
 {-| -}
-border :
-    { width : Int
-    , color : Color
+palette :
+    { background : Color
+    , border : Color
+    , font : Color
     }
     -> Attribute msg
+palette colors =
+    Two.style3
+        "background-color"
+        (Style.color colors.background)
+        "border-color"
+        (Style.color colors.border)
+        "color"
+        (Style.color colors.font)
+
+
+{-| -}
+border : Int -> Attribute msg
 border options =
     Two.styleWith Flag.borderWidth
         "border"
-        (String.fromInt options.width
-            ++ "px solid "
-            ++ Style.color options.color
-        )
+        (String.fromInt options ++ "px")
+
+
+{-| -}
+borderColor : Color -> Attribute msg
+borderColor color =
+    Two.styleWith Flag.skip
+        "border-color"
+        (Style.color color)
 
 
 {-| -}
@@ -658,25 +733,20 @@ borderGradient options =
 
 {-| -}
 borderWith :
-    { width :
-        { bottom : Int
-        , left : Int
-        , right : Int
-        , top : Int
-        }
-    , color : Color
+    { bottom : Int
+    , left : Int
+    , right : Int
+    , top : Int
     }
     -> Attribute msg
 borderWith options =
-    Two.style2
+    Two.style
         "border-width"
-        ((String.fromInt options.width.top ++ "px ")
-            ++ (String.fromInt options.width.right ++ "px ")
-            ++ (String.fromInt options.width.bottom ++ "px ")
-            ++ (String.fromInt options.width.left ++ "px")
+        ((String.fromInt options.top ++ "px ")
+            ++ (String.fromInt options.right ++ "px ")
+            ++ (String.fromInt options.bottom ++ "px ")
+            ++ (String.fromInt options.left ++ "px")
         )
-        "border-color"
-        (Style.color options.color)
 
 
 {-| -}
@@ -860,7 +930,6 @@ width len =
                                 else
                                     []
                         , nearby = Nothing
-                        , transform = Nothing
                         , teleport = Nothing
                         }
                 }
@@ -938,7 +1007,6 @@ height len =
                                 else
                                     []
                         , nearby = Nothing
-                        , transform = Nothing
                         , teleport = Nothing
                         }
                 }
@@ -947,36 +1015,12 @@ height len =
 {-| -}
 scale : Float -> Attribute msg
 scale s =
-    Two.transformPiece 3 s
+    Two.style "scale" (String.fromFloat s)
 
 
 {-| -}
 type alias Angle =
     Style.Angle
-
-
-{-| -}
-up : Angle
-up =
-    Style.Angle 0
-
-
-{-| -}
-down : Angle
-down =
-    Style.Angle pi
-
-
-{-| -}
-right : Angle
-right =
-    Style.Angle (pi / 2)
-
-
-{-| -}
-left : Angle
-left =
-    Style.Angle (pi + (pi / 2))
 
 
 {-| -}
@@ -993,33 +1037,62 @@ radians =
 
 {-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
 -}
-rotate : Float -> Attribute msg
-rotate r =
-    Two.transformPiece 2 r
+rotate : Angle -> Attribute msg
+rotate (Style.Angle rads) =
+    Two.style "rotate" (String.fromFloat rads ++ "rad")
+
+
+type alias Position =
+    { x : Int
+    , y : Int
+    , z : Int
+    }
 
 
 {-| -}
-moveUp : Float -> Attribute msg
-moveUp x =
-    Two.transformPiece 1 (negate x)
+up : Int -> Position
+up y =
+    { x = 0
+    , y = negate y
+    , z = 0
+    }
 
 
 {-| -}
-moveDown : Float -> Attribute msg
-moveDown x =
-    Two.transformPiece 1 x
+down : Int -> Position
+down y =
+    { x = 0
+    , y = y
+    , z = 0
+    }
 
 
 {-| -}
-moveRight : Float -> Attribute msg
-moveRight x =
-    Two.transformPiece 0 x
+right : Int -> Position
+right x =
+    { x = x
+    , y = 0
+    , z = 0
+    }
 
 
 {-| -}
-moveLeft : Float -> Attribute msg
-moveLeft x =
-    Two.transformPiece 0 (negate x)
+left : Int -> Position
+left x =
+    { x = negate x
+    , y = 0
+    , z = 0
+    }
+
+
+{-| -}
+move : Position -> Attribute msg
+move pos =
+    Two.style "translate"
+        ((String.fromInt pos.x ++ "px ")
+            ++ (String.fromInt pos.y ++ "px ")
+            ++ (String.fromInt pos.z ++ "px")
+        )
 
 
 {-| -}
@@ -1038,6 +1111,15 @@ paddingXY x y =
         )
 
 
+{-| -}
+type alias Edges =
+    { top : Int
+    , right : Int
+    , bottom : Int
+    , left : Int
+    }
+
+
 {-| If you find yourself defining unique paddings all the time, you might consider defining
 
     edges =
@@ -1049,10 +1131,16 @@ paddingXY x y =
 
 And then just do
 
-    paddingEach { edges | right = 5 }
+    Ui.paddingEach (Ui.Edges 0 0 10 0)
 
 -}
-paddingEach : { top : Int, right : Int, bottom : Int, left : Int } -> Attribute msg
+paddingEach :
+    { top : Int
+    , right : Int
+    , bottom : Int
+    , left : Int
+    }
+    -> Attribute msg
 paddingEach pad =
     Two.style "padding"
         ((String.fromInt pad.top ++ "px ")
@@ -1130,7 +1218,6 @@ spacing x =
                                 )
                             ]
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
@@ -1168,7 +1255,6 @@ spacingXY x y =
                                 )
                             ]
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
