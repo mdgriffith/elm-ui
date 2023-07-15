@@ -10,13 +10,47 @@ import Test
 
 suite =
     Test.describe "Flag Operations"
-        [ Test.test "All Flags Invalidate Themselves" <|
+        [ Test.test "Can be set to true" <|
             \_ ->
-                Expect.equal True (List.all (\flag -> BitField.has flag (Flag.add flag Flag.none)) allFlags)
+                Expect.equal True
+                    (List.all
+                        (\flag ->
+                            BitField.has flag (Flag.add flag Flag.none)
+                        )
+                        allFlags
+                    )
         , Test.test "All Flags don't interfere with each other" <|
             \_ ->
                 Expect.equal True (List.all (doesntInvalidateOthers allFlags) allFlags)
+        , Test.test "Other flags aren't set by setting one flag" <|
+            \_ ->
+                Expect.equal True (List.all (isolated allFlags) allFlags)
+        , Test.test "Flipping a zero length flag doesn't flip others" <|
+            \_ ->
+                let
+                    _ =
+                        Debug.log "Skip" Flag.skip
+                in
+                Expect.equal True (isolated allFlags Flag.skip)
         ]
+
+
+isolated others flag =
+    let
+        othersNotThisOne =
+            List.filter (not << BitField.fieldEqual flag) others
+
+        withFlag =
+            Flag.none
+                |> BitField.flipIf flag True
+
+        -- |> Flag.add flag
+    in
+    List.all
+        (\otherFlag ->
+            not (BitField.has otherFlag withFlag)
+        )
+        othersNotThisOne
 
 
 doesntInvalidateOthers others flag =
@@ -25,12 +59,16 @@ doesntInvalidateOthers others flag =
             Flag.none
                 |> Flag.add flag
     in
-    List.all identity <|
-        List.map
-            (\otherFlag ->
-                BitField.has otherFlag (Flag.add otherFlag withFlag)
-            )
-            others
+    List.all
+        (\otherFlag ->
+            let
+                withBoth =
+                    Flag.add otherFlag withFlag
+            in
+            BitField.has otherFlag withBoth
+                && BitField.has flag withBoth
+        )
+        others
 
 
 allFlags =

@@ -168,30 +168,39 @@ custom :
     }
     -> BitField encoding
 custom details =
-    let
-        offset =
-            min (max 0 details.offset) 31
+    if details.offset == 0 && details.length == 0 then
+        BitField
+            { offset = 0
+            , length = 0
+            , mask = 0
+            , inverseMask = ones
+            }
 
-        length =
-            if details.length + offset > 32 then
-                32 - offset
+    else
+        let
+            offset =
+                min (max 0 details.offset) 31
 
-            else
-                details.length
+            length =
+                if details.length + offset > 32 then
+                    32 - offset
 
-        mask =
-            ones
-                -- calculate top
-                |> Bitwise.shiftRightZfBy (32 - length)
-                -- mask
-                |> Bitwise.shiftLeftBy offset
-    in
-    BitField
-        { offset = offset
-        , length = length
-        , mask = mask
-        , inverseMask = Bitwise.complement mask
-        }
+                else
+                    details.length
+
+            mask =
+                ones
+                    -- calculate top
+                    |> Bitwise.shiftRightZfBy (32 - length)
+                    -- mask
+                    |> Bitwise.shiftLeftBy offset
+        in
+        BitField
+            { offset = offset
+            , length = length
+            , mask = mask
+            , inverseMask = Bitwise.complement mask
+            }
 
 
 {-| -}

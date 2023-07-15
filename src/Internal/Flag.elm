@@ -30,11 +30,7 @@ none =
 -}
 add : Flag -> Field -> Field
 add myFlag myField =
-    if BitField.isZeroLength myFlag then
-        myField
-
-    else
-        BitField.flipIf myFlag True myField
+    BitField.flipIf myFlag True myField
 
 
 skip : Flag
