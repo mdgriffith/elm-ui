@@ -831,51 +831,6 @@ type Attribute msg
         }
 
 
-
--- type Attr msg
---     = NoAttribute
---     | OnPress msg
---     | OnKey (Html.Attribute msg)
---     | Attr (Html.Attribute msg)
---     | Link
--- { newTab : Bool
--- , url : String
--- , download : Maybe String
--- }
---     | WidthFill Int
---     | HeightFill Int
---     | Font
---         { family : String
---         , adjustments : Maybe (Inheritance.Encoded)
---         , variants : String
---         , smallCaps : Bool
---         , weight : String
---         , size : String
---         }
---     | FontSize Int
---     | Spacing Int Int
---     | Padding Edges
---     | TransformPiece TransformSlot Float
---     | Class String
---     | Style
---         { class : String
---         , styleName : String
---         , styleVal : String
---         }
---     | Style2
---         { oneName : String
---         , oneVal : String
---         , twoName : String
---         , twoVal : String
---         }
---     | Nearby Location (Element msg)
---     | CssTeleport
---         { class : String
---         , style : List ( String, String )
---         , data : Encode.Value
---         }
-
-
 type Attr msg
     = Attr
         { node : Node

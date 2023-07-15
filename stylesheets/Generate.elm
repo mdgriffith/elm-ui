@@ -767,7 +767,20 @@ baseSheet =
                                     ]
                                 ]
         ]
+    , Class (dot classes.single)
+        [ Prop "flex" "0 0 0px"
+        , Prop "align-items" "flex-start"
+
+        -- , Prop "flex-basis" "0px"
+        , Prop "min-height" "min-content"
+        , Prop "display" "flex"
+        , Prop "flex-direction" "column"
+        , Prop "box-sizing" "border-box"
+        ]
     , Class (dot classes.any)
+        -- [ Prop "flex-shrink" "0"
+        -- , Prop "flex-basis" "auto%"
+        -- , Prop "box-sizing" "border-box"
         [ Prop "position" "relative"
         , Prop "border" "none"
         , Prop "flex-shrink" "0"
@@ -816,12 +829,6 @@ baseSheet =
                 , Prop "-webkit-background-clip" "text"
                 , Prop "-webkit-text-fill-color" "transparent"
                 ]
-
-            -- , AllChildren (dot classes.paragraph)
-            --     [ Prop "background" "var(--text-gradient)"
-            --     , Prop "-webkit-background-clip" "text"
-            --     , Prop "-webkit-text-fill-color" "transparent"
-            --     ]
             ]
         , Descriptor (dot classes.fontAdjusted)
             [ Prop "font-size" "calc(1em * var(--font-size-factor))"
@@ -1431,7 +1438,7 @@ baseSheet =
                 [ Prop "display" "inline"
                 , Prop "white-space" "normal"
                 ]
-            , AllChildren (dot classes.paragraph)
+            , Child (dot classes.paragraph)
                 [ Prop "display" "inline"
                 , Descriptor "::after"
                     [ Prop "content" "none"
@@ -1659,10 +1666,7 @@ elDescription =
 
 variable =
     List.concat
-        [ spacing
-        , padding
-        , transform
-        , textInput
+        [ textInput
         , slider
         ]
 
@@ -1766,27 +1770,6 @@ color (Rgb red green blue) =
         ++ ")"
 
 
-transform =
-    [ Class (dot classes.transform)
-        [-- Variable "transform" vars.moveX
-         -- (rotate scale trasnform)
-        ]
-    ]
-
-
-padding =
-    [-- Class (dot classes.padding)
-     -- [ Prop "padding"
-     --     (quad
-     --         (renderVar vars.padTop)
-     --         (renderVar vars.padRight)
-     --         (renderVar vars.padBottom)
-     --         (renderVar vars.padLeft)
-     --     )
-     -- ]
-    ]
-
-
 slider =
     let
         props =
@@ -1800,199 +1783,6 @@ slider =
         props
     , Class ("input[type=\"range\"]." ++ classes.slider ++ "::-ms-thumb")
         props
-    ]
-
-
-spacing =
-    [ Class (dot classes.spacing)
-        [ Descriptor (dot classes.row)
-            [ Descriptor (dot classes.nowrap)
-                [ Child (dot classes.any)
-                    [ Descriptor ":first-child"
-                        [ Prop "margin" "0 !important"
-                        ]
-                    , Adjacent (dot classes.any)
-                        [ Prop "margin-top" "0 !important"
-                        , Prop "margin-right" "0 !important"
-                        , Prop "margin-bottom" "0 !important"
-                        ]
-                    ]
-                , Child (dot classes.nearby)
-                    [ Adjacent (dot classes.any)
-                        [ Prop "margin" "0 !important"
-                        ]
-                    ]
-                ]
-            , Descriptor (dot classes.wrapped)
-                [ Child (dot classes.any)
-                    [ Prop "margin-top" "0 !important"
-                    , Prop "margin-left" "0 !important"
-                    ]
-                ]
-            ]
-        , Descriptor (dot classes.column)
-            [ Child (dot classes.any)
-                [ Descriptor ":first-child"
-                    [ Prop "margin" "0 !important"
-                    ]
-                , Adjacent (dot classes.any)
-                    [ Prop "margin-left" "0 !important"
-                    , Prop "margin-right" "0 !important"
-                    , Prop "margin-bottom" "0 !important"
-                    ]
-                ]
-            , Child (dot classes.nearby)
-                [ Adjacent (dot classes.any)
-                    [ Prop "margin" "0 !important"
-                    ]
-                ]
-            ]
-
-        -- , Descriptor (dot classes.page)
-        --     [ Child (dot classes.any)
-        --         [ Adjacent (dot classes.any)
-        --             [ Variable "margin-top" vars.spaceY
-        --             ]
-        --         ]
-        --     , Child (dot classes.alignLeft)
-        --         [ Variable "margin-right" vars.spaceX
-        --         ]
-        --     , Child (dot classes.alignRight)
-        --         [ Variable "margin-left" vars.spaceX
-        --         ]
-        --     ]
-        -- , Descriptor (dot classes.paragraph)
-        --     [ Child (dot classes.alignLeft)
-        --         [ Variable "margin-right" vars.spaceX
-        --         ]
-        --     , Child (dot classes.alignRight)
-        --         [ Variable "margin-left" vars.spaceX
-        --         ]
-        --     , Variable "margin-right" vars.spaceX
-        --     , Variable "margin-bottom" vars.spaceY
-        --     , Calc "line-height" (Add (CalcVal "1em") (CalcVar vars.spaceY))
-        --     , Descriptor "::after"
-        --         [ Prop "content" "''"
-        --         , Prop "display" "block"
-        --         , Prop "height" "0"
-        --         , Prop "width" "0"
-        --         , Calc "margin-top"
-        --             (Multiply
-        --                 (CalcVal "-1")
-        --                 (Divide (CalcVar vars.spaceY) (CalcVal "2"))
-        --             )
-        --         ]
-        --     , Descriptor "::before"
-        --         [ Prop "content" "''"
-        --         , Prop "display" "block"
-        --         , Prop "height" "0"
-        --         , Prop "width" "0"
-        --         , Calc "margin-bottom"
-        --             (Multiply
-        --                 (CalcVal "-1")
-        --                 (Divide (CalcVar vars.spaceY) (CalcVal "2"))
-        --             )
-        --         ]
-        --     ]
-        ]
-
-    -- , Class
-    --     ("textarea" ++ dot classes.any ++ dot classes.spacing)
-    --     [ Calc "line-height"
-    --         (Add
-    --             (CalcVal "1em")
-    --             (CalcVar vars.spaceY)
-    --         )
-    --     , Calc "height"
-    --         (Add
-    --             (CalcVal "100%")
-    --             (CalcVar vars.spaceY)
-    --         )
-    --     ]
-    --     Class (dot classes.spacing)
-    --     [ Descriptor (dot classes.row)
-    --         [ Child (dot classes.any)
-    --             [ Adjacent (dot classes.any)
-    --                 [
-    --                     Variable "margin-left" vars.spaceX
-    --                 ]
-    --             ]
-    --         , Descriptor
-    --             (dot classes.wrapped)
-    --             [ Child (dot classes.any)
-    --                 [ CalcPair "margin"
-    --                     (Divide (CalcVar vars.spaceY) (CalcVal "2"))
-    --                     (Divide (CalcVar vars.spaceX) (CalcVal "2"))
-    --                 ]
-    --             ]
-    --         ]
-    --     , Descriptor (dot classes.column)
-    --         [ Child (dot classes.any)
-    --             [ Adjacent (dot classes.any)
-    --                 [ Variable "margin-top" vars.spaceY
-    --                 ]
-    --             ]
-    --         ]
-    --     , Descriptor (dot classes.page)
-    --         [ Child (dot classes.any)
-    --             [ Adjacent (dot classes.any)
-    --                 [ Variable "margin-top" vars.spaceY
-    --                 ]
-    --             ]
-    --         , Child (dot classes.alignLeft)
-    --             [ Variable "margin-right" vars.spaceX
-    --             ]
-    --         , Child (dot classes.alignRight)
-    --             [ Variable "margin-left" vars.spaceX
-    --             ]
-    --         ]
-    --     , Descriptor (dot classes.paragraph)
-    --         [ Child (dot classes.alignLeft)
-    --             [ Variable "margin-right" vars.spaceX
-    --             ]
-    --         , Child (dot classes.alignRight)
-    --             [ Variable "margin-left" vars.spaceX
-    --             ]
-    --         , Variable "margin-right" vars.spaceX
-    --         , Variable "margin-bottom" vars.spaceY
-    --         , Calc "line-height" (Add (CalcVal "1em") (CalcVar vars.spaceY))
-    --         , Descriptor "::after"
-    --             [ Prop "content" "''"
-    --             , Prop "display" "block"
-    --             , Prop "height" "0"
-    --             , Prop "width" "0"
-    --             , Calc "margin-top"
-    --                 (Multiply
-    --                     (CalcVal "-1")
-    --                     (Divide (CalcVar vars.spaceY) (CalcVal "2"))
-    --                 )
-    --             ]
-    --         , Descriptor "::before"
-    --             [ Prop "content" "''"
-    --             , Prop "display" "block"
-    --             , Prop "height" "0"
-    --             , Prop "width" "0"
-    --             , Calc "margin-bottom"
-    --                 (Multiply
-    --                     (CalcVal "-1")
-    --                     (Divide (CalcVar vars.spaceY) (CalcVal "2"))
-    --                 )
-    --             ]
-    --         ]
-    --     ]
-    -- , Class
-    --     ("textarea" ++ dot classes.any ++ dot classes.spacing)
-    --     [ Calc "line-height"
-    --         (Add
-    --             (CalcVal "1em")
-    --             (CalcVar vars.spaceY)
-    --         )
-    --     , Calc "height"
-    --         (Add
-    --             (CalcVal "100%")
-    --             (CalcVar vars.spaceY)
-    --         )
-    --     ]
     ]
 
 
