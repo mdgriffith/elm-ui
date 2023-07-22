@@ -1111,18 +1111,6 @@ none =
     Element (\_ -> Html.text "")
 
 
-type alias Rendered msg =
-    { name : String
-    , htmlAttrs : List (VirtualDom.Attribute msg)
-    , nearby : NearbyChildren msg
-    , wrapped : List Wrapped
-    }
-
-
-type Wrapped
-    = InLink String
-
-
 attrIf bool attr =
     if bool then
         attr
@@ -1370,10 +1358,10 @@ style3 oneName oneVal twoName twoVal threeName threeVal =
                 , class = Nothing
                 , styles =
                     \_ _ ->
-                        Tuple.pair oneName oneVal
-                            :: Tuple.pair twoName twoVal
-                            :: Tuple.pair threeName threeVal
-                            :: []
+                        [ Tuple.pair oneName oneVal
+                        , Tuple.pair twoName twoVal
+                        , Tuple.pair threeName threeVal
+                        ]
                 , nearby = Nothing
                 , teleport = Nothing
                 }
@@ -3001,36 +2989,27 @@ nearbyToHtml : Inheritance.Encoded -> Location -> Element msg -> Html.Html msg
 nearbyToHtml inheritance location (Element elem) =
     Html.div
         [ Attr.class <|
-            case location of
-                Above ->
-                    Style.classes.nearby
-                        ++ Style.classes.single
-                        ++ Style.classes.above
+            Style.classes.nearby
+                ++ (" " ++ Style.classes.single ++ " ")
+                ++ (case location of
+                        Above ->
+                            Style.classes.above
 
-                Below ->
-                    Style.classes.nearby
-                        ++ Style.classes.single
-                        ++ Style.classes.below
+                        Below ->
+                            Style.classes.below
 
-                OnRight ->
-                    Style.classes.nearby
-                        ++ Style.classes.single
-                        ++ Style.classes.onRight
+                        OnRight ->
+                            Style.classes.onRight
 
-                OnLeft ->
-                    Style.classes.nearby
-                        ++ Style.classes.single
-                        ++ Style.classes.onLeft
+                        OnLeft ->
+                            Style.classes.onLeft
 
-                InFront ->
-                    Style.classes.nearby
-                        ++ Style.classes.single
-                        ++ Style.classes.inFront
+                        InFront ->
+                            Style.classes.inFront
 
-                Behind ->
-                    Style.classes.nearby
-                        ++ Style.classes.single
-                        ++ Style.classes.behind
+                        Behind ->
+                            Style.classes.behind
+                   )
         ]
         [ elem inheritance
         ]
