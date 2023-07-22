@@ -1,6 +1,7 @@
 module Ui.Accessibility exposing
     ( mainContent, info
     , navigation, aside
+    , h1, h2, h3, h4, h5, h6
     , description
     , announce, announceUrgently
     )
@@ -25,7 +26,7 @@ Here's an example of annotating your navigation region:
 
 @docs navigation, aside
 
-@docs h1, h2, h3, h4 h5, h6
+@docs h1, h2, h3, h4, h5, h6
 
 @docs description
 
