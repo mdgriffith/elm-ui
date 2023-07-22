@@ -222,6 +222,10 @@ type Label msg
     | HiddenLabel String
 
 
+
+-- | LabelFromId String
+
+
 {-| -}
 labelRight : List (Attribute msg) -> Element msg -> Label msg
 labelRight =
@@ -261,6 +265,19 @@ Basically, a hidden label works when there are other contextual clues that sight
 labelHidden : String -> Label msg
 labelHidden =
     HiddenLabel
+
+
+
+-- {-| Sometimes you may need to have a label which is not visible, but is still accessible to screen readers.
+-- Seriously consider a visible label before using this.
+-- The situations where a hidden label makes sense:
+--   - A searchbar with a `search` button right next to it.
+--   - A `table` of inputs where the header gives the label.
+-- Basically, a hidden label works when there are other contextual clues that sighted people can pick up on.
+-- -}
+-- labelFromId : String -> Label msg
+-- labelFromId =
+--     LabelFromId
 
 
 hiddenLabelAttribute2 : Label msg -> Ui.Attribute a
@@ -371,10 +388,8 @@ defaultThumb =
         [ Ui.width (Ui.px 16)
         , Ui.height (Ui.px 16)
         , Ui.rounded 8
-        , Ui.border
-            { width = 1
-            , color = Ui.rgb 100 100 100
-            }
+        , Ui.border 1
+        , Ui.borderColor (Ui.rgb 100 100 100)
         , Ui.background (Ui.rgb 255 255 255)
         ]
 
@@ -1434,28 +1449,26 @@ defaultRadioOption optionLabel status =
             --         1
             --     , color = Color.rgba 235 235 235 0
             --     }
-            , Ui.border
-                { color =
-                    case status of
-                        Idle ->
-                            Ui.rgb 208 208 208
+            , Ui.borderColor <|
+                case status of
+                    Idle ->
+                        Ui.rgb 208 208 208
 
-                        Focused ->
-                            Ui.rgb 208 208 208
+                    Focused ->
+                        Ui.rgb 208 208 208
 
-                        Selected ->
-                            Ui.rgb 59 153 252
-                , width =
-                    case status of
-                        Idle ->
-                            1
+                    Selected ->
+                        Ui.rgb 59 153 252
+            , Ui.border <|
+                case status of
+                    Idle ->
+                        1
 
-                        Focused ->
-                            1
+                    Focused ->
+                        1
 
-                        Selected ->
-                            5
-                }
+                    Selected ->
+                        5
             ]
             Ui.none
         , Ui.el [ Ui.width Ui.fill, Two.class "unfocusable" ] optionLabel
@@ -1574,12 +1587,10 @@ onKeyLookup2 lookup =
 
 defaultTextBoxStyle2 : List (Ui.Attribute msg)
 defaultTextBoxStyle2 =
-    [ Ui.paddingXY 12 12
+    [ Ui.padding 12
     , Ui.rounded 3
-    , Ui.border
-        { color = darkGrey2
-        , width = 1
-        }
+    , Ui.borderColor darkGrey2
+    , Ui.border 1
     , Ui.background white2
     , Ui.spacing 5
     , Ui.width Ui.fill
@@ -1600,24 +1611,22 @@ defaultCheckbox checked =
         , Ui.width (Ui.px 14)
         , Ui.height (Ui.px 14)
         , Ui.Font.color white2
-        , Ui.centerY
         , Ui.Font.size 9
         , Ui.Font.center
+        , Ui.centerY
         , Ui.rounded 3
-        , Ui.border
-            { color =
-                if checked then
-                    Ui.rgb 59 153 252
+        , Ui.borderColor <|
+            if checked then
+                Ui.rgb 59 153 252
 
-                else
-                    Ui.rgb 211 211 211
-            , width =
-                if checked then
-                    0
+            else
+                Ui.rgb 211 211 211
+        , Ui.border <|
+            if checked then
+                0
 
-                else
-                    1
-            }
+            else
+                1
         , if checked then
             Ui.opacity 0
 
@@ -1641,20 +1650,18 @@ defaultCheckbox checked =
         (if checked then
             Ui.el
                 [ Ui.borderWith
-                    { color = white2
-                    , width =
-                        { top = 0
-                        , left = 2
-                        , bottom = 2
-                        , right = 0
-                        }
+                    { top = 0
+                    , left = 2
+                    , bottom = 2
+                    , right = 0
                     }
+                , Ui.borderColor white2
                 , Ui.height (Ui.px 6)
                 , Ui.width (Ui.px 9)
-                , Ui.rotate (degrees -45)
+                , Ui.rotate (Ui.turns 0.125)
                 , Ui.centerX
                 , Ui.centerY
-                , Ui.moveUp 1
+                , Ui.move (Ui.up 1)
                 ]
                 Ui.none
 

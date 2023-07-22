@@ -160,9 +160,15 @@ cell =
 
 
 default =
-    { padding = Ui.paddingXY 16 8
+    { padding =
+        Ui.paddingWith
+            { top = 8
+            , left = 16
+            , right = 16
+            , bottom = 8
+            }
     , paddingFirstRow =
-        Ui.paddingEach
+        Ui.paddingWith
             { top = 16
             , left = 16
             , right = 16
@@ -171,13 +177,10 @@ default =
     , fontAlignment = Ui.Font.alignLeft
     , borderHeader =
         Ui.borderWith
-            { color = Ui.rgb 200 200 200
-            , width =
-                { top = 0
-                , left = 0
-                , right = 0
-                , bottom = 1
-                }
+            { top = 0
+            , left = 0
+            , right = 0
+            , bottom = 1
             }
     }
 
