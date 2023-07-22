@@ -777,6 +777,12 @@ baseSheet =
         , Prop "flex-direction" "column"
         , Prop "box-sizing" "border-box"
         ]
+    , Class "button"
+        -- Button reset
+        [ Descriptor (dot classes.any)
+            [ Prop "background-color" "transparent"
+            ]
+        ]
     , Class (dot classes.any)
         -- [ Prop "flex-shrink" "0"
         -- , Prop "flex-basis" "auto%"
