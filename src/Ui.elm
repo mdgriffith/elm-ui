@@ -4,27 +4,27 @@ module Ui exposing
     , row, column
     , ellipsis, paragraph, textColumn
     , h1, h2, h3, h4, h5, h6
-    , id, noAttr
+    , id, noAttr, attrIf
     , Attribute, Length, px, fill, portion
     , width, widthMin, widthMax
     , height, heightMin, heightMax
     , explain
-    , padding, paddingXY, paddingEach
-    , spacing, spacingXY, spaceEvenly
+    , padding, paddingWith, Edges
+    , spacing, spacingWith, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
     , opacity
     , border, borderWith, borderGradient, borderColor
     , rounded, roundedWith, circle
     , background, Gradient, backgroundGradient
     , pointer, grab, grabbing
-    , move, up, down, left, right
-    , rotate, scale
+    , move, Position, up, down, left, right
+    , rotate, Angle, turns, radians
+    , scale
     , scrollable, clipped
-    , link, linkNewTab, download
+    , link, linkNewTab, download, downloadAs
     , image
     , Color, rgb, palette
     , above, below, onRight, onLeft, inFront, behindContent
-    , Angle, turns, radians
     , map
     , html, htmlAttribute
     )
@@ -60,7 +60,7 @@ So, the common ways to do that would be `row` and `column`.
 
 # Attributes
 
-@docs id, noAttr
+@docs id, noAttr, attrIf
 
 
 # Size
@@ -97,9 +97,9 @@ Here's what we can expect:
 
 **Note** `spacing` set on a `paragraph`, will set the pixel spacing between lines.
 
-@docs padding, paddingXY, paddingEach
+@docs padding, paddingWith, Edges
 
-@docs spacing, spacingXY, spaceEvenly
+@docs spacing, spacingWith, spaceEvenly
 
 
 # Alignment
@@ -152,9 +152,11 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Adjustment
 
-@docs move, up, down, left, right
+@docs move, Position, up, down, left, right
 
-@docs rotate, scale
+@docs rotate, Angle, turns, radians
+
+@docs scale
 
 
 # Viewports
@@ -168,7 +170,7 @@ Essentially a `scrollable` is the window that you're looking through. If the con
 
 # Links
 
-@docs link, linkNewTab, download
+@docs link, linkNewTab, download, downloadAs
 
 
 # Images
@@ -205,11 +207,6 @@ Where `"I'm Below"` doesn't change the size of `Ui.row`.
 This is very useful for things like dropdown menus or tooltips.
 
 @docs above, below, onRight, onLeft, inFront, behindContent
-
-
-# Angles
-
-@docs Angle, turns, radians
 
 
 # Mapping
@@ -520,6 +517,16 @@ noAttr =
     Two.noAttr
 
 
+{-| -}
+attrIf : Bool -> Attribute msg -> Attribute msg
+attrIf bool attr =
+    if bool then
+        attr
+
+    else
+        noAttr
+
+
 {-| This is just an alias for `Debug.todo`
 -}
 type alias Todo =
@@ -698,8 +705,8 @@ palette colors =
 {-| -}
 border : Int -> Attribute msg
 border options =
-    Two.styleWith Flag.borderWidth
-        "border"
+    Two.styleWith Flag.skip
+        "border-width"
         (String.fromInt options ++ "px")
 
 
@@ -732,13 +739,7 @@ borderGradient options =
 
 
 {-| -}
-borderWith :
-    { bottom : Int
-    , left : Int
-    , right : Int
-    , top : Int
-    }
-    -> Attribute msg
+borderWith : Edges -> Attribute msg
 borderWith options =
     Two.style
         "border-width"
@@ -828,28 +829,29 @@ linkNewTab uri =
 
 
 {-| A link to download a file.
-
-You can optionally supply a filename you would like the file downloaded as.
-
-If no filename is provided, whatever the server says the filename should be will be used.
-
 -}
-download :
+download : String -> Attribute msg
+download url =
+    Two.link
+        { newTab = False
+        , url = url
+        , download = Nothing
+        }
+
+
+{-| A link to download a file where you can supply a filename you would like the file downloaded as.
+-}
+downloadAs :
     { url : String
-    , filename : Maybe String
+    , filename : String
     }
     -> Attribute msg
-download opts =
+downloadAs opts =
     Two.link
         { newTab = False
         , url = opts.url
         , download =
-            case opts.filename of
-                Nothing ->
-                    Just ""
-
-                _ ->
-                    opts.filename
+            Just opts.filename
         }
 
 
@@ -1035,13 +1037,13 @@ radians =
     Style.Angle
 
 
-{-| Angle is given in radians. [Here are some conversion functions if you want to use another unit.](https://package.elm-lang.org/packages/elm/core/latest/Basics#degrees)
--}
+{-| -}
 rotate : Angle -> Attribute msg
 rotate (Style.Angle rads) =
     Two.style "rotate" (String.fromFloat rads ++ "rad")
 
 
+{-| -}
 type alias Position =
     { x : Int
     , y : Int
@@ -1101,17 +1103,22 @@ padding x =
     Two.style "padding" (String.fromInt x ++ "px")
 
 
-{-| Set horizontal and vertical padding.
+{-| A record that is used to set padding or border widths individually.
+
+    Ui.paddingWith
+        { top = 10
+        , right = 20
+        , bottom = 30
+        , left = 40
+        }
+
+You can also use `Edges` as a constructor. So, the above is the same as this:
+
+    Ui.paddingWith (Ui.Edges 10 20 30 40)
+
+Where the numbers start at the top and proceed clockwise.
+
 -}
-paddingXY : Int -> Int -> Attribute msg
-paddingXY x y =
-    Two.style "padding"
-        ((String.fromInt y ++ "px ")
-            ++ (String.fromInt x ++ "px")
-        )
-
-
-{-| -}
 type alias Edges =
     { top : Int
     , right : Int
@@ -1122,26 +1129,16 @@ type alias Edges =
 
 {-| If you find yourself defining unique paddings all the time, you might consider defining
 
-    edges =
+    Ui.paddingWith
         { top = 0
-        , right = 0
+        , right = 20
         , bottom = 0
         , left = 0
         }
 
-And then just do
-
-    Ui.paddingEach (Ui.Edges 0 0 10 0)
-
 -}
-paddingEach :
-    { top : Int
-    , right : Int
-    , bottom : Int
-    , left : Int
-    }
-    -> Attribute msg
-paddingEach pad =
+paddingWith : Edges -> Attribute msg
+paddingWith pad =
     Two.style "padding"
         ((String.fromInt pad.top ++ "px ")
             ++ (String.fromInt pad.right ++ "px ")
@@ -1228,8 +1225,8 @@ spacing x =
 However for some layouts, like `textColumn`, you may want to set a different spacing for the x axis compared to the y axis.
 
 -}
-spacingXY : Int -> Int -> Attribute msg
-spacingXY x y =
+spacingWith : { horizontal : Int, vertical : Int } -> Attribute msg
+spacingWith { horizontal, vertical } =
     Two.Attribute
         { flag = Flag.spacing
         , attr =
@@ -1237,8 +1234,8 @@ spacingXY x y =
                 { node = Two.NodeAsDiv
                 , additionalInheritance =
                     BitField.none
-                        |> BitField.set Inheritance.spacingX x
-                        |> BitField.set Inheritance.spacingY y
+                        |> BitField.set Inheritance.spacingX horizontal
+                        |> BitField.set Inheritance.spacingY vertical
                 , attrs = []
                 , class = Nothing
                 , styles =
@@ -1248,9 +1245,9 @@ spacingXY x y =
 
                         else
                             [ Tuple.pair "gap"
-                                (String.fromInt y
+                                (String.fromInt vertical
                                     ++ "px "
-                                    ++ String.fromInt x
+                                    ++ String.fromInt horizontal
                                     ++ "px"
                                 )
                             ]
