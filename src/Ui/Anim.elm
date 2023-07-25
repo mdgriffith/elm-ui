@@ -513,6 +513,7 @@ layout opts state attrs els =
 
                 Nothing ->
                     opts.options
+        , includeStatisStylesheet = True
         }
         state
         (onAnimationStart opts.toMsg

@@ -2,10 +2,8 @@ module Ui exposing
     ( layout, embed, Option
     , Element, none, text, el
     , row, column
-    , ellipsis, paragraph, textColumn
-    , h1, h2, h3, h4, h5, h6
     , id, noAttr, attrIf
-    , Attribute, Length, px, fill, portion
+    , Attribute, Length, px, fill, portion, shrink
     , width, widthMin, widthMax
     , height, heightMin, heightMax
     , explain
@@ -20,7 +18,7 @@ module Ui exposing
     , move, Position, up, down, left, right
     , rotate, Angle, turns, radians
     , scale
-    , scrollable, clipped
+    , scrollable, clipped, clipWithEllipsis
     , link, linkNewTab, download, downloadAs
     , image
     , Color, rgb, palette
@@ -51,13 +49,6 @@ So, the common ways to do that would be `row` and `column`.
 @docs row, column
 
 
-# Text Layout
-
-@docs ellipsis, paragraph, textColumn
-
-@docs h1, h2, h3, h4, h5, h6
-
-
 # Attributes
 
 @docs id, noAttr, attrIf
@@ -65,7 +56,7 @@ So, the common ways to do that would be `row` and `column`.
 
 # Size
 
-@docs Attribute, Length, px, fill, portion
+@docs Attribute, Length, px, fill, portion, shrink
 
 @docs width, widthMin, widthMax
 
@@ -165,7 +156,7 @@ For scrolling element, we're going to borrow some terminology from 3D graphics j
 
 Essentially a `scrollable` is the window that you're looking through. If the content is larger than the scrollable, then scrollbars will appear.
 
-@docs scrollable, clipped
+@docs scrollable, clipped, clipWithEllipsis
 
 
 # Links
@@ -288,6 +279,13 @@ map =
 type Length
     = Px Int
     | Fill Int
+    | Shrink
+
+
+{-| -}
+shrink : Length
+shrink =
+    Shrink
 
 
 {-| -}
@@ -301,12 +299,6 @@ px =
 fill : Length
 fill =
     Fill 1
-
-
-{-| -}
-ellipsis : Attribute msg
-ellipsis =
-    Two.classWith Flag.fontEllipsis Style.classes.ellipses
 
 
 {-| Sometimes you may not want to split available space evenly. In this case you can use `portion` to define which elements should have what portion of the available space.
@@ -325,24 +317,13 @@ portion i =
 -}
 layout : List (Attribute msg) -> Element msg -> Html msg
 layout attrs content =
-    -- Two.unwrap Two.zero <|
-    --     Two.element Two.NodeAsDiv
-    --         Two.AsRoot
-    --         attrs
-    --         [ Two.Element
-    --             (\_ ->
-    --                 Html.Keyed.node "div"
-    --                     []
-    --                     [ ( "static", Html.Lazy.lazy style Style.rules )
-    --                     ]
-    --             )
-    --         , content
-    --         ]
-    Two.renderLayout defaultOptions emptyState attrs content
-
-
-defaultOptions =
-    { options = [] }
+    Two.renderLayout
+        { options = []
+        , includeStatisStylesheet = True
+        }
+        emptyState
+        attrs
+        content
 
 
 emptyState : Two.State
@@ -361,7 +342,13 @@ You'll need to include it manually yourself
 -}
 embed : List (Attribute msg) -> Element msg -> Html msg
 embed attrs content =
-    Two.renderLayout defaultOptions emptyState attrs content
+    Two.renderLayout
+        { options = []
+        , includeStatisStylesheet = False
+        }
+        emptyState
+        attrs
+        content
 
 
 style : String -> Html msg
@@ -429,61 +416,7 @@ el : List (Attribute msg) -> Element msg -> Element msg
 el attrs child =
     Two.element Two.NodeAsDiv
         Two.AsEl
-        attrs
-        [ child ]
-
-
-{-| -}
-h1 : List (Attribute msg) -> Element msg -> Element msg
-h1 attrs child =
-    Two.element Two.NodeAsH1
-        Two.AsEl
-        attrs
-        [ child ]
-
-
-{-| -}
-h2 : List (Attribute msg) -> Element msg -> Element msg
-h2 attrs child =
-    Two.element Two.NodeAsH2
-        Two.AsEl
-        attrs
-        [ child ]
-
-
-{-| -}
-h3 : List (Attribute msg) -> Element msg -> Element msg
-h3 attrs child =
-    Two.element Two.NodeAsH3
-        Two.AsEl
-        attrs
-        [ child ]
-
-
-{-| -}
-h4 : List (Attribute msg) -> Element msg -> Element msg
-h4 attrs child =
-    Two.element Two.NodeAsH4
-        Two.AsEl
-        attrs
-        [ child ]
-
-
-{-| -}
-h5 : List (Attribute msg) -> Element msg -> Element msg
-h5 attrs child =
-    Two.element Two.NodeAsH5
-        Two.AsEl
-        attrs
-        [ child ]
-
-
-{-| -}
-h6 : List (Attribute msg) -> Element msg -> Element msg
-h6 attrs child =
-    Two.element Two.NodeAsH6
-        Two.AsEl
-        attrs
+        (width fill :: attrs)
         [ child ]
 
 
@@ -492,7 +425,7 @@ row : List (Attribute msg) -> List (Element msg) -> Element msg
 row attrs children =
     Two.element Two.NodeAsDiv
         Two.AsRow
-        attrs
+        (width fill :: attrs)
         children
 
 
@@ -501,7 +434,7 @@ column : List (Attribute msg) -> List (Element msg) -> Element msg
 column attrs children =
     Two.element Two.NodeAsDiv
         Two.AsColumn
-        attrs
+        (width fill :: attrs)
         children
 
 
@@ -546,80 +479,6 @@ type alias Todo =
 explain : Todo -> Attribute msg
 explain _ =
     Two.class "explain"
-
-
-{-| A paragraph will layout all children as wrapped, inline elements.
-
-    import Element exposing (el, paragraph, text)
-    import Ui.Font as Font
-
-    view =
-        paragraph []
-            [ text "lots of text ...."
-            , el [ Font.bold ] (text "this is bold")
-            , text "lots of text ...."
-            ]
-
-This is really useful when you want to markup text by having some parts be bold, or some be links, or whatever you so desire.
-
-Also, if a child element has `alignLeft` or `alignRight`, then it will be moved to that side and the text will flow around it, (ah yes, `float` behavior).
-
-This makes it particularly easy to do something like a [dropped capital](https://en.wikipedia.org/wiki/Initial).
-
-    import Element exposing (alignLeft, el, padding, paragraph, text)
-    import Ui.Font as Font
-
-    view =
-        paragraph []
-            [ el
-                [ alignLeft
-                , padding 5
-                ]
-                (text "S")
-            , text "o much text ...."
-            ]
-
-Which will look something like
-
-![A paragraph where the first letter is twice the height of the others](https://mdgriffith.gitbooks.io/style-elements/content/assets/Screen%20Shot%202017-08-25%20at%209.41.52%20PM.png)
-
-**Note** `spacing` on a paragraph will set the pixel spacing between lines.
-
--}
-paragraph : List (Attribute msg) -> List (Element msg) -> Element msg
-paragraph attrs children =
-    -- Two.element Two.NodeAsDivAs Html.p
-    Two.element Two.NodeAsParagraph
-        Two.AsParagraph
-        attrs
-        children
-
-
-{-| Now that we have a paragraph, we need some way to attach a bunch of paragraph's together.
-
-To do that we can use a `textColumn`.
-
-The main difference between a `column` and a `textColumn` is that `textColumn` will flow the text around elements that have `alignRight` or `alignLeft`, just like we just saw with paragraph.
-
-In the following example, we have a `textColumn` where one child has `alignLeft`.
-
-    Ui.textColumn [ spacing 10, padding 10 ]
-        [ paragraph [] [ text "lots of text ...." ]
-        , el [ alignLeft ] none
-        , paragraph [] [ text "lots of text ...." ]
-        ]
-
-Which will result in something like:
-
-![A text layout where an image is on the left.](https://mdgriffith.gitbooks.io/style-elements/content/assets/Screen%20Shot%202017-08-25%20at%208.42.39%20PM.png)
-
--}
-textColumn : List (Attribute msg) -> List (Element msg) -> Element msg
-textColumn attrs children =
-    Two.element Two.NodeAsDiv
-        Two.AsTextColumn
-        attrs
-        children
 
 
 {-| Both a source and a description are required for images.
@@ -673,7 +532,7 @@ image attrs img =
     --     )
     Two.element Two.NodeAsDiv
         Two.AsEl
-        (Two.class Style.classes.imageContainer :: attrs)
+        (width fill :: Two.class Style.classes.imageContainer :: attrs)
         [ Two.Element
             (\s ->
                 Html.img
@@ -835,7 +694,7 @@ download url =
     Two.link
         { newTab = False
         , url = url
-        , download = Nothing
+        , download = Just ""
         }
 
 
@@ -904,6 +763,9 @@ behindContent element =
 width : Length -> Attribute msg
 width len =
     case len of
+        Shrink ->
+            Two.classWith Flag.width Style.classes.widthContent
+
         Px x ->
             Two.styleAndClass Flag.width
                 { class = Style.classes.widthExact
@@ -981,6 +843,9 @@ heightMax x =
 height : Length -> Attribute msg
 height len =
     case len of
+        Shrink ->
+            Two.classWith Flag.height Style.classes.heightContent
+
         Px x ->
             Two.styleAndClass Flag.height
                 { class = Style.classes.heightExact
@@ -1292,6 +1157,12 @@ scrollbarY =
 scrollbarX : Attribute msg
 scrollbarX =
     Two.classWith Flag.overflow Style.classes.scrollbarsX
+
+
+{-| -}
+clipWithEllipsis : Attribute msg
+clipWithEllipsis =
+    Two.classWith Flag.fontEllipsis Style.classes.ellipses
 
 
 {-| Clip the content if it overflows.

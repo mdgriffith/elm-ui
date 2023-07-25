@@ -1453,12 +1453,14 @@ spacerBottom space =
 
 
 renderLayout :
-    { options : List Option }
+    { options : List Option
+    , includeStatisStylesheet : Bool
+    }
     -> State
     -> List (Attribute msg)
     -> Element msg
     -> Html.Html msg
-renderLayout { options } (State state) attrs content =
+renderLayout { options, includeStatisStylesheet } (State state) attrs content =
     let
         rendered =
             element NodeAsDiv
@@ -1469,7 +1471,13 @@ renderLayout { options } (State state) attrs content =
                         Html.Keyed.node "div"
                             []
                             [ ( "options", Html.Lazy.lazy renderOptions options )
-                            , ( "static", staticStyles )
+                            , ( "static"
+                              , if includeStatisStylesheet then
+                                    staticStyles
+
+                                else
+                                    Html.text ""
+                              )
                             , ( "animations", Html.Lazy.lazy styleRules state.rules )
                             , ( "boxes"
                               , Html.div [] (List.map viewBox state.boxes)
