@@ -22,7 +22,7 @@ output =
 classes =
     { root = "ui"
     , any = "s"
-    , single = "e"
+    , el = "e"
     , row = "r"
     , column = "c"
     , page = "pg"
@@ -65,17 +65,11 @@ classes =
     , alignCenterX = "cx"
     , alignCenterY = "cy"
     , alignedHorizontally = "ah"
-    , alignedVertically = "av"
 
     -- space evenly
     , spacing = "spc"
     , spaceEvenly = "sev"
     , padding = "pad"
-    , container = "ctr"
-    , alignContainerRight = "acr"
-    , alignContainerBottom = "acb"
-    , alignContainerCenterX = "accx"
-    , alignContainerCenterY = "accy"
 
     -- content alignments
     , contentTop = "ct"
@@ -257,12 +251,7 @@ overrides =
         ++ " > "
         ++ dot classes.any
         ++ " { flex-basis: auto !important; } "
-        ++ dot classes.any
-        ++ dot classes.row
-        ++ " > "
-        ++ dot classes.any
-        ++ dot classes.container
-        ++ " { flex-basis: auto !important; }}"
+        ++ "}"
         ++ inputTextReset
         ++ sliderReset
         ++ trackReset
@@ -594,7 +583,7 @@ baseSheet =
         , Prop "padding" "0"
         , Prop "margin" "0"
         ]
-    , Class (dot classes.any ++ dot classes.single ++ dot classes.imageContainer)
+    , Class (dot classes.any ++ dot classes.el ++ dot classes.imageContainer)
         [ Prop "display" "block"
         , Descriptor (dot classes.heightFill)
             [ Child "img"
@@ -644,7 +633,7 @@ baseSheet =
         --visible-bottom: 0.29000000000000004;
         , Descriptor
             (dot classes.any
-                -- ++ dot classes.single
+                -- ++ dot classes.el
                 ++ dot classes.heightFill
             )
             [ Prop "height" "100%"
@@ -666,7 +655,7 @@ baseSheet =
         , Prop "flex-direction" "row"
         , Prop "flex-basis" "auto"
         , Prop "border-radius" "inherit"
-        , Descriptor (dot classes.single)
+        , Descriptor (dot classes.el)
             elDescription
         , Batch <|
             (\fn -> List.map fn locations) <|
@@ -767,11 +756,9 @@ baseSheet =
                                     ]
                                 ]
         ]
-    , Class (dot classes.single)
+    , Class (dot classes.el)
         [ Prop "flex" "0 0 0px"
         , Prop "align-items" "flex-start"
-
-        -- , Prop "flex-basis" "0px"
         , Prop "min-height" "min-content"
         , Prop "display" "flex"
         , Prop "flex-direction" "column"
@@ -784,9 +771,6 @@ baseSheet =
             ]
         ]
     , Class (dot classes.any)
-        -- [ Prop "flex-shrink" "0"
-        -- , Prop "flex-basis" "auto%"
-        -- , Prop "box-sizing" "border-box"
         [ Prop "position" "relative"
         , Prop "border" "none"
         , Prop "flex-shrink" "0"
@@ -794,9 +778,6 @@ baseSheet =
         , Prop "flex-direction" "row"
         , Prop "flex-basis" "auto"
         , Prop "resize" "none"
-        , Prop "font-feature-settings" "inherit"
-
-        -- , Prop "flex-basis" "0%"
         , Prop "box-sizing" "border-box"
         , Prop "margin" "0"
         , Prop "padding" "0"
@@ -808,6 +789,7 @@ baseSheet =
         , Prop "color" "inherit"
         , Prop "font-family" "inherit"
         , Prop "font-weight" "inherit"
+        , Prop "font-feature-settings" "inherit"
 
         -- Text decoration is *mandatorily inherited* in the css spec.
         -- There's no way to change this.  How crazy is that?
@@ -850,10 +832,7 @@ baseSheet =
                 ]
             ]
         , Descriptor (dot classes.noTextSelection)
-            [ Prop "-moz-user-select" "none"
-            , Prop "-webkit-user-select" "none"
-            , Prop "-ms-user-select" "none"
-            , Prop "user-select" "none"
+            [ Prop "user-select" "none"
             ]
         , Descriptor (dot classes.cursorPointer)
             [ Prop "cursor" "pointer"
@@ -917,7 +896,7 @@ baseSheet =
                 [ Prop "flex-shrink" "1"
                 , Prop "flex-basis" "auto"
                 ]
-            , Descriptor (dot classes.single)
+            , Descriptor (dot classes.el)
                 [ Prop "flex-shrink" "1"
                 , Prop "flex-basis" "auto"
                 ]
@@ -934,7 +913,7 @@ baseSheet =
                 [ Prop "flex-shrink" "1"
                 , Prop "flex-basis" "auto"
                 ]
-            , Descriptor (dot classes.single)
+            , Descriptor (dot classes.el)
                 [ Prop "flex-shrink" "1"
                 , Prop "flex-basis" "auto"
                 ]
@@ -972,9 +951,7 @@ baseSheet =
             [ Prop "width" "auto"
             ]
         , Descriptor (dot classes.text)
-            [ --Prop "white-space" "pre"
-              -- ,
-              Prop "display" "inline-block"
+            [ Prop "display" "inline-block"
             , Prop "max-width" "100%"
 
             -- , Prop "overflow" "hidden"
@@ -1016,17 +993,26 @@ baseSheet =
                 )
                 (List.range 1 20)
             )
-        , Descriptor (dot classes.single)
+        , Descriptor (dot classes.el)
             elDescription
         , Descriptor (dot classes.row)
             [ Prop "display" "flex"
             , Prop "flex-direction" "row"
+
+            --
+            -- If the row has width fill, then everything within it
+            -- That has width-fill should have a flex-basis of 0.
+            -- This is so that they can share the available space evenly.
+            , Descriptor (dot classes.widthFill)
+                [ Child (dot classes.widthFill)
+                    [ Prop "flex-basis" "0%"
+                    ]
+                ]
             , Child (dot classes.any)
                 [ Prop "flex-basis" "auto"
                 , Prop "flex-shrink" "1"
                 , Descriptor (dot classes.widthFill)
-                    [ Prop "flex-basis" "0px"
-                    , Prop "flex-shrink" "0"
+                    [ Prop "flex-shrink" "0"
                     , Prop "flex-grow" "100000"
                     ]
                 , Descriptor (dot classes.clip)
@@ -1049,17 +1035,6 @@ baseSheet =
                 [ -- alignTop, centerY, and alignBottom need to be disabled
                   Prop "align-self" "stretch !important"
                 ]
-
-            -- TODO:: This may be necessary..should it move to classes.heightFIll?
-            -- , Child (dot classes.heightFillBetween)
-            --     [ Prop "align-self" "stretch"
-            --     , Descriptor ".aligned-vertically"
-            --         [ Prop "height" "100%"
-            --         ]
-            --     ]
-            -- , Child (dot classes.widthFill)
-            --     [ Prop "flex-grow" "100000"
-            --     ]
             , Batch
                 (List.map
                     (\f ->
@@ -1069,55 +1044,6 @@ baseSheet =
                     )
                     (List.range 1 10)
                 )
-            , Child (dot classes.container)
-                [ Prop "flex-grow" "0"
-                , Prop "flex-basis" "auto"
-                , Prop "align-self" "stretch"
-                ]
-
-            -- , Child "alignLeft:last-of-type.align-container-left"
-            --     [ Prop "flex-grow" "1"
-            --     ]
-            -- alignRight -> <u>
-            --centerX -> <s>
-            , Child ("u:first-of-type." ++ classes.alignContainerRight)
-                [ Prop "flex-grow" "1"
-                ]
-
-            -- first center y
-            , Child ("s:first-of-type." ++ classes.alignContainerCenterX)
-                [ Prop "flex-grow" "1"
-                , Child (dot classes.alignCenterX)
-                    [ Prop "margin-left" "auto !important"
-                    ]
-                ]
-            , Child ("s:last-of-type." ++ classes.alignContainerCenterX)
-                [ Prop "flex-grow" "1"
-                , Child (dot classes.alignCenterX)
-                    [ Prop "margin-right" "auto !important"
-                    ]
-                ]
-
-            -- lonley centerX
-            , Child ("s:only-of-type." ++ classes.alignContainerCenterX)
-                [ Prop "flex-grow" "1"
-                , Child (dot classes.alignCenterY)
-                    [ Prop "margin-top" "auto !important"
-                    , Prop "margin-bottom" "auto !important"
-                    ]
-                ]
-
-            -- alignBottom's after a centerX should not grow
-            , Child
-                ("s:last-of-type." ++ classes.alignContainerCenterX ++ " ~ u")
-                [ Prop "flex-grow" "0"
-                ]
-
-            -- centerX's after an alignBottom should be ignored
-            , Child ("u:first-of-type." ++ classes.alignContainerRight ++ " ~ s." ++ classes.alignContainerCenterX)
-                -- Bottom alignment always overrides center alignment
-                [ Prop "flex-grow" "0"
-                ]
             , describeAlignment <|
                 \alignment ->
                     case alignment of
@@ -1136,19 +1062,19 @@ baseSheet =
                         Right ->
                             ( [ Prop "justify-content" "flex-end"
                               ]
-                            , []
+                            , [ Prop "margin-left" "auto" ]
                             )
 
                         Left ->
                             ( [ Prop "justify-content" "flex-start"
                               ]
-                            , []
+                            , [ Prop "margin-right" "auto" ]
                             )
 
                         CenterX ->
                             ( [ Prop "justify-content" "center"
                               ]
-                            , []
+                            , [ Prop "margin" "0 auto" ]
                             )
 
                         CenterY ->
@@ -1227,51 +1153,6 @@ baseSheet =
             , Child (dot classes.widthContent)
                 [ Prop "align-self" "flex-start"
                 ]
-
-            -- , Child "alignTop:last-of-type.align-container-top"
-            --     [ Prop "flex-grow" "1"
-            --     ]
-            , Child ("u:first-of-type." ++ classes.alignContainerBottom)
-                [ Prop "flex-grow" "1"
-                ]
-
-            -- centerY -> <s>
-            -- alignBottom -> <u>
-            -- first center y
-            , Child ("s:first-of-type." ++ classes.alignContainerCenterY)
-                [ Prop "flex-grow" "1"
-                , Child (dot classes.alignCenterY)
-                    [ Prop "margin-top" "auto !important"
-                    , Prop "margin-bottom" "0 !important"
-                    ]
-                ]
-            , Child ("s:last-of-type." ++ classes.alignContainerCenterY)
-                [ Prop "flex-grow" "1"
-                , Child (dot classes.alignCenterY)
-                    [ Prop "margin-bottom" "auto !important"
-                    , Prop "margin-top" "0 !important"
-                    ]
-                ]
-
-            -- lonley centerY
-            , Child ("s:only-of-type." ++ classes.alignContainerCenterY)
-                [ Prop "flex-grow" "1"
-                , Child (dot classes.alignCenterY)
-                    [ Prop "margin-top" "auto !important"
-                    , Prop "margin-bottom" "auto !important"
-                    ]
-                ]
-
-            -- alignBottom's after a centerY should not grow
-            , Child ("s:last-of-type." ++ classes.alignContainerCenterY ++ " ~ u")
-                [ Prop "flex-grow" "0"
-                ]
-
-            -- centerY's after an alignBottom should be ignored
-            , Child ("u:first-of-type." ++ classes.alignContainerBottom ++ " ~ s." ++ classes.alignContainerCenterY)
-                -- Bottom alignment always overrides center alignment
-                [ Prop "flex-grow" "0"
-                ]
             , describeAlignment <|
                 \alignment ->
                     case alignment of
@@ -1305,12 +1186,6 @@ baseSheet =
                             ( [ Prop "justify-content" "center" ]
                             , []
                             )
-            , Child (dot classes.container)
-                [ Prop "flex-grow" "0"
-                , Prop "flex-basis" "auto"
-                , Prop "width" "100%"
-                , Prop "align-self" "stretch !important"
-                ]
             , Descriptor (dot classes.spaceEvenly)
                 [ Prop "justify-content" "space-between"
                 ]
@@ -1419,7 +1294,7 @@ baseSheet =
             -- , Prop "flex-direction" "column-reverse"
             -- ]
             [ -- to increase specificity to beat another rule
-              Descriptor (dot classes.single)
+              Descriptor (dot classes.el)
                 [ Prop "flex-basis" "auto" ]
             ]
         , Descriptor (dot classes.inputMultilineParent)
@@ -1453,7 +1328,7 @@ baseSheet =
                     [ Prop "content" "none"
                     ]
                 ]
-            , AllChildren (dot classes.single)
+            , AllChildren (dot classes.el)
                 [ Prop "display" "inline"
                 , Prop "white-space" "normal"
 
@@ -1608,10 +1483,10 @@ elDescription =
     , Child (dot classes.widthFill)
         [ -- alignLeft, alignRight, centerX are overridden by width.
           --   Prop "align-self" "stretch !important"
-          Prop "width" "100%"
+          Prop "min-width" "100%"
         ]
     , Child (dot classes.widthFillPortion)
-        [ Prop "width" "100%"
+        [ Prop "min-width" "100%"
         ]
     , Child (dot classes.widthContent)
         [ Prop "align-self" "flex-start"
@@ -1738,10 +1613,10 @@ innerShadows shades =
 
 joinInnerShadows shadow rendered =
     if String.isEmpty rendered then
-        "inset " ++ singleShadow shadow
+        "inset " ++ elShadow shadow
 
     else
-        rendered ++ ", inset" ++ singleShadow shadow
+        rendered ++ ", inset" ++ elShadow shadow
 
 
 shadows : List Shadow -> String
@@ -1751,14 +1626,14 @@ shadows shades =
 
 joinShadows shadow rendered =
     if String.isEmpty rendered then
-        singleShadow shadow
+        elShadow shadow
 
     else
-        rendered ++ "," ++ singleShadow shadow
+        rendered ++ "," ++ elShadow shadow
 
 
-singleShadow : Shadow -> String
-singleShadow shadow =
+elShadow : Shadow -> String
+elShadow shadow =
     pent
         (floatPx shadow.x)
         (floatPx shadow.y)
@@ -1823,7 +1698,7 @@ slider =
                 x -> parent
                 y -> inputParent
                 y -> cover
-                if single line -> do math involving line-height
+                if el line -> do math involving line-height
 
             4. Transform
                  x -> parent

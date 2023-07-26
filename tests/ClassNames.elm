@@ -54,7 +54,7 @@ allClassNames =
 allClassNameFns =
     [ ( .root, "root" )
     , ( .any, "any" )
-    , ( .single, "single" )
+    , ( .el, "el" )
     , ( .row, "row" )
     , ( .column, "column" )
     , ( .page, "page" )
@@ -89,15 +89,9 @@ allClassNameFns =
     , ( .alignCenterX, "alignCenterX" )
     , ( .alignCenterY, "alignCenterY" )
     , ( .alignedHorizontally, "alignedHorizontally" )
-    , ( .alignedVertically, "alignedVertically" )
 
     -- space evenly
     , ( .spaceEvenly, "spaceEvenly" )
-    , ( .container, "container" )
-    , ( .alignContainerRight, "alignContainerRight" )
-    , ( .alignContainerBottom, "alignContainerBottom" )
-    , ( .alignContainerCenterX, "alignContainerCenterX" )
-    , ( .alignContainerCenterY, "alignContainerCenterY" )
 
     -- content alignments
     , ( .contentTop, "contentTop" )
