@@ -218,7 +218,7 @@ font details =
                               )
                             , ( True
                               , ( "font-size"
-                                , String.fromInt details.size ++ "px"
+                                , toFontPixels (toFloat details.size)
                                 )
                               )
                             , ( True
@@ -238,10 +238,18 @@ font details =
                               )
                             ]
                 , nearby = Nothing
-                , transform = Nothing
                 , teleport = Nothing
                 }
         }
+
+
+toFontPixels : Float -> String
+toFontPixels f =
+    let
+        rem =
+            f / 16
+    in
+    String.fromFloat rem ++ "rem"
 
 
 {-| -}
@@ -280,7 +288,7 @@ size i =
                 modification =
                     (toFloat modificationInt / 100) * baseSize
             in
-            String.fromFloat (baseSize - modification) ++ "px"
+            toFontPixels (baseSize - modification)
         )
 
 
@@ -302,7 +310,7 @@ lineHeight height =
 {-| -}
 exactWhitespace : Attribute msg
 exactWhitespace =
-    Internal.style "whitespace" "pre"
+    Internal.style "white-space" "pre"
 
 
 {-| In `px`.
