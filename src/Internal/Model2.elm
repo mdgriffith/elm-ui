@@ -1585,10 +1585,10 @@ element node layout attrs children =
 
                 styleAttrs =
                     if BitField.has AnalyzeBits.cssVars analyzedBits then
-                        toStyleAsEncodedProperty parentBits myBits analyzedBits Flag.none (contextClasses layout) htmlAttrs "" attrs
+                        toStyleAsEncodedProperty parentBits myBits analyzedBits Flag.none (contextClasses layout) htmlAttrs "" (List.reverse attrs)
 
                     else
-                        toStyle parentBits myBits analyzedBits Flag.none htmlAttrs (contextClasses layout) attrs
+                        toStyle parentBits myBits analyzedBits Flag.none htmlAttrs (contextClasses layout) (List.reverse attrs)
 
                 finalChildren =
                     toChildren myBits analyzedBits attrs children
@@ -2015,7 +2015,7 @@ toStyle parentBits myBits analyzedBits has htmlAttrs classes attrs =
                         in
                         case details.styles parentBits analyzedBits of
                             [] ->
-                                toStyle parentBits myBits analyzedBits has htmlAttrs newClasses remain
+                                toStyle parentBits myBits analyzedBits (Flag.add flag has) htmlAttrs newClasses remain
 
                             [ ( name, val ) ] ->
                                 toStyle parentBits myBits analyzedBits (Flag.add flag has) (Attr.style name val :: htmlAttrs) newClasses remain
@@ -2082,7 +2082,7 @@ toStyleAsEncodedProperty parentBits myBits analyzed has classesString htmlAttrs 
                         in
                         case details.styles parentBits analyzed of
                             [] ->
-                                toStyleAsEncodedProperty parentBits myBits analyzed has newClasses htmlAttrs str remain
+                                toStyleAsEncodedProperty parentBits myBits analyzed (Flag.add flag has) newClasses htmlAttrs str remain
 
                             [ ( name, val ) ] ->
                                 toStyleAsEncodedProperty parentBits myBits analyzed (Flag.add flag has) newClasses htmlAttrs (name ++ ":" ++ val ++ ";" ++ str) remain
@@ -2998,7 +2998,7 @@ nearbyToHtml inheritance location (Element elem) =
     Html.div
         [ Attr.class <|
             Style.classes.nearby
-                ++ (" " ++ Style.classes.single ++ " ")
+                ++ (" " ++ Style.classes.el ++ " ")
                 ++ (case location of
                         Above ->
                             Style.classes.above
@@ -3043,7 +3043,7 @@ rootClass =
         ++ " "
         ++ Style.classes.any
         ++ " "
-        ++ Style.classes.single
+        ++ Style.classes.el
 
 
 rowClass =
@@ -3073,7 +3073,7 @@ columnClass =
 
 
 singleClass =
-    Style.classes.any ++ " " ++ Style.classes.single
+    Style.classes.any ++ " " ++ Style.classes.el
 
 
 gridClass =
