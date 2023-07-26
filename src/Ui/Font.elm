@@ -3,7 +3,7 @@ module Ui.Font exposing
     , Font
     , family, typeface, serif, sansSerif, monospace
     , alignLeft, alignRight, center, justify
-    , exactWhitespace
+    , exactWhitespace, noWrap
     , lineHeight, letterSpacing, wordSpacing
     , font
     , fontAdjustment
@@ -29,7 +29,7 @@ module Ui.Font exposing
 
 @docs alignLeft, alignRight, center, justify
 
-@docs exactWhitespace
+@docs exactWhitespace, noWrap
 
 @docs lineHeight, letterSpacing, wordSpacing
 
@@ -311,6 +311,12 @@ lineHeight height =
 exactWhitespace : Attribute msg
 exactWhitespace =
     Internal.style "white-space" "pre"
+
+
+{-| -}
+noWrap : Attribute msg
+noWrap =
+    Internal.style "white-space" "nowrap"
 
 
 {-| In `px`.
