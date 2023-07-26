@@ -39,12 +39,10 @@ classes =
     , widthFill = "wf"
     , widthContent = "wc"
     , widthExact = "we"
-    , widthFillPortion = "wfp"
     , widthBounded = "wb"
     , heightFill = "hf"
     , heightContent = "hc"
     , heightExact = "he"
-    , heightFillPortion = "hfp"
     , heightBounded = "hb"
 
     -- nearby elements
@@ -526,6 +524,19 @@ selfName desc =
             dot classes.alignCenterY
 
 
+select =
+    { widthFill =
+        dot classes.widthFill
+            ++ ":not("
+            ++ String.join ", "
+                [ dot classes.alignRight
+                , dot classes.alignLeft
+                , dot classes.alignCenterX
+                ]
+            ++ ")"
+    }
+
+
 contentName desc =
     case desc of
         Content Top ->
@@ -672,7 +683,7 @@ baseSheet =
                                 , Child (dot classes.heightFill)
                                     [ Prop "height" "auto"
                                     ]
-                                , Child (dot classes.widthFill)
+                                , Child select.widthFill
                                     [ Prop "width" "100%"
                                     ]
                                 , Prop "pointer-events" "none"
@@ -1003,24 +1014,24 @@ baseSheet =
             -- If the row has width fill, then everything within it
             -- That has width-fill should have a flex-basis of 0.
             -- This is so that they can share the available space evenly.
-            , Descriptor (dot classes.widthFill)
-                [ Child (dot classes.widthFill)
+            , Descriptor select.widthFill
+                [ Child select.widthFill
                     [ Prop "flex-basis" "0%"
                     ]
                 ]
             , Child (dot classes.any)
                 [ Prop "flex-basis" "auto"
                 , Prop "flex-shrink" "1"
-                , Descriptor (dot classes.widthFill)
+                , Descriptor select.widthFill
                     [ Prop "flex-shrink" "0"
-                    , Prop "flex-grow" "100000"
+                    , Prop "flex-grow" "1"
                     ]
                 , Descriptor (dot classes.clip)
-                    [ Descriptor (dot classes.widthFill)
+                    [ Descriptor select.widthFill
                         [ Prop "min-width" "auto" ]
                     ]
                 , Descriptor (dot classes.clipX)
-                    [ Descriptor (dot classes.widthFill)
+                    [ Descriptor select.widthFill
                         [ Prop "min-width" "auto" ]
                     ]
                 , Descriptor (dot classes.widthExact)
@@ -1031,19 +1042,6 @@ baseSheet =
                 [ -- alignTop, centerY, and alignBottom need to be disabled
                   Prop "align-self" "stretch !important"
                 ]
-            , Child (dot classes.heightFillPortion)
-                [ -- alignTop, centerY, and alignBottom need to be disabled
-                  Prop "align-self" "stretch !important"
-                ]
-            , Batch
-                (List.map
-                    (\f ->
-                        Child (dot classes.widthFillPortion ++ "-" ++ String.fromInt f)
-                            [ Prop "flex-grow" (String.fromInt (f * 100000))
-                            ]
-                    )
-                    (List.range 1 10)
-                )
             , describeAlignment <|
                 \alignment ->
                     case alignment of
@@ -1120,24 +1118,10 @@ baseSheet =
                     ]
                 ]
             , Child (dot classes.heightFill)
-                [ Prop "flex-grow" "100000"
+                [ Prop "flex-grow" "1"
                 , Prop "max-height" "100%"
                 ]
-            , Batch
-                (List.map
-                    (\f ->
-                        Child (dot classes.heightFillPortion ++ "-" ++ String.fromInt f)
-                            [ Prop "flex-grow" (String.fromInt (f * 100000))
-                            ]
-                    )
-                    (List.range 1 10)
-                )
-            , Child (dot classes.widthFill)
-                [ -- alignLeft, alignRight, centerX need to be disabled
-                  --   Prop "align-self" "stretch !important"
-                  Prop "width" "100%"
-                ]
-            , Child (dot classes.widthFillPortion)
+            , Child select.widthFill
                 [ -- alignLeft, alignRight, centerX need to be disabled
                   --   Prop "align-self" "stretch !important"
                   Prop "width" "100%"
@@ -1470,7 +1454,7 @@ elDescription =
         [ Prop "height" "auto"
         ]
     , Child (dot classes.heightFill)
-        [ Prop "flex-grow" "100000"
+        [ Prop "flex-grow" "1"
 
         -- max height is for when the child is larger than the parent el.
         -- An example case is
@@ -1480,13 +1464,10 @@ elDescription =
         -- We want the height fill to translate through the row so that scrollable know show to scroll.
         , Prop "max-height" "100%"
         ]
-    , Child (dot classes.widthFill)
+    , Child select.widthFill
         [ -- alignLeft, alignRight, centerX are overridden by width.
           --   Prop "align-self" "stretch !important"
           Prop "min-width" "100%"
-        ]
-    , Child (dot classes.widthFillPortion)
-        [ Prop "min-width" "100%"
         ]
     , Child (dot classes.widthContent)
         [ Prop "align-self" "flex-start"

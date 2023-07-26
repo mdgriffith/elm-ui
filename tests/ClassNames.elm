@@ -67,7 +67,6 @@ allClassNameFns =
     , ( .widthFill, "widthFill" )
     , ( .widthContent, "widthContent" )
     , ( .widthExact, "widthExact" )
-    , ( .widthFillPortion, "widthFillPortion" )
     , ( .heightFill, "heightFill" )
     , ( .heightContent, "heightContent" )
     , ( .heightFillPortion, "heightFillPortion" )
