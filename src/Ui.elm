@@ -385,8 +385,6 @@ none =
 
     text "Hello, you stylish developer!"
 
-**Note** text does not wrap by default. In order to get text to wrap, check out `paragraph`!
-
 -}
 text : String -> Element msg
 text =
