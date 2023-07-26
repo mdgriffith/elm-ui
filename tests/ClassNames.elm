@@ -69,7 +69,6 @@ allClassNameFns =
     , ( .widthExact, "widthExact" )
     , ( .heightFill, "heightFill" )
     , ( .heightContent, "heightContent" )
-    , ( .heightFillPortion, "heightFillPortion" )
 
     -- , ( .seButton, "seButton" )
     -- nearby elements

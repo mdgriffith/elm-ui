@@ -679,7 +679,6 @@ mapAttr fn (Attribute attr) =
 
 type Layout
     = AsRow
-    | AsWrappedRow
     | AsColumn
     | AsEl
     | AsGrid
@@ -3058,10 +3057,6 @@ rowClass =
         ++ Style.classes.contentCenterY
 
 
-wrappedRowClass =
-    Style.classes.any ++ " " ++ Style.classes.row ++ " " ++ Style.classes.wrapped
-
-
 columnClass =
     Style.classes.any
         ++ " "
@@ -3092,9 +3087,6 @@ contextClasses context =
     case context of
         AsRow ->
             rowClass
-
-        AsWrappedRow ->
-            wrappedRowClass
 
         AsColumn ->
             columnClass

@@ -31,7 +31,6 @@ classes =
     , grid = "g"
     , imageContainer = "ic"
     , nowrap = "nowrp"
-    , wrapped = "wrp"
     , transform = "move"
     , ellipses = "ellip"
 
@@ -782,8 +781,7 @@ baseSheet =
             ]
         ]
     , Class (dot classes.any)
-        [ Prop "position" "relative"
-        , Prop "border" "none"
+        [ Prop "border" "none"
         , Prop "flex-shrink" "0"
         , Prop "display" "flex"
         , Prop "flex-direction" "row"
@@ -831,9 +829,6 @@ baseSheet =
             ]
         , Descriptor (dot classes.fontAdjusted)
             [ Prop "font-size" "calc(1em * var(--font-size-factor))"
-            ]
-        , Descriptor (dot classes.wrapped)
-            [ Prop "flex-wrap" "wrap"
             ]
         , Descriptor (dot classes.ellipses)
             [ AllChildren (dot classes.text)
@@ -1088,14 +1083,6 @@ baseSheet =
             , Descriptor (dot classes.inputLabel)
                 [ Prop "align-items" "baseline"
                 ]
-
-            -- the wrapped row element is controlled entirely by elm-ui
-            , Descriptor (dot classes.wrapped)
-                [ Prop "pointer-events" "none"
-                , Child (dot classes.any)
-                    [ Prop "pointer-events" "auto"
-                    ]
-                ]
             ]
         , Descriptor (dot classes.column)
             [ Prop "display" "flex"
@@ -1122,18 +1109,8 @@ baseSheet =
                 , Prop "max-height" "100%"
                 ]
             , Child select.widthFill
-                [ -- alignLeft, alignRight, centerX need to be disabled
-                  --   Prop "align-self" "stretch !important"
-                  Prop "width" "100%"
+                [ Prop "width" "100%"
                 ]
-
-            -- TODO:: This might be necessary, maybe it should move to widthFill?
-            -- , Child (dot classes.widthFill)
-            --     [ Prop "align-self" "stretch"
-            --     , Descriptor (dot classes.alignedHorizontally)
-            --         [ Prop "width" "100%"
-            --         ]
-            --     ]
             , Child (dot classes.widthContent)
                 [ Prop "align-self" "flex-start"
                 ]
@@ -1168,7 +1145,7 @@ baseSheet =
 
                         CenterY ->
                             ( [ Prop "justify-content" "center" ]
-                            , []
+                            , [ Prop "margin" "auto 0" ]
                             )
             , Descriptor (dot classes.spaceEvenly)
                 [ Prop "justify-content" "space-between"
@@ -1291,7 +1268,6 @@ baseSheet =
             ]
         , Descriptor (dot classes.paragraph)
             [ Prop "display" "block"
-            , Prop "white-space" "normal"
             , Prop "overflow-wrap" "break-word"
             , Descriptor (dot classes.hasBehind)
                 [ Prop "z-index" "0"
@@ -1301,7 +1277,6 @@ baseSheet =
                 ]
             , AllChildren (dot classes.text)
                 [ Prop "display" "inline"
-                , Prop "white-space" "normal"
                 ]
             , Child (dot classes.paragraph)
                 [ Prop "display" "inline"
@@ -1314,7 +1289,6 @@ baseSheet =
                 ]
             , AllChildren (dot classes.el)
                 [ Prop "display" "inline"
-                , Prop "white-space" "normal"
 
                 -- Inline block allows the width of the item to be set
                 -- but DOES NOT like wrapping text in a standard, normal, sane way.
@@ -1328,7 +1302,6 @@ baseSheet =
                     ]
                 , Child (dot classes.text)
                     [ Prop "display" "inline"
-                    , Prop "white-space" "normal"
                     ]
                 ]
             , Child (dot classes.row)
@@ -1442,8 +1415,6 @@ animationTriggers =
 elDescription =
     [ Prop "display" "flex"
     , Prop "flex-direction" "column"
-
-    -- , Prop "white-space" "pre"
     , Descriptor (dot classes.hasBehind)
         [ Prop "z-index" "0"
         , Child (dot classes.behind)
