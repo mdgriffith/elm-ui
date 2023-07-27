@@ -45,6 +45,7 @@ classes =
     , heightBounded = "hb"
 
     -- nearby elements
+    , hasNearby = "hnb"
     , nearby = "nb"
     , above = "a"
     , below = "b"
@@ -658,6 +659,9 @@ baseSheet =
                 ]
             ]
         ]
+    , Class (dot classes.hasNearby)
+        [ Prop "position" "relative"
+        ]
     , Class (dot classes.nearby)
         [ Prop "position" "relative"
         , Prop "border" "none"
@@ -778,6 +782,7 @@ baseSheet =
         -- Button reset
         [ Descriptor (dot classes.any)
             [ Prop "background-color" "transparent"
+            , Prop "text-align" "start"
             ]
         ]
     , Class (dot classes.any)
