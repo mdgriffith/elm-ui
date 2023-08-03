@@ -34,7 +34,7 @@ encodeCss css =
     Encode.object
         [ ( "hash", Encode.string css.hash )
         , ( "keyframes", Encode.string css.keyframes )
-        , ( "tranition", Encode.string css.transition )
+        , ( "transition", Encode.string css.transition )
         , ( "props", Encode.list encodeProp css.props )
         ]
 
