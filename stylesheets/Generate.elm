@@ -615,8 +615,13 @@ baseSheet =
     , Class (dot classes.root)
         [ Prop "width" "100%"
         , Prop "height" "auto"
-        , Prop "min-height" "100%"
-        , Prop "z-index" "0"
+        , zIndex 0
+        , Descriptor (dot classes.el)
+            [ Prop "min-height" "100%"
+            , Prop "font-size" "16px"
+            , Prop "font-family" "\"Open Sans\", sans-serif"
+            , Prop "color" "#000"
+            ]
 
         -- Default line-height rules
         , Prop "line-height" "1.2"
@@ -630,11 +635,6 @@ baseSheet =
                 , Prop "margin-bottom" "-0.1em"
                 ]
             ]
-
-        -- defaults
-        , Prop "font-size" "16px"
-        , Prop "font-family" "\"Open Sans\", sans-serif"
-        , Prop "color" "#000"
 
         -- basics for EB Garamond
         --font-size-factor: 1.4184397163120566;
@@ -776,7 +776,6 @@ baseSheet =
         , Prop "min-height" "min-content"
         , Prop "display" "flex"
         , Prop "flex-direction" "column"
-        , Prop "box-sizing" "border-box"
         ]
     , Class "button"
         -- Button reset
@@ -1093,12 +1092,7 @@ baseSheet =
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
             , Child (dot classes.any)
-                -- So we add `min-height: min-content`, which isn't supported by IE, but works for all other browsers!
-                -- Separately, 0% is different than 0px, but only for columns
-                -- In columns, 0% will actually be calculated as `auto` for columns
-                -- So, 0px is the one we want.
-                [ Prop "flex-basis" "0px"
-                , Prop "min-height" "min-content"
+                [ Prop "min-height" "min-content"
                 , Descriptor (dot classes.heightExact)
                     [ Prop "flex-basis" "auto"
                     ]
@@ -1415,6 +1409,17 @@ animationTriggers =
         [ Prop "animation" "on-dismount 31449600s"
         ]
     ]
+
+
+{-| z-index only takes effect if the element is not position:static
+<https://developer.mozilla.org/en-US/docs/Web/CSS/z-index>
+-}
+zIndex : Int -> Rule
+zIndex z =
+    Batch
+        [ Prop "position" "relative"
+        , Prop "z-index" (String.fromInt z)
+        ]
 
 
 elDescription =
