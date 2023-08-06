@@ -534,6 +534,16 @@ select =
                 , dot classes.alignCenterX
                 ]
             ++ ")"
+    , heightFill =
+        dot classes.heightFill
+            ++ ":not("
+            ++ String.join ", "
+                [ dot classes.alignTop
+                , dot classes.alignBottom
+                , dot classes.alignCenterY
+                , dot classes.heightBounded
+                ]
+            ++ ")"
     }
 
 
@@ -1037,22 +1047,32 @@ baseSheet =
                     [ Prop "flex-shrink" "0"
                     ]
                 ]
+            , Child select.heightFill
+                [ Prop "align-self" "stretch"
+                ]
             , Child (dot classes.heightFill)
-                [ -- alignTop, centerY, and alignBottom need to be disabled
-                  Prop "align-self" "stretch !important"
+                [ Descriptor (dot classes.heightBounded)
+                    -- This looks super weird, I know.
+                    -- Here's the awkward situation: https://www.notion.so/Difficult-or-impossible-CSS-challenges-33d1216a69b74688a038da7a18eee200?pvs=4
+                    -- basically height: 100% is broken in a flex row
+                    -- Other approaches also fail for various reasons
+                    -- We know the height is bounded by a specific pixel height
+                    -- so we can set this value to a large pixel value to cause it to grow
+                    [ Prop "height" "max(2000px, 100vh)"
+                    ]
                 ]
             , describeAlignment <|
                 \alignment ->
                     case alignment of
                         Top ->
                             ( [ Prop "align-items" "flex-start" ]
-                            , [ Prop "align-self" "flex-start"
+                            , [ Prop "margin-bottom" "auto"
                               ]
                             )
 
                         Bottom ->
                             ( [ Prop "align-items" "flex-end" ]
-                            , [ Prop "align-self" "flex-end"
+                            , [ Prop "margin-top" "auto"
                               ]
                             )
 
@@ -1076,7 +1096,7 @@ baseSheet =
 
                         CenterY ->
                             ( [ Prop "align-items" "center" ]
-                            , [ Prop "align-self" "center"
+                            , [ Prop "margin" "auto 0"
                               ]
                             )
 
