@@ -1451,20 +1451,22 @@ elDescription =
         , Prop "max-height" "100%"
         ]
     , Child select.widthFill
-        [ -- alignLeft, alignRight, centerX are overridden by width.
-          --   Prop "align-self" "stretch !important"
-          Prop "min-width" "100%"
+        -- width full, but not aligned
+        [ Prop "width" "100%"
+        ]
+    , Child (dot classes.widthFill)
+        -- Bounded + width fill.
+        -- The element should grow to fill the space
+        -- but be capped
+        -- The weird case is if alignment is applied, which negates the initial width fill
+        -- But now we want to restore it.
+        [ Descriptor (dot classes.widthBounded)
+            [ Prop "width" "100%"
+            ]
         ]
     , Child (dot classes.widthContent)
         [ Prop "align-self" "flex-start"
         ]
-
-    -- , Child (dot classes.widthFill)
-    --     [ Prop "align-self" "stretch"
-    --     , Descriptor (dot classes.alignedHorizontally)
-    --         [ Prop "width" "100%"
-    --         ]
-    --     ]
     , describeAlignment <|
         \alignment ->
             case alignment of
