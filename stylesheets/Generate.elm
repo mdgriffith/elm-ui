@@ -1102,6 +1102,11 @@ baseSheet =
                 , Descriptor (dot classes.scrollbars)
                     [ Prop "flex-basis" "auto"
                     ]
+                , Descriptor (dot classes.widthBounded)
+                    [ Descriptor (dot classes.widthFill)
+                        [ Prop "width" "100%"
+                        ]
+                    ]
                 ]
             , Child (dot classes.heightFill)
                 [ Prop "flex-grow" "1"

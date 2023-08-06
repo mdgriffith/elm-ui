@@ -44,7 +44,7 @@ rulerRight height =
 main : Html msg
 main =
     Ui.layout []
-        (Ui.column [ Ui.spacing 40, Ui.height Ui.fill ]
+        (Ui.column [ Ui.spacing 40, Ui.height Ui.fill, Ui.padding 200 ]
             [ Ui.text "Hello"
             , Ui.text "World"
             , Ui.el [ palette.pink ] (Ui.text "default is width fill")
@@ -69,7 +69,7 @@ main =
                 [ Ui.height Ui.fill
                 , Ui.heightMax 200
                 , rulerRight 200
-                , Ui.width Ui.fill
+                , Ui.widthMax 800
                 , Ui.padding 25
                 , palette.pink
                 , Ui.centerX
