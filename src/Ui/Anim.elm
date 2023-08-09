@@ -6,6 +6,7 @@ module Ui.Anim exposing
     , Duration, ms
     , transition, hovered, focused, pressed
     , opacity, x, y, rotation, scale, scaleX, scaleY
+    , backgroundColor, fontColor, borderColor
     , keyframes, hoveredWith, focusedWith, pressedWith
     , set, wait, step
     , loop, loopFor
@@ -39,7 +40,9 @@ module Ui.Anim exposing
 
 @docs opacity, x, y, rotation, scale, scaleX, scaleY
 
--- @docs padding, paddingEach, background, border, font, height, width
+@docs backgroundColor, fontColor, borderColor
+
+-- @docs padding, paddingEach, backgroundColor, border, font, height, width
 
 -- # Premade animations
 
@@ -80,17 +83,19 @@ module Ui.Anim exposing
 import Animator
 import Animator.Timeline exposing (Timeline)
 import Animator.Watcher
+import Color
 import Html
 import Internal.BitEncodings as Bits
 import Internal.BitField as BitField
 import Internal.Flag as Flag
 import Internal.Model2 as Two
+import Internal.Style2 as Style
 import Internal.Teleport as Teleport
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Set
 import Time
-import Ui exposing (Attribute, Element)
+import Ui exposing (Attribute, Color, Element)
 import Ui.Events
 import Ui.Responsive
 
@@ -321,6 +326,24 @@ encodeBezier one two three four =
         |> BitField.setPercentage Bits.bezTwo two
         |> BitField.setPercentage Bits.bezThree three
         |> BitField.setPercentage Bits.bezFour four
+
+
+{-| -}
+fontColor : Color -> Animated
+fontColor (Style.Rgb r g b) =
+    Animator.color "color" (Color.rgb255 r g b)
+
+
+{-| -}
+backgroundColor : Color -> Animated
+backgroundColor (Style.Rgb r g b) =
+    Animator.color "background-color" (Color.rgb255 r g b)
+
+
+{-| -}
+borderColor : Color -> Animated
+borderColor (Style.Rgb r g b) =
+    Animator.color "border-color" (Color.rgb255 r g b)
 
 
 {-| -}
