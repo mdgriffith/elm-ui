@@ -1900,7 +1900,16 @@ toAttrs parentBits myBits has htmlAttrs teleported attrs =
                     Attr details ->
                         case details.attrs of
                             [] ->
-                                toAttrs parentBits myBits has htmlAttrs teleported remain
+                                let
+                                    newTeleported =
+                                        case details.teleport of
+                                            Nothing ->
+                                                teleported
+
+                                            Just newTele ->
+                                                newTele :: teleported
+                                in
+                                toAttrs parentBits myBits has htmlAttrs newTeleported remain
 
                             _ ->
                                 let
