@@ -502,7 +502,7 @@ renderTargetAnimatedStyle transform props =
                 ++ details.fourUnit
                 ++ " !important;"
 
-        (Anim _ _ name (AnimColor (Style.Rgb red green blue))) :: remaining ->
+        (Anim _ _ name (AnimColor (Style.Rgb red green blue alpha))) :: remaining ->
             let
                 redStr =
                     String.fromInt red
@@ -512,12 +512,16 @@ renderTargetAnimatedStyle transform props =
 
                 blueStr =
                     String.fromInt blue
+
+                alphaStr =
+                    String.fromFloat alpha
             in
             renderTargetAnimatedStyle transform remaining
                 ++ name
-                ++ (":rgb(" ++ redStr)
+                ++ (":rgba(" ++ redStr)
                 ++ ("," ++ greenStr)
                 ++ ("," ++ blueStr)
+                ++ ("," ++ alphaStr)
                 ++ ") !important;"
 
 
@@ -991,7 +995,7 @@ focusDefaultStyle =
             { x = 0
             , y = 0
             , color =
-                Style.Rgb 155 203 255
+                Style.Rgb 155 203 255 1
             , blur = 0
             , size = 3
             }

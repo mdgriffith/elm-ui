@@ -21,7 +21,7 @@ module Ui exposing
     , scrollable, clipped, clipWithEllipsis
     , link, linkNewTab, download, downloadAs
     , image
-    , Color, rgb, palette
+    , Color, rgb, rgba, palette
     , above, below, onRight, onLeft, inFront, behindContent
     , map
     , html, htmlAttribute
@@ -173,7 +173,7 @@ Essentially a `scrollable` is the window that you're looking through. If the con
 
 In order to use attributes like `Font.color` and `Background.color`, you'll need to make some colors!
 
-@docs Color, rgb, palette
+@docs Color, rgb, rgba, palette
 
 
 # Nearby Elements
@@ -237,7 +237,17 @@ Each channel takes a value between 0 and 255.
 -}
 rgb : Int -> Int -> Int -> Color
 rgb r g b =
-    Style.Rgb r g b
+    Style.Rgb r g b 1
+
+
+{-| Provide the red, green, and blue channels for the color and the alpha (transparency).
+
+Each channel takes a value between 0 and 255. Alpha takes a value between 0 (fully transparent) and 1 (fully opaque).
+
+-}
+rgba : Int -> Int -> Int -> Float -> Color
+rgba r g b a =
+    Style.Rgb r g b a
 
 
 {-| The basic building block of your layout.

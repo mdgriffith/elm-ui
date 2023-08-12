@@ -28,7 +28,7 @@ toRadians (Angle r) =
 
 
 type Color
-    = Rgb Int Int Int
+    = Rgb Int Int Int Float
 
 
 {--}
@@ -48,11 +48,12 @@ compactQuad x y =
 
 
 color : Color -> String
-color (Rgb red green blue) =
-    "rgb("
+color (Rgb red green blue alpha) =
+    "rgba("
         ++ String.fromInt red
         ++ ("," ++ String.fromInt green)
         ++ ("," ++ String.fromInt blue)
+        ++ ("," ++ String.fromFloat alpha)
         ++ ")"
 
 
