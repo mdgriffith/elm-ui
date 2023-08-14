@@ -1,6 +1,5 @@
 module Ui.Prose exposing
     ( column, paragraph
-    , h1, h2, h3, h4, h5, h6
     , noBreak, softHyphen
     , enDash, emDash
     , quote, singleQuote, apostrophe
@@ -12,8 +11,6 @@ module Ui.Prose exposing
 # Text Layout
 
 @docs column, paragraph
-
-@docs h1, h2, h3, h4, h5, h6
 
 
 # Special text handling
@@ -103,60 +100,6 @@ paragraph attrs children =
         Two.AsParagraph
         (width fill :: attrs)
         children
-
-
-{-| -}
-h1 : List (Attribute msg) -> String -> Element msg
-h1 attrs str =
-    Two.element Two.NodeAsH1
-        Two.AsEl
-        (width fill :: attrs)
-        [ Ui.text str ]
-
-
-{-| -}
-h2 : List (Attribute msg) -> String -> Element msg
-h2 attrs str =
-    Two.element Two.NodeAsH2
-        Two.AsEl
-        (width fill :: attrs)
-        [ Ui.text str ]
-
-
-{-| -}
-h3 : List (Attribute msg) -> String -> Element msg
-h3 attrs str =
-    Two.element Two.NodeAsH3
-        Two.AsEl
-        (width fill :: attrs)
-        [ Ui.text str ]
-
-
-{-| -}
-h4 : List (Attribute msg) -> String -> Element msg
-h4 attrs str =
-    Two.element Two.NodeAsH4
-        Two.AsEl
-        (width fill :: attrs)
-        [ Ui.text str ]
-
-
-{-| -}
-h5 : List (Attribute msg) -> String -> Element msg
-h5 attrs str =
-    Two.element Two.NodeAsH5
-        Two.AsEl
-        (width fill :: attrs)
-        [ Ui.text str ]
-
-
-{-| -}
-h6 : List (Attribute msg) -> String -> Element msg
-h6 attrs str =
-    Two.element Two.NodeAsH6
-        Two.AsEl
-        (width fill :: attrs)
-        [ Ui.text str ]
 
 
 
