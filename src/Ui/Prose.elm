@@ -260,7 +260,7 @@ orderedList : ListIcon -> List (Attribute msg) -> List (Item msg) -> Element msg
 orderedList icon attrs children =
     Two.element Two.NodeAsNumberedList
         Two.AsColumn
-        (Attr.style "list-style" (iconToString icon) :: attrs)
+        (Two.style "list-style" (iconToString icon) :: attrs)
         (List.map unwrapItem children)
 
 
@@ -269,5 +269,5 @@ unorderedList : ListIcon -> List (Attribute msg) -> List (Item msg) -> Element m
 unorderedList icon attrs children =
     Two.element Two.NodeAsBulletedList
         Two.AsColumn
-        (Attr.style "list-style" (iconToString icon) :: attrs)
+        (Two.style "list-style" (iconToString icon) :: attrs)
         (List.map unwrapItem children)
