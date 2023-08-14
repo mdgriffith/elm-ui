@@ -1,5 +1,8 @@
 module Ui.Prose exposing
     ( column, paragraph
+    , numbered, bulleted, item
+    , orderedList, unorderedList
+    , ListIcon, decimal, disc, circle, custom
     , noBreak, softHyphen
     , enDash, emDash
     , quote, singleQuote, apostrophe
@@ -11,6 +14,15 @@ module Ui.Prose exposing
 # Text Layout
 
 @docs column, paragraph
+
+
+# Lists
+
+@docs numbered, bulleted, item
+
+@docs orderedList, unorderedList
+
+@docs ListIcon, decimal, disc, circle, custom
 
 
 # Special text handling
@@ -106,7 +118,13 @@ paragraph attrs children =
 {- Text formatting -}
 
 
-{-| -}
+{-|
+
+     "&shy;"
+
+The "shy" hyphen. This is a hyphen that will only show up if the word is broken across lines.
+
+-}
 softHyphen : String
 softHyphen =
     -- Needs  word-break: break-word;
@@ -114,7 +132,19 @@ softHyphen =
     "&shy;"
 
 
-{-| -}
+{-|
+
+    "\u{00A0}"
+
+The classic, yet sometimes misunderstood "non-breaking space".
+
+This is useful for things like
+
+    "Mr. Griff"
+
+Where you don't want the "Mr." to be on one line and the "Griff" to be on the next.
+
+-}
 noBreak : String
 noBreak =
     "\u{00A0}"
@@ -161,15 +191,34 @@ emDash =
 
 
 {-| -}
-numbered : List (Attribute msg) -> List (Element msg) -> Element msg
+numbered : List (Attribute msg) -> List (Item msg) -> Element msg
 numbered =
     orderedList decimal
 
 
 {-| -}
-bulleted : List (Attribute msg) -> List (Element msg) -> Element msg
+bulleted : List (Attribute msg) -> List (Item msg) -> Element msg
 bulleted =
     unorderedList disc
+
+
+{-| -}
+type Item msg
+    = Item (List (Attribute msg)) (Element msg)
+
+
+{-| -}
+item : List (Attribute msg) -> Element msg -> Item msg
+item =
+    Item
+
+
+unwrapItem : Item msg -> Element msg
+unwrapItem (Item attrs child) =
+    Two.element Two.NodeAsListItem
+        Two.AsEl
+        attrs
+        [ child ]
 
 
 {-| -}
@@ -201,13 +250,24 @@ custom =
     ListIcon
 
 
+iconToString : ListIcon -> String
+iconToString (ListIcon str) =
+    str
+
+
 {-| -}
-orderedList : ListIcon -> List (Attribute msg) -> List (Element msg) -> Element msg
+orderedList : ListIcon -> List (Attribute msg) -> List (Item msg) -> Element msg
 orderedList icon attrs children =
-    Debug.todo "Lists"
+    Two.element Two.NodeAsNumberedList
+        Two.AsColumn
+        (Attr.style "list-style" (iconToString icon) :: attrs)
+        (List.map unwrapItem children)
 
 
 {-| -}
-unorderedList : ListIcon -> List (Attribute msg) -> List (Element msg) -> Element msg
+unorderedList : ListIcon -> List (Attribute msg) -> List (Item msg) -> Element msg
 unorderedList icon attrs children =
-    Debug.todo "Lists"
+    Two.element Two.NodeAsBulletedList
+        Two.AsColumn
+        (Attr.style "list-style" (iconToString icon) :: attrs)
+        (List.map unwrapItem children)
