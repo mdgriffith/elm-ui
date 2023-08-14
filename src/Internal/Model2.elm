@@ -857,6 +857,7 @@ type Node
     | NodeAsTableRow
     | NodeAsTableD
     | NodeAsTableFoot
+    | NodeAsTableBody
       -- Input stuff
     | NodeAsLabel
     | NodeAsInput
@@ -1624,6 +1625,9 @@ element node layout attrs children =
                     NodeAsTableRow ->
                         Html.tr styleAttrs finalChildren
 
+                    NodeAsTableBody ->
+                        Html.tbody styleAttrs finalChildren
+
                     NodeAsTableD ->
                         Html.td styleAttrs finalChildren
 
@@ -1708,74 +1712,190 @@ toChildren myBits analyzedBits attrs children =
 
 
 elementKeyed :
-    String
+    Node
     -> Layout
     -> List (Attribute msg)
     -> List ( String, Element msg )
     -> Element msg
-elementKeyed name layout attrs children =
+elementKeyed node layout attrs children =
     Element
         (\parentBits ->
-            -- let
-            --     rendered =
-            --         renderAttrs
-            --             parentBits
-            --             (Bits.clearSpacing parentBits
-            --                 |> (if layout == AsRow then
-            --                         BitField.set Bits.isRow 1
-            --                     else
-            --                         BitField.set Bits.isRow 0
-            --                    )
-            --                 |> (if layout == AsParagraph then
-            --                         BitField.set Bits.isParagraph 1
-            --                     else
-            --                         BitField.set Bits.isParagraph 0
-            --                    )
-            --             )
-            --             layout
-            --             emptyDetails
-            --             (ElemKeyed children emptyKeyedNearbys)
-            --             Flag.none
-            --             []
-            --             -- the "" below is the starting class
-            --             -- though we want some defaults based on the layout
-            --             (contextClasses layout)
-            --             (List.reverse attrs)
-            --     finalAttrs =
-            --         if BitField.has Flag.hasCssVars rendered.fields then
-            --             let
-            --                 styleStr =
-            --                     renderInlineStylesToString
-            --                         parentBits
-            --                         rendered.myBits
-            --                         layout
-            --                         rendered.details
-            --                         rendered.fields
-            --                         ""
-            --                         (List.reverse attrs)
-            --             in
-            --             Attr.property "style"
-            --                 (Encode.string
-            --                     styleStr
-            --                 )
-            --                 :: rendered.attrs
-            --         else
-            --             rendered.attrs
-            -- in
-            -- case rendered.children of
-            --     Keyed finalChildren ->
-            --         Html.Keyed.node
-            --             (if BitField.has Flag.isLink rendered.fields then
-            --                 "a"
-            --              else
-            --                 name
-            --             )
-            --             finalAttrs
-            --             finalChildren
-            --     _ ->
-            --         Html.div finalAttrs []
-            Html.div [] []
+            let
+                myBaseBits =
+                    Inheritance.clearParentValues parentBits
+                        |> (case layout of
+                                AsRow ->
+                                    BitField.flip Inheritance.isRow True
+
+                                AsColumn ->
+                                    BitField.flip Inheritance.isColumn True
+
+                                AsParagraph ->
+                                    BitField.flip Inheritance.isTextLayout True
+
+                                AsTextColumn ->
+                                    BitField.flip Inheritance.isTextLayout True
+
+                                _ ->
+                                    identity
+                           )
+
+                ( analyzedBits, myBits, iHave ) =
+                    analyze Flag.none BitField.init myBaseBits attrs
+
+                htmlAttrs =
+                    if BitField.has Inheritance.isTextLayout parentBits && BitField.has Flag.xAlign iHave then
+                        let
+                            spacingX =
+                                BitField.get Inheritance.spacingX parentBits
+
+                            spacingY =
+                                BitField.get Inheritance.spacingY parentBits
+
+                            margin =
+                                Attr.style "margin"
+                                    (String.fromInt spacingY
+                                        ++ "px"
+                                        ++ " "
+                                        ++ String.fromInt spacingX
+                                        ++ "px"
+                                    )
+                        in
+                        toAttrs parentBits myBits Flag.none [ margin ] [] attrs
+
+                    else
+                        toAttrs parentBits myBits Flag.none [] [] attrs
+
+                styleAttrs =
+                    if BitField.has AnalyzeBits.cssVars analyzedBits then
+                        toStyleAsEncodedProperty parentBits myBits analyzedBits Flag.none (contextClasses layout) htmlAttrs "" (List.reverse attrs)
+
+                    else
+                        toStyle parentBits myBits analyzedBits Flag.none htmlAttrs (contextClasses layout) (List.reverse attrs)
+
+                finalChildren =
+                    toChildrenKeyed myBits analyzedBits attrs children
+            in
+            if BitField.has AnalyzeBits.isLink analyzedBits then
+                Html.Keyed.node "a" styleAttrs finalChildren
+
+            else if BitField.has AnalyzeBits.isButton analyzedBits then
+                Html.Keyed.node "button" styleAttrs finalChildren
+
+            else
+                case node of
+                    NodeAsDiv ->
+                        Html.Keyed.node "div" styleAttrs finalChildren
+
+                    NodeAsLink ->
+                        Html.Keyed.node "a" styleAttrs finalChildren
+
+                    NodeAsParagraph ->
+                        Html.Keyed.node "p" styleAttrs finalChildren
+
+                    NodeAsButton ->
+                        Html.Keyed.node "button" styleAttrs finalChildren
+
+                    NodeAsTable ->
+                        Html.Keyed.node "table" styleAttrs finalChildren
+
+                    NodeAsTableHead ->
+                        Html.Keyed.node "thead" styleAttrs finalChildren
+
+                    NodeAsTableHeaderCell ->
+                        Html.Keyed.node "th" styleAttrs finalChildren
+
+                    NodeAsTableRow ->
+                        Html.Keyed.node "tr" styleAttrs finalChildren
+
+                    NodeAsTableBody ->
+                        Html.Keyed.node "tbody" styleAttrs finalChildren
+
+                    NodeAsTableD ->
+                        Html.Keyed.node "td" styleAttrs finalChildren
+
+                    NodeAsTableFoot ->
+                        Html.Keyed.node "tfoot" styleAttrs finalChildren
+
+                    NodeAsLabel ->
+                        Html.Keyed.node "label" styleAttrs finalChildren
+
+                    NodeAsInput ->
+                        Html.Keyed.node "input" styleAttrs finalChildren
+
+                    NodeAsTextArea ->
+                        Html.Keyed.node "textarea" styleAttrs finalChildren
+
+                    NodeAsH1 ->
+                        Html.Keyed.node "h1" styleAttrs finalChildren
+
+                    NodeAsH2 ->
+                        Html.Keyed.node "h2" styleAttrs finalChildren
+
+                    NodeAsH3 ->
+                        Html.Keyed.node "h3" styleAttrs finalChildren
+
+                    NodeAsH4 ->
+                        Html.Keyed.node "h4" styleAttrs finalChildren
+
+                    NodeAsH5 ->
+                        Html.Keyed.node "h5" styleAttrs finalChildren
+
+                    NodeAsH6 ->
+                        Html.Keyed.node "h6" styleAttrs finalChildren
+
+                    NodeAsNav ->
+                        Html.Keyed.node "nav" styleAttrs finalChildren
+
+                    NodeAsMain ->
+                        Html.Keyed.node "main" styleAttrs finalChildren
+
+                    NodeAsAside ->
+                        Html.Keyed.node "aside" styleAttrs finalChildren
+
+                    NodeAsSection ->
+                        Html.Keyed.node "section" styleAttrs finalChildren
+
+                    NodeAsArticle ->
+                        Html.Keyed.node "article" styleAttrs finalChildren
+
+                    NodeAsFooter ->
+                        Html.Keyed.node "footer" styleAttrs finalChildren
+
+                    NodeAsNumberedList ->
+                        Html.Keyed.node "ol" styleAttrs finalChildren
+
+                    NodeAsBulletedList ->
+                        Html.Keyed.node "ul" styleAttrs finalChildren
+
+                    NodeAsListItem ->
+                        Html.Keyed.node "li" styleAttrs finalChildren
         )
+
+
+toChildrenKeyed :
+    Inheritance.Encoded
+    -> AnalyzeBits.Encoded
+    -> List (Attribute msg)
+    -> List ( String, Element msg )
+    -> List ( String, Html.Html msg )
+toChildrenKeyed myBits analyzedBits attrs children =
+    if BitField.has AnalyzeBits.nearbys analyzedBits then
+        let
+            behind =
+                toBehindElements myBits [] attrs
+                    |> List.map (Tuple.pair "behind")
+
+            after =
+                toNearbyElements myBits [] attrs
+                    |> List.map (Tuple.pair "after")
+        in
+        behind
+            ++ List.map (\( key, Element toChild ) -> ( key, toChild myBits )) children
+            ++ after
+
+    else
+        List.map (\( key, Element toChild ) -> ( key, toChild myBits )) children
 
 
 emptyKeyedNearbys =

@@ -483,7 +483,7 @@ renderRows config state data =
                 Just sortFn ->
                     sortFn state data
     in
-    Two.elementKeyed "tbody"
+    Two.elementKeyed Two.NodeAsTableBody
         Two.AsRow
         [ Two.style "display" "contents" ]
         (List.indexedMap
