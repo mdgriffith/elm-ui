@@ -330,20 +330,20 @@ encodeBezier one two three four =
 
 {-| -}
 fontColor : Color -> Animated
-fontColor (Style.Rgb r g b) =
-    Animator.color "color" (Color.rgb255 r g b)
+fontColor clr =
+    Animator.color "color" clr
 
 
 {-| -}
 backgroundColor : Color -> Animated
-backgroundColor (Style.Rgb r g b) =
-    Animator.color "background-color" (Color.rgb255 r g b)
+backgroundColor clr =
+    Animator.color "background-color" clr
 
 
 {-| -}
 borderColor : Color -> Animated
-borderColor (Style.Rgb r g b) =
-    Animator.color "border-color" (Color.rgb255 r g b)
+borderColor clr =
+    Animator.color "border-color" clr
 
 
 {-| -}

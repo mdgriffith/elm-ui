@@ -211,6 +211,7 @@ This is very useful for things like dropdown menus or tooltips.
 
 -}
 
+import Color
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as Event
@@ -237,7 +238,13 @@ Each channel takes a value between 0 and 255.
 -}
 rgb : Int -> Int -> Int -> Color
 rgb r g b =
-    Style.Rgb r g b
+    Color.rgb255 r g b
+
+
+{-| -}
+rgba : Int -> Int -> Int -> Float -> Color
+rgba r g b a =
+    Color.rgba (toFloat r / 255) (toFloat g / 255) (toFloat b / 255) a
 
 
 {-| The basic building block of your layout.
@@ -397,15 +404,13 @@ You can think of an `el` as a `div`, but it can only have one child.
 
 If you want multiple children, you'll need to use something like `row` or `column`
 
-    import Element exposing (Element, rgb)
-    import Ui.Background as Background
-    import Ui.Border as Border
+    import Ui
 
-    myElement : Element msg
+    myElement : Ui.Element msg
     myElement =
         Ui.el
-            [ Background.color (rgb 0 0.5 0)
-            , Border.color (rgb 0 0.7 0)
+            [ Ui.background (Ui.rgb 0 125 0)
+            , Ui.borderColor (Ui.rgb 0 178 0)
             ]
             (Ui.text "You've made a stylish element!")
 

@@ -3,6 +3,7 @@ module Internal.Style2 exposing (..)
 {-| This module is used to generate the actual base stylesheet for elm-ui.
 -}
 
+import Color
 import Internal.Style.Generated as Gen
 
 
@@ -27,8 +28,8 @@ toRadians (Angle r) =
     r
 
 
-type Color
-    = Rgb Int Int Int
+type alias Color =
+    Color.Color
 
 
 {--}
@@ -48,12 +49,8 @@ compactQuad x y =
 
 
 color : Color -> String
-color (Rgb red green blue) =
-    "rgb("
-        ++ String.fromInt red
-        ++ ("," ++ String.fromInt green)
-        ++ ("," ++ String.fromInt blue)
-        ++ ")"
+color colorDetails =
+    Color.toCssString colorDetails
 
 
 pair : String -> String -> String

@@ -4,6 +4,7 @@ import Animator
 import Animator.Timeline
 import Animator.Watcher
 import Browser.Dom
+import Color
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -377,148 +378,6 @@ transformToString trans =
         ++ "rad) scale("
         ++ String.fromFloat trans.scale
         ++ ")"
-
-
-renderTargetAnimatedStyle : Maybe Transform -> List Animated -> String
-renderTargetAnimatedStyle transform props =
-    case props of
-        [] ->
-            case transform of
-                Nothing ->
-                    ""
-
-                Just details ->
-                    "transform: "
-                        ++ transformToString details
-                        ++ ";"
-
-        (Anim _ _ name (AnimFloat val unit)) :: remaining ->
-            if name == "rotate" then
-                case transform of
-                    Nothing ->
-                        renderTargetAnimatedStyle
-                            (Just
-                                { scale = 1
-                                , x = 0
-                                , y = 0
-                                , rotation = val
-                                }
-                            )
-                            remaining
-
-                    Just trans ->
-                        renderTargetAnimatedStyle
-                            (Just
-                                { scale = trans.scale
-                                , x = trans.x
-                                , y = trans.y
-                                , rotation = val
-                                }
-                            )
-                            remaining
-
-            else if name == "scale" then
-                case transform of
-                    Nothing ->
-                        renderTargetAnimatedStyle
-                            (Just
-                                { scale = val
-                                , x = 0
-                                , y = 0
-                                , rotation = 0
-                                }
-                            )
-                            remaining
-
-                    Just trans ->
-                        renderTargetAnimatedStyle
-                            (Just
-                                { scale = val
-                                , x = trans.x
-                                , y = trans.y
-                                , rotation = trans.rotation
-                                }
-                            )
-                            remaining
-
-            else
-                renderTargetAnimatedStyle transform remaining
-                    ++ name
-                    ++ ":"
-                    ++ String.fromFloat val
-                    ++ unit
-                    ++ " !important;"
-
-        (Anim _ _ name (AnimTwo details)) :: remaining ->
-            if name == "position" then
-                case transform of
-                    Nothing ->
-                        renderTargetAnimatedStyle
-                            (Just
-                                { scale = 1
-                                , x = details.one
-                                , y = details.two
-                                , rotation = 0
-                                }
-                            )
-                            remaining
-
-                    Just trans ->
-                        renderTargetAnimatedStyle
-                            (Just
-                                { scale = trans.scale
-                                , x = details.one
-                                , y = details.two
-                                , rotation = trans.rotation
-                                }
-                            )
-                            remaining
-
-            else
-                renderTargetAnimatedStyle transform remaining
-                    ++ name
-                    ++ ":"
-                    ++ String.fromFloat details.one
-                    ++ details.oneUnit
-                    ++ " "
-                    ++ String.fromFloat details.two
-                    ++ details.twoUnit
-                    ++ " !important;"
-
-        (Anim _ _ name (AnimQuad details)) :: remaining ->
-            renderTargetAnimatedStyle transform remaining
-                ++ name
-                ++ ":"
-                ++ String.fromFloat details.one
-                ++ details.oneUnit
-                ++ " "
-                ++ String.fromFloat details.two
-                ++ details.twoUnit
-                ++ " "
-                ++ String.fromFloat details.three
-                ++ details.threeUnit
-                ++ " "
-                ++ String.fromFloat details.four
-                ++ details.fourUnit
-                ++ " !important;"
-
-        (Anim _ _ name (AnimColor (Style.Rgb red green blue))) :: remaining ->
-            let
-                redStr =
-                    String.fromInt red
-
-                greenStr =
-                    String.fromInt green
-
-                blueStr =
-                    String.fromInt blue
-            in
-            renderTargetAnimatedStyle transform remaining
-                ++ name
-                ++ (":rgb(" ++ redStr)
-                ++ ("," ++ greenStr)
-                ++ ("," ++ blueStr)
-                ++ ") !important;"
 
 
 renderStylesString : List TransitionDetails -> String
@@ -991,7 +850,7 @@ focusDefaultStyle =
             { x = 0
             , y = 0
             , color =
-                Style.Rgb 155 203 255
+                Color.rgb255 155 203 255
             , blur = 0
             , size = 3
             }
