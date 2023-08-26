@@ -940,32 +940,12 @@ baseSheet =
             ]
         , Descriptor (dot classes.clip)
             [ Prop "overflow" "hidden"
-            , Prop "min-width" "min-content"
-            , Prop "min-height" "min-content"
-            , Descriptor (dot classes.widthBounded)
-                -- if the bound is a min-width, it will override this
-                [ Prop "min-width" "auto"
-                ]
-            , Descriptor (dot classes.heightBounded)
-                -- if the bound is a min-height, it will override this
-                [ Prop "min-height" "auto"
-                ]
             ]
         , Descriptor (dot classes.clipX)
             [ Prop "overflow-x" "hidden"
-            , Prop "min-width" "min-content"
-            , Descriptor (dot classes.widthBounded)
-                -- if the bound is a min-width, it will override this
-                [ Prop "min-width" "auto"
-                ]
             ]
         , Descriptor (dot classes.clipY)
             [ Prop "overflow-y" "hidden"
-            , Prop "min-height" "min-content"
-            , Descriptor (dot classes.heightBounded)
-                -- if the bound is a min-height, it will override this
-                [ Prop "min-height" "auto"
-                ]
             ]
         , Descriptor (dot classes.widthContent)
             [ Prop "width" "auto"
