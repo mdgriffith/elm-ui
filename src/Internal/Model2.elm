@@ -1060,7 +1060,7 @@ onKey details =
         { flag = Flag.skip
         , attr =
             Attr
-                { node = NodeAsLink
+                { node = NodeAsDiv
                 , additionalInheritance = BitField.none
                 , attrs =
                     [ Events.preventDefaultOn "keyup"
