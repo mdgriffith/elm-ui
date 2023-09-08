@@ -1338,9 +1338,10 @@ renderLayout { options, includeStatisStylesheet } (State state) attrs content =
                                     Html.text ""
                               )
                             , ( "animations", Html.Lazy.lazy styleRules state.rules )
-                            , ( "boxes"
-                              , Html.div [] (List.map viewBox state.boxes)
-                              )
+
+                            -- , ( "boxes"
+                            --   , Html.div [] (List.map viewBox state.boxes)
+                            --   )
                             ]
                     )
                 , content
