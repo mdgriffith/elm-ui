@@ -21,7 +21,7 @@ module Ui exposing
     , scrollable, clipped, clipWithEllipsis
     , link, linkNewTab, download, downloadAs
     , image
-    , Color, rgb, palette
+    , Color, rgb, rgba, palette
     , above, below, onRight, onLeft, inFront, behindContent
     , map
     , html, htmlAttribute
@@ -173,7 +173,7 @@ Essentially a `scrollable` is the window that you're looking through. If the con
 
 In order to use attributes like `Font.color` and `Background.color`, you'll need to make some colors!
 
-@docs Color, rgb, palette
+@docs Color, rgb, rgba, palette
 
 
 # Nearby Elements
