@@ -309,6 +309,7 @@ viewWithState attrs config state data =
                 (Two.classWith Flag.overflow Style.classes.scrollbars)
             :: Two.style "grid-template-columns"
                 (gridTemplate state config.columns "")
+            :: Ui.width Ui.fill
             :: attrs
         )
         [ headerRow
@@ -321,6 +322,7 @@ viewWithState attrs config state data =
         ]
 
 
+hasSummary : Column state data msg -> Bool
 hasSummary (Column col) =
     case col.summary of
         Nothing ->
