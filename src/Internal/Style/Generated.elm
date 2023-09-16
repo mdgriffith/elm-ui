@@ -223,17 +223,17 @@ input[type="search"]::-webkit-search-results-decoration {
     }
     
 .explain {
-    border: 6px solid rgb(174, 121, 15) !important;
+    outline: 6px solid rgb(174, 121, 15) !important;
 }
 .explain > .s {
-    border: 4px dashed rgb(0, 151, 167) !important;
+    outline: 4px dashed rgb(0, 151, 167) !important;
 }
 
 .ctr {
-    border: none !important;
+    outline: none !important;
 }
 .explain > .ctr > .s {
-    border: 4px dashed rgb(0, 151, 167) !important;
+    outline: 4px dashed rgb(0, 151, 167) !important;
 }
 
 
