@@ -1028,7 +1028,7 @@ baseSheet =
                     ]
                 ]
             , Child select.heightFill
-                [ Prop "align-self" "stretch"
+                [ Prop "height" "100%"
                 ]
             , Child (dot classes.heightFill)
                 [ Descriptor (dot classes.heightBounded)
