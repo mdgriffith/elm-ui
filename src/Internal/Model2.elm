@@ -1100,13 +1100,11 @@ link details =
                     , Attr.rel "noopener noreferrer"
                     , case details.download of
                         Nothing ->
-                            Attr.target
-                                (if details.newTab then
-                                    "_blank"
+                            if details.newTab then
+                                Attr.target "_blank"
 
-                                 else
-                                    "_self"
-                                )
+                            else
+                                Attr.class ""
 
                         Just downloadName ->
                             Attr.download downloadName
