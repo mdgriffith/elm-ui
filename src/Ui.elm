@@ -7,7 +7,7 @@ module Ui exposing
     , width, widthMin, widthMax
     , height, heightMin, heightMax
     , explain
-    , padding, paddingWith, Edges
+    , padding, paddingWith, Edges, EdgesXY
     , spacing, spacingWith, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
     , opacity
@@ -992,6 +992,14 @@ type alias Edges =
     , right : Int
     , bottom : Int
     , left : Int
+    }
+
+
+type alias EdgesXY =
+    { left : Int
+    , right : Int
+    , top : Int
+    , bottom : Int
     }
 
 
