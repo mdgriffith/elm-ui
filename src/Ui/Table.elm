@@ -161,12 +161,7 @@ cell =
 
 default =
     { padding =
-        Ui.paddingWith
-            { top = 8
-            , left = 16
-            , right = 16
-            , bottom = 8
-            }
+        Ui.paddingXY 16 8
     , paddingFirstRow =
         Ui.paddingWith
             { top = 16
