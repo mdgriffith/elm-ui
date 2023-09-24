@@ -117,12 +117,12 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 **Note** For text alignment, check out `Ui.Font`!
 
-@docs centered, centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
+@docs centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
 
 
 ## Content Alignment
 
-@docs contentCentered, contentCenterX, contentCenterY, contentTop, contentBottom, contentLeft, contentRight
+@docs contentCenterX, contentCenterY, contentTop, contentBottom, contentLeft, contentRight
 
 
 # Transparency
