@@ -164,7 +164,8 @@ Alternatively, see if it's reasonable to _not_ display an input if you'd normall
 import Html
 import Html.Attributes
 import Html.Events
-import Internal.Flag as Flag2
+import Internal.BitField as BitField
+import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style.Generated exposing (classes)
 import Internal.Style2 as Style
@@ -636,12 +637,13 @@ textHelper textInput attrs textOptions =
         withDefaults =
             defaultTextBoxStyle2 ++ attrs
 
-        -- redistributed =
-        --     redistribute2 textInput.type_ withDefaults
+        onlyStyleAttrs =
+            List.map Two.toOnlyStyle withDefaults
+
         inputElement =
             Two.element
                 (case textInput.type_ of
-                    TextInputNode inputType ->
+                    TextInputNode _ ->
                         Two.NodeAsInput
 
                     TextArea ->
@@ -658,15 +660,10 @@ textHelper textInput attrs textOptions =
                         ]
 
                     TextArea ->
-                        [ Two.classWith Flag2.overflow Style.classes.clip
+                        [ Two.classWith Flag.overflow Style.classes.clip
                         , Ui.height Ui.fill
                         , Two.class classes.inputMultiline
-
-                        -- , calcMoveToCompensateForPadding withDefaults
-                        -- The only reason we do this padding trick is so that when the user clicks in the padding,
-                        -- that the cursor will reset correctly.
-                        -- This could probably be combined with the above `calcMoveToCompensateForPadding`
-                        , Two.style "box-sizing" "content-box"
+                        , Two.style "line-height" "inherit"
                         ]
                  )
                     ++ [ Two.attribute (Html.Attributes.value textOptions.text)
@@ -697,234 +694,35 @@ textHelper textInput attrs textOptions =
             -- Then the input text is rendered as the space filling Ui.
             Two.element Two.NodeAsDiv
                 Two.AsEl
-                [ Ui.width Ui.fill
-                , Two.class classes.focusedWithin
-                , Two.class classes.inputMultilineWrapper
-                ]
-                [ Two.element Two.NodeAsDiv
-                    Two.AsParagraph
-                    [ Ui.width Ui.fill
-                    , Ui.height Ui.fill
-                    , Ui.inFront inputElement
-                    , Two.class classes.inputMultilineParent
-                    ]
-                    (if textOptions.text == "" then
+                ([ Ui.width Ui.fill
+                 , Two.class classes.focusedWithin
+                 , Two.class classes.inputMultilineWrapper
+                 , Two.style "white-space" "pre-wrap"
+
+                 -- Place the actual input element as a transparent foreground elment
+                 , Ui.inFront inputElement
+                 ]
+                    ++ List.filter (Two.ifFlag isWidthOrHeight) withDefaults
+                )
+                [ Ui.el (List.filter (Two.ifFlag isWidthOrHeight >> not) onlyStyleAttrs) <|
+                    -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
+                    if textOptions.text == "" then
                         -- Without this, firefox will make the text area lose focus
                         -- if the input is empty and you mash the keyboard
-                        [ Ui.text (Maybe.withDefault "" textOptions.placeholder ++ "\u{00A0}")
-                        ]
+                        Ui.text (Maybe.withDefault "" textOptions.placeholder ++ "\u{00A0}")
 
-                     else
-                        [ Ui.html
-                            (Html.span (Html.Attributes.class classes.inputMultilineFiller :: [])
-                                --redistributed.textAreaFiller)
-                                -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
-                                [ Html.text (textOptions.text ++ "\u{00A0}")
-                                ]
-                            )
-                        ]
-                    )
+                    else
+                        Ui.text (textOptions.text ++ "\u{00A0}")
                 ]
 
         TextInputNode inputType ->
             inputElement
 
 
-
--- {-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
--- redistribute them to the parent, the input, or the cover.
---   - fullParent -> Wrapper around label and input
---   - parent -> parent of wrapper
---   - wrapper -> the element that is here to take up space.
---   - cover -> things like placeholders or text areas which are layered on top of input.
---   - input -> actual input element
--- ^^ old logic
--- ----vv new logic
---   - nearbys -> inputParent element
---   - attributes -> `input`
---   - styles and classes ->
---     full parent (with special css to invalidate, and move styles to the proper places)
--- -}
--- redistribute2 :
---     TextKind
---     -> List (Ui.Attribute msg)
---     ->
---         { parent : List (Ui.Attribute msg)
---         , inputParent : List (Ui.Attribute msg)
---         , input : List (Ui.Attribute msg)
---         , placeholder : List (Ui.Attribute msg)
---         , textAreaWrapper : List (Ui.Attribute msg)
---         , textAreaFiller : List (Html.Attribute msg)
---         }
--- redistribute2 input attrs =
---     List.foldl (redistributeOver2 input)
---         { parent = []
---         , inputParent = []
---         , input = []
---         , placeholder = []
---         , textAreaWrapper = []
---         , textAreaFiller = []
---         }
---         attrs
---         |> (\redist ->
---                 { parent = List.reverse redist.parent
---                 , inputParent = List.reverse redist.inputParent
---                 , input = List.reverse redist.input
---                 , placeholder = List.reverse redist.placeholder
---                 , textAreaWrapper = List.reverse redist.textAreaWrapper
---                 , textAreaFiller = List.reverse redist.textAreaFiller
---                 }
---            )
--- {-|
---     --> full parent
---     <label class="ctxt spacing-12-12 s c wf lbl" aria-live="polite">
---       --> actual label
---       <div class="font-size-14 s e">
---         <div class="s t wf hf">Username</div>
---       </div>
---       --> parent (wrapper only applies to multiline text)
---       <div class="pad-0-3060-0-3060 br-3 bc-186-189-182-255 bg-255-255-255-255 b-1 hc spacing-12-12 s e wf focus-within">
---         --> placeholder (cover)
---         <div class="nb e bh">
---           <div class="p-12 b-1 fc-136-138-133-255 cp bc-0-0-0-0 bg-0-0-0-0 hf transparency-0 s e wf notxt ppe">
---             <div class="s t wf hf">username</div>
---           </div>
---         </div>
---         --> actual input
---         <input
---           class="spacing-12-12 s e wf it"
---           type="text"
---           spellcheck="false"
---           style="line-height: calc(1em + 24px); height: calc(1em + 24px);"
---         />
---         --> manually attached `nearby`
---         <div class="nb e b">
---           <div class="hc fc-204-0-0-255 font-size-14 ah ar s e wc mv-0-1530-0">
---             <div class="s t wf hf">This one is wrong</div>
---           </div>
---         </div>
---       </div>
---     </label>
--- -}
--- redistributeOver2 :
---     TextKind
---     -> Ui.Attribute msg
---     ->
---         { parent :
---             List (Ui.Attribute msg)
---         , textAreaFiller : List (Html.Attribute b)
---         , input : List (Ui.Attribute msg)
---         , textAreaWrapper : List (Ui.Attribute msg)
---         , inputParent : List (Ui.Attribute msg)
---         , placeholder : List (Ui.Attribute msg)
---         }
---     ->
---         { parent :
---             List (Ui.Attribute msg)
---         , textAreaFiller : List (Html.Attribute b)
---         , input : List (Ui.Attribute msg)
---         , textAreaWrapper : List (Ui.Attribute msg)
---         , inputParent : List (Ui.Attribute msg)
---         , placeholder : List (Ui.Attribute msg)
---         }
--- redistributeOver2 input ((Two.Attribute attrDetails) as attr) els =
---     case attrDetails.attr of
---         Two.Spacing xSpace ySpace ->
---             case input of
---                 TextArea ->
---                     let
---                         height =
---                             Two.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
---                         lineHeight =
---                             Two.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
---                     in
---                     { els
---                         | parent = attr :: els.parent
---                         , textAreaFiller =
---                             Html.Attributes.style "line-height" ("calc(1em + " ++ String.fromInt ySpace ++ "px)")
---                                 :: Html.Attributes.style "height" ("calc(100% + " ++ String.fromInt ySpace ++ "px)")
---                                 :: els.textAreaFiller
---                         , input =
---                             Ui.moveUp
---                                 (toFloat (floor (toFloat ySpace / 2)))
---                                 :: lineHeight
---                                 :: height
---                                 :: els.input
---                         , textAreaWrapper = attr :: els.textAreaWrapper
---                     }
---                 TextInputNode _ ->
---                     { els
---                         | parent = attr :: els.parent
---                     }
---         Two.Padding pad ->
---             case input of
---                 TextArea ->
---                     { els
---                         | inputParent = attr :: els.inputParent
---                         , placeholder = attr :: els.placeholder
---                     }
---                 TextInputNode _ ->
---                     { els
---                         | inputParent =
---                             Ui.paddingEach Two.emptyEdges
---                                 :: els.inputParent
---                         , placeholder = attr :: els.placeholder
---                         , input =
---                             Two.style "height"
---                                 ("calc(1em + "
---                                     ++ String.fromInt (pad.top + pad.bottom)
---                                     ++ "px)"
---                                 )
---                                 :: Two.style "line-height"
---                                     ("calc(1em + "
---                                         ++ String.fromInt (pad.top + pad.bottom)
---                                         ++ "px)"
---                                     )
---                                 :: attr
---                                 :: els.input
---                     }
---         Two.Nearby _ _ ->
---             { els | inputParent = attr :: els.inputParent }
---         Two.NoAttribute ->
---             els
---         Two.OnPress _ ->
---             { els | input = attr :: els.input }
---         Two.OnKey _ ->
---             { els | input = attr :: els.input }
---         Two.Attr a ->
---             { els
---                 | input = attr :: els.input
---             }
---         Two.Class _ ->
---             { els | parent = attr :: els.parent }
---         Two.FontSize _ ->
---             { els | parent = attr :: els.parent }
---         Two.Font _ ->
---             { els | parent = attr :: els.parent }
---         Two.WidthFill _ ->
---             { els
---                 | parent = attr :: els.parent
---             }
---         Two.HeightFill _ ->
---             { els
---                 | parent = attr :: els.parent
---             }
---         Two.Link _ ->
---             els
---         Two.TransformPiece _ _ ->
---             { els | parent = attr :: els.parent }
---         Two.Style _ ->
---             { els
---                 | parent = attr :: els.parent
---                 , inputParent = attr :: els.inputParent
---             }
---         Two.Style2 _ ->
---             { els
---                 | parent = attr :: els.parent
---                 , inputParent = attr :: els.inputParent
---             }
---         Two.CssTeleport _ ->
---             { els | parent = attr :: els.parent }
+isWidthOrHeight : Flag.Flag -> Bool
+isWidthOrHeight flag =
+    BitField.fieldEqual Flag.width flag
+        || BitField.fieldEqual Flag.height flag
 
 
 {-| -}

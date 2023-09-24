@@ -1249,7 +1249,8 @@ baseSheet =
             [ Prop "white-space" "pre-wrap !important"
             , Prop "height" "100%"
             , Prop "width" "100%"
-            , Prop "background-color" "transparent"
+            , Prop "background-color" "transparent !important"
+            , Prop "border-color" "transparent !important"
             ]
         , Descriptor (dot classes.inputMultilineWrapper)
             -- Get this.
