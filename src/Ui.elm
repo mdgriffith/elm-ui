@@ -1,17 +1,18 @@
 module Ui exposing
     ( layout, embed, Option
     , Element, none, text, el
-    , row, column
+    , row, column, wrap
     , id, noAttr, attrIf
     , Attribute, Length, px, fill, portion, shrink
     , width, widthMin, widthMax
     , height, heightMin, heightMax
     , explain
-    , padding, paddingWith, Edges
+    , padding, paddingXY, paddingLeft, paddingRight, paddingTop, paddingBottom, paddingWith
     , spacing, spacingWith, spaceEvenly
     , centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
+    , contentCenterX, contentCenterY, contentTop, contentBottom, contentLeft, contentRight
     , opacity
-    , border, borderWith, borderGradient, borderColor
+    , border, borderWith, Edges, borderGradient, borderColor
     , rounded, roundedWith, circle
     , background, Gradient, backgroundGradient
     , pointer, grab, grabbing
@@ -46,7 +47,7 @@ When we want more than one child on an element, we want to be _specific_ about h
 
 So, the common ways to do that would be `row` and `column`.
 
-@docs row, column
+@docs row, column, wrap
 
 
 # Attributes
@@ -88,7 +89,7 @@ Here's what we can expect:
 
 **Note** `spacing` set on a `paragraph`, will set the pixel spacing between lines.
 
-@docs padding, paddingWith, Edges
+@docs padding, paddingXY, paddingLeft, paddingRight, paddingTop, paddingBottom, paddingWith
 
 @docs spacing, spacingWith, spaceEvenly
 
@@ -116,7 +117,12 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 **Note** For text alignment, check out `Ui.Font`!
 
-@docs centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
+@docs centered, centerX, centerY, alignLeft, alignRight, alignTop, alignBottom
+
+
+## Content Alignment
+
+@docs contentCentered, contentCenterX, contentCenterY, contentTop, contentBottom, contentLeft, contentRight
 
 
 # Transparency
@@ -126,7 +132,7 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 # Borders
 
-@docs border, borderWith, borderGradient, borderColor
+@docs border, borderWith, Edges, borderGradient, borderColor
 
 @docs rounded, roundedWith, circle
 
@@ -971,6 +977,39 @@ padding x =
     Two.style "padding" (String.fromInt x ++ "px")
 
 
+{-| -}
+paddingXY : Int -> Int -> Attribute msg
+paddingXY x y =
+    Two.style "padding"
+        ((String.fromInt y ++ "px ")
+            ++ (String.fromInt x ++ "px")
+        )
+
+
+{-| -}
+paddingLeft : Int -> Attribute msg
+paddingLeft x =
+    Two.style "padding-left" (String.fromInt x ++ "px")
+
+
+{-| -}
+paddingRight : Int -> Attribute msg
+paddingRight x =
+    Two.style "padding-right" (String.fromInt x ++ "px")
+
+
+{-| -}
+paddingTop : Int -> Attribute msg
+paddingTop x =
+    Two.style "padding-top" (String.fromInt x ++ "px")
+
+
+{-| -}
+paddingBottom : Int -> Attribute msg
+paddingBottom x =
+    Two.style "padding-bottom" (String.fromInt x ++ "px")
+
+
 {-| A record that is used to set padding or border widths individually.
 
     Ui.paddingWith
@@ -995,16 +1034,7 @@ type alias Edges =
     }
 
 
-{-| If you find yourself defining unique paddings all the time, you might consider defining
-
-    Ui.paddingWith
-        { top = 0
-        , right = 20
-        , bottom = 0
-        , left = 0
-        }
-
--}
+{-| -}
 paddingWith : Edges -> Attribute msg
 paddingWith pad =
     Two.style "padding"
@@ -1049,6 +1079,52 @@ alignLeft =
 alignRight : Attribute msg
 alignRight =
     Two.classWith Flag.xAlign Style.classes.alignRight
+
+
+
+{- Content Alignment -}
+
+
+{-| -}
+wrap : Attribute msg
+wrap =
+    Two.style "flex-wrap" "wrap"
+
+
+{-| -}
+contentCenterX : Attribute msg
+contentCenterX =
+    Two.classWith Flag.xContentAlign Style.classes.contentCenterX
+
+
+{-| -}
+contentCenterY : Attribute msg
+contentCenterY =
+    Two.classWith Flag.yContentAlign Style.classes.contentCenterY
+
+
+{-| -}
+contentTop : Attribute msg
+contentTop =
+    Two.classWith Flag.yContentAlign Style.classes.contentTop
+
+
+{-| -}
+contentBottom : Attribute msg
+contentBottom =
+    Two.classWith Flag.yContentAlign Style.classes.contentBottom
+
+
+{-| -}
+contentLeft : Attribute msg
+contentLeft =
+    Two.classWith Flag.xContentAlign Style.classes.contentLeft
+
+
+{-| -}
+contentRight : Attribute msg
+contentRight =
+    Two.classWith Flag.xContentAlign Style.classes.contentRight
 
 
 {-| -}
