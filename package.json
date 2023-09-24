@@ -13,6 +13,7 @@
     "bench": "node benchmarks/runtime/index.js",
     "list-issues": "hub issue -f \"%i,%U,%t,'%L'%n\" > issues.csv",
     "stylesheet": "node stylesheets/build.js",
+    "docs": "elm make --docs docs.json",
     "watch-stylesheet": "node stylesheets/build.js --watch"
   },
   "repository": {
