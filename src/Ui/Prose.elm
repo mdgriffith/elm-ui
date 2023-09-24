@@ -35,9 +35,7 @@ module Ui.Prose exposing
 
 -}
 
-import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
-import Internal.Style2 as Style
 import Ui exposing (Attribute, Element, fill, width)
 
 

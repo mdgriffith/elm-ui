@@ -172,7 +172,6 @@ import Internal.Model2 as Two
 import Internal.Style.Generated exposing (classes)
 import Internal.Style2 as Style
 import Json.Decode as Json
-import Json.Encode as Encode
 import Ui exposing (Attribute, Element)
 import Ui.Accessibility
 import Ui.Events
@@ -587,6 +586,7 @@ viewThumb factor thumbAttributes =
         ]
 
 
+viewVerticalThumb : Float -> List (Attribute msg) -> Element msg
 viewVerticalThumb factor thumbAttributes =
     Ui.column
         [ Ui.width Ui.fill
@@ -1205,8 +1205,7 @@ multiline :
     -> Element msg
 multiline attrs multi =
     textHelper2
-        { type_ =
-            TextArea
+        { type_ = TextArea
         , spellchecked = multi.spellcheck
         , autofill = Nothing
         }
@@ -1218,6 +1217,7 @@ multiline attrs multi =
         }
 
 
+isHiddenLabel : Label msg -> Bool
 isHiddenLabel label =
     case label of
         HiddenLabel _ ->
