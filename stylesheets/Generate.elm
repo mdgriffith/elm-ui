@@ -999,6 +999,9 @@ baseSheet =
             [ Prop "display" "flex"
             , Prop "flex-direction" "row"
 
+            -- Default alignment is vertically centered
+            , Prop "align-items" "center"
+
             --
             -- If the row has width fill, then everything within it
             -- That has width-fill should have a flex-basis of 0.
