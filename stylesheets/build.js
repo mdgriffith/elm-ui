@@ -62,6 +62,8 @@ const flags = [
   "borderWidth",
   "yAlign",
   "xAlign",
+  "xContentAlign",
+  "yContentAlign",
   "focus",
   "active",
   "hover",

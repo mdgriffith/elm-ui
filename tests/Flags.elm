@@ -93,6 +93,8 @@ allFlags =
     , Flag.borderWidth
     , Flag.yAlign
     , Flag.xAlign
+    , Flag.xContentAlign
+    , Flag.yContentAlign
     , Flag.focus
     , Flag.active
     , Flag.hover
