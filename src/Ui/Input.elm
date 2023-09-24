@@ -1,11 +1,10 @@
 module Ui.Input exposing
-    ( checkbox
+    ( Label, label, labelHidden
+    , checkbox
     , text, multiline
-    , Placeholder, placeholder
     , username, newPassword, currentPassword, email, search, spellChecked
     , sliderHorizontal, sliderVertical, Thumb, thumb
     , chooseOne, Option, option, optionWith, OptionState(..)
-    , Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
     )
 
 {-| Input elements have a lot of constraints!
@@ -21,6 +20,13 @@ While these three goals may seem pretty obvious, Html and CSS have made it surpr
 And incredibly difficult for developers to remember all the tricks necessary to make things work. If you've every tried to make a `<textarea>` be the height of it's content or restyle a radio button while maintaining accessibility, you may be familiar.
 
 This module is intended to be accessible by default. You shouldn't have to wade through docs, articles, and books to find out [exactly how accessible your html actually is](https://www.powermapper.com/tests/screen-readers/aria/index.html).
+
+
+# Labels
+
+Every input has a required `Label`.
+
+@docs Label, label, labelHidden
 
 
 # Checkboxes
@@ -51,8 +57,6 @@ This is also the first input element that has a [`required label`](#Label).
 # Text
 
 @docs text, multiline
-
-@docs Placeholder, placeholder
 
 
 ## Text with autofill
@@ -93,13 +97,6 @@ A slider is great for choosing between a range of numerical values.
 **Note** we're using `Input.option`, which will render a default icon you're probably used to. If you want compeltely custom styling, use `Input.optionWith`!
 
 @docs chooseOne, Option, option, optionWith, OptionState
-
-
-# Labels
-
-Every input has a required `Label`.
-
-@docs Label, labelAbove, labelBelow, labelLeft, labelRight, labelHidden
 
 
 # Form Elements
@@ -179,11 +176,6 @@ import Ui.Font
 import Ui.Shadow
 
 
-{-| -}
-type Placeholder id msg
-    = Placeholder (List (Attribute msg)) (Element msg)
-
-
 white2 : Ui.Color
 white2 =
     Ui.rgb 255 255 255
@@ -203,50 +195,9 @@ charcoal2 =
 
 
 {-| -}
-placeholder : List (Attribute msg) -> Element msg -> Placeholder id msg
-placeholder =
-    Placeholder
-
-
-type LabelLocation
-    = OnRight
-    | OnLeft
-    | Above
-    | Below
-
-
-{-| -}
 type Label msg
-    = Label LabelLocation (List (Attribute msg)) (Element msg)
-    | HiddenLabel String
-
-
-
--- | LabelFromId String
-
-
-{-| -}
-labelRight : List (Attribute msg) -> Element msg -> Label msg
-labelRight =
-    Label OnRight
-
-
-{-| -}
-labelLeft : List (Attribute msg) -> Element msg -> Label msg
-labelLeft =
-    Label OnLeft
-
-
-{-| -}
-labelAbove : List (Attribute msg) -> Element msg -> Label msg
-labelAbove =
-    Label Above
-
-
-{-| -}
-labelBelow : List (Attribute msg) -> Element msg -> Label msg
-labelBelow =
-    Label Below
+    = HiddenLabel String
+    | LabelFromId String
 
 
 {-| Sometimes you may need to have a label which is not visible, but is still accessible to screen readers.
@@ -266,27 +217,56 @@ labelHidden =
     HiddenLabel
 
 
+{-|
 
--- {-| Sometimes you may need to have a label which is not visible, but is still accessible to screen readers.
--- Seriously consider a visible label before using this.
--- The situations where a hidden label makes sense:
---   - A searchbar with a `search` button right next to it.
---   - A `table` of inputs where the header gives the label.
--- Basically, a hidden label works when there are other contextual clues that sighted people can pick up on.
--- -}
--- labelFromId : String -> Label msg
--- labelFromId =
---     LabelFromId
+    let
+        label =
+            Ui.Input.label "guac-checked"
+                []
+                (Ui.text "Do you want Guacamole?")
+    in
+    Ui.row []
+        [ Ui.Input.checkbox []
+            { onChange = GuacamoleChecked
+            , icon = Nothing
+            , checked = model.guacamole
+
+            -- Hand the label id to the checkbox
+            , label = label.id
+            }
+        , label.element
+        ]
+
+-}
+label :
+    String
+    -> List (Attribute msg)
+    -> Element msg
+    ->
+        { element : Element msg
+        , id : Label msg
+        }
+label id attrs labelElement =
+    { element =
+        Two.element Two.NodeAsLabel
+            Two.AsColumn
+            (Ui.htmlAttribute (Html.Attributes.for id)
+                :: Ui.width Ui.fill
+                :: attrs
+            )
+            [ labelElement ]
+    , id = LabelFromId id
+    }
 
 
-hiddenLabelAttribute2 : Label msg -> Ui.Attribute a
-hiddenLabelAttribute2 label =
-    case label of
+hiddenLabelAttribute : Label msg -> Ui.Attribute a
+hiddenLabelAttribute lbl =
+    case lbl of
         HiddenLabel textLabel ->
             Ui.Accessibility.description textLabel
 
-        Label _ _ _ ->
-            Two.noAttr
+        LabelFromId id ->
+            Ui.id id
 
 
 {-| -}
@@ -317,23 +297,23 @@ checkbox :
         , label : Label msg
         }
     -> Element msg
-checkbox attrs { label, icon, checked, onChange } =
+checkbox attrs options =
     let
         attributes =
-            [ if isHiddenLabel label then
+            [ if isHiddenLabel options.label then
                 Two.noAttr
 
               else
                 Ui.spacing 6
-            , Two.attribute (Html.Events.onClick (onChange (not checked)))
+            , Two.attribute (Html.Events.onClick (options.onChange (not options.checked)))
             , Ui.Accessibility.announce
             , onKeyLookup2 <|
                 \code ->
                     if code == enter then
-                        Just <| onChange (not checked)
+                        Just <| options.onChange (not options.checked)
 
                     else if code == space then
-                        Just <| onChange (not checked)
+                        Just <| options.onChange (not options.checked)
 
                     else
                         Nothing
@@ -350,12 +330,12 @@ checkbox attrs { label, icon, checked, onChange } =
             Html.Attributes.attribute "role" "checkbox"
         , Two.attribute <|
             Html.Attributes.attribute "aria-checked" <|
-                if checked then
+                if options.checked then
                     "true"
 
                 else
                     "false"
-        , hiddenLabelAttribute2 label
+        , hiddenLabelAttribute options.label
         , Ui.centerY
         , Ui.height Ui.fill
 
@@ -363,9 +343,9 @@ checkbox attrs { label, icon, checked, onChange } =
         ]
         [ let
             viewIcon =
-                Maybe.withDefault defaultCheckbox icon
+                Maybe.withDefault defaultCheckbox options.icon
           in
-          viewIcon checked
+          viewIcon options.checked
         ]
 
 
@@ -626,17 +606,17 @@ type TextKind
 
 
 {-| -}
-type alias Text2 id msg =
+type alias Text2 msg =
     { onChange : String -> msg
     , text : String
-    , placeholder : Maybe (Placeholder id msg)
+    , placeholder : Maybe String
     , label : Label msg
     }
 
 
 {-| -}
-textHelper2 : TextInput -> List (Ui.Attribute msg) -> Text2 id msg -> Element msg
-textHelper2 textInput attrs textOptions =
+textHelper : TextInput -> List (Ui.Attribute msg) -> Text2 msg -> Element msg
+textHelper textInput attrs textOptions =
     {- General overview:
 
           - padding is used by the text area and negated in order to make the padded area clickable.
@@ -691,7 +671,7 @@ textHelper2 textInput attrs textOptions =
                  )
                     ++ [ Two.attribute (Html.Attributes.value textOptions.text)
                        , Two.attribute (Html.Events.onInput textOptions.onChange)
-                       , hiddenLabelAttribute2 textOptions.label
+                       , hiddenLabelAttribute textOptions.label
                        , Two.attribute (Html.Attributes.spellcheck textInput.spellchecked)
                        , case textInput.autofill of
                             Nothing ->
@@ -699,140 +679,58 @@ textHelper2 textInput attrs textOptions =
 
                             Just fill ->
                                 Two.attribute (Html.Attributes.attribute "autocomplete" fill)
+                       , case textOptions.placeholder of
+                            Nothing ->
+                                Two.noAttr
+
+                            Just placeholder ->
+                                Two.attribute (Html.Attributes.placeholder placeholder)
                        ]
                     ++ withDefaults
                 )
                 []
-
-        wrappedInput =
-            case textInput.type_ of
-                TextArea ->
-                    -- textarea with height-content means that
-                    -- the input element is rendered `inFront` with a transparent background
-                    -- Then the input text is rendered as the space filling Ui.
-                    Two.element Two.NodeAsDiv
-                        Two.AsEl
-                        [ Ui.width Ui.fill
-                        , Two.class classes.focusedWithin
-                        , Two.class classes.inputMultilineWrapper
+    in
+    case textInput.type_ of
+        TextArea ->
+            -- textarea with height-content means that
+            -- the input element is rendered `inFront` with a transparent background
+            -- Then the input text is rendered as the space filling Ui.
+            Two.element Two.NodeAsDiv
+                Two.AsEl
+                [ Ui.width Ui.fill
+                , Two.class classes.focusedWithin
+                , Two.class classes.inputMultilineWrapper
+                ]
+                [ Two.element Two.NodeAsDiv
+                    Two.AsParagraph
+                    [ Ui.width Ui.fill
+                    , Ui.height Ui.fill
+                    , Ui.inFront inputElement
+                    , Two.class classes.inputMultilineParent
+                    ]
+                    (if textOptions.text == "" then
+                        -- Without this, firefox will make the text area lose focus
+                        -- if the input is empty and you mash the keyboard
+                        [ Ui.text (Maybe.withDefault "" textOptions.placeholder ++ "\u{00A0}")
                         ]
-                        [ Two.element Two.NodeAsDiv
-                            Two.AsParagraph
-                            [ Ui.width Ui.fill
-                            , Ui.height Ui.fill
-                            , Ui.inFront inputElement
-                            , Two.class classes.inputMultilineParent
-                            ]
-                            (if textOptions.text == "" then
-                                case textOptions.placeholder of
-                                    Nothing ->
-                                        -- Without this, firefox will make the text area lose focus
-                                        -- if the input is empty and you mash the keyboard
-                                        [ Ui.text "\u{00A0}"
-                                        ]
 
-                                    Just place ->
-                                        [ renderPlaceholder [] place (textOptions.text == "")
-                                        ]
-
-                             else
-                                [ Ui.html
-                                    (Html.span (Html.Attributes.class classes.inputMultilineFiller :: [])
-                                        --redistributed.textAreaFiller)
-                                        -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
-                                        [ Html.text (textOptions.text ++ "\u{00A0}")
-                                        ]
-                                    )
+                     else
+                        [ Ui.html
+                            (Html.span (Html.Attributes.class classes.inputMultilineFiller :: [])
+                                --redistributed.textAreaFiller)
+                                -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
+                                [ Html.text (textOptions.text ++ "\u{00A0}")
                                 ]
                             )
                         ]
-
-                TextInputNode inputType ->
-                    -- Two.element
-                    --     Two.AsEl
-                    --     (Ui.width Ui.fill
-                    --         :: Two.class classes.focusedWithin
-                    --         :: Two.class Style.classes.inputTextInputWrapper
-                    --         :: List.concat
-                    --             [ redistributed.inputParent
-                    --             , case textOptions.placeholder of
-                    --                 Nothing ->
-                    --                     []
-                    --                 Just place ->
-                    --                     [ Ui.behindContent
-                    --                         (renderPlaceholder redistributed.placeholder place (textOptions.text == ""))
-                    --                     ]
-                    --             ]
-                    --     )
-                    --     [
-                    inputElement
-
-        -- ]
-    in
-    -- applyLabel
-    --     (Two.classWith Flag2.cursor classes.cursorText
-    --         :: Two.class Style.classes.inputTextParent
-    --         :: (if isHiddenLabel textOptions.label then
-    --                 Two.noAttr
-    --             else
-    --                 Ui.spacing
-    --                     5
-    --            )
-    --         :: Ui.Accessibility.announce
-    --         :: redistributed.parent
-    --     )
-    --     textOptions.label
-    wrappedInput
-
-
-renderPlaceholder attrs (Placeholder placeholderAttrs placeholderEl) on =
-    Ui.el
-        (attrs
-            ++ [ Ui.Font.color charcoal2
-               , Two.class
-                    (Style.classes.noTextSelection
-                        ++ " "
-                        ++ Style.classes.passPointerEvents
                     )
-               , Two.classWith Flag2.overflow Style.classes.clip
-               , Ui.height Ui.fill
-               , Ui.width Ui.fill
-               , Ui.opacity
-                    (if on then
-                        1
+                ]
 
-                     else
-                        0
-                    )
-               ]
-            ++ placeholderAttrs
-        )
-        placeholderEl
+        TextInputNode inputType ->
+            inputElement
 
 
 
--- {-| Because textareas are now shadowed, where they're rendered twice,
--- we to move the literal text area up because spacing is based on line height.
--- -}
--- calcMoveToCompensateForPadding : List (Attribute msg) -> Attribute msg
--- calcMoveToCompensateForPadding attrs =
---     let
---         gatherSpacing attr found =
---             case attr of
---                 Internal.StyleClass _ (Internal.SpacingStyle _ x y) ->
---                     case found of
---                         Nothing ->
---                             Just y
---                         _ ->
---                             found
---                 _ ->
---                     found
---     in
---     case List.foldr gatherSpacing Nothing attrs of
---         Nothing ->
---             Internal.NoAttribute
---         Just vSpace ->
---             Ui.moveUp (toFloat (floor (toFloat vSpace / 2)))
 -- {-| Given the list of attributes provided to `Input.multiline` or `Input.text`,
 -- redistribute them to the parent, the input, or the cover.
 --   - fullParent -> Wrapper around label and input
@@ -1035,12 +933,12 @@ text :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         }
     -> Element msg
 text =
-    textHelper2
+    textHelper
         { type_ = TextInputNode "text"
         , spellchecked = False
         , autofill = Nothing
@@ -1054,12 +952,12 @@ spellChecked :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         }
     -> Element msg
 spellChecked =
-    textHelper2
+    textHelper
         { type_ = TextInputNode "text"
         , spellchecked = True
         , autofill = Nothing
@@ -1072,12 +970,12 @@ search :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         }
     -> Element msg
 search =
-    textHelper2
+    textHelper
         { type_ = TextInputNode "search"
         , spellchecked = False
         , autofill = Nothing
@@ -1096,13 +994,13 @@ newPassword :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         , show : Bool
         }
     -> Element msg
 newPassword attrs pass =
-    textHelper2
+    textHelper
         { type_ =
             TextInputNode <|
                 if pass.show then
@@ -1127,13 +1025,13 @@ currentPassword :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         , show : Bool
         }
     -> Element msg
 currentPassword attrs pass =
-    textHelper2
+    textHelper
         { type_ =
             TextInputNode <|
                 if pass.show then
@@ -1158,12 +1056,12 @@ username :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         }
     -> Element msg
 username =
-    textHelper2
+    textHelper
         { type_ = TextInputNode "text"
         , spellchecked = False
         , autofill = Just "username"
@@ -1176,12 +1074,12 @@ email :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         }
     -> Element msg
 email =
-    textHelper2
+    textHelper
         { type_ = TextInputNode "email"
         , spellchecked = False
         , autofill = Just "email"
@@ -1198,13 +1096,13 @@ multiline :
     ->
         { onChange : String -> msg
         , text : String
-        , placeholder : Maybe (Placeholder id msg)
+        , placeholder : Maybe String
         , label : Label msg
         , spellcheck : Bool
         }
     -> Element msg
 multiline attrs multi =
-    textHelper2
+    textHelper
         { type_ = TextArea
         , spellchecked = multi.spellcheck
         , autofill = Nothing
@@ -1218,58 +1116,13 @@ multiline attrs multi =
 
 
 isHiddenLabel : Label msg -> Bool
-isHiddenLabel label =
-    case label of
+isHiddenLabel lbl =
+    case lbl of
         HiddenLabel _ ->
             True
 
         _ ->
             False
-
-
-applyLabel : List (Ui.Attribute msg) -> Label msg -> Element msg -> Element msg
-applyLabel attrs label input =
-    case label of
-        HiddenLabel labelText ->
-            -- NOTE: This means that the label is applied outside of this function!
-            -- It would be nice to unify this logic, but it's a little tricky
-            Two.element Two.NodeAsLabel
-                Two.AsColumn
-                attrs
-                [ input ]
-
-        Label position labelAttrs labelChild ->
-            let
-                labelElement =
-                    Two.element Two.NodeAsDiv
-                        Two.AsEl
-                        labelAttrs
-                        [ labelChild ]
-            in
-            case position of
-                Above ->
-                    Two.element Two.NodeAsLabel
-                        Two.AsColumn
-                        (Two.class classes.inputLabel :: attrs)
-                        [ labelElement, input ]
-
-                Below ->
-                    Two.element Two.NodeAsLabel
-                        Two.AsColumn
-                        (Two.class classes.inputLabel :: attrs)
-                        [ input, labelElement ]
-
-                OnRight ->
-                    Two.element Two.NodeAsLabel
-                        Two.AsRow
-                        (Two.class classes.inputLabel :: attrs)
-                        [ input, labelElement ]
-
-                OnLeft ->
-                    Two.element Two.NodeAsLabel
-                        Two.AsRow
-                        (Two.class classes.inputLabel :: attrs)
-                        [ labelElement, input ]
 
 
 {-| -}
@@ -1364,18 +1217,15 @@ chooseOne layoutFn attrs input =
         --                         True
         --                     _ ->
         --                         False
-    in
-    layoutFn
-        (hiddenLabelAttribute2 input.label :: attrs)
-        (List.map (renderOption input) input.options)
-        |> applyLabel
-            ([ Ui.alignLeft
-             , Two.attribute (Html.Attributes.tabindex 0)
-             , Two.class "focus"
-             , Ui.Accessibility.announce
-             , Two.attribute <|
+        finalAttrs =
+            [ hiddenLabelAttribute input.label
+            , Ui.alignLeft
+            , Two.attribute (Html.Attributes.tabindex 0)
+            , Two.class "focus"
+            , Ui.Accessibility.announce
+            , Two.attribute <|
                 Html.Attributes.attribute "role" "radiogroup"
-             , case prevNext of
+            , case prevNext of
                 Nothing ->
                     Two.class ""
 
@@ -1404,11 +1254,12 @@ chooseOne layoutFn attrs input =
 
                             else
                                 Nothing
-             ]
+            ]
                 ++ events
-             -- ++ hideIfEverythingisInvisible
-            )
-            input.label
+                ++ attrs
+    in
+    layoutFn finalAttrs
+        (List.map (renderOption input) input.options)
 
 
 defaultRadioOption : Element msg -> OptionState -> Element msg
