@@ -682,6 +682,25 @@ type alias TransformSlot =
     Int
 
 
+toOnlyStyle : Attribute msg -> Attribute msg
+toOnlyStyle (Attribute { flag, attr }) =
+    Attribute
+        { flag = flag
+        , attr =
+            case attr of
+                Attr details ->
+                    Attr
+                        { details
+                            | attrs = []
+                        }
+        }
+
+
+ifFlag : (Flag -> Bool) -> Attribute msg -> Bool
+ifFlag isPassing (Attribute { flag }) =
+    isPassing flag
+
+
 type Attribute msg
     = Attribute
         { flag : Flag
@@ -970,6 +989,7 @@ none =
     Element (\_ -> Html.text "")
 
 
+attrIf : Bool -> Attribute msg -> Attribute msg
 attrIf bool attr =
     if bool then
         attr
@@ -978,6 +998,7 @@ attrIf bool attr =
         noAttr
 
 
+attribute : Html.Attribute msg -> Attribute msg
 attribute a =
     Attribute
         { flag = Flag.skip
@@ -994,6 +1015,7 @@ attribute a =
         }
 
 
+attributeWith : Flag -> Html.Attribute msg -> Attribute msg
 attributeWith flag a =
     Attribute
         { flag = flag
@@ -2195,6 +2217,7 @@ nearbyToHtml inheritance location (Element elem) =
         ]
 
 
+zero : BitField.Bits encoding
 zero =
     BitField.init
 
@@ -2210,6 +2233,7 @@ textElementClasses =
         ++ Style.classes.heightContent
 
 
+rootClass : String
 rootClass =
     Style.classes.root
         ++ " "
@@ -2224,20 +2248,13 @@ rowClass =
         ++ Style.classes.row
         ++ " "
         ++ Style.classes.nowrap
-        ++ " "
-        ++ Style.classes.contentLeft
-        ++ " "
-        ++ Style.classes.contentCenterY
 
 
+columnClass : String
 columnClass =
     Style.classes.any
         ++ " "
         ++ Style.classes.column
-        ++ " "
-        ++ Style.classes.contentTop
-        ++ " "
-        ++ Style.classes.contentLeft
 
 
 singleClass =
