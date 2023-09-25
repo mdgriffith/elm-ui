@@ -196,7 +196,7 @@ charcoal2 =
 
 
 {-| -}
-type Label msg
+type Label
     = HiddenLabel String
     | LabelFromId String
 
@@ -213,7 +213,7 @@ The situations where a hidden label makes sense:
 Basically, a hidden label works when there are other contextual clues that sighted people can pick up on.
 
 -}
-labelHidden : String -> Label msg
+labelHidden : String -> Label
 labelHidden =
     HiddenLabel
 
@@ -245,7 +245,7 @@ label :
     -> Element msg
     ->
         { element : Element msg
-        , id : Label msg
+        , id : Label
         }
 label id attrs labelElement =
     { element =
@@ -260,8 +260,8 @@ label id attrs labelElement =
     }
 
 
-hiddenLabelAttribute : Label msg -> Ui.Attribute a
-hiddenLabelAttribute lbl =
+labelAttribute : Label -> Ui.Attribute a
+labelAttribute lbl =
     case lbl of
         HiddenLabel textLabel ->
             Ui.Accessibility.description textLabel
@@ -295,7 +295,7 @@ checkbox :
         { onChange : Bool -> msg
         , icon : Maybe (Bool -> Element msg)
         , checked : Bool
-        , label : Label msg
+        , label : Label
         }
     -> Element msg
 checkbox attrs options =
@@ -336,7 +336,7 @@ checkbox attrs options =
 
                 else
                     "false"
-        , hiddenLabelAttribute options.label
+        , labelAttribute options.label
         , Ui.centerY
         , Ui.height Ui.fill
 
@@ -378,7 +378,8 @@ defaultThumb =
 sliderHorizontal :
     List (Ui.Attribute msg)
     ->
-        { onChange : Float -> msg
+        { label : Label
+        , onChange : Float -> msg
         , min : Float
         , max : Float
         , value : Float
@@ -401,6 +402,7 @@ sliderHorizontal attributes input =
         [ Two.element Two.NodeAsInput
             Two.AsEl
             [ Two.class (Style.classes.slider ++ " focusable-parent")
+            , labelAttribute input.label
             , Two.attribute
                 (Html.Events.onInput
                     (\str ->
@@ -458,7 +460,8 @@ sliderHorizontal attributes input =
 sliderVertical :
     List (Ui.Attribute msg)
     ->
-        { onChange : Float -> msg
+        { label : Label
+        , onChange : Float -> msg
         , min : Float
         , max : Float
         , value : Float
@@ -486,6 +489,7 @@ sliderVertical attrs input =
         [ Two.element Two.NodeAsInput
             Two.AsEl
             [ Two.class (Style.classes.slider ++ " focusable-parent")
+            , labelAttribute input.label
             , Two.attribute <|
                 Html.Attributes.attribute "orient" "vertical"
             , Two.attribute
@@ -611,7 +615,7 @@ type alias Text2 msg =
     { onChange : String -> msg
     , text : String
     , placeholder : Maybe String
-    , label : Label msg
+    , label : Label
     }
 
 
@@ -668,7 +672,7 @@ textHelper textInput attrs textOptions =
                  )
                     ++ [ Two.attribute (Html.Attributes.value textOptions.text)
                        , Two.attribute (Html.Events.onInput textOptions.onChange)
-                       , hiddenLabelAttribute textOptions.label
+                       , labelAttribute textOptions.label
                        , Two.attribute (Html.Attributes.spellcheck textInput.spellchecked)
                        , case textInput.autofill of
                             Nothing ->
@@ -732,7 +736,7 @@ text :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         }
     -> Element msg
 text =
@@ -751,7 +755,7 @@ spellChecked :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         }
     -> Element msg
 spellChecked =
@@ -769,7 +773,7 @@ search :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         }
     -> Element msg
 search =
@@ -793,7 +797,7 @@ newPassword :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         , show : Bool
         }
     -> Element msg
@@ -824,7 +828,7 @@ currentPassword :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         , show : Bool
         }
     -> Element msg
@@ -855,7 +859,7 @@ username :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         }
     -> Element msg
 username =
@@ -873,7 +877,7 @@ email :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         }
     -> Element msg
 email =
@@ -895,7 +899,7 @@ multiline :
         { onChange : String -> msg
         , text : String
         , placeholder : Maybe String
-        , label : Label msg
+        , label : Label
         , spellcheck : Bool
         }
     -> Element msg
@@ -913,7 +917,7 @@ multiline attrs multi =
         }
 
 
-isHiddenLabel : Label msg -> Bool
+isHiddenLabel : Label -> Bool
 isHiddenLabel lbl =
     case lbl of
         HiddenLabel _ ->
@@ -957,7 +961,7 @@ chooseOne :
         { onChange : option -> msg
         , options : List (Option option msg)
         , selected : Maybe option
-        , label : Label msg
+        , label : Label
         }
     -> Element msg
 chooseOne layoutFn attrs input =
@@ -1016,7 +1020,7 @@ chooseOne layoutFn attrs input =
         --                     _ ->
         --                         False
         finalAttrs =
-            [ hiddenLabelAttribute input.label
+            [ labelAttribute input.label
             , Ui.alignLeft
             , Two.attribute (Html.Attributes.tabindex 0)
             , Two.class "focus"
