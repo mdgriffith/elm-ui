@@ -672,6 +672,13 @@ baseSheet =
     , Class (dot classes.hasNearby)
         [ Prop "position" "relative"
         ]
+    , Class "li"
+        [ Descriptor (dot classes.any)
+            [ Descriptor (dot classes.el)
+                [ Prop "display" "list-item"
+                ]
+            ]
+        ]
     , Class (dot classes.nearby)
         [ Prop "position" "relative"
         , Prop "border" "none"
