@@ -91,6 +91,7 @@ import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Internal.Teleport as Teleport
+import Internal.Teleport.Persistent as Persistent
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Set
@@ -578,7 +579,7 @@ init =
     Two.State
         { added = Set.empty
         , rules = []
-        , boxes = []
+        , boxes = Persistent.empty
         }
 
 
