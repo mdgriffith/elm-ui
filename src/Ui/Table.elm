@@ -56,9 +56,7 @@ module Ui.Table exposing
 
 -}
 
-import Html
-import Html.Attributes as Attr
-import Internal.Flag as Flag exposing (Flag)
+import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Element)
@@ -159,6 +157,12 @@ cell =
     Cell
 
 
+default :
+    { padding : Attribute msg
+    , paddingFirstRow : Attribute msg
+    , fontAlignment : Attribute msg
+    , borderHeader : Attribute msg
+    }
 default =
     { padding =
         Ui.paddingXY 16 8
@@ -210,8 +214,8 @@ column :
     -> Column state data msg
 column input =
     Column
-        { header = \state -> input.header
-        , view = \index state data -> input.view data
+        { header = \_ -> input.header
+        , view = \_ _ data -> input.view data
         , width = Nothing
         , visible = \_ -> True
         , order = \_ -> 0
