@@ -1376,7 +1376,7 @@ staticStyles : Html.Html msg
 staticStyles =
     Html.div []
         [ Html.node "style"
-            []
+            [ Attr.id "elm-ui-static-styles" ]
             [ Html.text Style.rules ]
         ]
 
@@ -1385,7 +1385,7 @@ styleRules : List String -> Html.Html msg
 styleRules styleStr =
     Html.div []
         [ Html.node "style"
-            []
+            [ Attr.id "elm-ui-dynamic-styles" ]
             [ Html.text (String.join "\n" styleStr) ]
         ]
 
@@ -2699,7 +2699,7 @@ renderMediaProps i =
 renderOptions : List Option -> Html.Html msg
 renderOptions opts =
     Html.node "style"
-        []
+        [ Attr.id "elm-ui-responsiveness" ]
         [ Html.text (renderOptionItem { breakpoints = False, focus = False } "" opts) ]
 
 
