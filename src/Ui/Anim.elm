@@ -106,17 +106,12 @@ type alias Animated =
 
 
 {-| -}
-type alias Personality =
-    Two.Personality
-
-
-{-| -}
 persistent : String -> String -> Attribute msg
 persistent group instance =
     --  attach a class and a message handler for the animation message
     -- we could also need to gather up any animateable state as well
     Two.teleport
-        { class = onRenderTrigger
+        { class = onRenderTrigger ++ " " ++ Teleport.persistentClass group instance
         , style = []
         , data =
             Teleport.persistentId group instance

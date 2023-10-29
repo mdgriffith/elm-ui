@@ -641,9 +641,6 @@ textHelper textInput attrs textOptions =
         withDefaults =
             defaultTextBoxStyle2 ++ attrs
 
-        onlyStyleAttrs =
-            List.map Two.toOnlyStyle withDefaults
-
         inputElement =
             Two.element
                 (case textInput.type_ of
@@ -693,6 +690,10 @@ textHelper textInput attrs textOptions =
     in
     case textInput.type_ of
         TextArea ->
+            let
+                onlyStyleAttrs =
+                    List.map Two.toOnlyStyle withDefaults
+            in
             -- textarea with height-content means that
             -- the input element is rendered `inFront` with a transparent background
             -- Then the input text is rendered as the space filling Ui.
@@ -719,7 +720,7 @@ textHelper textInput attrs textOptions =
                         Ui.text (textOptions.text ++ "\u{00A0}")
                 ]
 
-        TextInputNode inputType ->
+        TextInputNode _ ->
             inputElement
 
 
@@ -1128,6 +1129,14 @@ defaultRadioOption optionLabel status =
         ]
 
 
+renderOption :
+    { onChange : option -> msg
+    , options : List (Option option msg)
+    , selected : Maybe option
+    , label : Label
+    }
+    -> Option option msg
+    -> Element msg
 renderOption input (Option val view) =
     let
         status =
@@ -1159,11 +1168,6 @@ type Found
     = NotFound
     | BeforeFound
     | AfterFound
-
-
-type Orientation
-    = Row
-    | Column
 
 
 

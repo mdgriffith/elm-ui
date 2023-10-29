@@ -103,6 +103,7 @@ matchBoxHelper ((Id identifier instance) as id) boxes passed =
                 matchBoxHelper id others (( topId, topBox ) :: passed)
 
 
+moveAnimationFixed : String -> Box -> Box -> String
 moveAnimationFixed className previous current =
     let
         from =
@@ -120,6 +121,7 @@ moveAnimationFixed className previous current =
     keyframes ++ classRule
 
 
+bboxCss : Box -> String
 bboxCss box =
     "left:"
         ++ String.fromFloat box.x
@@ -132,6 +134,7 @@ bboxCss box =
         ++ "px;"
 
 
+bboxTransform : Box -> String
 bboxTransform box =
     "transform:translate("
         ++ String.fromFloat box.x
@@ -246,8 +249,28 @@ applyTeleported event data ( (State state) as untouched, cmds ) =
                 Nothing ->
                     ( State { state | boxes = ( id, event.box ) :: state.boxes }, cmds )
 
-                Just found ->
-                    ( untouched, cmds )
+                Just original ->
+                    let
+                        newBox =
+                            event.box
+
+                        newCss =
+                            moveAnimationFixed
+                                (Teleport.persistentClass group instance)
+                                original.box
+                                newBox
+                    in
+                    ( State
+                        { state
+                            | rules =
+                                state.rules
+                                    |> addRule newCss
+                            , boxes =
+                                ( id, event.box )
+                                    :: List.filter (\( i, _ ) -> not <| matchGroupName i id) state.boxes
+                        }
+                    , cmds
+                    )
 
         Teleport.Css css ->
             if Set.member css.hash state.added then
@@ -324,198 +347,6 @@ emptyTransform =
     }
 
 
-renderProps : List ( String, String ) -> String -> String
-renderProps props str =
-    case props of
-        [] ->
-            str
-
-        ( name, val ) :: remain ->
-            renderProps remain
-                (str ++ name ++ ":" ++ val ++ ";")
-
-
-phaseName : Trigger -> String
-phaseName trigger =
-    case trigger of
-        OnFocused ->
-            "-focus"
-
-        OnHovered ->
-            "-hover"
-
-        OnPressed ->
-            "-active"
-
-        OnIf on ->
-            ""
-
-
-phasePseudoClass : Trigger -> String
-phasePseudoClass trigger =
-    case trigger of
-        OnFocused ->
-            ":focus"
-
-        OnHovered ->
-            ":hover"
-
-        OnPressed ->
-            ":active"
-
-        OnIf on ->
-            ""
-
-
-transformToString : Transform -> String
-transformToString trans =
-    "translate("
-        ++ String.fromFloat trans.x
-        ++ "px, "
-        ++ String.fromFloat trans.y
-        ++ "px) rotate("
-        ++ String.fromFloat trans.rotation
-        ++ "rad) scale("
-        ++ String.fromFloat trans.scale
-        ++ ")"
-
-
-renderStylesString : List TransitionDetails -> String
-renderStylesString transitions =
-    case transitions of
-        [] ->
-            ""
-
-        top :: remaining ->
-            renderStylesString remaining ++ top.prop ++ ":" ++ top.val ++ " !important;"
-
-
-transitionFor : (Personality -> Approach) -> Bool -> List Animated -> String
-transitionFor toApproach transformRendered animated =
-    case animated of
-        [] ->
-            ""
-
-        (Anim _ transition propName _) :: remaining ->
-            let
-                isTransform =
-                    propName == "rotate" || propName == "scale" || propName == "position"
-            in
-            if isTransform && transformRendered then
-                transitionFor toApproach transformRendered remaining
-
-            else
-                let
-                    prop =
-                        if isTransform then
-                            "transform"
-
-                        else
-                            propName
-
-                    approach =
-                        toApproach transition
-
-                    duration =
-                        BitField.get Bits.duration approach.durDelay
-
-                    delay =
-                        BitField.get Bits.delay approach.durDelay
-
-                    curve =
-                        "cubic-bezier("
-                            ++ (String.fromFloat (BitField.getPercentage Bits.bezOne approach.curve) ++ ", ")
-                            ++ (String.fromFloat
-                                    (BitField.getPercentage Bits.bezTwo approach.curve)
-                                    ++ ", "
-                               )
-                            ++ (String.fromFloat
-                                    (BitField.getPercentage Bits.bezThree approach.curve)
-                                    ++ ", "
-                               )
-                            ++ (String.fromFloat
-                                    (BitField.getPercentage Bits.bezFour approach.curve)
-                                    ++ " "
-                               )
-                            ++ ")"
-
-                    transitionStr =
-                        prop ++ " " ++ String.fromInt duration ++ "ms " ++ curve ++ String.fromInt delay ++ "ms"
-                in
-                -- transition: <property> <duration> <timing-function> <delay>;
-                case remaining of
-                    [] ->
-                        transitionStr
-
-                    _ ->
-                        transitionFor toApproach (isTransform || transformRendered) remaining ++ ", " ++ transitionStr
-
-
-renderArrivingTransitionString : List TransitionDetails -> String
-renderArrivingTransitionString transitions =
-    case transitions of
-        [] ->
-            ""
-
-        top :: remaining ->
-            let
-                transition =
-                    case top.transition of
-                        Transition deets ->
-                            deets
-
-                duration =
-                    BitField.get Bits.duration transition.arriving.durDelay
-
-                delay =
-                    BitField.get Bits.delay transition.arriving.durDelay
-
-                curve =
-                    "cubic-bezier("
-                        ++ (String.fromFloat (BitField.getPercentage Bits.bezOne transition.arriving.curve) ++ ", ")
-                        ++ (String.fromFloat (BitField.getPercentage Bits.bezTwo transition.arriving.curve) ++ ", ")
-                        ++ (String.fromFloat (BitField.getPercentage Bits.bezThree transition.arriving.curve) ++ ", ")
-                        ++ (String.fromFloat (BitField.getPercentage Bits.bezFour transition.arriving.curve) ++ " ")
-                        ++ ") "
-
-                transitionStr =
-                    top.prop ++ " " ++ String.fromInt duration ++ "ms " ++ curve ++ String.fromInt delay ++ "ms"
-            in
-            -- transition: <property> <duration> <timing-function> <delay>;
-            case remaining of
-                [] ->
-                    transitionStr
-
-                _ ->
-                    renderArrivingTransitionString remaining ++ ", " ++ transitionStr
-
-
-renderDepartingTransitionString : List TransitionDetails -> String
-renderDepartingTransitionString transitions =
-    case transitions of
-        [] ->
-            ""
-
-        top :: remaining ->
-            renderDepartingTransitionString remaining ++ top.prop ++ " 200ms"
-
-
-transitionDetailsToClass : TransitionDetails -> String
-transitionDetailsToClass details =
-    transitionToClass details.transition
-
-
-transitionToClass : Transition -> String
-transitionToClass (Transition transition) =
-    BitField.toString transition.arriving.durDelay
-        ++ "-"
-        ++ BitField.toString transition.arriving.curve
-        ++ "-"
-        ++ BitField.toString transition.departing.durDelay
-        ++ "-"
-        ++ BitField.toString transition.departing.curve
-
-
 mapAttr : (a -> b) -> Attribute a -> Attribute b
 mapAttr fn (Attribute attr) =
     Attribute
@@ -549,6 +380,11 @@ type Layout
 {-| -}
 type Id
     = Id String String
+
+
+matchGroupName : Id -> Id -> Bool
+matchGroupName (Id group _) (Id group2 _) =
+    group == group2
 
 
 toCssClass : Id -> String
@@ -763,60 +599,6 @@ type ResponsiveInt
     | ResponsiveInt String
 
 
-type Trigger
-    = OnHovered
-    | OnPressed
-    | OnFocused
-    | OnIf Bool
-
-
-type Animated
-    = Anim String Personality String AnimValue
-
-
-type AnimValue
-    = AnimFloat Float String
-    | AnimColor Style.Color
-    | AnimTwo
-        { one : Float
-        , oneUnit : String
-        , two : Float
-        , twoUnit : String
-        }
-    | AnimQuad
-        { one : Float
-        , oneUnit : String
-        , two : Float
-        , twoUnit : String
-        , three : Float
-        , threeUnit : String
-        , four : Float
-        , fourUnit : String
-        }
-
-
-type alias Approach =
-    { durDelay : BitField.Bits Bits.Transition
-    , curve : BitField.Bits Bits.Bezier
-    }
-
-
-type alias Personality =
-    { arriving : Approach
-    , departing : Approach
-    , wobble : Float
-    }
-
-
-type alias TransitionDetails =
-    { phase : Phase
-    , class : String
-    , transition : Transition
-    , prop : String
-    , val : String
-    }
-
-
 type Location
     = Above
     | Below
@@ -834,21 +616,6 @@ type Option
         , offset : Float
         , height : Float
         }
-
-
-type Transition
-    = Transition
-        { arriving :
-            Approach
-        , departing :
-            Approach
-        }
-
-
-type Phase
-    = Hovered
-    | Focused
-    | Pressed
 
 
 {-| -}
@@ -873,26 +640,6 @@ focusDefaultStyle =
             , blur = 0
             , size = 3
             }
-    }
-
-
-type NearbyChildren msg
-    = NoNearbyChildren
-    | ChildrenBehind (List (Html.Html msg))
-    | ChildrenInFront (List (Html.Html msg))
-    | ChildrenBehindAndInFront (List (Html.Html msg)) (List (Html.Html msg))
-
-
-emptyPair : ( Int, Int )
-emptyPair =
-    ( 0, 0 )
-
-
-emptyEdges =
-    { top = 0
-    , left = 0
-    , bottom = 0
-    , right = 0
     }
 
 
@@ -1168,7 +915,7 @@ style name val =
                 , class = Nothing
                 , styles =
                     \_ _ ->
-                        [ Tuple.pair name val ]
+                        [ ( name, val ) ]
                 , nearby = Nothing
                 , teleport = Nothing
                 }
@@ -1187,7 +934,7 @@ styleDynamic name toVal =
                 , class = Nothing
                 , styles =
                     \inheritance _ ->
-                        [ Tuple.pair name (toVal inheritance) ]
+                        [ ( name, toVal inheritance ) ]
                 , nearby = Nothing
                 , teleport = Nothing
                 }
@@ -1211,7 +958,9 @@ style2 oneName oneVal twoName twoVal =
                 , class = Nothing
                 , styles =
                     \_ _ ->
-                        Tuple.pair oneName oneVal :: Tuple.pair twoName twoVal :: []
+                        [ ( oneName, oneVal )
+                        , ( twoName, twoVal )
+                        ]
                 , nearby = Nothing
                 , teleport = Nothing
                 }
@@ -1237,9 +986,9 @@ style3 oneName oneVal twoName twoVal threeName threeVal =
                 , class = Nothing
                 , styles =
                     \_ _ ->
-                        [ Tuple.pair oneName oneVal
-                        , Tuple.pair twoName twoVal
-                        , Tuple.pair threeName threeVal
+                        [ ( oneName, oneVal )
+                        , ( twoName, twoVal )
+                        , ( threeName, threeVal )
                         ]
                 , nearby = Nothing
                 , teleport = Nothing
@@ -1259,7 +1008,7 @@ styleWith flag name val =
                 , class = Nothing
                 , styles =
                     \_ _ ->
-                        Tuple.pair name val :: []
+                        [ ( name, val ) ]
                 , nearby = Nothing
                 , teleport = Nothing
                 }
@@ -1285,7 +1034,7 @@ styleAndClass flag v =
                 , class = Just v.class
                 , styles =
                     \_ _ ->
-                        Tuple.pair v.styleName v.styleVal :: []
+                        [ ( v.styleName, v.styleVal ) ]
                 , nearby = Nothing
                 , teleport = Nothing
                 }
@@ -1778,30 +1527,6 @@ toChildrenKeyed myBits analyzedBits attrs children =
         List.map (\( key, Element toChild ) -> ( key, toChild myBits )) children
 
 
-emptyKeyedNearbys =
-    { behind = []
-    , inFront = []
-    }
-
-
-type ElemChildren msg
-    = ElemChildren
-        (List (Element msg))
-        { behind : List (Element msg)
-        , inFront : List (Element msg)
-        }
-    | ElemKeyed
-        (List ( String, Element msg ))
-        { behind : List ( String, Element msg )
-        , inFront : List ( String, Element msg )
-        }
-
-
-type Children msg
-    = Children (List (Html.Html msg))
-    | Keyed (List ( String, Html.Html msg ))
-
-
 fontSizeAdjusted : Int -> Float -> Float
 fontSizeAdjusted size height =
     toFloat size * (1 / height)
@@ -2113,23 +1838,6 @@ addStylesToString styles attrs =
                 (name ++ ":" ++ val ++ ";" ++ attrs)
 
 
-triggerName : Trigger -> String
-triggerName trigger =
-    case trigger of
-        OnHovered ->
-            "on-hovered"
-
-        OnPressed ->
-            "on-pressed"
-
-        OnFocused ->
-            "on-focused"
-
-        OnIf bool ->
-            -- Note, could trigger this via attribute index
-            ""
-
-
 {-| -}
 onKeyListener : String -> msg -> Html.Attribute msg
 onKeyListener desiredCode msg =
@@ -2152,39 +1860,6 @@ onKeyListener desiredCode msg =
             )
             isKey
         )
-
-
-upsertTransform : Int -> Float -> Maybe Transform -> Transform
-upsertTransform slot val maybeTransform =
-    let
-        t =
-            Maybe.withDefault emptyTransform maybeTransform
-    in
-    { scale =
-        if slot - 3 == 0 then
-            val
-
-        else
-            t.scale
-    , x =
-        if slot - 0 == 0 then
-            val
-
-        else
-            t.x
-    , y =
-        if slot - 1 == 0 then
-            val
-
-        else
-            t.y
-    , rotation =
-        if slot - 2 == 0 then
-            val
-
-        else
-            t.rotation
-    }
 
 
 nearbyToHtml : Inheritance.Encoded -> Location -> Element msg -> Html.Html msg
@@ -2472,8 +2147,7 @@ decodeScrollPosition =
 
 type Breakpoints label
     = Responsive
-        { transition : Maybe Transition
-        , default : label
+        { default : label
         , breaks : List ( Int, label )
         , total : Int
         }
@@ -2771,15 +2445,16 @@ renderFontAdjustment adjustment =
                         ++ (("." ++ fontid ++ " .lh-" ++ String.fromInt offsetInt ++ " .s.t ") ++ body)
                 )
                 (List.range 1 20)
-                |> String.join ""
+                |> String.concat
            )
 
 
 curlyBrackets : List String -> String
 curlyBrackets lines =
-    "{" ++ String.join "" lines ++ "}"
+    "{" ++ String.concat lines ++ "}"
 
 
+maybeString : (a -> String) -> Maybe a -> String
 maybeString fn maybeStr =
     case maybeStr of
         Nothing ->
@@ -2789,10 +2464,12 @@ maybeString fn maybeStr =
             fn str
 
 
+andAdd : appendable -> appendable -> appendable
 andAdd one two =
     two ++ one
 
 
+dot : String -> String
 dot str =
     "." ++ str
 

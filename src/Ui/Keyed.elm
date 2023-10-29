@@ -21,7 +21,6 @@ This means if a key is changed between renders, then the diffing step will be sk
 -}
 
 import Internal.Model2 as Two
-import Internal.Style2 as Style
 import Ui exposing (Attribute, Element)
 
 

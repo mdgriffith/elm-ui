@@ -6,6 +6,7 @@ module Ui.Responsive exposing
     , padding, paddingXY, paddingEach
     , height, heightMin, heightMax
     , width, widthMin, widthMax
+    , fontSize
     , orAbove, orBelow
     )
 
@@ -90,22 +91,18 @@ module Ui.Responsive exposing
 
 @docs width, widthMin, widthMax
 
+@docs fontSize
+
 @docs orAbove, orBelow
 
 -}
 
-import Html
-import Html.Attributes as Attr
 import Internal.Flag as Flag
-import Internal.Font
 import Internal.Model2 as Internal
     exposing
         ( Attribute
         , Element
-        , ResponsiveTransition
         )
-import Ui
-import Ui.Font
 
 
 {-| -}
@@ -117,7 +114,7 @@ type alias Breakpoints label =
 orAbove : label -> Breakpoints label -> List label
 orAbove label resp =
     Internal.foldBreakpoints
-        (\i lab ( capturing, selected ) ->
+        (\_ lab ( capturing, selected ) ->
             if label == lab then
                 ( False
                 , lab :: selected
@@ -148,7 +145,7 @@ orBelow label resp =
     -- This gets all indices *above* the current index
     -- which means all breakpoints below
     Internal.foldBreakpoints
-        (\i lab ( capturing, selected ) ->
+        (\_ lab ( capturing, selected ) ->
             if capturing then
                 ( capturing
                 , lab :: selected
@@ -175,8 +172,7 @@ orBelow label resp =
 breakpoints : label -> List ( Int, label ) -> Breakpoints label
 breakpoints def breaks =
     Internal.Responsive
-        { transition = Nothing
-        , default = def
+        { default = def
         , breaks = List.sortBy Tuple.first breaks
         , total = List.length breaks
         }
@@ -361,49 +357,10 @@ widthMax resp toValue =
         (Internal.responsiveCssValue resp toValue)
 
 
+varStyle : String -> String -> Attribute msg
 varStyle name val =
     Internal.styleAndClass Flag.skip
         { class = "ui-rs"
         , styleName = name
         , styleVal = val
         }
-
-
-{-| Index of a label in the list of breakpoints
-
-so for the following
-
-    breakpoints : Ui.Responsive.Breakpoints Breakpoints
-    breakpoints =
-        Ui.Responsive.breakpoints ExtraLarge
-            [ Ui.Responsive.breakAt 2400 Large
-            , Ui.Responsive.breakAt 1400 Medium
-            , Ui.Responsive.breakAt 800 Small
-            ]
-
-    0 -> ExtraLarge
-    1 -> Large
-    2 -> Medium
-    3 -> Small
-
--}
-getIndex : label -> Breakpoints label -> Int
-getIndex target (Internal.Responsive details) =
-    if target == details.default then
-        0
-
-    else
-        getIndexHelper 1 target details.breaks
-
-
-getIndexHelper i target breaks =
-    case breaks of
-        [] ->
-            i
-
-        ( _, top ) :: remain ->
-            if top == target then
-                i
-
-            else
-                getIndexHelper (i + 1) target remain

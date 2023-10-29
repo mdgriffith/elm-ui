@@ -22,7 +22,9 @@ benchmark to be sure!
 
 -}
 
+import Html
 import Html.Lazy
+import Internal.Bits.Inheritance as Inheritance
 import Internal.Model2 as Internal
 import Ui exposing (Element)
 
@@ -63,25 +65,31 @@ lazy6 fn a b c d e f =
     Internal.Element (\s -> Html.Lazy.lazy8 apply6 fn a b c d e f s)
 
 
+apply1 : (a -> Element msg) -> a -> Inheritance.Encoded -> Html.Html msg
 apply1 fn a s =
     Internal.unwrap s (fn a)
 
 
+apply2 : (a -> b -> Element msg) -> a -> b -> Inheritance.Encoded -> Html.Html msg
 apply2 fn a b s =
     Internal.unwrap s (fn a b)
 
 
+apply3 : (a -> b -> c -> Element msg) -> a -> b -> c -> Inheritance.Encoded -> Html.Html msg
 apply3 fn a b c s =
     Internal.unwrap s (fn a b c)
 
 
+apply4 : (a -> b -> c -> d -> Element msg) -> a -> b -> c -> d -> Inheritance.Encoded -> Html.Html msg
 apply4 fn a b c d s =
     Internal.unwrap s (fn a b c d)
 
 
+apply5 : (a -> b -> c -> d -> e -> Element msg) -> a -> b -> c -> d -> e -> Inheritance.Encoded -> Html.Html msg
 apply5 fn a b c d e s =
     Internal.unwrap s (fn a b c d e)
 
 
+apply6 : (a -> b -> c -> d -> e -> f -> Element msg) -> a -> b -> c -> d -> e -> f -> Inheritance.Encoded -> Html.Html msg
 apply6 fn a b c d e f s =
     Internal.unwrap s (fn a b c d e f)

@@ -1,20 +1,22 @@
 module Internal.Teleport exposing
-    ( Box
-    , Data(..)
-    , Event
-    , Trigger(..)
-    , decode
-    , encodeCss
-    , persistentId
-    , stringToTrigger
+    ( persistentClass, persistentId
+    , Box, Data(..), Event, Trigger(..), decode, encodeCss, stringToTrigger
     )
 
 {-| This is data that is teleported to the central state.
+
+@docs persistentClass, persistentId
+
 -}
 
 import Animator
 import Json.Decode as Decode
 import Json.Encode as Encode
+
+
+persistentClass : String -> String -> String
+persistentClass group instance =
+    "elm-ui-persistent-" ++ group ++ "-" ++ instance
 
 
 persistentId : String -> String -> Encode.Value
