@@ -14,7 +14,8 @@
     "list-issues": "hub issue -f \"%i,%U,%t,'%L'%n\" > issues.csv",
     "stylesheet": "node stylesheets/build.js",
     "docs": "elm make --docs docs.json",
-    "watch-stylesheet": "node stylesheets/build.js --watch"
+    "watch-stylesheet": "node stylesheets/build.js --watch",
+    "review": "elm-review"
   },
   "repository": {
     "type": "git",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@kachkaev/run-elm": "^3.0.0-beta.1",
-    "chokidar": "^3.4.2"
+    "chokidar": "^3.4.2",
+    "elm-review": "^2.10.3"
   }
 }
