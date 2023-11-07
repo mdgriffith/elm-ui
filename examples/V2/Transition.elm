@@ -51,11 +51,11 @@ type Id
 id val =
     case val of
         One i ->
-            Ui.Anim.persistent Ui "one" (String.fromInt i)
+            Ui.Anim.persistent "one" (String.fromInt i)
 
 
 type Msg
-    = Ui (Ui.Anim.Msg Msg)
+    = Ui Ui.Anim.Msg
     | Focus Focus
 
 
@@ -95,9 +95,10 @@ breakpoints =
 
 
 view model =
-    Ui.Responsive.layout
+    Ui.Anim.layout
         { options = []
-        , breakpoints = breakpoints
+        , toMsg = Ui
+        , breakpoints = Just breakpoints
         }
         model.ui
         [ Ui.Font.italic
@@ -114,11 +115,6 @@ view model =
         , Ui.Font.font
             { name = "EB Garamond"
             , fallback = [ Ui.Font.serif ]
-            , sizing =
-                Ui.Font.byCapital
-                    { offset = 0.045
-                    , height = 0.73
-                    }
             , variants =
                 []
             , weight = Ui.Font.regular
@@ -169,10 +165,8 @@ viewData focus =
                 , padding 24
                 , Ui.background (rgb 255 255 255)
                 , Ui.rounded 3
-                , Ui.border
-                    { width = 3
-                    , color = rgb 0 0 0
-                    }
+                , Ui.border 3
+                , Ui.borderColor (rgb 0 0 0)
                 ]
                 (text "Mini")
 

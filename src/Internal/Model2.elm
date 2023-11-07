@@ -18,6 +18,7 @@ import Internal.Flag as Flag exposing (Flag)
 import Internal.Style.Generated as Generated
 import Internal.Style2 as Style
 import Internal.Teleport as Teleport
+import Internal.Teleport.Persistent as Persistent
 import Json.Decode as Json
 import Json.Encode as Encode
 import Set exposing (Set)
@@ -59,7 +60,7 @@ type State
     = State
         { added : Set String
         , rules : List String
-        , boxes : List ( Id, Box )
+        , boxes : Persistent.Persistent Box
         }
 
 
@@ -69,38 +70,6 @@ type alias Box =
     , width : Float
     , height : Float
     }
-
-
-{-| refreshed means this new box will completely replace an existing one.
--}
-matchBox :
-    Id
-    -> List ( Id, Box )
-    ->
-        Maybe
-            { box : Box
-            , transition : Bool
-            , others : List ( Id, Box )
-            }
-matchBox id boxes =
-    matchBoxHelper id boxes []
-
-
-matchBoxHelper ((Id identifier instance) as id) boxes passed =
-    case boxes of
-        [] ->
-            Nothing
-
-        ( (Id topIdentifier topInstance) as topId, topBox ) :: others ->
-            if topIdentifier == identifier then
-                Just
-                    { box = topBox
-                    , transition = instance /= topInstance
-                    , others = passed ++ others
-                    }
-
-            else
-                matchBoxHelper id others (( topId, topBox ) :: passed)
 
 
 moveAnimationFixed : String -> Box -> Box -> String
@@ -241,15 +210,22 @@ applyTeleported event data ( (State state) as untouched, cmds ) =
         Teleport.Persistent group instance ->
             let
                 id =
-                    Id group instance
+                    Persistent.id group instance
             in
             -- if this id matches an existing box in the cache
             -- it means this box was previously rendered at the position found
-            case matchBox id state.boxes of
+            case List.head <| Persistent.getOthersInGroup id state.boxes of
                 Nothing ->
-                    ( State { state | boxes = ( id, event.box ) :: state.boxes }, cmds )
+                    ( State
+                        { state
+                            | boxes =
+                                state.boxes
+                                    |> Persistent.insert id event.box
+                        }
+                    , cmds
+                    )
 
-                Just original ->
+                Just firstFound ->
                     let
                         newBox =
                             event.box
@@ -257,7 +233,7 @@ applyTeleported event data ( (State state) as untouched, cmds ) =
                         newCss =
                             moveAnimationFixed
                                 (Teleport.persistentClass group instance)
-                                original.box
+                                firstFound.value
                                 newBox
                     in
                     ( State
@@ -266,8 +242,8 @@ applyTeleported event data ( (State state) as untouched, cmds ) =
                                 state.rules
                                     |> addRule newCss
                             , boxes =
-                                ( id, event.box )
-                                    :: List.filter (\( i, _ ) -> not <| matchGroupName i id) state.boxes
+                                state.boxes
+                                    |> Persistent.insert id event.box
                         }
                     , cmds
                     )
@@ -300,34 +276,6 @@ addRule rule existingRules =
 
     else
         rule :: existingRules
-
-
-requestBoundingBoxes boxes =
-    Task.succeed []
-        |> requestBoundingBoxesHelper boxes
-
-
-requestBoundingBoxesHelper boxes task =
-    case boxes of
-        [] ->
-            task
-
-        ( topId, topBox ) :: remaining ->
-            let
-                newTask =
-                    task
-                        |> Task.andThen
-                            (\list ->
-                                Browser.Dom.getElement (toCssId topId)
-                                    |> Task.map
-                                        (\newBox ->
-                                            ( topId, newBox.element ) :: list
-                                        )
-                                    |> Task.onError
-                                        (\_ -> Task.succeed list)
-                            )
-            in
-            requestBoundingBoxesHelper remaining newTask
 
 
 type alias Transform =
@@ -375,26 +323,6 @@ type Layout
     | AsParagraph
     | AsTextColumn
     | AsRoot
-
-
-{-| -}
-type Id
-    = Id String String
-
-
-matchGroupName : Id -> Id -> Bool
-matchGroupName (Id group _) (Id group2 _) =
-    group == group2
-
-
-toCssClass : Id -> String
-toCssClass (Id one two) =
-    one ++ "_" ++ two
-
-
-toCssId : Id -> String
-toCssId (Id one two) =
-    one ++ "_" ++ two
 
 
 noAttr : Attribute msg
