@@ -14,7 +14,7 @@ type alias Field =
 
 
 type alias Encoded =
-    Bits Analyze
+    Bits
 
 
 

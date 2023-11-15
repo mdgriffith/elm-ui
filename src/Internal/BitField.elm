@@ -103,25 +103,25 @@ getFieldMask (BitField { mask }) =
 
 
 {-| -}
-type Bits encoding
-    = Bits Int
+type alias Bits =
+    Int
 
 
 {-| -}
-init : Bits encoding
+init : Bits
 init =
-    Bits 0
+    0
 
 
 {-| -}
-none : Bits encoding
+none : Bits
 none =
-    Bits 0
+    0
 
 
 {-| -}
-toString : Bits encoding -> String
-toString (Bits i) =
+toString : Bits -> String
+toString i =
     viewBitsHelper i 0 ""
 
 
@@ -227,19 +227,18 @@ next nextLength (BitField existing) =
 
 
 {-| -}
-clear : BitField encoding -> Bits encoding -> Bits encoding
-clear (BitField { inverseMask }) (Bits bits) =
+clear : BitField encoding -> Bits -> Bits
+clear (BitField { inverseMask }) bits =
     bits
         -- clear the target section
         |> Bitwise.and
             inverseMask
-        |> Bits
 
 
 {-| Copy a specific bitfield from one set of bits to another.
 -}
-copy : BitField encoding -> Bits encoding -> Bits encoding -> Bits encoding
-copy (BitField { mask, inverseMask }) (Bits one) (Bits destination) =
+copy : BitField encoding -> Bits -> Bits -> Bits
+copy (BitField { mask, inverseMask }) one destination =
     let
         newSection =
             one
@@ -250,36 +249,31 @@ copy (BitField { mask, inverseMask }) (Bits one) (Bits destination) =
         |> Bitwise.and inverseMask
         -- Combine the two
         |> Bitwise.or newSection
-        |> Bits
 
 
-flipIf : BitField encoding -> Bool -> Bits encoding -> Bits encoding
-flipIf (BitField { mask }) bool ((Bits innerBits) as bits) =
+flipIf : BitField encoding -> Bool -> Bits -> Bits
+flipIf (BitField { mask }) bool bits =
     if bool then
-        Bits (Bitwise.or innerBits mask)
+        Bitwise.or bits mask
 
     else
         bits
 
 
-flip : BitField encoding -> Bool -> Bits encoding -> Bits encoding
-flip (BitField { mask, inverseMask }) bool (Bits innerBits) =
+flip : BitField encoding -> Bool -> Bits -> Bits
+flip (BitField { mask, inverseMask }) bool innerBits =
     if bool then
-        Bits
-            (Bitwise.or innerBits
-                mask
-            )
+        Bitwise.or innerBits
+            mask
 
     else
-        Bits
-            (Bitwise.and innerBits
-                inverseMask
-            )
+        Bitwise.and innerBits
+            inverseMask
 
 
 {-| -}
-set : BitField encoding -> Int -> Bits encoding -> Bits encoding
-set (BitField { inverseMask, offset, length }) unboundedVal (Bits bits) =
+set : BitField encoding -> Int -> Bits -> Bits
+set (BitField { inverseMask, offset, length }) unboundedVal bits =
     let
         top =
             ones
@@ -298,12 +292,11 @@ set (BitField { inverseMask, offset, length }) unboundedVal (Bits bits) =
             (Bitwise.shiftLeftBy offset
                 (Bitwise.and top val)
             )
-        |> Bits
 
 
 {-| -}
-setPercentage : BitField encoding -> Float -> Bits encoding -> Bits encoding
-setPercentage (BitField { offset, length, inverseMask }) unboundedVal (Bits bits) =
+setPercentage : BitField encoding -> Float -> Bits -> Bits
+setPercentage (BitField { offset, length, inverseMask }) unboundedVal bits =
     let
         percentage =
             min 1 (max 0 unboundedVal)
@@ -339,12 +332,11 @@ setPercentage (BitField { offset, length, inverseMask }) unboundedVal (Bits bits
             (Bitwise.shiftLeftBy offset
                 (Bitwise.and top val)
             )
-        |> Bits
 
 
 {-| -}
-get : BitField encoding -> Bits encoding -> Int
-get (BitField { length, offset }) (Bits bits) =
+get : BitField encoding -> Bits -> Int
+get (BitField { length, offset }) bits =
     let
         top =
             ones
@@ -357,8 +349,8 @@ get (BitField { length, offset }) (Bits bits) =
 
 
 {-| -}
-getPercentage : BitField encoding -> Bits encoding -> Float
-getPercentage (BitField { offset, length }) (Bits bits) =
+getPercentage : BitField encoding -> Bits -> Float
+getPercentage (BitField { offset, length }) bits =
     let
         top =
             ones
@@ -375,26 +367,26 @@ getPercentage (BitField { offset, length }) (Bits bits) =
 
 
 {-| -}
-toInt : Bits encoding -> Int
-toInt (Bits bits) =
+toInt : Bits -> Int
+toInt bits =
     bits
 
 
 {-| -}
-fromInt : Int -> Bits encoding
-fromInt =
-    Bits
+fromInt : Int -> Bits
+fromInt i =
+    i
 
 
 {-| -}
-has : BitField encoding -> Bits encoding -> Bool
-has (BitField { mask }) (Bits base) =
+has : BitField encoding -> Bits -> Bool
+has (BitField { mask }) base =
     Bitwise.and mask base /= 0
 
 
 {-| -}
-equal : Bits encoding -> Bits encoding -> Bool
-equal (Bits one) (Bits two) =
+equal : Bits -> Bits -> Bool
+equal one two =
     one - two == 0
 
 
@@ -404,6 +396,6 @@ fieldEqual (BitField one) (BitField two) =
         && (one.length == two.length)
 
 
-merge : Bits encoding -> Bits encoding -> Bits encoding
-merge (Bits one) (Bits two) =
-    Bits (Bitwise.or one two)
+merge : Bits -> Bits -> Bits
+merge one two =
+    Bitwise.or one two

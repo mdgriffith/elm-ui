@@ -43,7 +43,7 @@ type alias Field =
 
 
 type alias Encoded =
-    Bits Inheritance
+    Bits
 
 
 

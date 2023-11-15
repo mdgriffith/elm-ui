@@ -1820,7 +1820,7 @@ nearbyToHtml inheritance location (Element elem) =
         ]
 
 
-zero : BitField.Bits encoding
+zero : BitField.Bits
 zero =
     BitField.init
 

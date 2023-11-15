@@ -15,12 +15,12 @@ type Inheritance
 {- Node State -}
 
 
-row : Bits Inheritance
+row : Bits
 row =
     BitField.init
 
 
-column : Bits Inheritance
+column : Bits
 column =
     row
         |> BitField.set isRow 1
@@ -60,7 +60,7 @@ column =
 -}
 
 
-clearSpacing : Bits Inheritance -> Bits Inheritance
+clearSpacing : Bits -> Bits
 clearSpacing bits =
     bits
         |> BitField.clear spacingX
@@ -68,7 +68,7 @@ clearSpacing bits =
 
 
 {-| -}
-hasSpacing : Bits Inheritance -> Bool
+hasSpacing : Bits -> Bool
 hasSpacing bits =
     (bits |> BitField.has spacingX)
         || (bits |> BitField.has spacingY)
@@ -110,7 +110,7 @@ fontOffset =
 
 
 {-| -}
-hasFontAdjustment : Bits Inheritance -> Bool
+hasFontAdjustment : Bits -> Bool
 hasFontAdjustment bits =
     (bits |> BitField.has fontHeight)
         || (bits |> BitField.has fontOffset)
@@ -142,7 +142,7 @@ type Bezier
     = Bezier
 
 
-defaultCurve : Bits Bezier
+defaultCurve : Bits
 defaultCurve =
     -- REPLACE THIS WITH THE REAL DEFAULT CURVE
     BitField.init

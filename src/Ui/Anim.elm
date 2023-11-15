@@ -302,7 +302,7 @@ pressed dur attrs =
 
 
 {-| -}
-linearCurve : BitField.Bits Bits.Bezier
+linearCurve : BitField.Bits
 linearCurve =
     encodeBezier 0 0 1 1
 
@@ -310,12 +310,12 @@ linearCurve =
 {-| cubic-bezier(0.4, 0.0, 0.2, 1);
 Standard curve as given here: <https://material.io/design/motion/speed.html#easing>
 -}
-standardCurve : BitField.Bits Bits.Bezier
+standardCurve : BitField.Bits
 standardCurve =
     encodeBezier 0.4 0 0.2 1
 
 
-encodeBezier : Float -> Float -> Float -> Float -> BitField.Bits Bits.Bezier
+encodeBezier : Float -> Float -> Float -> Float -> BitField.Bits
 encodeBezier one two three four =
     BitField.init
         |> BitField.setPercentage Bits.bezOne one

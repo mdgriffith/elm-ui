@@ -13,7 +13,7 @@ type IsFlag = IsFlag
 
 
 type alias Field
-    = Bits IsFlag
+    = Bits
 
 
 type alias Flag
