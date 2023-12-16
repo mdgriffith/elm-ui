@@ -300,54 +300,53 @@ checkbox :
     -> Element msg
 checkbox attrs options =
     let
-        attributes =
-            [ if isHiddenLabel options.label then
-                Two.noAttr
+        input =
+            Two.element Two.NodeAsInput
+                Two.AsEl
+                ([ Two.attribute
+                    (Html.Attributes.type_ "checkbox")
+                 , Two.attribute <|
+                    Html.Attributes.attribute "aria-checked" <|
+                        if options.checked then
+                            "true"
 
-              else
-                Ui.spacing 6
-            , Two.attribute (Html.Events.onClick (options.onChange (not options.checked)))
-            , Ui.Accessibility.announce
-            , onKeyLookup2 <|
-                \code ->
-                    if code == enter then
-                        Just <| options.onChange (not options.checked)
+                        else
+                            "false"
+                 , Two.attribute (Html.Attributes.class classes.inputReset)
+                 , labelAttribute options.label
+                 , Two.attribute (Html.Events.onClick (options.onChange (not options.checked)))
+                 , onKeyLookup2 <|
+                    \code ->
+                        if code == enter then
+                            Just <| options.onChange (not options.checked)
 
-                    else if code == space then
-                        Just <| options.onChange (not options.checked)
+                        else if code == space then
+                            Just <| options.onChange (not options.checked)
 
-                    else
-                        Nothing
-            , Two.attribute (Html.Attributes.tabindex 0)
-            , Ui.pointer
-            , Ui.alignLeft
-            , Ui.width Ui.fill
-            ]
-                ++ attrs
+                        else
+                            Nothing
+                 , Two.attribute (Html.Attributes.tabindex 0)
+                 , Ui.pointer
+                 , Ui.width Ui.fill
+                 , Ui.height Ui.fill
+                 ]
+                    ++ attrs
+                )
+                []
+
+        icon =
+            let
+                viewIcon =
+                    Maybe.withDefault defaultCheckbox options.icon
+            in
+            viewIcon options.checked
     in
-    Two.element Two.NodeAsDiv
-        Two.AsEl
-        [ Two.attribute <|
-            Html.Attributes.attribute "role" "checkbox"
-        , Two.attribute <|
-            Html.Attributes.attribute "aria-checked" <|
-                if options.checked then
-                    "true"
-
-                else
-                    "false"
-        , labelAttribute options.label
-        , Ui.centerY
-        , Ui.height Ui.fill
-
-        -- TODO: SHOULD BE WIDTH SHRINK
+    Ui.el
+        [ Ui.inFront input
+        , Ui.width Ui.shrink
+        , Ui.height Ui.shrink
         ]
-        [ let
-            viewIcon =
-                Maybe.withDefault defaultCheckbox options.icon
-          in
-          viewIcon options.checked
-        ]
+        icon
 
 
 {-| -}
@@ -871,7 +870,11 @@ username =
         }
 
 
-{-| -}
+{-| **Note** For some reason Firefox and Brave both require this element to have `id=email` in order for autofill to work correctly.
+
+This means if you set an `id` on this element directly, you'll lose autofill on those browsers.
+
+-}
 email :
     List (Ui.Attribute msg)
     ->
@@ -1264,8 +1267,7 @@ You'll likely want to make your own checkbox at some point that fits your design
 defaultCheckbox : Bool -> Element msg
 defaultCheckbox checked =
     Ui.el
-        [ Two.class "focusable"
-        , Ui.width (Ui.px 14)
+        [ Ui.width (Ui.px 14)
         , Ui.height (Ui.px 14)
         , Ui.Font.color white2
         , Ui.Font.size 9
@@ -1285,7 +1287,7 @@ defaultCheckbox checked =
             else
                 1
         , if checked then
-            Ui.opacity 0
+            Ui.noAttr
 
           else
             Ui.Shadow.shadows
@@ -1315,7 +1317,7 @@ defaultCheckbox checked =
                 , Ui.borderColor white2
                 , Ui.height (Ui.px 6)
                 , Ui.width (Ui.px 9)
-                , Ui.rotate (Ui.turns 0.125)
+                , Ui.rotate (Ui.turns (1 - 0.125))
                 , Ui.centerX
                 , Ui.centerY
                 , Ui.move (Ui.up 1)

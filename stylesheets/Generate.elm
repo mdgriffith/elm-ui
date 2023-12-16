@@ -125,6 +125,7 @@ classes =
     , transition = "ts"
 
     -- inputText
+    , inputReset = "irs"
     , inputText = "it"
     , inputTextInputWrapper = "itw"
     , inputTextParent = "itp"
@@ -603,6 +604,11 @@ baseSheet =
         [ Prop "height" "100%"
         , Prop "padding" "0"
         , Prop "margin" "0"
+        ]
+    , Class (dot classes.inputReset)
+        [ Prop "appearance" "none"
+        , Prop "-webkit-appearance" "none"
+        , Prop "-moz-appearance" "none"
         ]
     , Class (dot classes.any ++ dot classes.el ++ dot classes.imageContainer)
         [ Prop "display" "block"
