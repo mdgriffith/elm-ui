@@ -870,9 +870,26 @@ username =
         }
 
 
-{-| **Note** For some reason Firefox and Brave both require this element to have `id=email` in order for autofill to work correctly.
+{-| **Note** For some reason Firefox and Brave both require an email input to have `id=email` in order for autofill to work correctly.
 
-This means if you set an `id` on this element directly, you'll lose autofill on those browsers.
+If you use `labelHidden`, then elm-ui will set this behind the scenes for you.
+
+If you use a `label` though, you'll need to do something like this:
+
+    let
+        label =
+            -- the "email" string is required by firefox and brave to autofill correctly.
+            Ui.Input.label "email" [] (Ui.text "Do you want Guacamole?")
+    in
+    Ui.column []
+        [ label.element
+        , Ui.Input.email []
+            { onChange = EmailUpdated
+            , text = model.email
+            , placeholder = Nothing
+            , label = label.id
+            }
+        ]
 
 -}
 email :
@@ -884,12 +901,13 @@ email :
         , label : Label
         }
     -> Element msg
-email =
+email attrs =
     textHelper
         { type_ = TextInputNode "email"
         , spellchecked = False
         , autofill = Just "email"
         }
+        (attrs ++ [ Ui.id "email" ])
 
 
 {-| A multiline text input.
