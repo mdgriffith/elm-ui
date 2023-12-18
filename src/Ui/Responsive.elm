@@ -115,37 +115,6 @@ orAbove : label -> Breakpoints label -> List label
 orAbove label resp =
     Internal.foldBreakpoints
         (\_ lab ( capturing, selected ) ->
-            if label == lab then
-                ( False
-                , lab :: selected
-                )
-
-            else if capturing then
-                ( capturing
-                , lab :: selected
-                )
-
-            else
-                ( capturing
-                , selected
-                )
-        )
-        ( True
-        , []
-        )
-        resp
-        |> Tuple.second
-
-
-{-| -}
-orBelow : label -> Breakpoints label -> List label
-orBelow label resp =
-    -- indices for breakpoints are descending
-    -- i.e. largest first
-    -- This gets all indices *above* the current index
-    -- which means all breakpoints below
-    Internal.foldBreakpoints
-        (\_ lab ( capturing, selected ) ->
             if capturing then
                 ( capturing
                 , lab :: selected
@@ -162,6 +131,34 @@ orBelow label resp =
                 )
         )
         ( False
+        , []
+        )
+        resp
+        |> Tuple.second
+
+
+{-| -}
+orBelow : label -> Breakpoints label -> List label
+orBelow label resp =
+    -- The breakpoint fold will start with the first, which is the smallest
+    Internal.foldBreakpoints
+        (\_ lab ( capturing, selected ) ->
+            if label == lab then
+                ( False
+                , lab :: selected
+                )
+
+            else if capturing then
+                ( capturing
+                , lab :: selected
+                )
+
+            else
+                ( capturing
+                , selected
+                )
+        )
+        ( True
         , []
         )
         resp
@@ -212,6 +209,13 @@ Otherwise, it'll render as a `column`.
         , text "World!"
         ]
 
+    Ui.Reponsive.rowWhen (breakpoints.equal [ Medium ])
+        [ Ui.spacing 20
+        ]
+        [ text "Hello!"
+        , text "World!"
+        ]
+
 -}
 rowWhen :
     Breakpoints label
@@ -219,13 +223,13 @@ rowWhen :
     -> List (Attribute msg)
     -> List (Element msg)
     -> Element msg
-rowWhen breaks labels attrs children =
+rowWhen breaks rowBreakPoints attrs children =
     Internal.element Internal.NodeAsDiv
         Internal.AsRow
         (Internal.class
             (Internal.foldBreakpoints
                 (\i lab str ->
-                    if List.member lab labels then
+                    if List.member lab rowBreakPoints then
                         str
 
                     else
