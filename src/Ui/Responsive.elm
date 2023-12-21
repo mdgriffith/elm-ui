@@ -222,23 +222,24 @@ rowWhen :
 rowWhen breaks labels attrs children =
     Internal.element Internal.NodeAsDiv
         Internal.AsRow
-        (Internal.class
-            (Internal.foldBreakpoints
-                (\i lab str ->
-                    if List.member lab labels then
-                        str
+        (Ui.width Ui.fill
+            :: Internal.class
+                (Internal.foldBreakpoints
+                    (\i lab str ->
+                        if List.member lab labels then
+                            str
 
-                    else
-                        case str of
-                            "" ->
-                                "ui-bp-" ++ String.fromInt i ++ "-as-col"
+                        else
+                            case str of
+                                "" ->
+                                    "ui-bp-" ++ String.fromInt i ++ "-as-col"
 
-                            _ ->
-                                str ++ " " ++ "ui-bp-" ++ String.fromInt i ++ "-as-col"
+                                _ ->
+                                    str ++ " " ++ "ui-bp-" ++ String.fromInt i ++ "-as-col"
+                    )
+                    ""
+                    breaks
                 )
-                ""
-                breaks
-            )
             :: attrs
         )
         children
