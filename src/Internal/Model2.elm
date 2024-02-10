@@ -596,66 +596,16 @@ text : String -> Element msg
 text str =
     Element
         (\encoded ->
+            -- Only wrap the text in a span if it's not a text layout
+            -- Or if there is a text modification (like a text gradient)
             if
-                BitField.has Inheritance.isRow encoded
-                    || BitField.has Inheritance.isColumn encoded
+                not (BitField.has Inheritance.isTextLayout encoded)
                     || BitField.has Inheritance.hasTextModification encoded
             then
                 Html.span [ Attr.class textElementClasses ] [ Html.text str ]
 
             else
                 Html.text str
-         -- if BitField.equal encoded Bits.row || BitField.equal encoded Bits.column then
-         --     Html.span [ Attr.class textElementClasses ] [ Html.text str ]
-         -- else
-         --     let
-         --         height =
-         --             encoded
-         --                 |> BitField.getPercentage Bits.fontHeight
-         --         offset =
-         --             encoded
-         --                 |> BitField.getPercentage Bits.fontOffset
-         --         spacingY =
-         --             encoded
-         --                 |> BitField.get Bits.spacingY
-         --         spacingX =
-         --             encoded
-         --                 |> BitField.get Bits.spacingX
-         --         attrs =
-         --             [ Attr.class textElementClasses
-         --             ]
-         --         attrsWithParentSpacing =
-         --             -- if height == 1 && offset == 0 then
-         --             --     Attr.style "margin"
-         --             --         (String.fromInt spacingY ++ "px " ++ String.fromInt spacingX ++ "px")
-         --             --         ::
-         --             --         attrs
-         --             -- else
-         --             --     let
-         --             --         -- This doesn't totally make sense to me, but it works :/
-         --             --         -- I thought that the top margin should have a smaller negative margin than the bottom
-         --             --         -- however it seems evenly distributing the empty space works out.
-         --             --         topVal =
-         --             --             offset
-         --             --         bottomVal =
-         --             --             (1 - height) - offset
-         --             --         even =
-         --             --             (topVal + bottomVal) / 2
-         --             --         margin =
-         --             --             "-"
-         --             --                 ++ String.fromFloat (even + 0.25)
-         --             --                 ++ "em "
-         --             --                 ++ (String.fromInt spacingX ++ "0px ")
-         --             --     in
-         --             --     Attr.style "margin"
-         --             --         margin
-         --             --         :: Attr.style "padding" "0.25em calc((1/32) * 1em) 0.25em 0px"
-         --             --         :: attrs
-         --             attrs
-         --     in
-         --     Html.span
-         --         attrsWithParentSpacing
-         --         [ Html.text str ]
         )
 
 
@@ -1830,10 +1780,6 @@ textElementClasses =
     Style.classes.any
         ++ " "
         ++ Style.classes.text
-        ++ " "
-        ++ Style.classes.widthContent
-        ++ " "
-        ++ Style.classes.heightContent
 
 
 rootClass : String
@@ -1920,7 +1866,6 @@ decodeBoundingBox =
     Json.field "target"
         (Json.map3
             (\w h ( top, left ) ->
-                -- Debug.log "final"
                 { width = w
                 , height = h
                 , x = left
@@ -2293,8 +2238,8 @@ minWidth int =
 renderMediaProps : Int -> String
 renderMediaProps i =
     (":root {--ui-bp-" ++ String.fromInt i ++ ": 1;}")
-        ++ (".ui-bp-" ++ String.fromInt i ++ "-hidden {display:none !important;}")
-        ++ (".ui-bp-" ++ String.fromInt i ++ "-as-col {flex-direction: column;}")
+        ++ (".s.ui-bp-" ++ String.fromInt i ++ "-hidden {display:none !important;}")
+        ++ (".s.r.ui-bp-" ++ String.fromInt i ++ "-as-col {flex-direction: column; align-content: flex-start;}")
 
 
 {-| -}
