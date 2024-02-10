@@ -35,7 +35,9 @@ main =
                 [ Ui.text (String.repeat 50 "Text should wrap by default. ") ]
             , Ui.Prose.paragraph [ Ui.paddingXY 100 0, Ui.Font.lineHeight 1.8 ]
                 [ Ui.text (String.repeat 50 "Text should wrap by default. ") ]
-            , Theme.description "When we set font size, the top and bottom's should be trimmed, but line spacing should be unaffected"
+            , Theme.description """When we set font size, the top and bottom's should be trimmed, but line spacing should be unaffected
+The below paragraph has a padding of 40, a font size of 60 and a lineSpacing of 40.       
+"""
             , Ui.Prose.paragraph
                 [ Ui.padding 40
 
@@ -176,6 +178,28 @@ main =
                 , Ui.Font.gradient Theme.gradient
                 ]
                 (List.repeat 100 (Ui.el [] (Ui.text "Text should wrap by default. ")))
+
+            -- Text alignment
+            , Theme.h1 "Text alignment"
+            , Ui.el [ Ui.Font.alignRight ] (Ui.text "This should be aligned to the right")
+            , Ui.Prose.paragraph
+                [ Ui.paddingXY 100 0
+                , Ui.Font.gradient Theme.gradient
+                , Ui.Font.alignRight
+                ]
+                (List.repeat 20 (Ui.el [] (Ui.text "This should be aligned to the right. ")))
+            , Ui.Prose.paragraph
+                [ Ui.paddingXY 100 0
+                , Ui.Font.gradient Theme.gradient
+                , Ui.Font.alignLeft
+                ]
+                (List.repeat 20 (Ui.text "This should be aligned to the right. "))
+            , Ui.Prose.paragraph
+                [ Ui.paddingXY 100 0
+                , Ui.Font.gradient Theme.gradient
+                , Ui.Font.center
+                ]
+                (List.repeat 20 (Ui.el [] (Ui.text "This should be aligned to the center. ")))
             ]
         )
 
