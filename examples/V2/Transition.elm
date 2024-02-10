@@ -39,6 +39,8 @@ main =
 init () =
     ( { focus = Detail
       , ui = Ui.Anim.init
+      , checked = False
+      , email = ""
       }
     , Cmd.none
     )
@@ -57,6 +59,8 @@ id val =
 type Msg
     = Ui Ui.Anim.Msg
     | Focus Focus
+    | CheckUpdated Bool
+    | EmailUpdated String
 
 
 type Focus
@@ -77,6 +81,16 @@ update msg model =
 
         Focus focus ->
             ( { model | focus = focus }
+            , Cmd.none
+            )
+
+        CheckUpdated checked ->
+            ( { model | checked = checked }
+            , Cmd.none
+            )
+
+        EmailUpdated email ->
+            ( { model | email = email }
             , Cmd.none
             )
 
@@ -103,14 +117,13 @@ view model =
         model.ui
         [ Ui.Font.italic
         , Ui.Font.size 32
-
-        -- , Ui.Font.gradient
-        --     (Ui.Gradient.linear Ui.right
-        --         [ Ui.Gradient.percent 0 (rgb 0 255 255)
-        --         , Ui.Gradient.percent 20 (rgb 255 255 255)
-        --         , Ui.Gradient.percent 100 (rgb 255 255 255)
-        --         ]
-        --     )
+        , Ui.Font.gradient
+            (Ui.Gradient.linear (Ui.turns 0)
+                [ Ui.Gradient.percent 0 (rgb 0 255 255)
+                , Ui.Gradient.percent 20 (rgb 255 255 255)
+                , Ui.Gradient.percent 100 (rgb 255 255 255)
+                ]
+            )
         , Ui.Font.color (rgb 0 0 0)
         , Ui.Font.font
             { name = "EB Garamond"
@@ -131,25 +144,65 @@ view model =
                 )
             )
         ]
-        (row
-            [ centerX
-            , spacing 64
-            , height fill
-            ]
-            [ row [ height (px 800), width (px 500) ]
-                [ if model.focus == Mini then
-                    viewData model.focus
+        (column []
+            [ let
+                label =
+                    Ui.Input.label "guac-checked"
+                        []
+                        (Ui.text "Do you want Guacamole?")
+              in
+              row [ spacing 16, padding 16 ]
+                [ Ui.Input.checkbox []
+                    { onChange = CheckUpdated
+                    , icon = Nothing
+                    , checked = model.checked
 
-                  else
-                    none
+                    -- Hand the label id to the checkbox
+                    , label = label.id
+                    }
+                , label.element
                 ]
-            , row [ height (px 800), width (px 500), padding 80, spacing 10 ]
-                [ if model.focus == Detail then
-                    viewData model.focus
+            , let
+                textLabel =
+                    Ui.Input.label "email"
+                        []
+                        (Ui.text "Email?")
+              in
+              column []
+                [ textLabel.element
+                , Ui.Input.email []
+                    { onChange = EmailUpdated
+                    , text = model.email
+                    , placeholder = Nothing
+                    , label = textLabel.id
+                    }
+                , Ui.Input.email [ Ui.id "pls" ]
+                    { onChange = EmailUpdated
+                    , text = model.email
+                    , placeholder = Nothing
+                    , label = Ui.Input.labelHidden "My email"
+                    }
+                ]
+            , row
+                [ centerX
+                , spacing 64
+                , height fill
+                ]
+                [ row [ height (px 800), width (px 500) ]
+                    [ if model.focus == Mini then
+                        viewData model.focus
 
-                  else
-                    none
-                , text "yooo"
+                      else
+                        none
+                    ]
+                , row [ height (px 800), width (px 500), padding 80, spacing 10 ]
+                    [ if model.focus == Detail then
+                        viewData model.focus
+
+                      else
+                        none
+                    , text "yooo"
+                    ]
                 ]
             ]
         )
