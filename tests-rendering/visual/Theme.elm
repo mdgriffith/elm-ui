@@ -30,7 +30,7 @@ garamond =
         , weight = Ui.Font.regular
         , size = 60
         , lineSpacing = 40
-        , capitalSizeRatio = 0.74
+        , capitalSizeRatio = 0.7
         }
 
 
