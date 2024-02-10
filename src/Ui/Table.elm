@@ -441,7 +441,7 @@ renderColumnHeader cfg state isFirstColumn (Column col) =
             cfg.stickFirstColumn && isFirstColumn
     in
     Two.element Two.NodeAsTableHeaderCell
-        Two.AsRow
+        Two.AsEl
         (default.padding
             :: default.fontAlignment
             :: Two.attrIf
@@ -538,7 +538,7 @@ renderColumn config state rowIndex row isFirstColumn (Column col) =
                 default.padding
     in
     Two.element Two.NodeAsTableD
-        Two.AsRow
+        Two.AsEl
         (padding
             :: Two.attrIf
                 (config.stickFirstColumn && isFirstColumn)
