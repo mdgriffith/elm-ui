@@ -143,7 +143,8 @@ singleShadow shadow =
 
 
 type Gradient
-    = Linear Angle (List Step)
+    = SingleColor Color
+    | Linear Angle (List Step)
     | Radial Bool Anchor (List Step)
     | Conic Anchor Angle (List ( Angle, Color ))
 
@@ -151,6 +152,16 @@ type Gradient
 type Step
     = Percent Int Color
     | Pixel Int Color
+
+
+stepToColor : Step -> Color
+stepToColor step =
+    case step of
+        Percent _ clr ->
+            clr
+
+        Pixel _ clr ->
+            clr
 
 
 {-| -}
@@ -173,6 +184,9 @@ type AnchorY
 toCssGradient : Gradient -> String
 toCssGradient grad =
     case grad of
+        SingleColor clr ->
+            color clr
+
         Linear angle steps ->
             "linear-gradient("
                 ++ ((String.fromFloat (toRadians angle) ++ "rad")
