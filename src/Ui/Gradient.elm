@@ -1,10 +1,13 @@
 module Ui.Gradient exposing
-    ( Gradient, linear, conic, radial, circle
+    ( color
+    , Gradient, linear, conic, radial, circle
     , Step, px, percent
     , center, top, bottom, left, right, topLeft, topRight, bottomLeft, bottomRight, offset
     )
 
 {-|
+
+@docs color
 
 @docs Gradient, linear, conic, radial, circle
 
@@ -29,6 +32,12 @@ type alias Step =
 
 
 {-| -}
+color : Color -> Gradient
+color =
+    Style.SingleColor
+
+
+{-| -}
 percent : Int -> Color -> Step
 percent =
     Style.Percent
@@ -45,14 +54,24 @@ linear :
     Angle
     -> List Step
     -> Gradient
-linear =
-    Style.Linear
+linear angle steps =
+    case steps of
+        [ single ] ->
+            color (Style.stepToColor single)
+
+        _ ->
+            Style.Linear angle steps
 
 
 {-| -}
 conic : Anchor -> Angle -> List ( Angle, Color ) -> Gradient
-conic =
-    Style.Conic
+conic anchor angle steps =
+    case steps of
+        [ ( _, single ) ] ->
+            color single
+
+        _ ->
+            Style.Conic anchor angle steps
 
 
 {-| -}
@@ -60,8 +79,13 @@ radial :
     Anchor
     -> List Step
     -> Gradient
-radial =
-    Style.Radial False
+radial anchor steps =
+    case steps of
+        [ single ] ->
+            color (Style.stepToColor single)
+
+        _ ->
+            Style.Radial False anchor steps
 
 
 {-| This is _also_ a type of radial gradient, but where the base is circular instead of elliptical.
