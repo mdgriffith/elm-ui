@@ -640,24 +640,7 @@ baseSheet =
             ]
 
         -- Default line-height rules
-        , Prop "line-height" "1.2"
-        , Batch
-            [ AllChildren (dot classes.text)
-                [ Prop "margin-top" "-0.1em"
-                , Prop "margin-bottom" "-0.1em"
-                ]
-            , AllChildren (dot classes.paragraph)
-                [ Prop "margin-top" "-0.1em"
-                , Prop "margin-bottom" "-0.1em"
-                ]
-            ]
-
-        -- basics for EB Garamond
-        --font-size-factor: 1.4184397163120566;
-        --vacuum-top: -0.24851250000000005;
-        --vacuum-bottom: -0.24851250000000005;
-        --visible-top: 0;
-        --visible-bottom: 0.29000000000000004;
+        , Prop "line-height" "1.4"
         , Descriptor
             (dot classes.any
                 -- ++ dot classes.el
@@ -809,16 +792,21 @@ baseSheet =
         ]
     , Class (dot classes.any)
         [ Prop "border" "none"
-        , Prop "flex-shrink" "0"
+        , Prop "flex-shrink" "1"
+        , Prop "flex-basis" "auto"
         , Prop "display" "flex"
         , Prop "flex-direction" "row"
-        , Prop "flex-basis" "auto"
         , Prop "resize" "none"
         , Prop "box-sizing" "border-box"
         , Prop "margin" "0"
         , Prop "padding" "0"
         , Prop "border-width" "0"
         , Prop "border-style" "solid"
+
+        -- https://dfmcphee.com/flex-items-and-min-width-0/
+        -- https://defensivecss.dev/tip/flexbox-min-content-size/
+        -- https://www.joshwcomeau.com/css/interactive-guide-to-flexbox/
+        , Prop "min-width" "0"
 
         -- inheritable font properties
         , Prop "font-size" "inherit"
@@ -848,20 +836,42 @@ baseSheet =
             , Prop "left" "0"
             ]
         , Descriptor (dot classes.textGradient)
-            [ AllChildren (dot classes.text)
-                [ Prop "background" "var(--text-gradient)"
-                , Prop "-webkit-background-clip" "text"
-                , Prop "-webkit-text-fill-color" "transparent"
-                ]
+            [ Prop "-webkit-background-clip" "text"
+            , Prop "-webkit-text-fill-color" "transparent"
             ]
         , Descriptor (dot classes.fontAdjusted)
             [ Prop "font-size" "calc(1em * var(--font-size-factor))"
+            ]
+        , Descriptor (dot classes.text)
+            [ Descriptor "::after"
+                [ Prop "content" "\" \""
+                , Prop "margin-top" "calc((1lh - 1cap) / -2)"
+                , Prop "display" "table"
+                ]
+            , Descriptor "::before"
+                [ Prop "content" "\" \""
+                , Prop "margin-bottom" "calc((1lh - 1cap) / -2)"
+                , Prop "display" "table"
+                ]
             ]
         , Descriptor (dot classes.ellipses)
             [ AllChildren (dot classes.text)
                 [ Prop "text-overflow" "ellipsis"
                 , Prop "white-space" "nowrap"
                 , Prop "overflow" "hidden"
+
+                -- If we're clipping ellips, we adjust the vaccum so that
+                -- we're exactly 1lh
+                , Descriptor "::after"
+                    [ Prop "content" "\" \""
+                    , Prop "margin-top" "calc((1lh - 1cap) / -2)"
+                    , Prop "display" "table"
+                    ]
+                , Descriptor "::before"
+                    [ Prop "content" "\" \""
+                    , Prop "margin-bottom" "calc((1lh - 1cap) / -2)"
+                    , Prop "display" "table"
+                    ]
                 ]
             ]
         , Descriptor (dot classes.noTextSelection)
@@ -966,46 +976,7 @@ baseSheet =
         , Descriptor (dot classes.text)
             [ Prop "display" "inline-block"
             , Prop "max-width" "100%"
-
-            -- , Prop "overflow" "hidden"
-            -- , Prop "margin-top" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-top) - var(--visible-top)) ))"
-            -- , Prop "margin-bottom" "calc(((1em/var(--font-size-factor)) * (var(--vacuum-bottom) - var(--visible-bottom)) ))"
-            -- , Prop "padding-right" "calc((1/32) * 1em)" --"2px"
-            -- , Prop "padding-top" "calc(var(--visible-top) * (1em/var(--font-size-factor)))"
-            -- , Prop "padding-bottom" "calc(var(--visible-bottom) * (1em/var(--font-size-factor)))"
             ]
-        , Batch
-            (List.map
-                (\i ->
-                    let
-                        offsetInt =
-                            i * 5
-
-                        -- lineHeightOffset =
-                        --     toFloat offsetInt / 100
-                        -- offset =
-                        --     -- 0.05 line height
-                        --     -- But we need to express it as a percentage of the *existing* lineheight.
-                        --     lineHeightOffset
-                        --         / (1 + lineHeightOffset)
-                        -- offsetString =
-                        --     String.fromFloat (offset / 2)
-                        offsetString =
-                            lineHeightAdjustment i
-                    in
-                    Descriptor (dot (classes.lineHeightPrefix ++ "-" ++ String.fromInt offsetInt))
-                        [ AllChildren (dot classes.text)
-                            [ Prop "margin-top" offsetString
-                            , Prop "margin-bottom" offsetString
-                            ]
-                        , AllChildren (dot classes.paragraph)
-                            [ Prop "margin-top" offsetString
-                            , Prop "margin-bottom" offsetString
-                            ]
-                        ]
-                )
-                (List.range 1 20)
-            )
         , Descriptor (dot classes.el)
             elDescription
         , Descriptor (dot classes.row)
@@ -1028,8 +999,7 @@ baseSheet =
                 [ Prop "flex-basis" "auto"
                 , Prop "flex-shrink" "1"
                 , Descriptor select.widthFill
-                    [ Prop "flex-shrink" "0"
-                    , Prop "flex-grow" "1"
+                    [ Prop "flex-grow" "1"
                     ]
                 , Descriptor (dot classes.clip)
                     [ Descriptor select.widthFill
@@ -1044,7 +1014,7 @@ baseSheet =
                     ]
                 ]
             , Child select.heightFill
-                [ Prop "height" "100%"
+                [ Prop "align-self" "stretch"
                 ]
             , Child (dot classes.heightFill)
                 [ Descriptor (dot classes.heightBounded)
@@ -1107,6 +1077,7 @@ baseSheet =
         , Descriptor (dot classes.column)
             [ Prop "display" "flex"
             , Prop "flex-direction" "column"
+            , Prop "align-content" "flex-start"
             , Child (dot classes.any)
                 [ Prop "min-height" "min-content"
                 , Descriptor (dot classes.heightExact)
@@ -1290,6 +1261,29 @@ baseSheet =
         , Descriptor (dot classes.paragraph)
             [ Prop "display" "block"
             , Prop "overflow-wrap" "break-word"
+            , AllChildren (dot classes.text)
+                [ Prop "display" "inline"
+
+                -- We can have text elements within a paragraph if there is
+                -- a text modification like a text gradient.
+                -- In this case, we don't want to clip the text because the paragraph already has
+                , Descriptor "::after"
+                    [ Prop "content" "none"
+                    ]
+                , Descriptor "::before"
+                    [ Prop "content" "none"
+                    ]
+                ]
+            , Descriptor "::after"
+                [ Prop "content" "\" \""
+                , Prop "margin-top" "calc((1lh - 1cap) / -2)"
+                , Prop "display" "table"
+                ]
+            , Descriptor "::before"
+                [ Prop "content" "\" \""
+                , Prop "margin-bottom" "calc((1lh - 1cap) / -2)"
+                , Prop "display" "table"
+                ]
             , Descriptor (dot classes.hasBehind)
                 [ Prop "z-index" "0"
                 , Child (dot classes.behind)
@@ -1380,12 +1374,14 @@ baseSheet =
             ]
         , Descriptor (dot classes.textCenter)
             [ Prop "text-align" "center"
+            , Prop "align-items" "center"
             ]
         , Descriptor (dot classes.textRight)
-            [ Prop "text-align" "right"
+            [ Prop "text-align" "end"
+            , Prop "align-items" "flex-end"
             ]
         , Descriptor (dot classes.textLeft)
-            [ Prop "text-align" "left"
+            [ Prop "text-align" "start"
             ]
         , Descriptor (dot classes.italic)
             [ Prop "font-style" "italic"
@@ -1402,9 +1398,6 @@ baseSheet =
             [ Prop "text-decoration" "line-through underline"
             , Prop "text-decoration-skip-ink" "auto"
             , Prop "text-decoration-skip" "ink"
-            ]
-        , Descriptor (dot classes.textUnitalicized)
-            [ Prop "font-style" "normal"
             ]
         ]
     ]

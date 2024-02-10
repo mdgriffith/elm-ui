@@ -6,7 +6,6 @@ module Ui.Font exposing
     , exactWhitespace, noWrap
     , lineHeight, letterSpacing, wordSpacing
     , font
-    , fontAdjustment
     , underline, strike, italic
     , weight
     , Weight, heavy, extraBold, bold, semiBold, medium, regular, light, extraLight, hairline
@@ -37,8 +36,6 @@ module Ui.Font exposing
 ## Font
 
 @docs font
-
-@docs fontAdjustment
 
 
 ## Font Styles
@@ -87,7 +84,7 @@ gradient :
 gradient grad =
     Internal.styleAndClass Flag.fontGradient
         { class = Style.classes.textGradient
-        , styleName = "--text-gradient"
+        , styleName = "background-image"
         , styleVal = Style.toCssGradient grad
         }
 
@@ -136,49 +133,6 @@ typeface =
     Internal.Font.Typeface
 
 
-{-| -}
-type alias Adjustment =
-    { offset : Float
-    , height : Float
-    }
-
-
-{-| -}
-type alias Sizing =
-    Internal.Font.Sizing
-
-
-{-| -}
-full : Sizing
-full =
-    Internal.Font.Full
-
-
-{-| -}
-fontAdjustment :
-    { family : String
-    , offset : Float
-    , height : Float
-    }
-    -> Ui.Option
-fontAdjustment =
-    Internal.FontAdjustment
-
-
-
-{- FONT ADJUSTMENTS -}
-{-
-
-
-
-   type FontColor Color = FontColor Color | FontGradient Gradient
-
-
-
-
--}
-
-
 {-|
 
     Ui.Font.font
@@ -187,7 +141,12 @@ fontAdjustment =
         , variants = []
         , weight = Ui.Font.bold
         , size = 16
+        , lineSpacing = 8
+        , capitalSizeRatio = 0.7
         }
+
+  - Capital size ratio is the ratio of the capital size to the font size.
+    If this is set to something other than 1, then the font size will be adjusted to match the capital size.
 
 -}
 font :
@@ -196,9 +155,36 @@ font :
     , variants : List Variant
     , weight : Weight
     , size : Int
+    , lineSpacing : Int
+    , capitalSizeRatio : Float
     }
     -> Attribute msg
 font details =
+    let
+        fontSize =
+            max 1 details.size
+
+        actualFontSize =
+            if details.capitalSizeRatio <= 0 then
+                toFloat fontSize
+
+            else
+                toFloat fontSize / details.capitalSizeRatio
+
+        actualLineHeight =
+            --  Example calculation
+            -- 16px font size
+            -- 8px line spacing
+            -- 12px capital size, so capitalSizeRatio is 12/16 = 0.75
+            -- So, actual font size is 16/0.75 = 21.3333
+            -- A line-height of 1 is going to be 21.3333px
+            -- We want the line-height to be 16px + 8px = 24px
+            -- (fontSize + lineSpacing) / actualFontSize
+            -- Line height should be 8/21.3333 = 0.375 + 1
+            -- line-height should be 1.375
+            (toFloat fontSize + toFloat (max 0 details.lineSpacing))
+                / actualFontSize
+    in
     Internal.Attribute
         { flag = Flag.fontAdjustment
         , attr =
@@ -209,7 +195,7 @@ font details =
                 , class = Nothing
                 , styles =
                     \_ _ ->
-                        listIfFirst
+                        listIf
                             [ ( True
                               , ( "font-family"
                                 , details.name
@@ -218,7 +204,7 @@ font details =
                               )
                             , ( True
                               , ( "font-size"
-                                , toFontPixels (toFloat details.size)
+                                , toFontPixels actualFontSize
                                 )
                               )
                             , ( True
@@ -226,6 +212,11 @@ font details =
                                 , case details.weight of
                                     Internal.Font.Weight wght ->
                                         String.fromInt wght
+                                )
+                              )
+                            , ( True
+                              , ( "line-height"
+                                , String.fromFloat actualLineHeight
                                 )
                               )
                             , ( not (List.isEmpty details.variants)
@@ -258,8 +249,8 @@ variants variantList =
     Internal.style "font-feature-settings" (Internal.Font.renderVariants variantList "")
 
 
-listIfFirst : List ( Bool, a ) -> List a
-listIfFirst list =
+listIf : List ( Bool, a ) -> List a
+listIf list =
     List.filterMap
         (\( first, item ) ->
             if first then
@@ -271,7 +262,10 @@ listIfFirst list =
         list
 
 
-{-| Font sizes are always given as `px`.
+{-| Font sizes are always given as a web-pixel size.
+
+**Note:** Behind the scenes this is rendered as `rem` units, so that the font size can be adjusted by the user's browser settings.
+
 -}
 size : Int -> Attribute msg
 size i =
@@ -295,16 +289,7 @@ size i =
 {-| -}
 lineHeight : Float -> Attribute msg
 lineHeight height =
-    Internal.styleAndClass Flag.skip
-        { class =
-            let
-                offset =
-                    ((floor (height * 100) - 100) // 5) * 5
-            in
-            Style.classes.lineHeightPrefix ++ "-" ++ String.fromInt offset
-        , styleName = "line-height"
-        , styleVal = String.fromFloat height
-        }
+    Internal.style "line-height" (String.fromFloat height)
 
 
 {-| -}
@@ -448,13 +433,6 @@ extraBold =
 heavy : Weight
 heavy =
     Internal.Font.Weight 900
-
-
-{-| This will reset bold and italic.
--}
-unitalicized : Attribute msg
-unitalicized =
-    Internal.class Style.classes.textUnitalicized
 
 
 
