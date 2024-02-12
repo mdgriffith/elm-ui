@@ -6,6 +6,7 @@ import Html exposing (Html)
 import Theme
 import Ui
 import Ui.Font
+import Ui.Prose
 
 
 main : Html msg
