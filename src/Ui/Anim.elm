@@ -92,6 +92,7 @@ import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Internal.Teleport as Teleport
 import Internal.Teleport.Persistent as Persistent
+import InternalAnim.Css as Css
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Set
@@ -112,7 +113,8 @@ persistent group instance =
     --  attach a class and a message handler for the animation message
     -- we could also need to gather up any animateable state as well
     Two.teleport
-        { class = onRenderTrigger ++ " " ++ Teleport.persistentClass group instance
+        { trigger = onRenderTrigger
+        , class = Teleport.persistentClass group instance
         , style = []
         , data =
             Teleport.persistentId group instance
@@ -123,7 +125,8 @@ persistent group instance =
 onTimeline : Timeline state -> (state -> List Animated) -> Attribute msg
 onTimeline timeline fn =
     Two.teleport
-        { class = onRenderTrigger
+        { trigger = onRenderTrigger
+        , class = onRenderTrigger
         , style = []
         , data =
             Animator.css timeline (\state -> ( fn state, [] ))
@@ -240,7 +243,8 @@ transitionWithTrigger trigger dur attrs =
                     ":active"
     in
     Two.teleport
-        { class = triggerClass ++ " " ++ css.hash
+        { trigger = triggerClass
+        , class = css.hash
         , style = [ ( "transition", css.transition ) ]
         , data =
             css
@@ -270,13 +274,7 @@ transition dur attrs =
                     ( animated, [] )
                 )
     in
-    Two.teleport
-        { class = ""
-        , style = css.props
-        , data =
-            css
-                |> Teleport.encodeCss
-        }
+    Two.styleList css.props
 
 
 {-| -}
@@ -419,7 +417,8 @@ onTimelineWith :
     -> Attribute msg
 onTimelineWith timeline fn =
     Two.teleport
-        { class = onRenderTrigger
+        { trigger = onRenderTrigger
+        , class = onRenderTrigger
         , style = []
         , data =
             Animator.css timeline fn
@@ -430,19 +429,28 @@ onTimelineWith timeline fn =
 {-| -}
 keyframes : List Step -> Attribute msg
 keyframes steps =
+    let
+        css =
+            Animator.keyframes steps
+                |> Debug.log "STEEEEPS"
+                |> Animator.toCss
+                |> Debug.log "KEYFRAAAAAMES"
+    in
     Two.teleport
-        { class = onRenderTrigger
+        { trigger = onRenderTrigger
+        , class = css.hash
         , style = []
         , data =
-            Animator.css
-                (Animator.Timeline.init []
-                    |> Animator.Timeline.to (Animator.ms 0) steps
-                    |> Animator.Timeline.update (Time.millisToPosix 1)
-                    |> Animator.Timeline.update (Time.millisToPosix 2)
-                )
-                (\mySteps ->
-                    ( [], mySteps )
-                )
+            -- Animator.css
+            --     (Animator.Timeline.init []
+            --         |> Animator.Timeline.to (Animator.ms 0) steps
+            --         |> Animator.Timeline.update (Time.millisToPosix 1)
+            --         |> Animator.Timeline.update (Time.millisToPosix 2)
+            --     )
+            --     (\mySteps ->
+            --         ( [], mySteps )
+            --     )
+            css
                 |> Teleport.encodeCss
         }
 
@@ -451,7 +459,8 @@ keyframes steps =
 hoveredWith : List Step -> Attribute msg
 hoveredWith steps =
     Two.teleport
-        { class = onHoverTrigger
+        { trigger = onHoverTrigger
+        , class = onHoverTrigger
         , style = []
         , data =
             Animator.css
@@ -463,6 +472,7 @@ hoveredWith steps =
                 (\mySteps ->
                     ( [], mySteps )
                 )
+                |> Debug.log "HOVERED CSS"
                 |> Teleport.encodeCss
         }
 
@@ -471,7 +481,8 @@ hoveredWith steps =
 focusedWith : List Step -> Attribute msg
 focusedWith steps =
     Two.teleport
-        { class = onFocusTrigger
+        { trigger = onFocusTrigger
+        , class = onFocusTrigger
         , style = []
         , data =
             Animator.css
@@ -491,7 +502,8 @@ focusedWith steps =
 pressedWith : List Step -> Attribute msg
 pressedWith steps =
     Two.teleport
-        { class = onActiveTrigger
+        { trigger = onActiveTrigger
+        , class = onActiveTrigger
         , style = []
         , data =
             Animator.css

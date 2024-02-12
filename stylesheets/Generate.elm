@@ -143,6 +143,17 @@ classes =
     , stickyTop = "stick-top"
     , stickyLeft = "stick-left"
     , stickyBottom = "stick-bottom"
+
+    -- animation triggers
+    , onHovered = "on-hovered"
+    , onFocused = "on-focused"
+    , onFocusedWithin = "on-focused-within"
+    , onPressed = "on-pressed"
+    , onRendered = "on-rendered"
+    , onDismout = "on-dismount"
+
+    --
+    , trigger = "ui-trigger"
     }
 
 
@@ -243,21 +254,13 @@ type Color
 {- RESETS -}
 
 
+overrides : String
 overrides =
-    """@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {"""
-        ++ dot classes.any
-        ++ dot classes.row
-        ++ " > "
-        ++ dot classes.any
-        ++ " { flex-basis: auto !important; } "
-        ++ "}"
-        ++ inputTextReset
+    inputTextReset
         ++ sliderReset
         ++ trackReset
         ++ thumbReset
         ++ explainer
-        ++ debug
-        ++ transitionPlaceholders
         ++ animationTriggerKeyframes
 
 
@@ -267,57 +270,52 @@ NOT to actually animate anything.
 They need separate names because we want to know what event occurred.
 -}
 animationTriggerKeyframes =
-    """
-@keyframes on-hovered { from {} to {} }
+    """@keyframes on-hovered { from {} to {} }
 @keyframes on-focused { from {} to {} }
 @keyframes on-pressed { from {} to {} }
 @keyframes on-rendered { from {} to {} }
-@keyframes on-dismount { from {} to {} }
-"""
+@keyframes on-dismount { from {} to {} }"""
 
 
 inputTextReset =
-    """
-input[type="search"],
+    """input[type="search"],
 input[type="search"]::-webkit-search-decoration,
 input[type="search"]::-webkit-search-cancel-button,
 input[type="search"]::-webkit-search-results-button,
 input[type="search"]::-webkit-search-results-decoration {
   -webkit-appearance:none;
-}
-"""
+}"""
 
 
 sliderReset =
-    """
-    input[type=range] {
-      -webkit-appearance: none;
-      background: transparent;
-      position:absolute;
-      left:0;
-      top:0;
-      z-index:10;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-    }
+    """input[type=range] {
+    -webkit-appearance: none;
+    background: transparent;
+    position:absolute;
+    left:0;
+    top:0;
+    z-index:10;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+}
     """
 
 
 trackReset =
     """
-    input[type=range]::-moz-range-track {
-        background: transparent;
-        cursor: pointer;
-    }
-    input[type=range]::-ms-track {
-        background: transparent;
-        cursor: pointer;
-    }
-    input[type=range]::-webkit-slider-runnable-track {
-        background: transparent;
-        cursor: pointer;
-    }
+input[type=range]::-moz-range-track {
+    background: transparent;
+    cursor: pointer;
+}
+input[type=range]::-ms-track {
+    background: transparent;
+    cursor: pointer;
+}
+input[type=range]::-webkit-slider-runnable-track {
+    background: transparent;
+    cursor: pointer;
+}
     """
 
 
@@ -356,78 +354,20 @@ thumbReset =
     ""
 
 
-debug =
-    """
-.debug-box {
-    display:fixed;
-    outline: 1px solid red !important;
-}
-
-
-"""
+explainerRules =
+    Class ".explain"
+        [ Prop "outline" "6px solid rgb(174, 121, 15) !important"
+        , Child (dot classes.any)
+            [ Prop "outline" "4px dashed rgb(0, 151, 167) !important"
+            ]
+        , AllChildren "*"
+            [ Prop "animation" "show-redraw 0.4s ease"
+            ]
+        ]
 
 
 explainer =
-    """
-.explain {
-    outline: 6px solid rgb(174, 121, 15) !important;
-}
-.explain > .""" ++ classes.any ++ """ {
-    outline: 4px dashed rgb(0, 151, 167) !important;
-}
-
-.ctr {
-    outline: none !important;
-}
-.explain > .ctr > .""" ++ classes.any ++ """ {
-    outline: 4px dashed rgb(0, 151, 167) !important;
-}
-
-
-.explain * {
-    animation: show-redraw 0.4s ease;
-}
-
-
-@keyframes show-redraw {
-    0% {
-       background-color:red;
-    }
-}
-
-"""
-
-
-
-{-
-
--}
-
-
-transitionPlaceholders =
-    """
-.ui-placeholder {
-    visibility: hidden;
-    border: 0px !important;
-}
-.explain > .ui-placeholder {
-    border: 0px !important;
-}
-.ui-movable {
-    position: absolute !important;
-    visibility: visible;
-    margin:0px !important;
-    left:0px;
-    top:0px;
-    width:100%;
-    height:100%;
-}
-.ui-movable.on-rendered {
-    animation: none !important;
-}
-
-
-"""
+    """@keyframes show-redraw { 0% { background-color:red; }}"""
 
 
 
@@ -628,6 +568,7 @@ baseSheet =
     , Class (dot classes.any ++ ":focus")
         [ Prop "outline" "none"
         ]
+    , explainerRules
     , Class (dot classes.root)
         [ Prop "width" "100%"
         , Prop "height" "auto"
@@ -1403,23 +1344,62 @@ baseSheet =
     ]
 
 
+{-| This is the main mechanism to "teleport" CSS to the top of the DOM.
+
+1.  Attach an `on-hovered` class to an element (Let's call this the `primary` element)
+2.  Also embed a "behind-content" element as the first child of the `primary` element.
+    Let's call this the `trigger` element.
+3.  When a pseudo class is applied to the `primary` element, we apply an animation to the `trigger` element.
+      - We also attach arbitrary data to the `trigger` element.
+4.  We listen for animation events globally and use the decoder to extract information we need to render the CSS.
+5.  We then use the information to render the CSS to the top of the DOM.
+    We ALSO use this information to remove the `animation` trigger.
+
+```
+    -- The DOM element
+    <div class= "on-hovered css-hash-abc-123">
+        <div class="hover-trigger trigger-css-hash-abc-123" data-elm-ui={arbitraryCSSAsJson}></div>
+        ...arbitrary content
+    </div>
+
+    -- Initial Static CSS
+    .on-hovered:hover > .ui-trigger { animation: on-hovered 1ms;}
+
+    -- The animation is triggered, and css is rendered that uses css-hash-abc-123
+    .css-hash-abc-123:hover {..whatever}
+
+    -- And we also disable the original animation.
+    .on-hovered:hover > .ui-trigger.trigger-css-hash-abc-123 { animation: none }
+```
+
+-}
+animationTriggers : List Rule
 animationTriggers =
-    [ Descriptor ".on-hovered:hover"
+    let
+        toTrigger baseClass props =
+            Descriptor baseClass
+                [ Child "*"
+                    [ Child (dot classes.trigger)
+                        props
+                    ]
+                ]
+    in
+    [ toTrigger ".on-hovered:hover"
         [ Prop "animation" "on-hovered 1ms"
         ]
-    , Descriptor ".on-focused:focus"
+    , toTrigger ".on-focused:focus"
         [ Prop "animation" "on-focused 1ms"
         ]
-    , Descriptor ".on-focused-within:focus-within"
+    , toTrigger ".on-focused-within:focus-within"
         [ Prop "animation" "on-focused 1ms"
         ]
-    , Descriptor ".on-pressed:active"
+    , toTrigger ".on-pressed:active"
         [ Prop "animation" "on-pressed 1ms"
         ]
-    , Descriptor ".on-rendered"
+    , toTrigger ".on-rendered"
         [ Prop "animation" "on-rendered 1ms"
         ]
-    , Descriptor ".on-dismount"
+    , toTrigger ".on-dismount"
         --  A years worth of seconds :imp-smiling:
         [ Prop "animation" "on-dismount 31449600s"
         ]

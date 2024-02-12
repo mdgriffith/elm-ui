@@ -284,9 +284,15 @@ htmlAttribute a =
 
 
 {-| -}
-map : (msg -> msg1) -> Element msg -> Element msg1
+map : (a -> b) -> Element a -> Element b
 map =
     Two.map
+
+
+{-| -}
+mapAttribute : (a -> b) -> Attribute a -> Attribute b
+mapAttribute =
+    Two.mapAttr
 
 
 {-| -}
@@ -804,7 +810,6 @@ width len =
                                 else
                                     []
                         , nearby = Nothing
-                        , teleport = Nothing
                         }
                 }
 
@@ -884,7 +889,6 @@ height len =
                                 else
                                     []
                         , nearby = Nothing
-                        , teleport = Nothing
                         }
                 }
 
@@ -1160,7 +1164,6 @@ spacing x =
                                 )
                             ]
                 , nearby = Nothing
-                , teleport = Nothing
                 }
         }
 
@@ -1197,7 +1200,6 @@ spacingWith { horizontal, vertical } =
                                 )
                             ]
                 , nearby = Nothing
-                , teleport = Nothing
                 }
         }
 

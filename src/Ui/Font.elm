@@ -229,7 +229,6 @@ font details =
                               )
                             ]
                 , nearby = Nothing
-                , teleport = Nothing
                 }
         }
 
