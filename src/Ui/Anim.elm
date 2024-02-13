@@ -432,9 +432,7 @@ keyframes steps =
     let
         css =
             Animator.keyframes steps
-                |> Debug.log "STEEEEPS"
                 |> Animator.toCss
-                |> Debug.log "KEYFRAAAAAMES"
     in
     Two.teleport
         { trigger = onRenderTrigger
@@ -472,7 +470,6 @@ hoveredWith steps =
                 (\mySteps ->
                     ( [], mySteps )
                 )
-                |> Debug.log "HOVERED CSS"
                 |> Teleport.encodeCss
         }
 
