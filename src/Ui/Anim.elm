@@ -124,13 +124,15 @@ persistent group instance =
 {-| -}
 onTimeline : Timeline state -> (state -> List Animated) -> Attribute msg
 onTimeline timeline fn =
+    let
+        css =
+            Animator.css timeline (\state -> ( fn state, [] ))
+    in
     Two.teleport
         { trigger = onRenderTrigger
-        , class = onRenderTrigger
+        , class = css.hash
         , style = []
-        , data =
-            Animator.css timeline (\state -> ( fn state, [] ))
-                |> Teleport.encodeCss
+        , data = Teleport.encodeCss css
         }
 
 
@@ -438,81 +440,55 @@ keyframes steps =
         { trigger = onRenderTrigger
         , class = css.hash
         , style = []
-        , data =
-            -- Animator.css
-            --     (Animator.Timeline.init []
-            --         |> Animator.Timeline.to (Animator.ms 0) steps
-            --         |> Animator.Timeline.update (Time.millisToPosix 1)
-            --         |> Animator.Timeline.update (Time.millisToPosix 2)
-            --     )
-            --     (\mySteps ->
-            --         ( [], mySteps )
-            --     )
-            css
-                |> Teleport.encodeCss
+        , data = Teleport.encodeCss css
         }
 
 
 {-| -}
 hoveredWith : List Step -> Attribute msg
 hoveredWith steps =
+    let
+        css =
+            Animator.keyframes steps
+                |> Animator.toCss
+    in
     Two.teleport
         { trigger = onHoverTrigger
-        , class = onHoverTrigger
+        , class = css.hash
         , style = []
-        , data =
-            Animator.css
-                (Animator.Timeline.init []
-                    |> Animator.Timeline.to (Animator.ms 0) steps
-                    |> Animator.Timeline.update (Time.millisToPosix 1)
-                    |> Animator.Timeline.update (Time.millisToPosix 2)
-                )
-                (\mySteps ->
-                    ( [], mySteps )
-                )
-                |> Teleport.encodeCss
+        , data = Teleport.encodeCss css
         }
 
 
 {-| -}
 focusedWith : List Step -> Attribute msg
 focusedWith steps =
+    let
+        css =
+            Animator.keyframes steps
+                |> Animator.toCss
+    in
     Two.teleport
         { trigger = onFocusTrigger
-        , class = onFocusTrigger
+        , class = css.hash
         , style = []
-        , data =
-            Animator.css
-                (Animator.Timeline.init []
-                    |> Animator.Timeline.to (Animator.ms 0) steps
-                    |> Animator.Timeline.update (Time.millisToPosix 1)
-                    |> Animator.Timeline.update (Time.millisToPosix 2)
-                )
-                (\mySteps ->
-                    ( [], mySteps )
-                )
-                |> Teleport.encodeCss
+        , data = Teleport.encodeCss css
         }
 
 
 {-| -}
 pressedWith : List Step -> Attribute msg
 pressedWith steps =
+    let
+        css =
+            Animator.keyframes steps
+                |> Animator.toCss
+    in
     Two.teleport
         { trigger = onActiveTrigger
-        , class = onActiveTrigger
+        , class = css.hash
         , style = []
-        , data =
-            Animator.css
-                (Animator.Timeline.init []
-                    |> Animator.Timeline.to (Animator.ms 0) steps
-                    |> Animator.Timeline.update (Time.millisToPosix 1)
-                    |> Animator.Timeline.update (Time.millisToPosix 2)
-                )
-                (\mySteps ->
-                    ( [], mySteps )
-                )
-                |> Teleport.encodeCss
+        , data = Teleport.encodeCss css
         }
 
 
