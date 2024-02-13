@@ -24,7 +24,7 @@ module Ui exposing
     , image
     , Color, rgb, rgba, palette
     , above, below, onRight, onLeft, inFront, behindContent
-    , map
+    , map, mapAttribute
     , html, htmlAttribute
     )
 
@@ -208,7 +208,7 @@ This is very useful for things like dropdown menus or tooltips.
 
 # Mapping
 
-@docs map
+@docs map, mapAttribute
 
 
 # Compatibility
