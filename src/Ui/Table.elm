@@ -355,7 +355,7 @@ gridTemplate state cols str =
                                             gridTemplate state remain (str ++ " 1fr")
 
                                         else
-                                            gridTemplate state remain (str ++ " min-content")
+                                            gridTemplate state remain (str ++ " minmax(min-content, max-content)")
 
                                     Just max ->
                                         if w.fill then
