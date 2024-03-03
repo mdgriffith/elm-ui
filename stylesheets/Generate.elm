@@ -783,18 +783,19 @@ baseSheet =
         , Descriptor (dot classes.fontAdjusted)
             [ Prop "font-size" "calc(1em * var(--font-size-factor))"
             ]
-        , Descriptor (dot classes.text)
-            [ Descriptor "::after"
-                [ Prop "content" "\" \""
-                , Prop "margin-top" "calc((1lh - 1cap) / -2)"
-                , Prop "display" "table"
-                ]
-            , Descriptor "::before"
-                [ Prop "content" "\" \""
-                , Prop "margin-bottom" "calc((1lh - 1cap) / -2)"
-                , Prop "display" "table"
-                ]
-            ]
+
+        -- , Descriptor (dot classes.text)
+        --     [ Descriptor "::after"
+        --         [ Prop "content" "\" \""
+        --         , Prop "margin-top" "calc((1lh - 1cap) / -2)"
+        --         , Prop "display" "table"
+        --         ]
+        --     , Descriptor "::before"
+        --         [ Prop "content" "\" \""
+        --         , Prop "margin-bottom" "calc((1lh - 1cap) / -2)"
+        --         , Prop "display" "table"
+        --         ]
+        --     ]
         , Descriptor (dot classes.ellipses)
             [ AllChildren (dot classes.text)
                 [ Prop "text-overflow" "ellipsis"
@@ -803,16 +804,16 @@ baseSheet =
 
                 -- If we're clipping ellips, we adjust the vaccum so that
                 -- we're exactly 1lh
-                , Descriptor "::after"
-                    [ Prop "content" "\" \""
-                    , Prop "margin-top" "calc((1lh - 1cap) / -2)"
-                    , Prop "display" "table"
-                    ]
-                , Descriptor "::before"
-                    [ Prop "content" "\" \""
-                    , Prop "margin-bottom" "calc((1lh - 1cap) / -2)"
-                    , Prop "display" "table"
-                    ]
+                -- , Descriptor "::after"
+                --     [ Prop "content" "\" \""
+                --     , Prop "margin-top" "calc((1lh - 1cap) / -2)"
+                --     , Prop "display" "table"
+                --     ]
+                -- , Descriptor "::before"
+                --     [ Prop "content" "\" \""
+                --     , Prop "margin-bottom" "calc((1lh - 1cap) / -2)"
+                --     , Prop "display" "table"
+                --     ]
                 ]
             ]
         , Descriptor (dot classes.noTextSelection)
