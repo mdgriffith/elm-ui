@@ -494,6 +494,8 @@ type Node
     | NodeAsNumberedList
     | NodeAsBulletedList
     | NodeAsListItem
+      -- webcomponents
+    | NodeAs String
 
 
 type ResponsiveInt
@@ -1150,6 +1152,9 @@ element node layout attrs children =
 
                     NodeAsListItem ->
                         Html.li styleAttrs finalChildren
+
+                    NodeAs nodeName ->
+                        Html.node nodeName styleAttrs finalChildren
         )
 
 
@@ -1333,6 +1338,9 @@ elementKeyed node layout attrs children =
 
                     NodeAsListItem ->
                         Html.Keyed.node "li" styleAttrs finalChildren
+
+                    NodeAs nodeName ->
+                        Html.Keyed.node nodeName styleAttrs finalChildren
         )
 
 

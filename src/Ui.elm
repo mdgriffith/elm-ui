@@ -25,7 +25,7 @@ module Ui exposing
     , Color, rgb, rgba, palette
     , above, below, onRight, onLeft, inFront, behindContent
     , map, mapAttribute
-    , html, htmlAttribute
+    , html, htmlAttribute, node
     )
 
 {-|
@@ -213,7 +213,7 @@ This is very useful for things like dropdown menus or tooltips.
 
 # Compatibility
 
-@docs html, htmlAttribute
+@docs html, htmlAttribute, node
 
 -}
 
@@ -330,7 +330,7 @@ So, two elements, one with `width (portion 2)` and one with `width (portion 3)`.
 -}
 portion : Int -> Length
 portion i =
-    Fill (min 1 i)
+    Fill (max 1 i)
 
 
 {-| This is your top level node where you can turn `Element` into `Html`.
@@ -409,6 +409,15 @@ none =
 text : String -> Element msg
 text =
     Two.text
+
+
+{-| -}
+node : String -> List (Attribute msg) -> Element msg -> Element msg
+node nodeName attrs child =
+    Two.element (Two.NodeAs nodeName)
+        Two.AsEl
+        attrs
+        [ child ]
 
 
 {-| The basic building block of your layout.
@@ -805,7 +814,7 @@ width len =
                         , styles =
                             \inheritance _ ->
                                 if BitField.has Inheritance.isRow inheritance then
-                                    [ Tuple.pair "flex-grow" (String.fromInt (portionSize * 100000)) ]
+                                    [ Tuple.pair "flex-grow" (String.fromInt portionSize) ]
 
                                 else
                                     []
@@ -884,7 +893,7 @@ height len =
                         , styles =
                             \inheritance _ ->
                                 if BitField.has Inheritance.isColumn inheritance then
-                                    [ Tuple.pair "flex-grow" (String.fromInt (portionSize * 100000)) ]
+                                    [ Tuple.pair "flex-grow" (String.fromInt portionSize) ]
 
                                 else
                                     []
