@@ -708,7 +708,7 @@ textHelper textInput attrs textOptions =
                  ]
                     ++ List.filter (Two.ifFlag isWidthOrHeight) withDefaults
                 )
-                [ Ui.el (List.filter (Two.ifFlag isWidthOrHeight >> not) onlyStyleAttrs) <|
+                [ Ui.el (Ui.height Ui.fill :: Ui.width Ui.fill :: List.filter (Two.ifFlag isWidthOrHeight >> not) onlyStyleAttrs) <|
                     -- We append a non-breaking space to the end of the content so that newlines don't get chomped.
                     if textOptions.text == "" then
                         -- Without this, firefox will make the text area lose focus
