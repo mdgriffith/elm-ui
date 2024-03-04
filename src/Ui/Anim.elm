@@ -510,14 +510,12 @@ layout opts state attrs els =
     Two.renderLayout
         { options =
             case opts.breakpoints of
-                Just breakpoints ->
-                    Two.ResponsiveBreakpoints
-                        (Two.toMediaQuery breakpoints)
-                        :: opts.options
+                Just (Responsive breakpoints) ->
+                    breakpoints.breakpoints :: opts.options
 
                 Nothing ->
                     opts.options
-        , includeStatisStylesheet = True
+        , includeStaticStylesheet = True
         }
         state
         (onAnimationStart opts.toMsg

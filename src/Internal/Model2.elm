@@ -514,7 +514,7 @@ type Location
 
 type Option
     = FocusStyleOption FocusStyle
-    | ResponsiveBreakpoints String
+    | ResponsiveBreakpoints (List Int)
     | FontAdjustment
         { family : String
         , offset : Float
@@ -918,13 +918,13 @@ type alias Details =
 
 renderLayout :
     { options : List Option
-    , includeStatisStylesheet : Bool
+    , includeStaticStylesheet : Bool
     }
     -> State
     -> List (Attribute msg)
     -> Element msg
     -> Html.Html msg
-renderLayout { options, includeStatisStylesheet } (State state) attrs content =
+renderLayout { options, includeStaticStylesheet } (State state) attrs content =
     let
         rendered =
             element NodeAsDiv
@@ -936,7 +936,7 @@ renderLayout { options, includeStatisStylesheet } (State state) attrs content =
                             []
                             [ ( "options", Html.Lazy.lazy renderOptions options )
                             , ( "static"
-                              , if includeStatisStylesheet then
+                              , if includeStaticStylesheet then
                                     staticStyles
 
                                 else
@@ -1973,6 +1973,7 @@ type Breakpoints label
         { default : label
         , breaks : List ( Int, label )
         , total : Int
+        , breakpoints : Option
         }
 
 
@@ -2083,36 +2084,38 @@ type alias ResponsiveTransition =
 {- Rendering -}
 
 
-toMediaQuery : Breakpoints label -> String
-toMediaQuery (Responsive details) =
-    case details.breaks of
+toBreakpoints :
+    { default : label
+    , breaks : List ( Int, label )
+    , total : Int
+    }
+    -> Breakpoints label
+toBreakpoints details =
+    Responsive
+        { default = details.default
+        , breaks = details.breaks
+        , total = details.total
+        , breakpoints = ResponsiveBreakpoints (List.map Tuple.first details.breaks)
+        }
+
+
+toMediaQuery : List Int -> Html.Html msg
+toMediaQuery breaks =
+    case breaks of
         [] ->
-            ""
+            Html.text ""
 
-        ( lowerBound, _ ) :: remain ->
-            ":root {"
-                ++ toRoot details.breaks
-                    1
-                    (renderResponsiveCssVars 0 0 lowerBound)
-                ++ " }"
-                ++ toBoundedMediaQuery details.breaks
-                    1
-                    (maxWidthMediaQuery 0 lowerBound)
-
-
-renderRoot : Int -> String
-renderRoot breakpointCounts =
-    ":root {" ++ renderRootItem breakpointCounts "" ++ "}"
-
-
-renderRootItem : Int -> String -> String
-renderRootItem count rendered =
-    if count <= 0 then
-        rendered
-
-    else
-        renderRootItem (count - 1)
-            (rendered ++ "--ui-bp-" ++ String.fromInt (count - 1) ++ ": 0;")
+        lowerBound :: remain ->
+            Html.text
+                (":root {"
+                    ++ toRoot breaks
+                        1
+                        (renderResponsiveCssVars 0 0 lowerBound)
+                    ++ " }"
+                    ++ toBoundedMediaQuery breaks
+                        1
+                        (maxWidthMediaQuery 0 lowerBound)
+                )
 
 
 renderResponsiveCssVars : Int -> Int -> Int -> String
@@ -2130,31 +2133,31 @@ renderResponsiveCssVars i lower upper =
            )
 
 
-toRoot : List ( Int, label ) -> Int -> String -> String
+toRoot : List Int -> Int -> String -> String
 toRoot breaks i rendered =
     case breaks of
         [] ->
             rendered
 
-        [ ( upper, _ ) ] ->
+        [ upper ] ->
             rendered ++ renderResponsiveCssVars i upper (upper + 1000)
 
-        ( lower, _ ) :: ((( upper, _ ) :: _) as tail) ->
+        lower :: ((upper :: _) as tail) ->
             toRoot tail
                 (i + 1)
                 (rendered ++ renderResponsiveCssVars i lower upper)
 
 
-toBoundedMediaQuery : List ( Int, label ) -> Int -> String -> String
+toBoundedMediaQuery : List Int -> Int -> String -> String
 toBoundedMediaQuery breaks i rendered =
     case breaks of
         [] ->
             rendered
 
-        [ ( upper, _ ) ] ->
+        [ upper ] ->
             rendered ++ minWidthMediaQuery i upper
 
-        ( lower, _ ) :: ((( upper, _ ) :: _) as tail) ->
+        lower :: ((upper :: _) as tail) ->
             toBoundedMediaQuery tail
                 (i + 1)
                 (rendered ++ renderBoundedMediaQuery upper lower i)
@@ -2197,39 +2200,46 @@ renderOptions : List Option -> Html.Html msg
 renderOptions opts =
     Html.node "style"
         [ Attr.id "elm-ui-responsiveness" ]
-        [ Html.text (renderOptionItem { breakpoints = False, focus = False } "" opts) ]
+        (renderOptionItem { breakpoints = False, focus = False } [] opts)
 
 
-renderOptionItem alreadyRendered renderedStr opts =
+renderOptionItem :
+    { breakpoints : Bool
+    , focus : Bool
+    }
+    -> List (Html.Html msg)
+    -> List Option
+    -> List (Html.Html msg)
+renderOptionItem alreadyRendered renderedNodes opts =
     case opts of
         [] ->
-            renderedStr
+            renderedNodes
 
         (FocusStyleOption focus) :: remain ->
             if alreadyRendered.focus then
                 renderOptionItem alreadyRendered
-                    renderedStr
+                    renderedNodes
                     remain
 
             else
                 renderOptionItem { alreadyRendered | focus = True }
-                    (renderedStr ++ renderFocusStyle focus)
+                    (Html.Lazy.lazy renderFocusStyle focus :: renderedNodes)
                     remain
 
-        (ResponsiveBreakpoints mediaQueryStr) :: remain ->
+        (ResponsiveBreakpoints breakpoints) :: remain ->
             if alreadyRendered.breakpoints then
                 renderOptionItem alreadyRendered
-                    renderedStr
+                    renderedNodes
                     remain
 
             else
                 renderOptionItem { alreadyRendered | breakpoints = True }
-                    (renderedStr ++ mediaQueryStr)
+                    (Html.Lazy.lazy toMediaQuery breakpoints :: renderedNodes)
                     remain
 
         (FontAdjustment adjustment) :: remain ->
             renderOptionItem alreadyRendered
-                (renderedStr ++ renderFontAdjustment adjustment)
+                (Html.text (renderFontAdjustment adjustment) :: renderedNodes)
                 remain
 
 
@@ -2297,9 +2307,7 @@ dot str =
     "." ++ str
 
 
-renderFocusStyle :
-    FocusStyle
-    -> String
+renderFocusStyle : FocusStyle -> Html.Html msg
 renderFocusStyle focus =
     let
         focusProps =
@@ -2329,12 +2337,14 @@ renderFocusStyle focus =
                         focus.shadow
                     )
     in
-    String.append
+    Html.text
         (String.append
-            (dot Style.classes.focusedWithin ++ ":focus-within")
-            focusProps
-        )
-        (String.append
-            (dot Style.classes.any ++ ":focus .focusable, " ++ dot Style.classes.any ++ ".focusable:focus")
-            focusProps
+            (String.append
+                (dot Style.classes.focusedWithin ++ ":focus-within")
+                focusProps
+            )
+            (String.append
+                (dot Style.classes.any ++ ":focus .focusable, " ++ dot Style.classes.any ++ ".focusable:focus")
+                focusProps
+            )
         )

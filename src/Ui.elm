@@ -339,7 +339,7 @@ layout : List (Attribute msg) -> Element msg -> Html msg
 layout attrs content =
     Two.renderLayout
         { options = []
-        , includeStatisStylesheet = True
+        , includeStaticStylesheet = True
         }
         emptyState
         attrs
@@ -364,7 +364,7 @@ embed : List (Attribute msg) -> Element msg -> Html msg
 embed attrs content =
     Two.renderLayout
         { options = []
-        , includeStatisStylesheet = False
+        , includeStaticStylesheet = False
         }
         emptyState
         attrs

@@ -168,7 +168,7 @@ orBelow label resp =
 {-| -}
 breakpoints : label -> List ( Int, label ) -> Breakpoints label
 breakpoints def breaks =
-    Internal.Responsive
+    Internal.toBreakpoints
         { default = def
         , breaks = List.sortBy Tuple.first breaks
         , total = List.length breaks
