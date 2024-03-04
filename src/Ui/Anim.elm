@@ -510,7 +510,7 @@ layout opts state attrs els =
     Two.renderLayout
         { options =
             case opts.breakpoints of
-                Just (Responsive breakpoints) ->
+                Just (Two.Responsive breakpoints) ->
                     breakpoints.breakpoints :: opts.options
 
                 Nothing ->
