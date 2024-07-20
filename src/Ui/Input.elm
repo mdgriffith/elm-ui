@@ -776,41 +776,11 @@ textHelper textInput attrs textOptions =
             let
                 padding =
                     List.filter (Two.ifFlag (BitField.fieldEqual Flag.padding)) withDefaults
-
-                inputElement =
-                    Two.element
-                        Two.NodeAsTextArea
-                        Two.AsEl
-                        ([ Two.class classes.inputMultiline
-                         , Two.style "line-height" "inherit"
-                         , Two.style "grid-column" "1 / 2"
-                         , Two.style "grid-row" "1 / 2"
-                         , Two.style "resize" "none"
-                         , Two.style "overflow" "hidden"
-                         , Two.attribute (Html.Attributes.value textOptions.text)
-                         , Two.attribute (Html.Events.onInput textOptions.onChange)
-                         , labelAttribute textOptions.label
-                         , Two.attribute (Html.Attributes.spellcheck textInput.spellchecked)
-                         , case textInput.autofill of
-                            Nothing ->
-                                Two.noAttr
-
-                            Just fill ->
-                                Two.attribute (Html.Attributes.attribute "autocomplete" fill)
-                         , case textOptions.placeholder of
-                            Nothing ->
-                                Two.noAttr
-
-                            Just placeholder ->
-                                Two.attribute (Html.Attributes.placeholder placeholder)
-                         ]
-                            ++ padding
-                        )
-                        []
             in
-            -- In order to get growing text areas, we have a grid element and then layer two elements on top of eahc other.
+            -- In order to get growing text areas, we have a grid element and then layer two elements on top of each other.
             --
-            Two.element Two.NodeAsDiv
+            Two.element
+                Two.NodeAsDiv
                 Two.AsEl
                 ([ Ui.width Ui.fill
                  , Two.class classes.focusedWithin
@@ -818,7 +788,7 @@ textHelper textInput attrs textOptions =
                  , Two.style "white-space" "pre-wrap"
                  , Two.style "display" "grid"
                  ]
-                    ++ withDefaults
+                    ++ defaultTextBoxStyle2
                     ++ [ Ui.padding 0 ]
                 )
                 [ Ui.el
@@ -836,7 +806,36 @@ textHelper textInput attrs textOptions =
 
                     else
                         Ui.text (textOptions.text ++ "\u{00A0}")
-                , inputElement
+                , Two.element
+                    Two.NodeAsTextArea
+                    Two.AsEl
+                    ([ Two.class classes.inputMultiline
+                     , Two.style "line-height" "inherit"
+                     , Two.style "grid-column" "1 / 2"
+                     , Two.style "grid-row" "1 / 2"
+                     , Two.style "resize" "none"
+                     , Two.style "overflow" "hidden"
+                     , Two.attribute (Html.Attributes.value textOptions.text)
+                     , Two.attribute (Html.Events.onInput textOptions.onChange)
+                     , labelAttribute textOptions.label
+                     , Two.attribute (Html.Attributes.spellcheck textInput.spellchecked)
+                     , case textInput.autofill of
+                        Nothing ->
+                            Two.noAttr
+
+                        Just fill ->
+                            Two.attribute (Html.Attributes.attribute "autocomplete" fill)
+                     , case textOptions.placeholder of
+                        Nothing ->
+                            Two.noAttr
+
+                        Just placeholder ->
+                            Two.attribute (Html.Attributes.placeholder placeholder)
+                     ]
+                        ++ padding
+                        ++ attrs
+                    )
+                    []
                 ]
 
         TextInputNode inputType ->
