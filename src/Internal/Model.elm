@@ -2941,7 +2941,7 @@ renderStyleRule options rule maybePseudo =
                                     String.fromInt i ++ "fr"
 
                                 ( Just minSize, Nothing ) ->
-                                    "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt i ++ "fr" ++ "fr)"
+                                    "minmax(" ++ String.fromInt minSize ++ "px, " ++ String.fromInt i ++ "fr)"
 
                                 ( Nothing, Just maxSize ) ->
                                     "minmax(max-content, " ++ String.fromInt maxSize ++ "px)"
