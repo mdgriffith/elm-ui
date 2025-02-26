@@ -2245,7 +2245,7 @@ renderFocusStyle focus =
             ]
         )
     , Style
-        ((Internal.Style.dot classes.any ++ ":focus .focusable, ")
+        (("label" ++ Internal.Style.dot classes.any ++ ":focus .focusable, ")
             ++ (Internal.Style.dot classes.any ++ ".focusable:focus, ")
             ++ (".ui-slide-bar:focus + " ++ Internal.Style.dot classes.any ++ " .focusable-thumb")
         )
