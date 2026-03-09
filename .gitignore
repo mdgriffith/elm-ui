@@ -33,3 +33,5 @@ stylesheets/generated/dev*
 src/Animator
 src/InternalAnim
 src/Animator.elm
+
+.DS_Store

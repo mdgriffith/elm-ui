@@ -182,7 +182,7 @@ Where there are two elements on the left, one on the right, and one in the cente
 
 In order to use attributes like `Font.color` and `Background.color`, you'll need to make some colors!
 
-@docs Color, rgb, rgba, palette
+@docs Color, rgb, rgba
 
 
 # Nearby Elements
@@ -1325,3 +1325,4 @@ grab =
 grabbing : Attribute msg
 grabbing =
     Two.class Style.classes.cursorGrabbing
+

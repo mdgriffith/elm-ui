@@ -16,7 +16,8 @@
     "docs": "elm make --docs docs.json",
     "watch-stylesheet": "node stylesheets/build.js --watch",
     "review": "elm-review src/Internal/Model2.elm",
-    "render-test": "bash tests-rendering/render.sh"
+    "render-test": "bash tests-rendering/render.sh",
+    "anim:copy": "cp -R /Users/griff/projects/elm-animator/src/* /Users/griff/projects/elm-ui/src/"
   },
   "repository": {
     "type": "git",
