@@ -1,7 +1,7 @@
 module Internal.Teleport exposing
     ( persistentClass, persistentId
     , encodeParentTrigger, encodeChildReaction
-    , Box, CssAnimation, Data(..), Event, ParentTriggerDetails, Trigger(..), decode, encodeCss, reactionPropertyName, stringToTrigger
+    , Box, CssAnimation, Data(..), Event, ParentTriggerDetails, Trigger(..), decode, encodeCss, encodeFocusOnHover, reactionPropertyName, stringToTrigger
     )
 
 {-| This is data that is teleported to the central state.
@@ -84,6 +84,14 @@ encodeChildReaction triggerPseudoclass identifierClass keyframeHash css =
     encodeCss triggerPseudoclass keyframeHash css
 
 
+encodeFocusOnHover : String -> Encode.Value
+encodeFocusOnHover htmlId =
+    Encode.object
+        [ ( "type", Encode.string "focusOnHover" )
+        , ( "id", Encode.string htmlId )
+        ]
+
+
 
 -- DECODER
 
@@ -91,6 +99,7 @@ encodeChildReaction triggerPseudoclass identifierClass keyframeHash css =
 type Data
     = Css CssAnimation
     | ParentTrigger ParentTriggerDetails
+    | FocusOnHover String
 
 
 type Trigger
@@ -183,6 +192,9 @@ decodeCssData =
                 case str of
                     "css" ->
                         Decode.map Css decodeCss
+
+                    "focusOnHover" ->
+                        Decode.map FocusOnHover (Decode.field "id" Decode.string)
 
                     _ ->
                         Decode.fail ("Unknown type: " ++ str)

@@ -224,15 +224,12 @@ import Color
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as Event
-import Html.Keyed
-import Html.Lazy
 import Internal.BitField as BitField
 import Internal.Bits.Inheritance as Inheritance
 import Internal.Flag as Flag exposing (Flag)
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Json.Decode as Decode
-import Set
 import Ui.Responsive
 
 
@@ -397,24 +394,6 @@ layout opts attrList content =
     Two.renderLayout opts
         attrList
         content
-
-
-style : String -> Html msg
-style styleStr =
-    Html.div []
-        [ Html.node "style"
-            []
-            [ Html.text styleStr ]
-        ]
-
-
-styleRules : List String -> Html msg
-styleRules styleStr =
-    Html.div []
-        [ Html.node "style"
-            []
-            [ Html.text (String.join "\n" styleStr) ]
-        ]
 
 
 {-| When you want to render exactly nothing.
@@ -1325,3 +1304,4 @@ grab =
 grabbing : Attribute msg
 grabbing =
     Two.class Style.classes.cursorGrabbing
+

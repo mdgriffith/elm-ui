@@ -72,7 +72,6 @@ import Internal.Flag as Flag
 import Internal.Model2 as Two
 import Internal.Style2 as Style
 import Ui exposing (Attribute, Element)
-import Ui.Events
 import Ui.Font
 import Ui.Lazy
 
@@ -1014,3 +1013,4 @@ viewSummaryColumn config state rows rowCount columnIndex (Column col) =
             :: attrs
         )
         children
+

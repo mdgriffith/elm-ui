@@ -1,5 +1,6 @@
 module Internal.Model2 exposing (..)
 
+import Browser.Dom
 import Html
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -14,6 +15,7 @@ import Internal.Teleport as Teleport
 import Json.Decode as Json
 import Json.Encode as Encode
 import Set exposing (Set)
+import Task
 import Time
 import VirtualDom
 
@@ -41,6 +43,7 @@ map fn el =
 type Msg
     = Tick Time.Posix
     | Teleported Teleport.Trigger Teleport.Event
+    | Focused (Result Browser.Dom.Error ())
 
 
 type State
@@ -63,6 +66,9 @@ update : (Msg -> msg) -> Msg -> State -> ( State, Cmd msg )
 update toAppMsg msg ((State details) as unchanged) =
     case msg of
         Tick _ ->
+            ( unchanged, Cmd.none )
+
+        Focused _ ->
             ( unchanged, Cmd.none )
 
         Teleported trigger teleported ->
@@ -162,6 +168,11 @@ applyTeleported event data ( (State state) as untouched, cmds ) =
                     }
                 , cmds
                 )
+
+        Teleport.FocusOnHover htmlId ->
+            ( untouched
+            , Task.attempt Focused (Browser.Dom.focus htmlId) :: cmds
+            )
 
 
 addRule : String -> List String -> List String
@@ -654,6 +665,20 @@ attributeWith flag a =
                 , nearby = []
                 }
           }
+        ]
+
+
+focusOnHover : String -> Attribute msg
+focusOnHover htmlId =
+    attrs
+        [ attributeWith Flag.id (Attr.id htmlId)
+        , attribute (Attr.tabindex -1)
+        , teleport
+            { trigger = "on-hovered"
+            , class = "focus-on-hover"
+            , style = []
+            , data = Teleport.encodeFocusOnHover htmlId
+            }
         ]
 
 

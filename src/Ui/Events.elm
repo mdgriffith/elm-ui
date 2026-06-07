@@ -1,7 +1,7 @@
 module Ui.Events exposing
     ( onClick
     , onDoubleClick, onMouseDown, onMouseUp, onMouseEnter, onMouseLeave, onMouseMove
-    , onFocus, onLoseFocus
+    , onFocus, onLoseFocus, focusOnHover
     , onKey
     , Key, enter, space, up, down, left, right, backspace, key
     , on, stopPropagationOn, preventDefaultOn, custom
@@ -19,7 +19,7 @@ module Ui.Events exposing
 
 # Focus
 
-@docs onFocus, onLoseFocus
+@docs onFocus, onLoseFocus, focusOnHover
 
 
 # Keyboard
@@ -183,6 +183,18 @@ onLoseFocus =
 onFocus : msg -> Attribute msg
 onFocus =
     Two.attribute << Html.Events.onFocus
+
+
+{-| Set focus to this element when it is hovered.
+
+This also sets the element's `id` to the provided string and adds
+`tabindex="-1"`, making non-native elements programmatically focusable without
+adding them to the page's normal tab order.
+
+-}
+focusOnHover : String -> Attribute msg
+focusOnHover =
+    Two.focusOnHover
 
 
 
