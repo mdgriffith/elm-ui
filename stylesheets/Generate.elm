@@ -869,6 +869,7 @@ baseSheet =
             ]
         , Descriptor (dot classes.scrollbars)
             [ Prop "overflow" "auto"
+            , Prop "scrollbar-gutter" "stable both-edges"
             , Prop "flex-shrink" "1"
             , Descriptor (dot classes.column)
                 [ Prop "flex-shrink" "1"
@@ -887,6 +888,7 @@ baseSheet =
             ]
         , Descriptor (dot classes.scrollbarsY)
             [ Prop "overflow-y" "auto"
+            , Prop "scrollbar-gutter" "stable both-edges"
             , Descriptor (dot classes.column)
                 [ Prop "flex-shrink" "1"
                 , Prop "flex-basis" "auto"
@@ -962,15 +964,7 @@ baseSheet =
                 [ Prop "align-self" "stretch"
                 ]
             , Child (dot classes.heightFill)
-                [ Descriptor (dot classes.heightBounded)
-                    -- This looks super weird, I know.
-                    -- Here's the awkward situation: https://www.notion.so/Difficult-or-impossible-CSS-challenges-33d1216a69b74688a038da7a18eee200?pvs=4
-                    -- basically height: 100% is broken in a flex row
-                    -- Other approaches also fail for various reasons
-                    -- We know the height is bounded by a specific pixel height
-                    -- so we can set this value to a large pixel value to cause it to grow
-                    [ Prop "height" "max(2000px, 100vh)"
-                    ]
+                [ Prop "min-height" "0"
                 ]
             , describeAlignment <|
                 \alignment ->
@@ -1044,8 +1038,21 @@ baseSheet =
                         ]
                     ]
                 ]
+            , Child (dot classes.scrollbars)
+                [ Prop "min-height" "0"
+                ]
+            , Child (dot classes.scrollbarsY)
+                [ Prop "min-height" "0"
+                ]
+            , Child (dot classes.clip)
+                [ Prop "min-height" "0"
+                ]
+            , Child (dot classes.clipY)
+                [ Prop "min-height" "0"
+                ]
             , Child (dot classes.heightFill)
-                [ Prop "flex-grow" "1"
+                [ Prop "min-height" "0"
+                , Prop "flex-grow" "1"
                 , Prop "max-height" "100%"
                 ]
             , Child select.widthFill

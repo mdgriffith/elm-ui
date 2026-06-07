@@ -929,7 +929,7 @@ height len =
 
         Fill portionSize ->
             Two.Attribute
-                [ { flag = Flag.width
+                [ { flag = Flag.height
                   , attr =
                         { node = Two.NodeAsDiv
                         , additionalInheritance = BitField.none
@@ -1325,4 +1325,3 @@ grab =
 grabbing : Attribute msg
 grabbing =
     Two.class Style.classes.cursorGrabbing
-
