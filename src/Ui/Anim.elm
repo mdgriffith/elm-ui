@@ -1,6 +1,6 @@
 module Ui.Anim exposing
     ( init, update
-    , transition, intro, hovered, focused, active
+    , transition, intro, hovered, focused, focusedByKeyboard, active
     , Duration, ms
     , Animated, opacity
     , x, y, z
@@ -10,7 +10,7 @@ module Ui.Anim exposing
     , Transition, withTransition, withStepTransition
     , linear, spring, bezier
     , spinning, pulsing, bouncing, pinging
-    , keyframes, hoveredWith, focusedWith, activeWith
+    , keyframes, hoveredWith, focusedWith, focusedByKeyboardWith, activeWith
     , Step, set, wait, step
     , loop, loopFor
     , onHover, onFocus, onActive
@@ -28,7 +28,7 @@ module Ui.Anim exposing
 
 # Animations
 
-@docs transition, intro, hovered, focused, active
+@docs transition, intro, hovered, focused, focusedByKeyboard, active
 
 @docs Duration, ms
 
@@ -66,7 +66,7 @@ Check out how they're defined if you want to make your own.
 
 # Keyframes
 
-@docs keyframes, hoveredWith, focusedWith, activeWith
+@docs keyframes, hoveredWith, focusedWith, focusedByKeyboardWith, activeWith
 
 @docs Step, set, wait, step
 
@@ -210,6 +210,11 @@ onFocusTrigger =
     "on-focused"
 
 
+onFocusByKeyboardTrigger : String
+onFocusByKeyboardTrigger =
+    "on-focused-by-keyboard"
+
+
 onFocusWithinTrigger : String
 onFocusWithinTrigger =
     "on-focused-within"
@@ -227,6 +232,7 @@ onActiveTrigger =
 type Trigger
     = Hover
     | Focus
+    | FocusByKeyboard
     | Active
     | OnRender
 
@@ -239,6 +245,9 @@ triggerClass trigger =
 
         Focus ->
             onFocusTrigger
+
+        FocusByKeyboard ->
+            onFocusByKeyboardTrigger
 
         Active ->
             onActiveTrigger
@@ -255,6 +264,9 @@ triggerPsuedo trigger =
 
         Focus ->
             ":focus"
+
+        FocusByKeyboard ->
+            ":focus-visible"
 
         Active ->
             ":active"
@@ -345,6 +357,18 @@ hovered dur attrs =
 focused : Duration -> List Animated -> Attribute msg
 focused dur attrs =
     transitionWithTrigger Focus dur attrs
+
+
+{-| Style focus when the browser decides a focus indicator should be shown.
+
+This is usually due to keyboard navigation. Behind the scenes, this uses
+`:focus-visible`, which you can read more about on
+[MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible).
+
+-}
+focusedByKeyboard : Duration -> List Animated -> Attribute msg
+focusedByKeyboard dur attrs =
+    transitionWithTrigger FocusByKeyboard dur attrs
 
 
 {-| -}
@@ -640,6 +664,20 @@ focusedWith steps =
     Animator.keyframes steps
         |> Animator.toCss
         |> toAttr Focus
+
+
+{-| Run keyframes when the browser decides a focus indicator should be shown.
+
+This is usually due to keyboard navigation. Behind the scenes, this uses
+`:focus-visible`, which you can read more about on
+[MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible).
+
+-}
+focusedByKeyboardWith : List Step -> Attribute msg
+focusedByKeyboardWith steps =
+    Animator.keyframes steps
+        |> Animator.toCss
+        |> toAttr FocusByKeyboard
 
 
 {-| -}

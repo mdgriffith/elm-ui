@@ -1403,6 +1403,9 @@ animationTriggers =
     , toTrigger ".on-focused:focus"
         [ Prop "animation" "on-focused 1ms"
         ]
+    , toTrigger ".on-focused-by-keyboard:focus-visible"
+        [ Prop "animation" "on-focused 1ms"
+        ]
     , toTrigger ".on-focused-within:focus-within"
         [ Prop "animation" "on-focused 1ms"
         ]
