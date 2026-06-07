@@ -35,3 +35,4 @@ src/InternalAnim
 src/Animator.elm
 
 .DS_Store
+elm-ui-components
