@@ -554,9 +554,11 @@ viewSlider attributes input direction =
                 Vertical ->
                     True
 
+        value =
+            clamp input.min input.max input.value
+
         factor =
-            (input.value - input.min)
-                / (input.max - input.min)
+            (value - input.min) / (input.max - input.min)
     in
     Ui.el
         ([ Ui.behindContent
@@ -613,7 +615,7 @@ viewSlider attributes input direction =
                     )
                 , Html.Attributes.min (String.fromFloat input.min)
                 , Html.Attributes.max (String.fromFloat input.max)
-                , Html.Attributes.value (String.fromFloat input.value)
+                , Html.Attributes.value (String.fromFloat value)
                 ]
                 []
         )
