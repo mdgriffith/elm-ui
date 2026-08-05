@@ -587,9 +587,7 @@ baseSheet =
         ]
     , Class "li"
         [ Descriptor (dot classes.any)
-            [ Descriptor (dot classes.el)
-                [ Prop "display" "list-item"
-                ]
+            [ Prop "display" "list-item"
             ]
         ]
     , Class (dot classes.trigger)

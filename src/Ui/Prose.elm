@@ -2,7 +2,7 @@ module Ui.Prose exposing
     ( paragraph, column
     , numbered, bulleted, item
     , orderedList, unorderedList
-    , ListIcon, decimal, disc, circle, custom
+    , ListIcon, decimal, disc, circle, markerUrl, markerString, custom
     , noBreak, softHyphen
     , enDash, emDash
     , quote, singleQuote, apostrophe
@@ -22,7 +22,7 @@ module Ui.Prose exposing
 
 @docs orderedList, unorderedList
 
-@docs ListIcon, decimal, disc, circle, custom
+@docs ListIcon, decimal, disc, circle, markerUrl, markerString, custom
 
 
 # Special text handling
@@ -201,57 +201,135 @@ bulleted =
     unorderedList disc
 
 
-{-| -}
+{-| Create a list item whose children use standard text-column flow.
+
+List items can contain inline text, paragraphs, nested lists, and other block
+content. The item owns that layout directly so native list markers align with
+the first line of content.
+
+-}
 type Item msg
-    = Item (List (Attribute msg)) (Element msg)
+    = Item (List (Attribute msg)) (List (Element msg))
 
 
-{-| -}
-item : List (Attribute msg) -> Element msg -> Item msg
+{-| Create a list item with text-column children.
+-}
+item : List (Attribute msg) -> List (Element msg) -> Item msg
 item =
     Item
 
 
 unwrapItem : Item msg -> Element msg
-unwrapItem (Item attrs child) =
+unwrapItem (Item attrs children) =
     Two.element Two.NodeAsListItem
-        Two.AsEl
+        Two.AsTextColumn
         attrs
-        [ child ]
+        children
 
 
-{-| -}
+{-| A native CSS list marker description.
+-}
 type ListIcon
-    = ListIcon String
+    = DecimalMarker
+    | DiscMarker
+    | CircleMarker
+    | UrlMarker String
+    | StringMarker String
+    | CustomCssMarker String
 
 
 {-| -}
 decimal : ListIcon
 decimal =
-    ListIcon "decimal"
+    DecimalMarker
 
 
 {-| -}
 disc : ListIcon
 disc =
-    ListIcon "disc"
+    DiscMarker
 
 
 {-| -}
 circle : ListIcon
 circle =
-    ListIcon "disc"
+    CircleMarker
 
 
-{-| -}
+{-| Use an image URL as the native list marker.
+-}
+markerUrl : String -> ListIcon
+markerUrl =
+    UrlMarker
+
+
+{-| Use a string, such as a Unicode glyph, as the native list marker.
+-}
+markerString : String -> ListIcon
+markerString =
+    StringMarker
+
+
+{-| Use a raw CSS `list-style` value.
+
+Prefer `markerUrl` or `markerString` for those common cases.
+
+-}
 custom : String -> ListIcon
 custom =
-    ListIcon
+    CustomCssMarker
 
 
 iconToString : ListIcon -> String
-iconToString (ListIcon str) =
-    str
+iconToString icon =
+    case icon of
+        DecimalMarker ->
+            "decimal"
+
+        DiscMarker ->
+            "disc"
+
+        CircleMarker ->
+            "circle"
+
+        UrlMarker source ->
+            "url(" ++ cssQuotedString source ++ ")"
+
+        StringMarker marker ->
+            cssQuotedString marker
+
+        CustomCssMarker value ->
+            value
+
+
+cssQuotedString : String -> String
+cssQuotedString value =
+    "\"" ++ String.foldr escapeCssStringChar "" value ++ "\""
+
+
+escapeCssStringChar : Char -> String -> String
+escapeCssStringChar char escaped =
+    case char of
+        '\\' ->
+            "\\\\" ++ escaped
+
+        '"' ->
+            "\\\"" ++ escaped
+
+        '\n' ->
+            "\\A " ++ escaped
+
+        '\u{000D}' ->
+            "\\D " ++ escaped
+
+        '\u{000C}' ->
+            "\\C " ++ escaped
+
+        '\u{0000}' ->
+            "�" ++ escaped
+
+        _ ->
+            String.fromChar char ++ escaped
 
 
 {-| -}
