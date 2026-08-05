@@ -818,6 +818,7 @@ textHelper textInput attrs textOptions =
                  , Two.class classes.focusedWithin
                  , Two.class classes.inputMultilineWrapper
                  , Two.style "white-space" "pre-wrap"
+                 , Two.style "overflow-wrap" "anywhere"
                  , Two.style "display" "grid"
                  ]
                     ++ withDefaults
