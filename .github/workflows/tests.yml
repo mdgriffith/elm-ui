@@ -2,42 +2,33 @@ name: Test Suite
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "2.0" ]
   pull_request:
-    branches: [ master ]
-
+    branches: [ "2.0" ]
 
 jobs:
-  testing:
+  deterministic:
+    name: Deterministic non-browser gate
     runs-on: ubuntu-latest
 
-    steps:   
-    - uses: actions/checkout@v2
-    
-    - name: Setup node
-      uses: actions/setup-node@v1
-      with:
-        node-version: 10
-        
-    - uses: actions/cache@v1
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Install
-      run: npm ci
-    
-    - name: Elm test suite
-      run: npm run test
-    
-    - uses: webfactory/ssh-agent@v0.2.0
-      with:
-          ssh-private-key: ${{ secrets.ELM_UI_TESTING_SSH_PRIVATE_KEY }}
-        
-    - name: Rendering test suite on saucelabs
-      run: npm run test-render-sauce-automated -- --build=2.0.0 --name=development
-      env:
-        SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
-        SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
+
+      - name: Check generated artifacts are up to date
+        run: bun run stylesheet:check
+
+      - name: Run Elm tests
+        run: bun run test

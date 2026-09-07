@@ -147,7 +147,6 @@ allClassNameFns =
     , ( .italic, "italic" )
     , ( .strike, "strike" )
     , ( .underline, "underline" )
-    , ( .textUnitalicized, "textUnitalicized" )
 
     -- text alignment
     , ( .textJustify, "textJustify" )
