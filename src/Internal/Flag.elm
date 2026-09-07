@@ -2,7 +2,7 @@ module Internal.Flag exposing (..)
 
 {-| THIS FILE IS GENERATED, NO TOUCHY 
 
-This file is generated via 'npm run stylesheet' in the elm-ui repository
+This file is generated via 'bun run stylesheet' in the elm-ui repository
   
 -}
 
@@ -206,5 +206,4 @@ background =
 event : Flag
 event =
     BitField.next 1 background
-
 

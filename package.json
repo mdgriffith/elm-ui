@@ -3,16 +3,21 @@
   "version": "1.0.0",
   "description": "Run the Elm UI benchmarks and render tests",
   "main": "index.js",
+  "engines": {
+    "node": ">=22",
+    "bun": ">=1.4.2"
+  },
+  "packageManager": "bun@1.4.2",
   "scripts": {
-    "test": "elm-test",
+    "test": "node --test stylesheets/build.test.js && elm-test",
     "view-test": "node tests-rendering/automation/view.js",
     "test-render": "node tests-rendering/automation/run.js --chrome",
     "test-render-sauce": "source sauce.env; node tests-rendering/automation/run.js --sauce --headless",
     "test-render-sauce-automated": "node tests-rendering/automation/run.js --sauce --headless",
     "test-doc-preview": "bash tests-rendering/automation/doc-preview.sh",
     "bench": "node benchmarks/runtime/index.js",
-    "list-issues": "hub issue -f \"%i,%U,%t,'%L'%n\" > issues.csv",
     "stylesheet": "node stylesheets/build.js",
+    "stylesheet:check": "node stylesheets/build.js --check",
     "docs": "elm make --docs docs.json",
     "watch-stylesheet": "node stylesheets/build.js --watch",
     "review": "elm-review src/Internal/Model2.elm",
@@ -40,7 +45,7 @@
   "devDependencies": {
     "@kachkaev/run-elm": "^3.0.0-beta.1",
     "chokidar": "^3.4.2",
-    "elm-review": "^2.10.3",
-    "puppeteer": "^22.13.1"
+    "elm-review": "2.13.5",
+    "puppeteer": "22.13.1"
   }
 }
