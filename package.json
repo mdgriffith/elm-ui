@@ -9,7 +9,7 @@
   },
   "packageManager": "bun@1.4.2",
   "scripts": {
-    "test": "elm-test",
+    "test": "node --test stylesheets/build.test.js && elm-test",
     "view-test": "node tests-rendering/automation/view.js",
     "test-render": "node tests-rendering/automation/run.js --chrome",
     "test-render-sauce": "source sauce.env; node tests-rendering/automation/run.js --sauce --headless",
