@@ -473,7 +473,6 @@ select =
                 [ dot classes.alignTop
                 , dot classes.alignBottom
                 , dot classes.alignCenterY
-                , dot classes.heightBounded
                 ]
             ++ ")"
     }
