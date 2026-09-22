@@ -1,6 +1,6 @@
 module Internal.Style.Generated exposing (Var(..), classes, vars, stylesheet, lineHeightAdjustment)
 
-{-| This file is generated via 'npm run stylesheet' in the elm-ui repository -}
+{-| This file is generated via 'bun run stylesheet' in the elm-ui repository -}
 
 {- BEGIN COPY -}
 

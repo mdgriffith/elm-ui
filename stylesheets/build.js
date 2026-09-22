@@ -4,41 +4,7 @@ const path = require("path");
 const child = require("child_process");
 const chokidar = require("chokidar");
 
-async function gzip(file) {
-  // --keep = keep the original file
-  // --force = overwrite the exisign gzip file if it's there
-  child.execSync("gzip --keep --force " + file);
-}
-
-async function build() {
-  const root = process.cwd();
-
-  let { output, debugLog } = await runElm("stylesheets/Generate.elm");
-  process.chdir(root);
-
-  const elmSource = fs.readFileSync("stylesheets/Generate.elm", "utf8");
-
-  const start = elmSource.indexOf("{- BEGIN COPY -}");
-  const end = elmSource.indexOf("{- END COPY -}");
-  const copy = elmSource.slice(start, end);
-
-  const elm = `module Internal.Style.Generated exposing (Var(..), classes, vars, stylesheet, lineHeightAdjustment)
-
-{-| This file is generated via 'npm run stylesheet' in the elm-ui repository -}
-
-${copy}stylesheet : String
-stylesheet = """${output}"""
-`;
-
-  fs.writeFileSync("./src/Internal/Style/Generated.elm", elm);
-
-  fs.writeFileSync("./stylesheets/generated/dev.min.css", output);
-  // gzip("./stylesheets/generated/dev.min.css");
-
-  fs.writeFileSync("./src/Internal/Flag.elm", build_flags(flags));
-
-  console.log("  -> Files regenerated");
-}
+// ─── Deterministic generation ────────────────────────────────────────────────
 
 const flags = [
   "padding",
@@ -75,7 +41,7 @@ const flags = [
   "event",
 ];
 
-const base = `import Internal.BitField as BitField exposing (BitField, Bits)
+const flagBase = `import Internal.BitField as BitField exposing (BitField, Bits)
 
 
 type IsFlag = IsFlag
@@ -114,56 +80,242 @@ skip : Flag
 skip =
     BitField.first 0`;
 
-function build_flags(flags) {
-  let items = "";
-  let i = 0;
-  let previous = "skip";
-  for (const flag of flags) {
-    items += `
-
-${flag} : Flag
-${flag} =
-    BitField.next 1 ${previous}
-`;
-    i += 1;
-    previous = flag;
+/**
+ * Validate the flag list and return the generated Internal.Flag source.
+ * Throws if there are too many flags.
+ */
+function generateFlagSource(flagList) {
+  if (flagList.length > 32) {
+    throw new Error(
+      `Flag overflow: ${flagList.length} flags defined but the limit is 32.`
+    );
   }
-  if (i > 32) {
-    console.warn(`You have ${i} flags. The limit is 32!`);
+
+  let items = "";
+  let previous = "skip";
+  for (const flag of flagList) {
+    items += `\n\n${flag} : Flag\n${flag} =\n    BitField.next 1 ${previous}\n`;
+    previous = flag;
   }
 
   return `module Internal.Flag exposing (..)
 
 {-| THIS FILE IS GENERATED, NO TOUCHY 
 
-This file is generated via 'npm run stylesheet' in the elm-ui repository
+This file is generated via 'bun run stylesheet' in the elm-ui repository
   
 -}
 
 
-${base}
+${flagBase}
 
 ${items}
-
 `;
 }
+
+function extractClasses(elmSource) {
+  const begin = "{- BEGIN COPY -}";
+  const end = "{- END COPY -}";
+  const start = elmSource.indexOf(begin);
+  const finish = elmSource.indexOf(end);
+  if (start < 0 || finish < start + begin.length ||
+      elmSource.lastIndexOf(begin) !== start || elmSource.lastIndexOf(end) !== finish) {
+    throw new Error("Expected unique, ordered BEGIN COPY / END COPY markers");
+  }
+  const copy = elmSource.slice(start, finish);
+  const source = elmSource.slice(start + begin.length, finish);
+  let offset = 0;
+  function take(pattern) {
+    pattern.lastIndex = offset;
+    const match = pattern.exec(source);
+    if (!match) {
+      throw new Error(`Unsupported classes record near: ${source.slice(offset, offset + 80)}`);
+    }
+    offset = pattern.lastIndex;
+    return match;
+  }
+  function trivia() {
+    take(/(?:\s|--[^\r\n]*)*/y);
+  }
+
+  // Only plain CSS-name string literals and line comments are supported.
+  // Consume every token, rather than searching for whichever fields happen to match.
+  trivia();
+  take(/classes\s*=\s*\{/y);
+  const pairs = [];
+  const keys = new Set();
+  while (true) {
+    trivia();
+    const field = take(/([a-z][A-Za-z0-9_]*)\s*=\s*"([A-Za-z0-9_-]+)"/y);
+    if (keys.has(field[1])) {
+      throw new Error(`Duplicate class field: ${field[1]}`);
+    }
+    keys.add(field[1]);
+    pairs.push({ key: field[1], value: field[2] });
+    trivia();
+    if (take(/[,}]/y)[0] === "}") break;
+  }
+  // The closing brace must end the definition, not prefix an expression.
+  take(/[ \t]*(?:\r?\n[ \t]*)*(?=\r?\n(?:type[ \t]+[A-Z]|[a-z][A-Za-z0-9_]*[ \t]*(?:=|:))|\s*$)/y);
+  if (/^classes\b/m.test(source.slice(offset))) {
+    throw new Error("Duplicate classes definition");
+  }
+
+  const seen = new Map(); // value -> key
+  const collisions = [];
+  for (const { key, value } of pairs) {
+    if (seen.has(value)) {
+      collisions.push(
+        `  "${value}" is used by both "${seen.get(value)}" and "${key}"`
+      );
+    } else {
+      seen.set(value, key);
+    }
+  }
+
+  if (collisions.length > 0) {
+    throw new Error(
+      `Class value collisions detected:\n${collisions.join("\n")}`
+    );
+  }
+  return { copy, pairs };
+}
+
+function generateInventories(pairs, flagList) {
+  return `module Generated.Inventories exposing (allClassNames, allFlags)
+
+{-| Generated by 'bun run stylesheet'. Do not edit. -}
+
+import Internal.Flag as Flag
+import Internal.Style.Generated as Generated
+
+
+allClassNames : List ( String, String )
+allClassNames =
+    [ ${pairs.map(({ key }) => `( Generated.classes.${key}, "${key}" )`).join("\n    , ")}
+    ]
+
+
+allFlags : List Flag.Flag
+allFlags =
+    [ ${flagList.map((flag) => `Flag.${flag}`).join("\n    , ")}
+    ]
+`;
+}
+
+/**
+ * Run the Elm generator and return all expected file contents.
+ * This is the single deterministic function that produces all strings.
+ */
+async function generate() {
+  const root = process.cwd();
+
+  const elmSource = fs.readFileSync("stylesheets/Generate.elm", "utf8");
+  const { copy, pairs } = extractClasses(elmSource);
+  const flagElm = generateFlagSource(flags);
+
+  let { output } = await runElm("stylesheets/Generate.elm");
+  process.chdir(root);
+
+  const generatedElm = `module Internal.Style.Generated exposing (Var(..), classes, vars, stylesheet, lineHeightAdjustment)
+
+{-| This file is generated via 'bun run stylesheet' in the elm-ui repository -}
+
+${copy}stylesheet : String
+stylesheet = """${output}"""
+`;
+
+  return {
+    "src/Internal/Style/Generated.elm": generatedElm,
+    "stylesheets/generated/dev.min.css": output,
+    "src/Internal/Flag.elm": flagElm,
+    "tests/Generated/Inventories.elm": generateInventories(pairs, flags),
+  };
+}
+
+// ─── Tracked artifacts (checked by stylesheet:check) ─────────────────────────
+// dev.min.css is gitignored and written by `bun run stylesheet` only.
+const TRACKED_KEYS = [
+  "src/Internal/Style/Generated.elm",
+  "src/Internal/Flag.elm",
+  "tests/Generated/Inventories.elm",
+];
+
+// ─── Write command (bun run stylesheet) ──────────────────────────────────────
+
+async function write() {
+  const artifacts = await generate();
+  for (const [relPath, content] of Object.entries(artifacts)) {
+    fs.mkdirSync(path.dirname(relPath), { recursive: true });
+    fs.writeFileSync(relPath, content);
+  }
+  console.log("  -> Files regenerated");
+}
+
+// ─── Check command (bun run stylesheet:check) ─────────────────────────────────
+
+async function check() {
+  const artifacts = await generate();
+  let stale = [];
+
+  for (const relPath of TRACKED_KEYS) {
+    const expected = artifacts[relPath];
+    let current;
+    try {
+      current = fs.readFileSync(relPath, "utf8");
+    } catch (_) {
+      stale.push(`  MISSING: ${relPath}`);
+      continue;
+    }
+    if (current !== expected) {
+      stale.push(`  STALE:   ${relPath}`);
+    }
+  }
+
+  if (stale.length > 0) {
+    console.error("stylesheet:check failed — stale or missing artifacts:");
+    stale.forEach((s) => console.error(s));
+    console.error('\nRun "bun run stylesheet" to regenerate.');
+    process.exit(1);
+  } else {
+    console.log("stylesheet:check passed — all artifacts are up to date.");
+  }
+}
+
+// ─── Watch command (bun run watch-stylesheet) ─────────────────────────────────
 
 async function watch() {
   chokidar
     .watch("./stylesheets/Generate.elm")
-    .on("all", async (event, path) => {
+    .on("all", async (event, filePath) => {
       console.log("Stylesheet change detected");
-      build();
+      try {
+        await write();
+      } catch (e) {
+        console.error(e.message);
+      }
     });
 }
 
+// ─── Entry point ─────────────────────────────────────────────────────────────
+
 function run() {
-  const watching = process.argv[2];
-  if (watching == "--watch" || watching == "-w") {
+  const arg = process.argv[2];
+  if (arg === "--check") {
+    check().catch((e) => {
+      console.error(e.message);
+      process.exit(1);
+    });
+  } else if (arg === "--watch" || arg === "-w") {
     watch();
   } else {
-    build();
+    write().catch((e) => {
+      console.error(e.message);
+      process.exit(1);
+    });
   }
 }
 
-run();
+module.exports = { extractClasses, generateInventories, generateFlagSource, flags };
+
+if (require.main === module) run();
